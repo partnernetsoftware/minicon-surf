@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "native_protocol": "minicon-surf.control",
+  "native_version": "0.0.1",
+  "status": "hypothesis",
+  "objects": [
+    {
+      "native": "profile",
+      "cdp": null,
+      "mapping": "none",
+      "boundary": "BrowserContext does not define native profile persistence, locking, policy, or budgets"
+    },
+    {
+      "native": "session",
+      "cdp": "Target.SessionID",
+      "mapping": "different-semantics",
+      "boundary": "CDP session is a client attachment, not the native engine authority"
+    },
+    {
+      "native": "target",
+      "cdp": "Target.TargetID",
+      "mapping": "candidate-one-to-one",
+      "boundary": "must be proven against one live target by G2"
+    },
+    {
+      "native": "frame",
+      "cdp": "Page.FrameId",
+      "mapping": "adapter-scoped",
+      "boundary": "navigation lifetime requires qualification"
+    },
+    {
+      "native": "realm",
+      "cdp": "Runtime.ExecutionContextId",
+      "mapping": "adapter-scoped",
+      "boundary": "invalid after executionContextDestroyed"
+    },
+    {
+      "native": "surface",
+      "cdp": null,
+      "mapping": "none",
+      "boundary": "target activation is not presentation attachment"
+    },
+    {
+      "native": "revision",
+      "cdp": null,
+      "mapping": "none",
+      "boundary": "maintained by the native target and adapter"
+    },
+    {
+      "native": "node_reference",
+      "cdp": "DOM.NodeId|DOM.BackendNodeId",
+      "mapping": "adapter-scoped-lossy",
+      "boundary": "CDP IDs never bypass target revision validation"
+    }
+  ]
+}

@@ -35,7 +35,9 @@ MiniCon to be installed. Its place in the product family is deliberate:
 The project is in the `0.0.x` product-definition and feasibility phase. No Web
 engine, compatibility level, memory number, or release platform is claimed
 until it has a named court and reproducible evidence. See
-[`plan/plan-0.0.x.md`](plan/plan-0.0.x.md).
+[`plan/plan-0.0.x.md`](plan/plan-0.0.x.md). The first versioned vocabulary and
+bounded JSON control-envelope candidate lives under [`protocol/`](protocol/);
+it is a contract for experiments, not a released API or compatibility claim.
 
 ## License
 

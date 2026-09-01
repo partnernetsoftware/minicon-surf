@@ -1,0 +1,123 @@
+# MiniCon Surf control contract 0.0.1
+
+Status: **G0 vocabulary checked; transport unimplemented**. This freezes object
+meanings early enough to build the synthetic G2 target, but it does not claim
+that a product executable, CLI transport, or CDP adapter exists yet.
+
+The internal contract is not CDP. Native CLI and future in-process clients use
+this model; CDP is an adapter whose exact losses are recorded below.
+
+## Object vocabulary and ownership
+
+| Object | One meaning in every frontend | Owner and lifetime |
+|---|---|---|
+| profile | Storage, network policy, permissions, budgets, and persistence identity | Exists independently of a process. Persistent profiles retain identity; ephemeral profiles are destroyed explicitly or with their owning host. |
+| session | One live browser-engine authority opened against exactly one profile | Owns targets and arbitrates clients. Closing it closes its targets, but does not delete a persistent profile. |
+| target | One Agent-addressable top-level browsing context with navigation and page state | Belongs to one session for its lifetime. A surface never owns it. Its opaque ID is not recycled within a host generation. |
+| frame | One node in a target's browsing-context tree | Belongs to one target. Same-frame navigation may retain frame identity while replacing its document and realms. |
+| realm | One JavaScript execution environment for a frame/document/world | Replaced when its document or world is replaced. An evaluation always names its target and, when needed, realm. |
+| surface | A presentation attachment that can display and accept human input | Attaches to at most one target. Detaching releases presentation resources without closing or navigating the target. `hidden` is not `hibernated`. |
+| revision | A target-local, monotonically increasing semantic-state version | Advances when navigation or observable document state invalidates a snapshot. It never decreases during a target lifetime. |
+| node reference | The compound `(target, revision, node)` returned by a semantic snapshot | Valid only for that exact target revision. A later revision produces `stale_revision`; node IDs alone have no meaning. |
+
+Opaque IDs use a typed prefix (`profile_`, `session_`, `target_`, `frame_`,
+`realm_`, `surface_`, or `node_`) followed by 1–64 lowercase ASCII letters,
+digits, `_`, or `-`. Clients compare them but never parse their suffixes.
+
+```text
+profile
+└── session (live authority)
+    └── target (page lifetime)
+        ├── frame
+        │   └── realm
+        ├── revision
+        │   └── node reference = target + revision + node
+        └── surface (optional attachment; never owner)
+```
+
+## Bounded JSON envelope
+
+[`control-0.0.1.schema.json`](control-0.0.1.schema.json) is the machine-readable
+envelope and identity schema. Every request contains the exact protocol and
+version, an opaque `request_id`, a bounded deadline, one named operation, and
+an arguments object. Every response echoes the identity and is exactly one of
+success or typed failure.
+
+Initial limits are deliberately conservative:
+
+- one UTF-8 JSON request: at most 65,536 bytes;
+- one UTF-8 JSON response: at most 4,194,304 bytes;
+- nesting depth: at most 32; collection length: at most 10,000;
+- `deadline_ms`: 1–120,000; expiry is a typed `deadline_exceeded` failure;
+- snapshots and evaluations additionally carry caller-selected result limits;
+- screenshot pixels are never silently base64-expanded into an unbounded JSON
+  response; the eventual transport must return a bounded resource handle or a
+  caller-authorized output destination.
+
+The initial operation names reserve the product surface without claiming
+implementation: `profile.create`, `profile.list`, `profile.inspect`,
+`profile.delete`, `session.open`, `session.list`, `session.inspect`,
+`session.close`, `target.open`, `target.list`, `target.inspect`, `target.close`,
+`target.snapshot`, `target.act`, `target.wait`, `target.screenshot`,
+`surface.show`, `surface.hide`, and `memory.report`. A name outside this version
+is `invalid_request`; a listed operation unavailable on the selected backend is
+`unsupported_operation`. Neither falls through to engine-specific behavior.
+
+Errors have stable codes, human-readable bounded messages, `retryable`, and an
+optional typed scope. The initial codes are `invalid_request`, `not_found`,
+`conflict`, `profile_locked`, `stale_revision`, `deadline_exceeded`,
+`resource_limit`, `unsupported_operation`, `unsupported_capability`,
+`permission_denied`, `target_crashed`, and `internal`. Engine errors are mapped
+to these codes or retained in bounded diagnostic detail; they do not redefine
+the public contract.
+
+The CLI projection is one request object in and one response object out. A
+future executable may offer a one-shot invocation and an NDJSON stream, but
+both must carry the identical envelope. Diagnostics go to stderr and cannot
+be required to interpret stdout.
+
+The proposed one-shot projection is
+`minicon-surf control --json <request.json`; stdout is the corresponding
+success or failure envelope. The command is illustrative and does not exist
+yet. Its operation names and object IDs cannot diverge from this schema.
+
+## CDP projection and explicit losses
+
+The checked machine-readable form is
+[`cdp-mapping-0.0.1.json`](cdp-mapping-0.0.1.json).
+
+| Native object/operation | Candidate CDP projection | Qualification boundary |
+|---|---|---|
+| target | `Target.targetId` | Intended 1:1 identity while exposed; G2 must prove native and CDP clients reach the same live target. |
+| session attach | flattened `Target.attachToTarget` session | A CDP session is a client attachment, not the native browser session. |
+| frame | `Page.FrameId` | Adapter-scoped mapping; navigation semantics require journey tests. |
+| realm | `Runtime.ExecutionContextId` | Adapter-scoped and invalid after context destruction. |
+| semantic snapshot | selected `DOM`/`Accessibility` methods | CDP node IDs are not native node references and cannot bypass revision checks. |
+| structured action | selected `DOM`, `Runtime`, and `Input` calls | Only methods in the version matrix qualify; coordinate-only action is insufficient for the native Agent contract. |
+| wait | events plus adapter-owned condition evaluation | No sleep-based success mapping. Deadline and cancellation remain native semantics. |
+| profile | no exact standard mapping | Chromium browser contexts may approximate isolation but do not define MiniCon Surf profile identity, locking, policy, or persistence. |
+| surface show/hide | no qualified CDP mapping | CDP target activation is not dynamic presentation attachment. |
+| revision/node reference | no exact standard mapping | The adapter maintains mappings and returns explicit stale/unsupported failures; it never equates a `NodeId` with a native reference. |
+
+CDP discovery, domains, method versions, and external Playwright/Puppeteer
+journeys remain D4/G2 evidence. This table is a mapping hypothesis, not that
+evidence.
+
+## Checked examples
+
+The examples demonstrate a snapshot request and its successful revision-scoped
+result, plus an action request and its stale-node failure. Run:
+
+```sh
+python3 protocol/check_contract.py
+```
+
+The dependency-free checker validates byte/depth/collection bounds, envelope
+shape, typed IDs, exact success/failure exclusivity, echoed request identity,
+and node-reference revision consistency. It also executes negative self-tests.
+It complements the JSON Schema; it is not a general-purpose JSON Schema
+implementation.
+
+This reviewed vocabulary, schema, checked examples, and explicit CDP mapping
+satisfy the paper-model minimum for G0. G2 remains red until two real frontends
+control one target; paper mappings cannot satisfy it.

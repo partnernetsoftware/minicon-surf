@@ -1,6 +1,6 @@
 # MiniCon Surf 0.0.x product-definition plan
 
-Status: **planned — repository charter only; no engine or compatibility claim**  
+Status: **active feasibility experiments — no default engine or compatibility claim**
 Outcome: establish whether a Rust browser can be both demonstrably
 memory-optimized and Agent-use oriented while supporting dynamic
 headed/headless presentation, CDP interoperability, and first-class profiles.
@@ -125,7 +125,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── a compatibility-only route is labelled and cannot set the product memory claim
 │   └── default route survives only if it satisfies ↳ [N0] ↳ [H5] ↳ [P6]
 ├── [G8] 0.0.x decision gates
-│   ├── G0 terminology: profile/session/target/surface/revision have one meaning
+│   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
 │   ├── G1 memory court can attribute and cap a synthetic target
 │   ├── G2 one target is controlled interchangeably by CLI and a CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
@@ -164,7 +164,7 @@ flowchart LR
     end
 
     subgraph LIVE["Session Hall"]
-        CTRL["one control desk [A3]<br/>profile · session · target · revision"]
+        CTRL["one control desk [A3]<br/>control 0.0.1 · G0 checked<br/>profile · session · target · revision"]
         PAGE["live target<br/>DOM · realm · network · storage"]
         ARB["input arbitration<br/>Agent · CDP · human"]
     end
@@ -227,6 +227,15 @@ flowchart LR
 
 ## 5. Current experimental frontier
 
+- [x] G0 vocabulary is checked in control contract `0.0.1`: profile, session,
+  target, frame, realm, surface, revision and compound node reference have one
+  owner/lifetime meaning; typed opaque IDs, request/success/failure envelopes,
+  deadlines, byte/depth/collection bounds and stable error codes have a JSON
+  Schema plus a dependency-free checker. Four paired snapshot/action examples
+  and seven negative cases pass. The machine-readable CDP mapping explicitly
+  leaves profile, surface and revision unmapped rather than borrowing Chromium
+  semantics. This closes the paper-model G0 minimum only; no executable honors
+  the contract yet, so A3, D4 and G2 remain open.
 - [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
   redaction rules exist under `labs/` and `AGENTS.md`.
 - [x] The shared Rust process-tree sampler has deadline cleanup, recursively
