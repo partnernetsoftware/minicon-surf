@@ -1,0 +1,203 @@
+# MiniCon Surf 0.0.x product-definition plan
+
+Status: **planned — repository charter only; no engine or compatibility claim**  
+Outcome: establish whether a Rust browser can make memory bounds, Agent-native
+control, dynamic headed/headless presentation, CDP interoperability, and
+first-class profiles one coherent product rather than five unrelated features.
+
+## 1. Product ruling
+
+MiniCon Surf is an independent product in the MiniCon family: a memory-first,
+agent-native browser that can also be used directly by a human. MiniCon is not
+a prerequisite, and the MiniCon terminal binary does not absorb a browser
+engine or its dependency, security, and update surface. AgenTerm may later
+consume the same versioned control contract rather than fork the browser.
+
+Five contracts are fixed before implementation choices:
+
+1. **Memory is product state.** Major live and retained bytes have an owner,
+   budget, observable report, bounded failure, and recovery path. Rust is the
+   implementation language, but Rust alone is not accepted as memory evidence.
+2. **Agents are first-class users.** A bounded, structured CLI exists from the
+   first executable. Stable target/node references, waits, snapshots, actions,
+   and typed failures do not depend on screen-coordinate guessing.
+3. **CDP is a compatibility edge.** A CDP discovery/WebSocket endpoint maps
+   selected domains onto the same targets as the CLI. CDP does not become the
+   internal product model, and unsupported methods fail explicitly.
+4. **Headed and headless are runtime states.** A presentation surface can
+   attach to or detach from a live target without navigation, realm rebuild,
+   cookie loss, or automation-session replacement.
+5. **Profiles are first-class objects.** Persistent, temporary, and later
+   copy-on-write/readonly profiles have explicit identity, locking, budgets,
+   policy, inspection, and lifecycle.
+
+The 0.0.x series is allowed to reject an engine route. It is not allowed to
+hide total memory behind process boundaries, call startup-only headed/headless
+selection a dynamic switch, or advertise unqualified CDP/Web compatibility.
+
+## 2. Markdown-tree DAG PRD
+
+Bracketed IDs are stable decision/evidence nodes. `↳ [ID]` denotes a dependency
+on an already-owned node so the tree remains a DAG rather than duplicating it.
+
+```text
+[S00] MiniCon Surf 0.0.x — prove the product shape before building the product
+├── [C1] charter and product-family boundary
+│   ├── Rust implementation; memory use is the leading optimization target
+│   ├── independent MiniCon-family product; MiniCon installation not required
+│   ├── AgenTerm consumes a versioned contract, never CLI prose or UI internals
+│   ├── separate repository, binary, profiles, versioning and release cadence
+│   └── [-] no browser engine linked into the MiniCon terminal executable
+├── [M2] accountable memory model
+│   ├── baseline: empty host, first target, representative page and per-target delta
+│   ├── owners: DOM · JS heap · network · decoded images · fonts · render · storage
+│   ├── measures: live · retained · resident/private · peak · post-close reuse
+│   ├── limits: process · profile · target · response · DOM · image · cache
+│   ├── pressure ladder: evict → trim → hibernate → terminate one target
+│   └── adversarial courts: huge input · deep DOM · navigation loop · open/close soak
+├── [A3] Agent-native control plane
+│   ├── CLI from first executable; bounded JSON input/output and typed errors
+│   ├── profile/session/target identity shared by every frontend
+│   ├── semantic snapshot with revision-scoped stable node references
+│   ├── open · list · inspect · act · wait · screenshot · show · hide · memory
+│   ├── waits observe conditions; callers do not guess with sleeps
+│   └── local authority and authentication are explicit before remote exposure
+├── [D4] CDP compatibility adapter
+│   ├── ↳ [A3] maps onto the same profile/session/target authority
+│   ├── discovery endpoint · WebSocket transport · attach/detach lifecycle
+│   ├── first candidate domains: Target · Page · Runtime · DOM · Network · Input
+│   ├── domain/method/version matrix names exact supported behavior
+│   ├── tool journeys qualify selected Playwright/Puppeteer clients
+│   └── [-] no claim that Chromium-specific behavior exists when it does not
+├── [H5] dynamic presentation surface
+│   ├── browser session and page lifetime do not belong to the GUI
+│   ├── show attaches a native surface to the existing live target
+│   ├── hide releases presentation resources while page execution continues
+│   ├── repeated hide/show preserves page · realm · profile · scroll · Agent target
+│   ├── hibernate is distinct: discard reconstructible state under memory pressure
+│   └── CLI, CDP and human input arbitrate focus and mutations deterministically
+├── [P6] first-class profile system
+│   ├── named persistent and ephemeral profiles in the first usable slice
+│   ├── cookies · storage · cache · history · downloads · permissions · network policy
+│   ├── single-writer ownership; multiple clients attach through the owning process
+│   ├── profile-specific budgets and diagnostics
+│   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
+│   └── corrupt, locked or incompatible profiles fail closed without harming others
+├── [E7] bounded engine experiments
+│   ├── candidates declare total dependency/process cost and security-update owner
+│   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
+│   ├── compatibility route may evaluate a system engine without hiding its memory
+│   ├── JS candidates require heap/time/task/capability limits and teardown evidence
+│   ├── representative journeys choose Web APIs; specification breadth alone does not
+│   └── route survives only if it can satisfy ↳ [M2] ↳ [A3] ↳ [H5] ↳ [P6]
+├── [G8] 0.0.x decision gates
+│   ├── G0 terminology: profile/session/target/surface/revision have one meaning
+│   ├── G1 memory court can attribute and cap a synthetic target
+│   ├── G2 one target is controlled interchangeably by CLI and a CDP client
+│   ├── G3 a live stateful page crosses headless → headed → headless without reload
+│   ├── G4 two profiles prove storage and policy isolation under one host
+│   └── G5 engine decision records measured wins, costs, gaps and rejected routes
+└── [-] explicit 0.0.x non-goals
+    ├── no claim of full Web, Chrome, extension, media, DRM or CDP compatibility
+    ├── no numeric memory promise before workload, OS and measurement are fixed
+    ├── no silent fallback from bounded native behavior to an unmeasured process
+    ├── no remote-open control port, credential plaintext or shared unlocked profile
+    └── no premature extraction/rewrite of MiniCon or AgenTerm platform layers
+```
+
+## 3. Mermaid flowchart memory palace
+
+Read left to right. The Profile Cabinet owns durable identity; the Session Hall
+owns live pages; CLI and CDP enter through separate doors but meet at one
+control desk. The Window Dock attaches or detaches without owning the session.
+Every route passes through the Memory Court before an engine decision survives.
+
+```mermaid
+flowchart LR
+    U["Users<br/>Agent first · human ready"]
+
+    subgraph ENTRY["Control doors"]
+        CLI["CLI door [A3]<br/>bounded JSON · waits · actions"]
+        CDP["CDP door [D4]<br/>discovery · WebSocket<br/>qualified domains"]
+    end
+
+    subgraph ID["Profile Cabinet [P6]"]
+        PP["persistent profile<br/>named · locked · budgeted"]
+        EP["ephemeral profile<br/>isolated · discardable"]
+        CP["later COW/readonly<br/>task branch"]
+    end
+
+    subgraph LIVE["Session Hall"]
+        CTRL["one control desk [A3]<br/>profile · session · target · revision"]
+        PAGE["live target<br/>DOM · realm · network · storage"]
+        ARB["input arbitration<br/>Agent · CDP · human"]
+    end
+
+    subgraph SURF["Window Dock [H5]"]
+        OFF["headless<br/>no attached presentation"]
+        ON["headed<br/>native surface attached"]
+        HIB["hibernate<br/>reconstructible state trimmed"]
+    end
+
+    subgraph MEM["Memory Court [M2]"]
+        BOOK["ownership ledger<br/>live · retained · resident · peak"]
+        LIMIT["budget judge<br/>process · profile · target · resource"]
+        PRESS{"within budget<br/>after pressure ladder?"}
+    end
+
+    subgraph LAB["Engine Lab [E7]"]
+        NATIVE["bounded native route<br/>measured feature slices"]
+        COMPAT["compatibility route<br/>total process cost visible"]
+        DECIDE["Gate G5<br/>keep · combine · reject"]
+    end
+
+    AT["AgenTerm<br/>later versioned consumer"]
+    MINI["MiniCon terminal<br/>independent · unchanged"]
+    FAIL["local bounded failure<br/>evict · trim · hibernate<br/>terminate one target"]
+
+    U --> CLI & CDP
+    CLI & CDP --> CTRL
+    PP & EP --> CTRL
+    CP -. later .-> CTRL
+    CTRL --> PAGE --> ARB
+    PAGE --> OFF
+    OFF -->|show; no reload| ON
+    ON -->|hide; same target| OFF
+    OFF & ON -->|memory pressure| HIB
+    PAGE --> BOOK --> LIMIT --> PRESS
+    NATIVE & COMPAT --> BOOK
+    PRESS -->|yes| DECIDE
+    PRESS -->|no| FAIL
+    DECIDE --> CTRL
+    AT -. same protocol .-> CTRL
+    MINI -. product family only .-> CLI
+```
+
+## 4. 0.0.x evidence ledger
+
+| Gate | Question | Minimum evidence | Safe failure |
+|---|---|---|---|
+| G0 vocabulary | Do all frontends name the same objects? | versioned schema plus CLI/CDP mapping examples | change the paper model before code depends on it |
+| G1 memory | Can bytes be owned and bounded? | deterministic synthetic workload with component, peak and post-close reports | reject the representation or engine route |
+| G2 control | Can existing automation share native targets? | one journey performed by CLI and a named CDP client against one target | narrow the compatibility matrix |
+| G3 surface | Is headed/headless truly dynamic? | stateful page retains target, realm, DOM mutation, scroll and profile across show/hide | repair ownership; do not relabel restart as switching |
+| G4 profile | Is identity isolated and durable? | two named profiles plus one ephemeral profile prove cookie/storage/policy separation and lock behavior | block persistence or multi-client use |
+| G5 engine | Which route earns implementation? | same workloads, platforms and total-process measurements for surviving candidates | record rejection; keep product contract intact |
+
+## 5. First sequencing
+
+1. Write the vocabulary and protocol sketch for profile, browser session,
+   target, frame, execution realm, surface, node reference and revision.
+2. Build the memory-court harness before selecting data structures or embedding
+   an engine; fix workloads and OS measurement semantics.
+3. Prove one in-memory synthetic target through the native CLI and CDP transport.
+4. Prove surface attachment/detachment against that target without giving the
+   surface ownership of page lifetime.
+5. Prove persistent and ephemeral profile isolation with a deliberately small
+   storage model.
+6. Run bounded engine spikes behind the established contracts, publish the
+   measurement table, and keep or reject routes explicitly.
+
+The first code milestone is therefore not “render a website.” It is “one
+bounded target has one identity and state while CLI, CDP, and an optional
+window observe and control it without changing its lifetime.”
