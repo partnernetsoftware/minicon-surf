@@ -144,7 +144,7 @@ receipt = {
         "fixed warmup is accepted only because every recorded setup completed before it",
         "one synthetic two-node target and presentation buffer are not an HTML or native-window workload",
         "logical accounted bytes exclude allocator and map overhead",
-        "post-hide logical ownership returns to live but median RSS remains 32768 bytes above live",
+        f"post-hide logical ownership returns to live but median RSS remains {post_hide - live} bytes above live",
         "capacity rejection is unit-tested but maximum-capacity RSS is not measured",
         "no external browser baseline is meaningful for this engine-neutral control state",
     ],

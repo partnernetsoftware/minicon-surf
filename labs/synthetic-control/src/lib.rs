@@ -1,7 +1,11 @@
-use serde::Serialize;
+use fs2::FileExt;
+use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
+use std::fs::{self, File, OpenOptions};
+use std::io;
 use std::mem::size_of;
+use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -14,6 +18,9 @@ pub const MAX_RESPONSE_BYTES: usize = 4_194_304;
 pub const MAX_DEPTH: usize = 32;
 pub const MAX_COLLECTION: usize = 10_000;
 pub const MAX_PROFILES: usize = 8;
+pub const MAX_PROFILE_ENTRIES: usize = 32;
+pub const MAX_PROFILE_KEY_BYTES: usize = 64;
+pub const MAX_PROFILE_VALUE_BYTES: usize = 1024;
 pub const MAX_SESSIONS: usize = 16;
 pub const MAX_TARGETS: usize = 32;
 pub const MAX_SURFACES: usize = 8;
@@ -24,6 +31,9 @@ pub const KNOWN_OPERATIONS: &[&str] = &[
     "profile.list",
     "profile.inspect",
     "profile.delete",
+    "profile.storage.put",
+    "profile.storage.get",
+    "profile.policy.set",
     "session.open",
     "session.list",
     "session.inspect",
@@ -289,17 +299,34 @@ fn valid_typed_id(kind: &str, value: &str) -> bool {
         })
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Profile {
+    format_version: u32,
     id: String,
+    name: String,
     persistence: Persistence,
+    policy: ProfilePolicy,
+    cookies: BTreeMap<String, String>,
+    local_storage: BTreeMap<String, String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 enum Persistence {
     Persistent,
     Ephemeral,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ProfilePolicy {
+    network: String,
+    permissions: String,
+}
+
+#[derive(Debug)]
+struct ProfileWriterLock {
+    file: File,
+    sessions: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -338,6 +365,9 @@ pub struct ControlState {
     sessions: BTreeMap<String, Session>,
     targets: BTreeMap<String, Target>,
     surfaces: BTreeMap<String, Surface>,
+    unavailable_profiles: BTreeMap<String, String>,
+    profile_locks: BTreeMap<String, ProfileWriterLock>,
+    profile_root: Option<PathBuf>,
     next_profile: u64,
     next_session: u64,
     next_target: u64,
@@ -345,13 +375,58 @@ pub struct ControlState {
 }
 
 impl ControlState {
+    pub fn with_profile_root(profile_root: Option<PathBuf>) -> io::Result<Self> {
+        let mut state = Self {
+            profile_root,
+            ..Self::default()
+        };
+        let Some(root) = state.profile_root.as_ref() else {
+            return Ok(state);
+        };
+        fs::create_dir_all(root)?;
+        for entry in fs::read_dir(root)? {
+            let entry = entry?;
+            if !entry.file_type()?.is_dir() {
+                continue;
+            }
+            let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+                continue;
+            };
+            if !valid_profile_name(&name) {
+                continue;
+            }
+            match load_persistent_profile(&entry.path(), &name) {
+                Ok(profile) if state.profiles.len() < MAX_PROFILES => {
+                    state.profiles.insert(profile.id.clone(), profile);
+                }
+                Ok(_) => {
+                    state
+                        .unavailable_profiles
+                        .insert(name, "profile capacity exceeded during load".into());
+                }
+                Err(error) => {
+                    state
+                        .unavailable_profiles
+                        .insert(name, truncate_chars(error.to_string(), 160));
+                }
+            }
+        }
+        Ok(state)
+    }
+
     pub fn execute(&mut self, request: Request) -> Response {
         let request_id = request.request_id.clone();
         let outcome = match request.operation.as_str() {
             "profile.create" => self.profile_create(&request.arguments),
             "profile.list" => self.profile_list(&request.arguments),
+            "profile.inspect" => self.profile_inspect(&request.arguments),
+            "profile.delete" => self.profile_delete(&request.arguments),
+            "profile.storage.put" => self.profile_storage_put(&request.arguments),
+            "profile.storage.get" => self.profile_storage_get(&request.arguments),
+            "profile.policy.set" => self.profile_policy_set(&request.arguments),
             "session.open" => self.session_open(&request.arguments),
             "session.list" => self.session_list(&request.arguments),
+            "session.close" => self.session_close(&request.arguments),
             "target.open" => self.target_open(&request.arguments),
             "target.list" => self.target_list(&request.arguments),
             "target.inspect" => self.target_inspect(&request.arguments),
@@ -375,7 +450,7 @@ impl ControlState {
     }
 
     fn profile_create(&mut self, arguments: &Value) -> Result<Value, ControlError> {
-        let object = exact_object(arguments, &["persistence"])?;
+        let object = allowed_object(arguments, &["persistence"], &["name", "policy"])?;
         let persistence = match string_field(object, "persistence")? {
             "persistent" => Persistence::Persistent,
             "ephemeral" => Persistence::Ephemeral,
@@ -385,15 +460,74 @@ impl ControlState {
             return Err(limit("profile capacity reached"));
         }
         self.next_profile += 1;
-        let id = format!("profile_{}", self.next_profile);
-        self.profiles.insert(
-            id.clone(),
-            Profile {
-                id: id.clone(),
-                persistence,
-            },
-        );
-        Ok(json!({"kind":"profile","profile":id,"persistence":persistence}))
+        let name = match object.get("name") {
+            Some(value) => value
+                .as_str()
+                .filter(|name| valid_profile_name(name))
+                .ok_or_else(|| invalid("profile name differs"))?
+                .to_owned(),
+            None if persistence == Persistence::Ephemeral => {
+                format!("ephemeral_{}", self.next_profile)
+            }
+            None => return Err(invalid("persistent profile requires name")),
+        };
+        let id = format!("profile_{name}");
+        if self.profiles.contains_key(&id) || self.unavailable_profiles.contains_key(&name) {
+            return Err(
+                ControlError::new("conflict", "profile name already exists", false)
+                    .scoped("profile", &id),
+            );
+        }
+        let policy = parse_policy(object.get("policy"))?;
+        let profile = Profile {
+            format_version: 1,
+            id: id.clone(),
+            name: name.clone(),
+            persistence,
+            policy,
+            cookies: BTreeMap::new(),
+            local_storage: BTreeMap::new(),
+        };
+        if persistence == Persistence::Persistent {
+            let root = self.profile_root.as_ref().ok_or_else(|| {
+                ControlError::new(
+                    "unsupported_capability",
+                    "persistent profiles require an explicit profile root",
+                    false,
+                )
+            })?;
+            let directory = root.join(&name);
+            fs::create_dir(&directory).map_err(|error| {
+                ControlError::new(
+                    "conflict",
+                    format!("profile directory unavailable: {error}"),
+                    false,
+                )
+                .scoped("profile", &id)
+            })?;
+            if let Err(error) = restrict_profile_directory(&directory) {
+                let _ = fs::remove_dir(&directory);
+                return Err(ControlError::new(
+                    "internal",
+                    format!("profile directory permissions failed: {error}"),
+                    false,
+                )
+                .scoped("profile", &id));
+            }
+            if let Err(error) = save_persistent_profile(root, &profile) {
+                let _ = fs::remove_dir(&directory);
+                return Err(ControlError::new(
+                    "internal",
+                    format!("persistent profile creation failed: {error}"),
+                    false,
+                )
+                .scoped("profile", &id));
+            }
+        }
+        self.profiles.insert(id.clone(), profile);
+        Ok(
+            json!({"kind":"profile","profile":id,"name":name,"persistence":persistence,"created":true}),
+        )
     }
 
     fn profile_list(&self, arguments: &Value) -> Result<Value, ControlError> {
@@ -402,9 +536,214 @@ impl ControlState {
             "kind":"profile_list",
             "profiles":self.profiles.values().map(|profile| json!({
                 "profile":profile.id,
+                "name":profile.name,
                 "persistence":profile.persistence,
+            })).collect::<Vec<_>>(),
+            "unavailable":self.unavailable_profiles.iter().map(|(name,error)| json!({
+                "name":name,"error":"corrupt_or_incompatible","detail":error
             })).collect::<Vec<_>>()
         }))
+    }
+
+    fn profile_inspect(&self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["profile"])?;
+        let profile_id = typed_field(object, "profile", "profile")?;
+        let profile = self
+            .profiles
+            .get(profile_id)
+            .ok_or_else(|| not_found("profile", profile_id))?;
+        Ok(profile_summary(profile, self.session_count(profile_id)))
+    }
+
+    fn profile_delete(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["profile"])?;
+        let profile_id = typed_field(object, "profile", "profile")?;
+        if self.session_count(profile_id) != 0 {
+            return Err(
+                ControlError::new("conflict", "profile has live sessions", false)
+                    .scoped("profile", profile_id),
+            );
+        }
+        let profile = self
+            .profiles
+            .get(profile_id)
+            .cloned()
+            .ok_or_else(|| not_found("profile", profile_id))?;
+        if profile.persistence == Persistence::Persistent {
+            let root = self.profile_root.as_ref().ok_or_else(|| {
+                ControlError::new("internal", "persistent profile root missing", false)
+            })?;
+            delete_persistent_profile(root, &profile).map_err(|error| {
+                ControlError::new(
+                    "internal",
+                    format!("persistent profile deletion failed: {error}"),
+                    false,
+                )
+                .scoped("profile", profile_id)
+            })?;
+        }
+        self.profiles.remove(profile_id);
+        Ok(
+            json!({"kind":"profile_deleted","profile":profile.id,"name":profile.name,"persistence":profile.persistence}),
+        )
+    }
+
+    fn profile_storage_put(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session", "kind", "key", "value"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let kind = string_field(object, "kind")?;
+        let key = bounded_string_field(object, "key", 1, MAX_PROFILE_KEY_BYTES)?;
+        let value = bounded_string_field(object, "value", 0, MAX_PROFILE_VALUE_BYTES)?;
+        let profile_id = self
+            .sessions
+            .get(session_id)
+            .ok_or_else(|| not_found("session", session_id))?
+            .profile_id
+            .clone();
+        let mut candidate = self
+            .profiles
+            .get(&profile_id)
+            .cloned()
+            .ok_or_else(|| not_found("profile", &profile_id))?;
+        let bucket = profile_bucket_mut(&mut candidate, kind)?;
+        if !bucket.contains_key(key) && bucket.len() >= MAX_PROFILE_ENTRIES {
+            return Err(limit("profile storage entry capacity reached"));
+        }
+        bucket.insert(key.to_owned(), value.to_owned());
+        self.persist_if_needed(&candidate)?;
+        self.profiles.insert(profile_id.clone(), candidate);
+        Ok(
+            json!({"kind":"profile_storage","profile":profile_id,"storage_kind":kind,"key":key,"stored":true}),
+        )
+    }
+
+    fn profile_storage_get(&self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session", "kind", "key"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let kind = string_field(object, "kind")?;
+        let key = bounded_string_field(object, "key", 1, MAX_PROFILE_KEY_BYTES)?;
+        let profile_id = &self
+            .sessions
+            .get(session_id)
+            .ok_or_else(|| not_found("session", session_id))?
+            .profile_id;
+        let profile = self
+            .profiles
+            .get(profile_id)
+            .ok_or_else(|| not_found("profile", profile_id))?;
+        let value = profile_bucket(profile, kind)?.get(key).cloned();
+        Ok(
+            json!({"kind":"profile_storage","profile":profile_id,"storage_kind":kind,"key":key,"found":value.is_some(),"value":value}),
+        )
+    }
+
+    fn profile_policy_set(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session", "network", "permissions"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let network = policy_network(string_field(object, "network")?)?;
+        let permissions = policy_permissions(string_field(object, "permissions")?)?;
+        let profile_id = self
+            .sessions
+            .get(session_id)
+            .ok_or_else(|| not_found("session", session_id))?
+            .profile_id
+            .clone();
+        let mut candidate = self
+            .profiles
+            .get(&profile_id)
+            .cloned()
+            .ok_or_else(|| not_found("profile", &profile_id))?;
+        candidate.policy = ProfilePolicy {
+            network: network.to_owned(),
+            permissions: permissions.to_owned(),
+        };
+        self.persist_if_needed(&candidate)?;
+        self.profiles.insert(profile_id.clone(), candidate);
+        Ok(
+            json!({"kind":"profile_policy","profile":profile_id,"network":network,"permissions":permissions}),
+        )
+    }
+
+    fn session_count(&self, profile_id: &str) -> usize {
+        self.sessions
+            .values()
+            .filter(|session| session.profile_id == profile_id)
+            .count()
+    }
+
+    fn persist_if_needed(&self, profile: &Profile) -> Result<(), ControlError> {
+        if profile.persistence == Persistence::Ephemeral {
+            return Ok(());
+        }
+        let root = self.profile_root.as_ref().ok_or_else(|| {
+            ControlError::new("internal", "persistent profile root missing", false)
+        })?;
+        save_persistent_profile(root, profile).map_err(|error| {
+            ControlError::new(
+                "internal",
+                format!("persistent profile write failed: {error}"),
+                true,
+            )
+            .scoped("profile", &profile.id)
+        })
+    }
+
+    fn acquire_profile_lock(&mut self, profile_id: &str) -> Result<(), ControlError> {
+        let profile = self
+            .profiles
+            .get(profile_id)
+            .ok_or_else(|| not_found("profile", profile_id))?;
+        if profile.persistence == Persistence::Ephemeral {
+            return Ok(());
+        }
+        if let Some(lock) = self.profile_locks.get_mut(profile_id) {
+            lock.sessions += 1;
+            return Ok(());
+        }
+        let root = self.profile_root.as_ref().ok_or_else(|| {
+            ControlError::new("internal", "persistent profile root missing", false)
+        })?;
+        let lock_path = root.join(&profile.name).join("writer.lock");
+        let file = OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .read(true)
+            .write(true)
+            .open(lock_path)
+            .map_err(|error| {
+                ControlError::new(
+                    "internal",
+                    format!("profile lock open failed: {error}"),
+                    true,
+                )
+            })?;
+        restrict_profile_file(&file).map_err(|error| {
+            ControlError::new(
+                "internal",
+                format!("profile lock permissions failed: {error}"),
+                false,
+            )
+            .scoped("profile", profile_id)
+        })?;
+        file.try_lock_exclusive().map_err(|_| {
+            ControlError::new("profile_locked", "profile has another writer", true)
+                .scoped("profile", profile_id)
+        })?;
+        self.profile_locks.insert(
+            profile_id.to_owned(),
+            ProfileWriterLock { file, sessions: 1 },
+        );
+        Ok(())
+    }
+
+    fn release_profile_lock(&mut self, profile_id: &str) {
+        let should_remove = self.profile_locks.get_mut(profile_id).is_some_and(|lock| {
+            lock.sessions -= 1;
+            lock.sessions == 0
+        });
+        if should_remove && let Some(lock) = self.profile_locks.remove(profile_id) {
+            let _ = FileExt::unlock(&lock.file);
+        }
     }
 
     fn session_open(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -416,6 +755,7 @@ impl ControlState {
         if self.sessions.len() >= MAX_SESSIONS {
             return Err(limit("session capacity reached"));
         }
+        self.acquire_profile_lock(profile)?;
         self.next_session += 1;
         let id = format!("session_{}", self.next_session);
         self.sessions.insert(
@@ -437,6 +777,30 @@ impl ControlState {
                 "profile":session.profile_id,
             })).collect::<Vec<_>>()
         }))
+    }
+
+    fn session_close(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let session = self
+            .sessions
+            .remove(session_id)
+            .ok_or_else(|| not_found("session", session_id))?;
+        let target_ids = self
+            .targets
+            .values()
+            .filter(|target| target.session_id == session_id)
+            .map(|target| target.id.clone())
+            .collect::<Vec<_>>();
+        for target_id in &target_ids {
+            self.targets.remove(target_id);
+            self.surfaces
+                .retain(|_, surface| surface.target_id != *target_id);
+        }
+        self.release_profile_lock(&session.profile_id);
+        Ok(
+            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":target_ids.len()}),
+        )
     }
 
     fn target_open(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -713,7 +1077,15 @@ impl ControlState {
         let profile_bytes = self
             .profiles
             .values()
-            .map(|item| size_of::<Profile>() + item.id.capacity())
+            .map(|item| {
+                size_of::<Profile>()
+                    + item.id.capacity()
+                    + item.name.capacity()
+                    + item.policy.network.capacity()
+                    + item.policy.permissions.capacity()
+                    + map_owned_bytes(&item.cookies)
+                    + map_owned_bytes(&item.local_storage)
+            })
             .sum::<usize>();
         let session_bytes = self
             .sessions
@@ -787,6 +1159,24 @@ fn exact_object<'a>(
     Ok(object)
 }
 
+fn allowed_object<'a>(
+    value: &'a Value,
+    required: &[&str],
+    optional: &[&str],
+) -> Result<&'a serde_json::Map<String, Value>, ControlError> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| invalid("arguments differ"))?;
+    if !required.iter().all(|key| object.contains_key(*key))
+        || object
+            .keys()
+            .any(|key| !required.contains(&key.as_str()) && !optional.contains(&key.as_str()))
+    {
+        return Err(invalid("arguments fields differ"));
+    }
+    Ok(object)
+}
+
 fn string_field<'a>(
     object: &'a serde_json::Map<String, Value>,
     key: &str,
@@ -820,6 +1210,223 @@ fn bounded_u64(
         .and_then(Value::as_u64)
         .filter(|value| (minimum..=maximum).contains(value))
         .ok_or_else(|| invalid(format!("{key} differs")))
+}
+
+fn bounded_string_field<'a>(
+    object: &'a serde_json::Map<String, Value>,
+    key: &str,
+    minimum: usize,
+    maximum: usize,
+) -> Result<&'a str, ControlError> {
+    string_field(object, key).and_then(|value| {
+        if (minimum..=maximum).contains(&value.len()) {
+            Ok(value)
+        } else {
+            Err(invalid(format!("{key} byte length differs")))
+        }
+    })
+}
+
+fn valid_profile_name(value: &str) -> bool {
+    (1..=48).contains(&value.len())
+        && value.bytes().enumerate().all(|(index, byte)| {
+            byte.is_ascii_lowercase()
+                || byte.is_ascii_digit()
+                || (index > 0 && matches!(byte, b'_' | b'-'))
+        })
+}
+
+fn parse_policy(value: Option<&Value>) -> Result<ProfilePolicy, ControlError> {
+    let Some(value) = value else {
+        return Ok(ProfilePolicy {
+            network: "online".into(),
+            permissions: "deny_by_default".into(),
+        });
+    };
+    let object = exact_object(value, &["network", "permissions"])?;
+    Ok(ProfilePolicy {
+        network: policy_network(string_field(object, "network")?)?.into(),
+        permissions: policy_permissions(string_field(object, "permissions")?)?.into(),
+    })
+}
+
+fn policy_network(value: &str) -> Result<&str, ControlError> {
+    match value {
+        "online" | "offline" => Ok(value),
+        _ => Err(invalid("network policy differs")),
+    }
+}
+
+fn policy_permissions(value: &str) -> Result<&str, ControlError> {
+    match value {
+        "deny_by_default" | "allow_by_default" => Ok(value),
+        _ => Err(invalid("permissions policy differs")),
+    }
+}
+
+fn profile_bucket<'a>(
+    profile: &'a Profile,
+    kind: &str,
+) -> Result<&'a BTreeMap<String, String>, ControlError> {
+    match kind {
+        "cookie" => Ok(&profile.cookies),
+        "local_storage" => Ok(&profile.local_storage),
+        _ => Err(invalid("profile storage kind differs")),
+    }
+}
+
+fn profile_bucket_mut<'a>(
+    profile: &'a mut Profile,
+    kind: &str,
+) -> Result<&'a mut BTreeMap<String, String>, ControlError> {
+    match kind {
+        "cookie" => Ok(&mut profile.cookies),
+        "local_storage" => Ok(&mut profile.local_storage),
+        _ => Err(invalid("profile storage kind differs")),
+    }
+}
+
+fn profile_summary(profile: &Profile, live_sessions: usize) -> Value {
+    json!({
+        "kind":"profile",
+        "profile":profile.id,
+        "name":profile.name,
+        "persistence":profile.persistence,
+        "policy":{"network":profile.policy.network,"permissions":profile.policy.permissions},
+        "storage":{"cookies":profile.cookies.len(),"local_storage":profile.local_storage.len()},
+        "live_sessions":live_sessions,
+        "entry_limit_per_bucket":MAX_PROFILE_ENTRIES,
+        "value_byte_limit":MAX_PROFILE_VALUE_BYTES,
+    })
+}
+
+fn map_owned_bytes(map: &BTreeMap<String, String>) -> usize {
+    map.iter()
+        .map(|(key, value)| key.capacity() + value.capacity())
+        .sum()
+}
+
+fn load_persistent_profile(directory: &Path, expected_name: &str) -> io::Result<Profile> {
+    validate_profile_permissions(directory, &directory.join("profile.json"))?;
+    let bytes = fs::read(directory.join("profile.json"))?;
+    if bytes.len() > MAX_RESPONSE_BYTES {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "profile record exceeds limit",
+        ));
+    }
+    let profile: Profile = serde_json::from_slice(&bytes)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    validate_persistent_profile(&profile, expected_name)?;
+    Ok(profile)
+}
+
+fn validate_persistent_profile(profile: &Profile, expected_name: &str) -> io::Result<()> {
+    let valid = profile.format_version == 1
+        && profile.persistence == Persistence::Persistent
+        && profile.name == expected_name
+        && valid_profile_name(&profile.name)
+        && profile.id == format!("profile_{}", profile.name)
+        && profile.cookies.len() <= MAX_PROFILE_ENTRIES
+        && profile.local_storage.len() <= MAX_PROFILE_ENTRIES
+        && profile
+            .cookies
+            .iter()
+            .chain(&profile.local_storage)
+            .all(|(key, value)| {
+                (1..=MAX_PROFILE_KEY_BYTES).contains(&key.len())
+                    && value.len() <= MAX_PROFILE_VALUE_BYTES
+            })
+        && policy_network(&profile.policy.network).is_ok()
+        && policy_permissions(&profile.policy.permissions).is_ok();
+    if valid {
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "profile record is incompatible or exceeds bounds",
+        ))
+    }
+}
+
+fn save_persistent_profile(root: &Path, profile: &Profile) -> io::Result<()> {
+    validate_persistent_profile(profile, &profile.name)?;
+    let directory = root.join(&profile.name);
+    let final_path = directory.join("profile.json");
+    let temporary_path = directory.join("profile.json.tmp");
+    let bytes = serde_json::to_vec(profile)
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    if bytes.len() > MAX_RESPONSE_BYTES {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "profile record exceeds limit",
+        ));
+    }
+    let mut temporary = OpenOptions::new()
+        .create(true)
+        .truncate(true)
+        .write(true)
+        .open(&temporary_path)?;
+    restrict_profile_file(&temporary)?;
+    use std::io::Write as _;
+    temporary.write_all(&bytes)?;
+    temporary.sync_all()?;
+    drop(temporary);
+    fs::rename(&temporary_path, &final_path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn restrict_profile_directory(path: &Path) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    fs::set_permissions(path, fs::Permissions::from_mode(0o700))
+}
+
+#[cfg(not(unix))]
+fn restrict_profile_directory(_path: &Path) -> io::Result<()> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn restrict_profile_file(file: &File) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    file.set_permissions(fs::Permissions::from_mode(0o600))
+}
+
+#[cfg(not(unix))]
+fn restrict_profile_file(_file: &File) -> io::Result<()> {
+    Ok(())
+}
+
+#[cfg(unix)]
+fn validate_profile_permissions(directory: &Path, record: &Path) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    if fs::metadata(directory)?.permissions().mode() & 0o077 != 0
+        || fs::metadata(record)?.permissions().mode() & 0o077 != 0
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "profile permissions are too broad",
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn validate_profile_permissions(_directory: &Path, _record: &Path) -> io::Result<()> {
+    Ok(())
+}
+
+fn delete_persistent_profile(root: &Path, profile: &Profile) -> io::Result<()> {
+    let directory = root.join(&profile.name);
+    for name in ["profile.json.tmp", "profile.json", "writer.lock"] {
+        match fs::remove_file(directory.join(name)) {
+            Ok(()) => {}
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error),
+        }
+    }
+    fs::remove_dir(directory)
 }
 
 fn invalid(message: impl Into<String>) -> ControlError {
@@ -1063,6 +1670,227 @@ mod tests {
                 assert_eq!(shown.error.unwrap().code, "resource_limit");
             }
         }
+    }
+
+    #[test]
+    fn persistent_profiles_isolate_storage_policy_and_writer_locks() {
+        let unique = format!(
+            "minicon-surf-profile-test-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        );
+        let root = std::env::temp_dir().join(unique);
+        let mut owner = ControlState::with_profile_root(Some(root.clone())).unwrap();
+        let alpha = result(owner.execute(request(
+            "req_profile_alpha",
+            "profile.create",
+            json!({"persistence":"persistent","name":"alpha","policy":{"network":"online","permissions":"deny_by_default"}}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let beta = result(owner.execute(request(
+            "req_profile_beta",
+            "profile.create",
+            json!({"persistence":"persistent","name":"beta","policy":{"network":"online","permissions":"allow_by_default"}}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let ephemeral = result(owner.execute(request(
+            "req_profile_scratch",
+            "profile.create",
+            json!({"persistence":"ephemeral","name":"scratch"}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let alpha_session = result(owner.execute(request(
+            "req_profile_alpha_session",
+            "session.open",
+            json!({"profile":alpha}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let beta_session = result(owner.execute(request(
+            "req_profile_beta_session",
+            "session.open",
+            json!({"profile":beta}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let scratch_session = result(owner.execute(request(
+            "req_profile_scratch_session",
+            "session.open",
+            json!({"profile":ephemeral}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        for (id, session, value) in [
+            ("req_profile_alpha_cookie", &alpha_session, "alpha-cookie"),
+            ("req_profile_beta_cookie", &beta_session, "beta-cookie"),
+            (
+                "req_profile_scratch_cookie",
+                &scratch_session,
+                "scratch-cookie",
+            ),
+        ] {
+            result(owner.execute(request(
+                id,
+                "profile.storage.put",
+                json!({"session":session,"kind":"cookie","key":"court","value":value}),
+            )));
+        }
+        result(owner.execute(request(
+            "req_profile_alpha_local",
+            "profile.storage.put",
+            json!({"session":alpha_session,"kind":"local_storage","key":"court","value":"alpha-local"}),
+        )));
+        result(owner.execute(request(
+            "req_profile_alpha_policy",
+            "profile.policy.set",
+            json!({"session":alpha_session,"network":"offline","permissions":"deny_by_default"}),
+        )));
+
+        let mut contender = ControlState::with_profile_root(Some(root.clone())).unwrap();
+        let locked = contender.execute(request(
+            "req_profile_locked",
+            "session.open",
+            json!({"profile":alpha}),
+        ));
+        assert_eq!(locked.error.unwrap().code, "profile_locked");
+        let profiles =
+            result(contender.execute(request("req_profile_reloaded", "profile.list", json!({}))));
+        assert_eq!(profiles["profiles"].as_array().unwrap().len(), 2);
+        assert!(
+            profiles["profiles"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|profile| profile["profile"] != ephemeral)
+        );
+
+        result(owner.execute(request(
+            "req_profile_alpha_close",
+            "session.close",
+            json!({"session":alpha_session}),
+        )));
+        drop(owner);
+        let reopened = result(contender.execute(request(
+            "req_profile_alpha_reopen",
+            "session.open",
+            json!({"profile":alpha}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let cookie = result(contender.execute(request(
+            "req_profile_alpha_cookie_get",
+            "profile.storage.get",
+            json!({"session":reopened,"kind":"cookie","key":"court"}),
+        )));
+        assert_eq!(cookie["value"], "alpha-cookie");
+        let local = result(contender.execute(request(
+            "req_profile_alpha_local_get",
+            "profile.storage.get",
+            json!({"session":reopened,"kind":"local_storage","key":"court"}),
+        )));
+        assert_eq!(local["value"], "alpha-local");
+        let alpha_inspect = result(contender.execute(request(
+            "req_profile_alpha_inspect",
+            "profile.inspect",
+            json!({"profile":alpha}),
+        )));
+        let beta_inspect = result(contender.execute(request(
+            "req_profile_beta_inspect",
+            "profile.inspect",
+            json!({"profile":beta}),
+        )));
+        assert_eq!(alpha_inspect["policy"]["network"], "offline");
+        assert_eq!(beta_inspect["policy"]["network"], "online");
+        assert_eq!(alpha_inspect["policy"]["permissions"], "deny_by_default");
+        assert_eq!(beta_inspect["policy"]["permissions"], "allow_by_default");
+        result(contender.execute(request(
+            "req_profile_alpha_reclose",
+            "session.close",
+            json!({"session":reopened}),
+        )));
+        drop(contender);
+
+        fs::create_dir(root.join("broken")).unwrap();
+        fs::write(root.join("broken/profile.json"), b"{not-json").unwrap();
+        let mut recovered = ControlState::with_profile_root(Some(root.clone())).unwrap();
+        let listed = result(recovered.execute(request(
+            "req_profile_corrupt_list",
+            "profile.list",
+            json!({}),
+        )));
+        assert_eq!(listed["profiles"].as_array().unwrap().len(), 2);
+        assert_eq!(listed["unavailable"][0]["name"], "broken");
+        fs::remove_file(root.join("broken/profile.json")).unwrap();
+        fs::remove_dir(root.join("broken")).unwrap();
+        result(recovered.execute(request(
+            "req_profile_beta_delete",
+            "profile.delete",
+            json!({"profile":beta}),
+        )));
+        assert!(!root.join("beta").exists());
+        drop(recovered);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn profile_storage_bounds_fail_without_growing() {
+        let mut state = ControlState::default();
+        let profile = result(state.execute(request(
+            "req_storage_profile",
+            "profile.create",
+            json!({"persistence":"ephemeral","name":"bounded"}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let session = result(state.execute(request(
+            "req_storage_session",
+            "session.open",
+            json!({"profile":profile}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        for index in 0..MAX_PROFILE_ENTRIES {
+            let stored = state.execute(request(
+                &format!("req_storage_{index}"),
+                "profile.storage.put",
+                json!({"session":session,"kind":"cookie","key":format!("key-{index}"),"value":"value"}),
+            ));
+            assert!(stored.ok);
+        }
+        let overflow = state.execute(request(
+            "req_storage_overflow",
+            "profile.storage.put",
+            json!({"session":session,"kind":"cookie","key":"overflow","value":"value"}),
+        ));
+        assert_eq!(overflow.error.unwrap().code, "resource_limit");
+        let oversized = state.execute(request(
+            "req_storage_oversized",
+            "profile.storage.put",
+            json!({"session":session,"kind":"local_storage","key":"key","value":"x".repeat(MAX_PROFILE_VALUE_BYTES + 1)}),
+        ));
+        assert_eq!(oversized.error.unwrap().code, "invalid_request");
+        let inspected = result(state.execute(request(
+            "req_storage_inspect",
+            "profile.inspect",
+            json!({"profile":profile}),
+        )));
+        assert_eq!(inspected["storage"]["cookies"], MAX_PROFILE_ENTRIES);
+        assert_eq!(inspected["storage"]["local_storage"], 0);
     }
 
     #[test]

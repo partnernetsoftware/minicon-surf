@@ -55,14 +55,31 @@ Initial limits are deliberately conservative:
   caller-authorized output destination.
 
 The initial operation names reserve the product surface. The synthetic host
-implements `profile.create`, `profile.list`, `session.open`, `session.list`,
+implements `profile.create`, `profile.list`, `profile.inspect`,
+`profile.delete`, `profile.storage.put`, `profile.storage.get`,
+`profile.policy.set`, `session.open`, `session.list`, `session.close`,
 `target.open`, `target.list`, `target.inspect`, `target.close`,
 `target.snapshot`, `target.act`, `target.wait`, `surface.show`, `surface.hide`,
 and `memory.report`. It explicitly rejects the remaining reserved operations:
-`profile.inspect`, `profile.delete`, `session.inspect`, `session.close`, and
-`target.screenshot`. A name outside this version
+`session.inspect` and `target.screenshot`. A name outside this version
 is `invalid_request`; a listed operation unavailable on the selected backend is
 `unsupported_operation`. Neither falls through to engine-specific behavior.
+
+The qualified synthetic profile slice uses exact bounded arguments:
+
+| Operation | Arguments | Result boundary |
+|---|---|---|
+| `profile.create` | `persistence`; optional safe `name` and `{network, permissions}` policy | Persistent profiles require the host's explicit profile root; duplicate names conflict. |
+| `profile.inspect` / `profile.delete` | `profile` | Inspection exposes policy/counts, not values; deletion conflicts with live sessions. |
+| `profile.storage.put` | `session`, `kind`, `key`, `value` | `kind` is `cookie` or `local_storage`; 32 entries/bucket, 64-byte keys, 1,024-byte values. |
+| `profile.storage.get` | `session`, `kind`, `key` | Returns `found` plus a bounded value; the session proves writer ownership. |
+| `profile.policy.set` | `session`, `network`, `permissions` | Network is online/offline; permissions are allow/deny by default. |
+| `session.close` | `session` | Closes owned targets/surfaces and releases the persistent writer lock when its last session closes. |
+
+Persistent records have format version 1 and use write-sync-rename replacement.
+On Unix, profile directories are `0700`, while records and lock files are
+`0600`. A malformed, incompatible, oversized, or over-permissive profile is
+listed unavailable without preventing healthy siblings from loading.
 
 Errors have stable codes, human-readable bounded messages, `retryable`, and an
 optional typed scope. The initial codes are `invalid_request`, `not_found`,
@@ -72,10 +89,10 @@ optional typed scope. The initial codes are `invalid_request`, `not_found`,
 to these codes or retained in bounded diagnostic detail; they do not redefine
 the public contract.
 
-The CLI projection is one request object in and one response object out. A
-future executable may offer a one-shot invocation and an NDJSON stream, but
-both must carry the identical envelope. Diagnostics go to stderr and cannot
-be required to interpret stdout.
+The current synthetic executable offers an NDJSON stream with one request and
+one response object per line. A future product executable may also offer a
+one-shot invocation, but both must carry the identical envelope. Diagnostics
+go to stderr and cannot be required to interpret stdout.
 
 The proposed one-shot projection is
 `minicon-surf control --json <request.json`; stdout is the corresponding
@@ -103,6 +120,12 @@ The checked machine-readable form is
 The synthetic G2 court qualifies discovery/WebSocket plus seven selected
 Target/DOM/Runtime methods against one shared target. External
 Playwright/Puppeteer journeys and HTML-engine behavior remain D4 evidence.
+
+The native profile projection has no CDP equivalent. Persistent mutations
+require a live session holding the profile's advisory writer lock; cookie and
+local-storage maps are bounded independently, and policy is part of the
+profile record. The synthetic record is versioned and atomically replaced but
+is deliberately unencrypted, so it accepts court values only—not credentials.
 
 ## Checked examples
 

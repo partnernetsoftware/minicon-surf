@@ -1,0 +1,48 @@
+{
+  "binary_sha256": "60d8f5e91571c525d0bfe804fc23afe16f59bcf02d8697458bbfbcedae62dbd0",
+  "bounded": {
+    "entries_per_bucket": 32,
+    "key_bytes": 64,
+    "profiles": 8,
+    "value_bytes": 1024
+  },
+  "cookie_isolation": true,
+  "corrupt_profile_failed_closed": true,
+  "ephemeral_absent_after_restart": true,
+  "healthy_profiles_survived_corrupt_sibling": true,
+  "limitations": [
+    "synthetic cookie/local-storage maps, not an engine cookie jar",
+    "cache, history, downloads, and permission prompts are not implemented",
+    "synthetic values are unencrypted and must not hold real credentials",
+    "readonly and copy-on-write profiles remain future work"
+  ],
+  "local_storage_isolation": true,
+  "lock_released_after_owner_close": true,
+  "network_policy_isolation": true,
+  "permission_policy_isolation": true,
+  "persistent_identity_survived_restart": true,
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "processes": {
+    "concurrent_hosts": 2,
+    "restart_generations": 3
+  },
+  "profiles": {
+    "ephemeral": [
+      "scratch"
+    ],
+    "persistent": [
+      "alpha",
+      "beta"
+    ]
+  },
+  "schema": "minicon-surf.synthetic-profile-receipt/0.0.1",
+  "single_writer_conflict": "profile_locked",
+  "status": "qualified-synthetic",
+  "unix_private_permissions": {
+    "directory": "0700",
+    "record_and_lock": "0600"
+  }
+}

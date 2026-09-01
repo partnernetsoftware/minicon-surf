@@ -82,21 +82,32 @@ fn serve(
 
 fn main() -> io::Result<()> {
     let arguments = std::env::args().skip(1).collect::<Vec<_>>();
-    if arguments.len() != 2 && arguments.len() != 6
-        || arguments.first().map(String::as_str) != Some("serve")
+    if arguments.first().map(String::as_str) != Some("serve")
         || arguments.get(1).map(String::as_str) != Some("--stdio")
+        || !(arguments.len() - 2).is_multiple_of(2)
     {
         usage();
     }
-    let state = Arc::new(Mutex::new(ControlState::default()));
-    let _cdp_server = if arguments.len() == 6 {
-        if arguments.get(2).map(String::as_str) != Some("--cdp-port")
-            || arguments.get(4).map(String::as_str) != Some("--ready-file")
-        {
-            usage();
+    let mut cdp_port = None;
+    let mut ready_file = None;
+    let mut profile_root = None;
+    for pair in arguments[2..].chunks_exact(2) {
+        match pair[0].as_str() {
+            "--cdp-port" if cdp_port.is_none() => {
+                cdp_port = Some(pair[1].parse::<u16>().unwrap_or_else(|_| usage()));
+            }
+            "--ready-file" if ready_file.is_none() => ready_file = Some(PathBuf::from(&pair[1])),
+            "--profile-root" if profile_root.is_none() => {
+                profile_root = Some(PathBuf::from(&pair[1]));
+            }
+            _ => usage(),
         }
-        let port = arguments[3].parse::<u16>().unwrap_or_else(|_| usage());
-        let ready_file = PathBuf::from(&arguments[5]);
+    }
+    if cdp_port.is_some() != ready_file.is_some() {
+        usage();
+    }
+    let state = Arc::new(Mutex::new(ControlState::with_profile_root(profile_root)?));
+    let _cdp_server = if let (Some(port), Some(ready_file)) = (cdp_port, ready_file) {
         let server = cdp::Server::start(port, state.clone())?;
         let receipt = json!({
             "cdp_port":server.port(),
@@ -114,7 +125,7 @@ fn main() -> io::Result<()> {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: minicon-surf-synthetic-control serve --stdio [--cdp-port PORT --ready-file PATH]"
+        "usage: minicon-surf-synthetic-control serve --stdio [--profile-root PATH] [--cdp-port PORT --ready-file PATH]"
     );
     std::process::exit(64);
 }

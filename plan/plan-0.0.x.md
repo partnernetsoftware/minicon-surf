@@ -113,6 +113,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── cookies · storage · cache · history · downloads · permissions · network policy
 │   ├── single-writer ownership; multiple clients attach through the owning process
 │   ├── profile-specific budgets and diagnostics
+│   ├── [x] synthetic G4: two persistent + one ephemeral isolate storage/policy/locks
 │   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
@@ -131,7 +132,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── G1 memory court can attribute and cap a synthetic target
 │   ├── [x] G2 synthetic target is controlled interchangeably by CLI and a named CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
-│   ├── G4 two profiles prove storage and policy isolation under one host
+│   ├── [x] G4 synthetic profiles prove restart, storage/policy isolation and lock behavior
 │   ├── G5 route decision records measured wins, costs, gaps and rejected routes
 │   └── G6 default eligibility requires memory and Agent gates independently green
 └── [-] explicit 0.0.x non-goals
@@ -160,8 +161,8 @@ flowchart LR
     end
 
     subgraph ID["Profile Cabinet [P6]"]
-        PP["persistent profile<br/>named · locked · budgeted"]
-        EP["ephemeral profile<br/>isolated · discardable"]
+        PP["persistent profile [G4 synthetic]<br/>named · locked · bounded"]
+        EP["ephemeral profile [G4 synthetic]<br/>isolated · discardable"]
         CP["later COW/readonly<br/>task branch"]
     end
 
@@ -192,7 +193,7 @@ flowchart LR
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
 
-    SYN["synthetic control court<br/>one shared ControlState<br/>native + CDP + bounded surface mechanics"]
+    SYN["synthetic control court<br/>shared authority · bounded surface<br/>persistent profile mechanics"]
 
     AT["AgenTerm<br/>later versioned consumer"]
     MINI["MiniCon terminal<br/>independent · unchanged"]
@@ -249,7 +250,7 @@ flowchart LR
   `stale_revision`, satisfies a condition wait, and reports explicit profile,
   session and target memory owners; closing the target reduces both its owner
   count and logical accounted bytes. Fixed capacity limits and a streaming
-  oversized-line drain prevent unbounded request/state growth. Eight library,
+  oversized-line drain prevent unbounded request/state growth. Ten library,
   one reader and one process integration test pass. Its logical memory ledger
   is a lower bound, not RSS/private/PSS, so G1 remains open.
 - [x] G2's stated synthetic minimum is now observed. One host exposes bounded
@@ -263,6 +264,16 @@ flowchart LR
   is synthetic rather than HTML, only seven methods are qualified, one CDP
   connection is supported, and Playwright/Puppeteer qualification remains D4
   work. There is no claim of broad CDP compatibility or remote-safe exposure.
+- [x] G4's deliberately small synthetic minimum is observed across two
+  concurrent hosts and three restart generations. Named persistent `alpha` and
+  `beta` retain distinct cookie/local-storage values and network/permission
+  policies; ephemeral `scratch` is absent after restart. A competing process
+  gets typed `profile_locked`, then opens the same identity after owner close.
+  A corrupt sibling fails closed while healthy profiles remain available, and
+  Unix records/locks use private permissions. This does not complete P6:
+  synthetic unencrypted values are not real credentials or an engine cookie
+  jar; cache, history, downloads, permission prompts, readonly and COW remain
+  open.
 - [~] The synthetic surface mechanics court holds one CDP attachment while
   native stdio performs three headless → headed → headless cycles. Target,
   native session, realm, clicked DOM, revision 2 and scroll position 240 remain
@@ -272,11 +283,11 @@ flowchart LR
   window/rendering context, and therefore cannot prove GUI resource teardown.
 - [~] The expanded synthetic lifecycle court separates empty, live, headed,
   post-hide and post-close steady windows with a 300 ms sampler warmup; every
-  measured setup completed within 3.132 ms. Across seven runs per state, median
-  complete-tree RSS was 1,900,544, 1,933,312, 1,949,696, 1,966,080 and
-  1,933,312 bytes. Headed was +16 KiB versus live, but post-hide retained
-  +32 KiB versus live even though logical surface ownership returned to zero.
-  Logical bytes were 0, 462, 66,079, 462 and 107. This exposes a real retained-
+  measured setup completed within 2.889 ms. Across seven runs per state, median
+  complete-tree RSS was 1,982,464, 2,031,616, 2,048,000, 2,048,000 and
+  2,031,616 bytes. Headed was +16 KiB versus live, and post-hide retained
+  +16 KiB versus live even though logical surface ownership returned to zero.
+  Logical bytes were 0, 634, 66,251, 634 and 279. This exposes a real retained-
   RSS gap and still does not pass G1: modes are separate fresh processes,
   maximum-capacity RSS and private/PSS are absent, and the synthetic state has
   no meaningful external browser-efficiency baseline.
@@ -336,8 +347,9 @@ flowchart LR
 4. [~] Prove surface attachment/detachment against that target without giving
    the surface ownership of page lifetime; synthetic mechanics pass, native
    presentation resources remain open.
-5. Prove persistent and ephemeral profile isolation with a deliberately small
-   storage model.
+5. [x] Prove persistent and ephemeral profile isolation with a deliberately
+   small synthetic storage model; product/engine-backed profile breadth remains
+   P6 work.
 6. Run independent `labs/{techName}` spikes behind the established contracts,
    publish comparable memory and Agent-control evidence, and issue an explicit
    keep/narrow/combine/reject verdict for every route.
