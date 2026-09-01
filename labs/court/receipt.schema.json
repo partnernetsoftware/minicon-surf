@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicon.agenterm.work/surf/labs/court/receipt.schema.json",
+  "title": "MiniCon Surf lab receipt",
+  "type": "object",
+  "required": [
+    "schema",
+    "status",
+    "technology",
+    "technology_version",
+    "artifact_sha256",
+    "platform",
+    "workload",
+    "measurement",
+    "agent_observation",
+    "limitations"
+  ],
+  "properties": {
+    "schema": { "const": 1 },
+    "status": {
+      "enum": ["observed", "qualified", "incomplete", "rejected"]
+    },
+    "technology": { "type": "string", "minLength": 1 },
+    "technology_version": { "type": "string", "minLength": 1 },
+    "artifact_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "platform": {
+      "type": "object",
+      "required": ["os", "architecture"],
+      "properties": {
+        "os": { "type": "string", "minLength": 1 },
+        "os_version": { "type": "string" },
+        "architecture": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "workload": {
+      "type": "object",
+      "required": ["id", "transport", "fixture_sha256", "repetitions"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^W[0-9]+$" },
+        "transport": { "type": "string", "minLength": 1 },
+        "fixture_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "repetitions": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "measurement": {
+      "type": "object",
+      "required": ["memory_semantic", "process_scope", "samples"],
+      "properties": {
+        "memory_semantic": { "type": "string", "minLength": 1 },
+        "process_scope": { "type": "string", "minLength": 1 },
+        "samples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["wall_seconds", "memory_bytes"],
+            "properties": {
+              "wall_seconds": { "type": "number", "minimum": 0 },
+              "memory_bytes": { "type": "integer", "minimum": 0 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "agent_observation": {
+      "type": "object",
+      "required": ["interface", "expected_present"],
+      "properties": {
+        "interface": { "type": "string", "minLength": 1 },
+        "expected_present": { "type": "boolean" },
+        "output_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      },
+      "additionalProperties": false
+    },
+    "limitations": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

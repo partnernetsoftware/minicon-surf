@@ -116,6 +116,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
+│   ├── [~] Lightpanda 0.4.0 reference: macOS arm64 W1 observed, comparison incomplete
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -181,6 +182,7 @@ flowchart LR
     end
 
     subgraph LAB["Engine Lab [E7]"]
+        LP["Lightpanda 0.4.0<br/>macOS arm64 W1 observed<br/>comparison incomplete"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -201,7 +203,7 @@ flowchart LR
     OFF & ON -->|memory pressure| HIB
     PAGE --> BOOK --> LIMIT --> PRESS
     BASE --> PRESS
-    NATIVE & COMPAT --> BOOK
+    LP & NATIVE & COMPAT --> BOOK
     PRESS -->|yes| DECIDE
     PRESS -->|no| FAIL
     DECIDE -->|Agent gate also green| CTRL
@@ -221,7 +223,22 @@ flowchart LR
 | G5 route | Which use, if any, has each route earned? | same workloads, platforms, protocol journeys and total-process measurements; verdict is keep/narrow/combine/reject | record rejection; compatibility-only routes remain labelled |
 | G6 default | Can the route represent MiniCon Surf? | G1 memory and G2 Agent control independently green, plus the required surface/profile gates | no default engine; continue labs without weakening either outcome |
 
-## 5. First sequencing
+## 5. Current experimental frontier
+
+- [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
+  redaction rules exist under `labs/` and `AGENTS.md`.
+- [~] Lightpanda `0.4.0` macOS arm64 W1 is the first observed reference:
+  the pinned official artifact passed its SHA-256 check, emitted the expected
+  semantic heading/button, and exposed CDP 1.3 discovery on loopback.
+- [~] Seven post-warm-up executions reported a 25,575,424-byte median and
+  25,690,112-byte maximum using BSD `time -l` process maximum RSS. The receipt
+  remains `incomplete`: it is root-process-only, one short `data:` document,
+  one OS/ISA, with no same-machine Chrome complete-process-tree baseline.
+- [ ] The next shared prerequisite is a sampler that attributes the full process
+  tree; only then can Lightpanda and Chrome W1/W2 become a comparative memory
+  court rather than two incomparable numbers.
+
+## 6. First sequencing
 
 1. Write the vocabulary and protocol sketch for profile, browser session,
    target, frame, execution realm, surface, node reference and revision.

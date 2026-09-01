@@ -1,0 +1,71 @@
+# MiniCon Surf agent guide
+
+Start every product or implementation decision at `plan/plan-0.0.x.md`. The
+Markdown-tree DAG is the owner/decision index; the Mermaid flowchart is the
+memory palace for dependency and gate flow. Update both when a durable outcome,
+dependency, gate, or rejection changes. A lab README records technology-local
+facts; it must not silently redefine the product.
+
+## Non-negotiable product outcomes
+
+MiniCon Surf is both **memory-optimized** and **Agent-use oriented**. Neither
+outcome compensates for failure of the other. Compatibility, delivery speed,
+framework convenience, binary size, or a persuasive demo cannot waive either
+gate. Read `[N0]`, `[M2]`, and `[A3]` in the plan before changing a lab or
+claim.
+
+## Redaction
+
+The repository is public. Never commit or paste into tracked files, commit
+messages, screenshots, fixtures, receipts, or examples:
+
+- an expanded home directory, repository absolute path, account name, email,
+  phone number, token, credential, personal hostname, IP or MAC address;
+- a real profile, cookie database, browsing history, downloaded page, URL with
+  private query parameters, or environment-variable value;
+- raw command output before checking it for the above.
+
+Use repository-relative paths for files in the clone and `~/...` for generic
+paths under a user home. Use RFC 2606 domains, loopback, `data:` URLs, or
+committed hermetic fixtures for tests. Record OS version, architecture, engine
+version, artifact digest, workload identity and measurement semantics; omit
+host identity.
+
+Before committing documentation or evidence, run:
+
+```bash
+rg -n '/Users/|/home/|[A-Za-z]:\\\\Users\\\\|@[^ ]+\.|(token|password|secret|api[_-]?key)[=:]' \
+  --glob '*.md' --glob '*.json' --glob '*.jsonl' --glob '*.txt' .
+```
+
+Review every hit; URLs and explanatory placeholder text may be legitimate,
+but host/user paths and credentials are not.
+
+## Lab discipline
+
+- Each `labs/{technology}/` is isolated and has a hypothesis, exact scope,
+  reproduction command, evidence, gaps, and `keep|narrow|combine|reject`
+  verdict.
+- Labs share workloads and receipt vocabulary from `labs/court/`; they do not
+  share a dependency graph merely for convenience.
+- Downloaded SDKs, binaries, profiles, caches, raw traces, and local receipts
+  live under ignored `target/` unless a small sanitized result is deliberately
+  promoted.
+- Pin external artifact version and SHA-256. Disable telemetry and crash dumps
+  where the candidate permits it.
+- Memory means the complete attributable process tree. If a platform service
+  cannot be attributed, report the gap; never substitute root-process memory.
+- A result from one OS/ISA and workload is evidence only for that cell and
+  workload.
+- `memory-optimized` requires a named same-machine baseline. Attribution and a
+  hard limit alone are not optimization evidence.
+- Unsupported behavior is a valid result. Do not emulate support in the court
+  or weaken a workload to manufacture a pass.
+
+## Change hygiene
+
+Keep experiments out of future product crates until at least two real routes
+prove the shared boundary. Preserve rejected labs and their small reviewed
+evidence when they explain a durable decision; remove downloaded artifacts and
+bulk build state. Use focused commits and keep the worktree clean after every
+reviewed increment.
