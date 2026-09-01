@@ -48,3 +48,18 @@ its receipt must record that transport.
 
 The first Lightpanda receipt intentionally remains `incomplete` until its
 same-machine browser baseline and stronger process-tree sampling exist.
+
+## Process-tree sampler
+
+[`process-tree-sampler/`](process-tree-sampler/) is the first shared court
+utility. It launches one command in a dedicated process group, recursively
+attributes descendants by PPID, samples summed RSS, enforces a deadline and
+emits argument-redacted JSON. `--exclude-root` permits two candidates to use
+the same orchestration wrapper without charging that wrapper to either one.
+
+The sampler does not make dissimilar lifecycles comparable. A short
+Lightpanda `fetch` and a persistent Chrome headless process must not be reduced
+to a ratio merely because both numbers came from the same sampler. The next W1
+comparison must create one live target through each candidate's CDP server,
+hold both for the same observation window, then close and reap them through the
+same orchestration contract.

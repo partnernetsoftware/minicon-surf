@@ -1,6 +1,6 @@
 # Lightpanda lab
 
-Status: **active — first macOS arm64 W1 receipt observed, comparison incomplete**
+Status: **active — macOS arm64 W1/W2 receipts observed, comparison incomplete**
 Candidate role: **low-memory/Agent architecture reference and comparative
 baseline; not a Rust SDK or headed engine candidate**
 
@@ -33,6 +33,7 @@ On macOS arm64, from repository root:
 
 ```bash
 ./labs/lightpanda/run-macos-arm64.sh
+./labs/lightpanda/run-w2-macos-arm64.sh
 ```
 
 The script emits a redaction-safe JSON object to stdout. It performs one warm-up
@@ -40,11 +41,21 @@ and seven measured executions. BSD `time -l` reports process maximum resident
 set size; this is neither private memory nor live heap. The first workload also
 checks that the semantic tree exposes the expected heading and button.
 
+The W2 runner additionally places a hard 15-second process deadline around
+each fetch, verifies that page JavaScript replaced the fixture DOM, and runs a
+dependency-free CDP 1.3 journey against a loopback-only server. The journey
+creates and attaches one target, navigates it to the same hermetic data URL,
+observes post-script state with `Runtime`, resolves the button through `DOM`,
+mutates that node through its remote object, observes the mutation on the same
+target, and closes the target. The server uses an ephemeral port, disables its
+metrics endpoint, and is always reaped by the runner trap.
+
 ## Open gates
 
 - Compare with a named same-machine headless Chrome build using a complete
   attributable process-tree sampler.
-- Add W2 scripted mutation, CDP target reuse and multiple-page/session workloads.
+- Add multiple-page/session workloads and qualify `Input` plus a named external
+  CDP client; the W2 journey currently covers Target/Page/Runtime/DOM directly.
 - Establish whether Lightpanda remains single-process for every measured mode.
 - Reproduce on Linux x86_64 and arm64; no Windows-native artifact exists in the
   pinned release.
@@ -59,3 +70,11 @@ engine adoption decision has been made. The first reviewed receipt is
 seven process-maximum-RSS samples have a 25,575,424-byte median and a
 25,690,112-byte maximum. These are root-process, single-document facts, not a
 Chrome comparison or a MiniCon Surf memory claim.
+
+The W2 receipt is
+[`evidence/macos-arm64-0.4.0-w2.json`](evidence/macos-arm64-0.4.0-w2.json).
+It proves scripted DOM observation and one real CDP target/action journey, but
+remains `incomplete` for the same process-tree, baseline, and platform reasons.
+Its seven root-process maximum-RSS samples have a 27,131,904-byte median and a
+27,721,728-byte maximum; child processes were not sampled or excluded, so these
+numbers are not complete-process-tree evidence.

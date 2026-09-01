@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "status": "incomplete",
+  "technology": "lightpanda",
+  "technology_version": "0.4.0",
+  "artifact_sha256": "840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7",
+  "platform": {
+    "os": "macos",
+    "os_version": "26.5.1",
+    "architecture": "arm64"
+  },
+  "workload": {
+    "id": "W2",
+    "transport": "data-url",
+    "fixture_sha256": "44eb4c231f0f6253a8f64b2cb8b001cee1074dd413203419436a426cc99ed6b7",
+    "repetitions": 7
+  },
+  "measurement": {
+    "memory_semantic": "bsd-time-process-maximum-resident-set-size",
+    "process_scope": "root-process-only; child processes were not sampled or excluded",
+    "samples": [
+      { "wall_seconds": 0.04, "memory_bytes": 27148288 },
+      { "wall_seconds": 0.04, "memory_bytes": 27099136 },
+      { "wall_seconds": 0.04, "memory_bytes": 27099136 },
+      { "wall_seconds": 0.04, "memory_bytes": 27131904 },
+      { "wall_seconds": 0.04, "memory_bytes": 27721728 },
+      { "wall_seconds": 0.04, "memory_bytes": 27099136 },
+      { "wall_seconds": 0.04, "memory_bytes": 27131904 }
+    ]
+  },
+  "agent_observation": {
+    "interface": "semantic_tree_text+cdp-1.3-target-page-runtime-dom",
+    "expected_present": true,
+    "output_sha256": "fdac4031291d6b84432daca3bac793c2d384b5248759f3fdbd360acf7a028301"
+  },
+  "limitations": [
+    "same-machine browser baseline pending",
+    "complete process-tree sampler pending",
+    "CDP journey is one target in one short-lived server session",
+    "CDP Input domain and external client qualification pending",
+    "semantic and CDP observations are separate executions of the same hermetic fixture",
+    "macos-arm64 only"
+  ]
+}

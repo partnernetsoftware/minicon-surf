@@ -17,8 +17,8 @@ Planned first landscape:
 
 | Lab | Initial role | Status |
 |---|---|---|
-| `lightpanda` | low-memory/Agent reference and baseline | active |
-| `servo` | Rust embeddable full-engine candidate | planned |
+| `lightpanda` | low-memory/Agent reference and baseline | active — W1/W2 observed |
+| `servo` | Rust embeddable full-engine candidate | active — API compile qualified |
 | `blitz` | modular Rust HTML/CSS/native-component candidate | planned |
 | `wpe` | embedded low-consumption WebKit candidate | planned |
 | `wry` | system-WebView compatibility candidate | planned |

@@ -1,0 +1,36 @@
+{
+  "technology": "servo",
+  "engine_version": "0.5.0",
+  "upstream_tag": "v0.5.0",
+  "upstream_commit": "1d44e5dd6a8b64c02f9dbf7fcbdf4ebdd0740019",
+  "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "platform": "macos-arm64",
+  "rustc": "1.97.0",
+  "probe": "public-embedding-api-compile",
+  "status": "qualified",
+  "result": {
+    "cargo_check": "passed",
+    "public_types": [
+      "ServoBuilder",
+      "Servo",
+      "WebViewBuilder",
+      "WebView",
+      "RenderingContext",
+      "OffscreenRenderingContext",
+      "SoftwareRenderingContext"
+    ],
+    "locked_packages": 800,
+    "cold_check_wall_seconds_approximate": 114,
+    "target_directory_bytes_approximate": 1610612736
+  },
+  "not_measured": [
+    "runtime startup",
+    "first target",
+    "complete process tree memory",
+    "surface detachment",
+    "profile isolation",
+    "Agent semantic control",
+    "CDP compatibility"
+  ],
+  "claim_boundary": "Compile feasibility only; not a court workload or runtime result."
+}
