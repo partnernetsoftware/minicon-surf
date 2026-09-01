@@ -91,7 +91,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── semantic snapshot with revision-scoped stable node references
 │   ├── open · list · inspect · act · wait · screenshot · show · hide · memory
 │   ├── waits observe conditions; callers do not guess with sleeps
-│   ├── [~] synthetic stdio host preserves native identity/revision; CDP is absent
+│   ├── [x] synthetic stdio/CDP host shares one target identity and revision
 │   └── local authority and authentication are explicit before remote exposure
 ├── [D4] CDP compatibility adapter
 │   ├── ↳ [A3] maps onto the same profile/session/target authority
@@ -128,7 +128,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
 │   ├── G1 memory court can attribute and cap a synthetic target
-│   ├── G2 one target is controlled interchangeably by CLI and a CDP client
+│   ├── [x] G2 synthetic target is controlled interchangeably by CLI and a named CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
 │   ├── G4 two profiles prove storage and policy isolation under one host
 │   ├── G5 route decision records measured wins, costs, gaps and rejected routes
@@ -191,7 +191,7 @@ flowchart LR
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
 
-    SYN["synthetic control court<br/>native stdio journey observed<br/>CDP transport pending"]
+    SYN["synthetic control court<br/>one shared ControlState<br/>native stdio + qualified CDP"]
 
     AT["AgenTerm<br/>later versioned consumer"]
     MINI["MiniCon terminal<br/>independent · unchanged"]
@@ -239,8 +239,8 @@ flowchart LR
   and seven negative cases pass. The machine-readable CDP mapping explicitly
   leaves profile, surface and revision unmapped rather than borrowing Chromium
   semantics. This closes the paper-model G0 minimum. The synthetic host now
-  honors a native subset, but no product executable or CDP projection does, so
-  A3, D4 and G2 remain open.
+  honors a native subset and projects the qualified synthetic slice through
+  CDP; product executable and broad client/HTML qualification remain open.
 - [~] The engine-neutral Rust synthetic-control host now consumes bounded
   control `0.0.1` NDJSON and preserves profile → session → target identity in
   one process. Its process-level journey snapshots revision 0, clicks a
@@ -248,10 +248,20 @@ flowchart LR
   `stale_revision`, satisfies a condition wait, and reports explicit profile,
   session and target memory owners; closing the target reduces both its owner
   count and logical accounted bytes. Fixed capacity limits and a streaming
-  oversized-line drain prevent unbounded request/state growth. Four library,
-  one reader and one process integration test pass. This is native transport
-  evidence, not G2: no CDP client reaches the same `ControlState`; its logical
-  memory ledger is a lower bound, not RSS/private/PSS, so G1 also remains open.
+  oversized-line drain prevent unbounded request/state growth. Six library,
+  one reader and one process integration test pass. Its logical memory ledger
+  is a lower bound, not RSS/private/PSS, so G1 remains open.
+- [x] G2's stated synthetic minimum is now observed. One host exposes bounded
+  native stdio and a loopback CDP discovery/WebSocket edge backed exclusively
+  by the same `Arc<Mutex<ControlState>>`. The named dependency-free
+  `synthetic-g2-court-client` found the exact native-created target ID, attached
+  with flattened sessions, resolved and clicked its button through qualified
+  Target/DOM/Runtime methods, and native stdio then observed revision 0 → 1 and
+  a typed `stale_revision` for the pre-CDP reference. `Page.navigate` returned
+  explicit `-32601`. This closes only G2's engine-neutral mechanism: the target
+  is synthetic rather than HTML, only seven methods are qualified, one CDP
+  connection is supported, and Playwright/Puppeteer qualification remains D4
+  work. There is no claim of broad CDP compatibility or remote-safe exposure.
 - [~] The synthetic lifecycle court now separates empty, live-target and
   post-close steady windows with an explicit 300 ms sampler warmup; every
   measured setup completed within 3.278 ms. Across seven runs per state,
@@ -314,7 +324,7 @@ flowchart LR
    target, frame, execution realm, surface, node reference and revision.
 2. Build the memory-court harness before selecting data structures or embedding
    an engine; fix workloads, named baselines and OS measurement semantics.
-3. Prove one in-memory synthetic target through the native CLI and CDP transport.
+3. [x] Prove one in-memory synthetic target through native CLI and CDP transport.
 4. Prove surface attachment/detachment against that target without giving the
    surface ownership of page lifetime.
 5. Prove persistent and ephemeral profile isolation with a deliberately small

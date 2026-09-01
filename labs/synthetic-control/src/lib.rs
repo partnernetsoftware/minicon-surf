@@ -5,6 +5,8 @@ use std::mem::size_of;
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub mod cdp;
+
 pub const PROTOCOL: &str = "minicon-surf.control";
 pub const VERSION: &str = "0.0.1";
 pub const MAX_REQUEST_BYTES: usize = 65_536;
@@ -129,6 +131,14 @@ impl Response {
             ControlError::new("resource_limit", "response exceeds byte limit", true),
         ))
         .expect("bounded failure serialization is infallible")
+    }
+
+    pub fn into_outcome(self) -> Result<Value, &'static str> {
+        match (self.result, self.error) {
+            (Some(result), None) if self.ok => Ok(result),
+            (None, Some(error)) if !self.ok => Err(error.code),
+            _ => Err("internal"),
+        }
     }
 }
 

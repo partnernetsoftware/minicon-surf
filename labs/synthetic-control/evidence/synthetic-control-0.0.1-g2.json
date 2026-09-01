@@ -1,0 +1,34 @@
+{
+  "client": "synthetic-g2-court-client",
+  "limitations": [
+    "synthetic semantic target, not HTML",
+    "custom court client, not Playwright or Puppeteer",
+    "single CDP connection",
+    "loopback only"
+  ],
+  "native_stale_revision_after_cdp_mutation": true,
+  "qualified_methods": [
+    "Target.getTargets",
+    "Target.attachToTarget",
+    "Target.detachFromTarget",
+    "DOM.getDocument",
+    "DOM.querySelector",
+    "DOM.resolveNode",
+    "Runtime.callFunctionOn"
+  ],
+  "revision_transition": [
+    0,
+    1
+  ],
+  "same_target_identity": true,
+  "schema": "minicon-surf.synthetic-g2-receipt/0.0.1",
+  "status": "qualified-synthetic",
+  "transport": [
+    "native-stdio",
+    "cdp-loopback-websocket"
+  ],
+  "unsupported_method": {
+    "code": -32601,
+    "method": "Page.navigate"
+  }
+}

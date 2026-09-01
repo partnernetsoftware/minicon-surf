@@ -1,5 +1,11 @@
-use minicon_surf_synthetic_control::{ControlState, MAX_REQUEST_BYTES, Response, parse_request};
+use minicon_surf_synthetic_control::{
+    ControlState, MAX_REQUEST_BYTES, Response, cdp, parse_request,
+};
+use serde_json::json;
+use std::fs;
 use std::io::{self, BufRead, Write};
+use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
 
 enum Line {
     Eof,
@@ -50,8 +56,11 @@ fn emit(writer: &mut impl Write, response: Response) -> io::Result<()> {
     writer.flush()
 }
 
-fn serve(reader: &mut impl BufRead, writer: &mut impl Write) -> io::Result<()> {
-    let mut state = ControlState::default();
+fn serve(
+    reader: &mut impl BufRead,
+    writer: &mut impl Write,
+    state: &Arc<Mutex<ControlState>>,
+) -> io::Result<()> {
     loop {
         let response = match read_bounded_line(reader)? {
             Line::Eof => return Ok(()),
@@ -60,7 +69,10 @@ fn serve(reader: &mut impl BufRead, writer: &mut impl Write) -> io::Result<()> {
                 Response::invalid("req_invalid", "request is empty")
             }
             Line::Bytes(bytes) => match parse_request(&bytes) {
-                Ok(request) => state.execute(request),
+                Ok(request) => state
+                    .lock()
+                    .map_err(|_| io::Error::other("control state lock failed"))?
+                    .execute(request),
                 Err(error) => error.into_response(),
             },
         };
@@ -70,13 +82,41 @@ fn serve(reader: &mut impl BufRead, writer: &mut impl Write) -> io::Result<()> {
 
 fn main() -> io::Result<()> {
     let arguments = std::env::args().skip(1).collect::<Vec<_>>();
-    if arguments != ["serve", "--stdio"] {
-        eprintln!("usage: minicon-surf-synthetic-control serve --stdio");
-        std::process::exit(64);
+    if arguments.len() != 2 && arguments.len() != 6
+        || arguments.first().map(String::as_str) != Some("serve")
+        || arguments.get(1).map(String::as_str) != Some("--stdio")
+    {
+        usage();
     }
+    let state = Arc::new(Mutex::new(ControlState::default()));
+    let _cdp_server = if arguments.len() == 6 {
+        if arguments.get(2).map(String::as_str) != Some("--cdp-port")
+            || arguments.get(4).map(String::as_str) != Some("--ready-file")
+        {
+            usage();
+        }
+        let port = arguments[3].parse::<u16>().unwrap_or_else(|_| usage());
+        let ready_file = PathBuf::from(&arguments[5]);
+        let server = cdp::Server::start(port, state.clone())?;
+        let receipt = json!({
+            "cdp_port":server.port(),
+            "browser_websocket_url":server.browser_websocket_url(),
+        });
+        fs::write(ready_file, serde_json::to_vec(&receipt)?)?;
+        Some(server)
+    } else {
+        None
+    };
     let stdin = io::stdin();
     let stdout = io::stdout();
-    serve(&mut stdin.lock(), &mut stdout.lock())
+    serve(&mut stdin.lock(), &mut stdout.lock(), &state)
+}
+
+fn usage() -> ! {
+    eprintln!(
+        "usage: minicon-surf-synthetic-control serve --stdio [--cdp-port PORT --ready-file PATH]"
+    );
+    std::process::exit(64);
 }
 
 #[cfg(test)]

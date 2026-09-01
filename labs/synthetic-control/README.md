@@ -15,8 +15,9 @@ owners and refuse capacity growth beyond fixed limits.
 ## Scope
 
 `minicon-surf-synthetic-control serve --stdio` accepts one UTF-8 JSON request
-per line and writes exactly one bounded JSON response per line. State lives for
-the host process. Diagnostics never form part of stdout.
+per line and writes exactly one bounded JSON response per line. Optional
+`--cdp-port PORT --ready-file PATH` starts a loopback-only CDP edge against the
+same `Arc<Mutex<ControlState>>`; the ready record is kept off stdout.
 
 The first slice implements profile create/list, session open/list, target
 open/list/inspect/close, semantic snapshot, revision-scoped button click,
@@ -24,7 +25,9 @@ revision wait, and memory report. Other reserved 0.0.1 operations return
 `unsupported_operation`. The target is a deliberately tiny fixed semantic
 document, not HTML and not a Web-compatibility claim.
 
-The current host is sequential. `target.wait` can confirm an already-satisfied
+Native requests and one CDP connection may interleave at operation boundaries.
+The current host handles only one CDP TCP connection at a time. `target.wait`
+can confirm an already-satisfied
 condition and produces a typed deadline for an unmet condition, but another
 stdio request cannot mutate state while a wait is blocked. Multi-client event
 wakeup belongs to the shared CLI/CDP host experiment and is not claimed here.
@@ -40,12 +43,14 @@ Run:
 ```sh
 cargo test --locked --manifest-path labs/synthetic-control/Cargo.toml
 cargo run --locked --manifest-path labs/synthetic-control/Cargo.toml -- serve --stdio
+python3 labs/synthetic-control/cdp-native-journey.py \
+  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
 labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
 ```
 
 ## Evidence boundary and next step
 
-Four library tests, one executable-reader test and one process-level stdio
+Six library tests, one executable-reader test and one process-level stdio
 journey cover revision invalidation, waits, capacity failure, memory owners,
 schema-operation drift, parser bounds, oversized-line recovery and persistent
 identity across requests. The process journey also closes its target and
@@ -53,10 +58,19 @@ observes the target owner count and logical accounted bytes decrease. The memory
 report is explicitly a logical owned-capacity lower bound: it excludes map and
 allocator overhead and is not RSS, private memory, PSS, or heap profiling.
 
-This is native stdio control evidence only. It does not satisfy G2 until a CDP
-adapter connects to this exact `ControlState` and an external journey proves
-both transports see and mutate one target identity. It also does not satisfy
-G1 until the process-tree evidence is strong enough to establish its full gate.
+The synthetic G2 court uses native stdio to create and snapshot a target, then
+uses CDP discovery/WebSocket plus `Target.getTargets`, attach/detach,
+`DOM.getDocument`, `DOM.querySelector`, `DOM.resolveNode`, and
+`Runtime.callFunctionOn` to click it. Native stdio then observes the same target
+at revision 1 and rejects its old reference as `stale_revision`. An unsupported
+`Page.navigate` returns CDP `-32601`. This qualifies the narrow synthetic G2
+mechanism, not HTML/CDP compatibility: the dependency-free named court client
+is not Playwright/Puppeteer, the semantic target is not HTML, and only the
+listed methods are supported. The endpoint is loopback-only and has no remote
+authentication claim.
+
+G1 remains open until process-tree evidence is strong enough to establish its
+full gate.
 
 The first lifecycle memory court runs empty, one-live-target, and
 create-then-close states through the same release binary and wrapper. Each mode

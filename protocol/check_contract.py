@@ -217,7 +217,10 @@ def main():
     )
     for native in ("profile", "surface", "revision"):
         require(mapped[native]["mapping"] == "none" and mapped[native]["cdp"] is None, f"{native} loss is implicit")
-    require(mapped["target"]["mapping"] == "candidate-one-to-one", "target mapping differs")
+    require(
+        mapped["target"]["mapping"] == "qualified-synthetic-one-to-one",
+        "target mapping differs",
+    )
     require(all(item.get("boundary") for item in mapping["objects"]), "mapping boundary is empty")
     examples = ROOT / "examples"
     request = load_bounded(examples / "target-snapshot.request.json", MAX_REQUEST_BYTES)

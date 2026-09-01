@@ -19,8 +19,8 @@
     {
       "native": "target",
       "cdp": "Target.TargetID",
-      "mapping": "candidate-one-to-one",
-      "boundary": "must be proven against one live target by G2"
+      "mapping": "qualified-synthetic-one-to-one",
+      "boundary": "observed by the synthetic G2 court; HTML engines and external clients remain unqualified"
     },
     {
       "native": "frame",
