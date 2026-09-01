@@ -117,7 +117,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2 + same-CDP-live-target Chrome court observed
-│   ├── [~] Servo 0.5.0: macOS arm64 public embedding API compiles; runtime unmeasured
+│   ├── [~] Servo 0.5.0: public API + software-rendered W1 runtime observed
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -184,7 +184,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2 · CDP action observed<br/>Chrome W1 court incomplete"]
-        SERVO["Servo 0.5.0<br/>embedding API compiles<br/>runtime unmeasured"]
+        SERVO["Servo 0.5.0<br/>software W1 rendered<br/>comparison · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -247,11 +247,18 @@ flowchart LR
   and Input/external-client qualification remains open.
 - [~] Servo `0.5.0` is pinned by exact crate checksum, release tag/commit and
   lockfile. Its public Rust embedding API compiles on macOS arm64, including
-  window/offscreen/software rendering contexts. No engine was launched; 800
-  locked packages and about 1.5 GiB cold build state are integration-cost facts,
-  not runtime-memory evidence. Public `show`/`hide` does not prove a live
-  rendering-context detach, profiles are not yet MiniCon Surf profile objects,
-  and Servo devtools must not be called CDP.
+  window/offscreen/software rendering contexts. A real software-rendered W1
+  now loads the fixture, observes its four named semantic values through a JS
+  callback, verifies an 800×600 screenshot, holds for two seconds, and shuts
+  down across seven post-warmup runs. Median sampled complete-tree RSS was
+  92,700,672 bytes, maximum 92,880,896 bytes, with one process observed in all
+  runs. Status remains `incomplete`: software rendering and direct Rust control
+  are not like-for-like with the CDP baseline; summed RSS is not private/PSS;
+  retention, soak and marginal target cost are open. The 800 locked packages
+  and about 1.5 GiB cold build state remain integration-cost facts, not RSS.
+  Public `show`/`hide` still does not prove live rendering-context detach,
+  profiles are not MiniCon Surf profile objects, and Servo devtools must not be
+  called CDP.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

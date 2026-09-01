@@ -3543,7 +3543,11 @@ dependencies = [
 name = "minicon-surf-servo-api-probe"
 version = "0.0.0"
 dependencies = [
+ "dpi",
+ "percent-encoding",
+ "rustls",
  "servo",
+ "url",
 ]
 
 [[package]]

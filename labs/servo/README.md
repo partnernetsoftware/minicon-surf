@@ -1,8 +1,9 @@
 # Servo lab
 
 Status: `exploring`
-Decision: `keep` as a buildable Rust-engine candidate; no runtime, memory,
-Agent, CDP, surface-detachment, or profile claim yet.
+Decision: `keep` as a running Rust-engine candidate; W1 software-rendered
+runtime is observed, while comparative memory, native Agent control, CDP,
+surface-detachment, and profile claims remain open.
 
 ## Hypothesis
 
@@ -37,15 +38,23 @@ Only Servo-owned sources define the API interpretation:
 
 ## Scope and reproduction
 
-The compile-only source names the public `ServoBuilder`, `Servo`,
+The initial compile-only source names the public `ServoBuilder`, `Servo`,
 `WebViewBuilder`, `WebView`, `RenderingContext`, `OffscreenRenderingContext`,
 and `SoftwareRenderingContext` types in one checked signature. It does not
 instantiate the engine and therefore is not W0 or W1 memory evidence.
+
+The follow-on runtime executable creates an 800×600
+`SoftwareRenderingContext`, loads W1 as a percent-encoded `data:` URL, waits
+for `LoadStatus::Complete`, verifies the named heading/input/button/link through
+`evaluate_javascript`, checks an 800×600 screenshot, holds the live target for
+two seconds, and shuts Servo down. Each repetition has a fresh config directory
+with `temporary_storage=true`.
 
 On macOS arm64:
 
 ```sh
 labs/servo/run-api-probe.sh
+labs/servo/run-w1-runtime-macos-arm64.sh
 ```
 
 All generated build state stays in the ignored `labs/servo/target/` directory.
@@ -70,9 +79,17 @@ context*. This probe found no public operation that replaces or drops a live
 view's rendering context while preserving its realm. W5 must therefore test a
 real engine and must not call visibility toggling “detach.”
 
-No engine was started, so empty startup, first-target cost, child processes,
-memory-profiler coverage, target teardown, and post-close recovery are all
-unmeasured. The 1.5 GiB build directory says nothing about RSS.
+The runtime court started the engine seven measured times after one warmup.
+All runs completed both typed observation conditions. The sampled tree
+contained one process in every repetition; median peak summed RSS was
+92,700,672 bytes and maximum was 92,880,896 bytes. The 1.5 GiB build directory
+still says nothing about RSS.
+
+This is not yet the memory-optimized claim. Summed RSS is not private/PSS; the
+court uses software rendering, one fixture and one platform; no comparable
+candidate ran through the same control contract in this execution; retention,
+soak and per-target delta remain unmeasured. Comparing it directly with the CDP
+court would mix interfaces and rendering paths.
 
 ### Profiles
 
@@ -85,26 +102,26 @@ history, downloads, permissions, copy-on-write, or a profile-to-target mapping.
 
 ### Agent control and CDP
 
-The Rust API exposes navigation, JavaScript evaluation, screenshots, event
-delegates, and view identity, so an Agent-native adapter appears technically
-possible. The checked crate has Servo's own devtools server, but this lab found
-no official claim that it implements Chrome DevTools Protocol. Servo devtools
-must not be described as CDP. Stable semantic node references, condition
+The runtime directly exercises JavaScript evaluation, screenshot and view
+lifecycle callbacks, strengthening the case that an Agent-native adapter is
+technically possible. These callbacks are not a native CLI, semantic snapshot,
+or stable node contract. The checked crate has Servo's own devtools server, but
+this lab found no official claim that it implements Chrome DevTools Protocol.
+Servo devtools must not be described as CDP. Stable semantic node references, condition
 waits, structured snapshots, network lifecycle interception, CDP discovery,
 and one-target CLI/CDP interoperability remain unproven.
 
 ## Exact limitations and next experiment
 
 - `cargo check` validates public Rust types and the dependency graph only.
-- It does not link or launch a runnable embedder.
-- No court fixture was loaded and no process-tree sampler ran.
-- Evidence applies only to the named release and macOS arm64 compile cell.
+- The API probe alone does not launch; the separate W1 runner does.
+- W1 loads and renders, but only through a software context and direct Rust API.
+- Evidence applies only to the named release and macOS arm64 cells.
 - The exact dependency graph contains 800 packages on this toolchain; feature
   reduction needs its own compile/runtime comparison rather than assumptions.
 
-The next Servo experiment should adapt the official `winit_minimal` example
-without changing Servo internals, load the hermetic W1 fixture in an offscreen
-context, exit on a typed load/screenshot condition, and sample the complete
-process tree. A second experiment must attempt context detachment while
-preserving JavaScript state; visibility-only `hide` is an explicit failure for
-that question.
+The next Servo experiment should put its W1 lifecycle behind the shared native
+target vocabulary and bounded JSON CLI, then compare like-for-like lifecycle
+and rendering semantics. A separate experiment must attempt context detachment
+while preserving JavaScript state; visibility-only `hide` is an explicit
+failure for that question.

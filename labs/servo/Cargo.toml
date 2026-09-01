@@ -3,6 +3,15 @@ name = "minicon-surf-servo-api-probe"
 version = "0.0.0"
 edition = "2024"
 publish = false
+autobins = false
+
+[[bin]]
+name = "servo-w1-runtime"
+path = "src/main.rs"
 
 [dependencies]
+dpi = "=0.1.2"
+percent-encoding = "=2.3.2"
+rustls = { version = "=0.23.43", default-features = false, features = ["aws_lc_rs", "std"] }
 servo = { version = "=0.5.0", default-features = false, features = ["baked-in-resources", "bundled_freetype", "js_jit"] }
+url = "=2.5.8"
