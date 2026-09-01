@@ -49,6 +49,7 @@ pub const KNOWN_OPERATIONS: &[&str] = &[
     "surface.show",
     "surface.hide",
     "memory.report",
+    "memory.trim",
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -437,6 +438,7 @@ impl ControlState {
             "surface.show" => self.surface_show(&request.arguments),
             "surface.hide" => self.surface_hide(&request.arguments),
             "memory.report" => self.memory_report(&request.arguments),
+            "memory.trim" => self.memory_trim(&request.arguments),
             _ => Err(ControlError::new(
                 "unsupported_operation",
                 "operation is reserved but not implemented by synthetic-control",
@@ -1132,6 +1134,30 @@ impl ControlState {
             "total_accounted_bytes":profile_bytes + session_bytes + target_bytes + surface_bytes,
             "limitations":["excludes allocator and map overhead","not RSS/private/PSS/live heap"],
         }))
+    }
+
+    fn memory_trim(&self, arguments: &Value) -> Result<Value, ControlError> {
+        exact_object(arguments, &[])?;
+        #[cfg(target_os = "macos")]
+        {
+            unsafe extern "C" {
+                fn malloc_zone_pressure_relief(zone: *mut std::ffi::c_void, goal: usize) -> usize;
+            }
+            // SAFETY: a null zone requests pressure relief from every malloc zone;
+            // the function accepts no Rust-owned pointer and does not retain one.
+            let released = unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) };
+            Ok(
+                json!({"kind":"memory_trim","strategy":"malloc_zone_pressure_relief","released_bytes":released}),
+            )
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            Err(ControlError::new(
+                "unsupported_capability",
+                "allocator trim is not qualified on this platform",
+                false,
+            ))
+        }
     }
 }
 

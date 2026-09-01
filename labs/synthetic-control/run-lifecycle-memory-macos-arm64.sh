@@ -145,7 +145,7 @@ receipt = {
         "one synthetic two-node target and presentation buffer are not an HTML or native-window workload",
         "logical accounted bytes exclude allocator and map overhead",
         f"post-hide logical ownership returns to live but median RSS remains {post_hide - live} bytes above live",
-        "capacity rejection is unit-tested but maximum-capacity RSS is not measured",
+        "this fresh-process receipt omits maximum capacity; the separate staged-capacity court measures it",
         "no external browser baseline is meaningful for this engine-neutral control state",
     ],
 }

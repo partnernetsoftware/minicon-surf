@@ -81,6 +81,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── owners: DOM · JS heap · network · decoded images · fonts · render · storage
 │   ├── measures: complete process tree · live · retained · resident/private · peak
 │   ├── lifecycle: steady · post-close reuse · navigation soak · profile/target growth
+│   ├── [~] same-process maximum-capacity court exposes retained RSS/physical footprint
 │   ├── limits: process · profile · target · response · DOM · image · cache
 │   ├── pressure ladder: evict → trim → hibernate → terminate one target
 │   ├── release budgets prevent a later feature from silently spending the advantage
@@ -180,6 +181,7 @@ flowchart LR
 
     subgraph MEM["Memory Court [M2]"]
         BOOK["ownership ledger<br/>live · retained · resident · peak"]
+        RETAIN["same-process retention court<br/>maximum capacity · post-release · trim"]
         LIMIT["budget judge<br/>process · profile · target · resource"]
         BASE["comparative baseline<br/>same workload · machine · mode"]
         PRESS{"bounded AND materially<br/>below named baseline?"}
@@ -209,7 +211,7 @@ flowchart LR
     OFF -->|show; no reload| ON
     ON -->|hide; same target| OFF
     OFF & ON -->|memory pressure| HIB
-    PAGE --> BOOK --> LIMIT --> PRESS
+    PAGE --> BOOK --> RETAIN --> LIMIT --> PRESS
     BASE --> PRESS
     LP & SERVO & NATIVE & COMPAT --> BOOK
     PRESS -->|yes| DECIDE
@@ -283,14 +285,27 @@ flowchart LR
   window/rendering context, and therefore cannot prove GUI resource teardown.
 - [~] The expanded synthetic lifecycle court separates empty, live, headed,
   post-hide and post-close steady windows with a 300 ms sampler warmup; every
-  measured setup completed within 2.889 ms. Across seven runs per state, median
-  complete-tree RSS was 1,982,464, 2,031,616, 2,048,000, 2,048,000 and
-  2,031,616 bytes. Headed was +16 KiB versus live, and post-hide retained
+  measured setup completed within 3.008 ms. Across seven runs per state, median
+  complete-tree RSS was 1,966,080, 2,015,232, 2,031,616, 2,031,616 and
+  2,015,232 bytes. Headed was +16 KiB versus live, and post-hide retained
   +16 KiB versus live even though logical surface ownership returned to zero.
   Logical bytes were 0, 634, 66,251, 634 and 279. This exposes a real retained-
-  RSS gap and still does not pass G1: modes are separate fresh processes,
-  maximum-capacity RSS and private/PSS are absent, and the synthetic state has
-  no meaningful external browser-efficiency baseline.
+  RSS gap and still does not pass G1: modes are separate fresh processes and
+  private/PSS are absent; the staged companion now covers maximum capacity,
+  but the synthetic state has no meaningful browser-efficiency baseline.
+- [~] The same-process maximum-capacity court now closes two important G1
+  evidence gaps. One host crosses empty → one target → headed → post-hide → 8
+  profiles/16 sessions/32 targets/8 surfaces plus 512 × 1,024-byte storage
+  values → zero owners → allocator trim. All profile/session/target/surface/
+  storage overflow attempts returned `resource_limit` in all seven runs.
+  Median RSS rose from 1,966,080 to 2,949,120 bytes and Apple physical
+  footprint from 1,048,888 to 2,015,568 bytes. With every logical owner back at
+  zero, 983,040 RSS bytes and 966,680 physical-footprint bytes remained above
+  the initial state. `malloc_zone_pressure_relief` returned zero in every run
+  and did not change either median, so this first trim strategy is rejected as
+  ineffective for the court. G1 remains open: this is still synthetic rather
+  than HTML/engine work, has no meaningful browser baseline, and does not yet
+  provide an effective retained-memory recovery path.
 - [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
   redaction rules exist under `labs/` and `AGENTS.md`.
 - [x] The shared Rust process-tree sampler has deadline cleanup, recursively

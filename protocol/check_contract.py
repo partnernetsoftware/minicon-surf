@@ -41,6 +41,7 @@ OPERATIONS = {
     "surface.show",
     "surface.hide",
     "memory.report",
+    "memory.trim",
 }
 ERROR_CODES = {
     "invalid_request",

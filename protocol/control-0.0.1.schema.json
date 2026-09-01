@@ -44,7 +44,8 @@
         "target.screenshot",
         "surface.show",
         "surface.hide",
-        "memory.report"
+        "memory.report",
+        "memory.trim"
       ]
     },
     "request": {

@@ -1,0 +1,588 @@
+{
+  "binary_sha256": "919e028943e55714eeb37f0911e14574d8c6a715efb7f6a1ce21c10c73e74f12",
+  "capacity_rejections": [
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    }
+  ],
+  "limitations": [
+    "synthetic state is not an HTML/browser-engine workload",
+    "footprint physical footprint is Apple platform-specific",
+    "20ms gaps and command overhead exist between stage samples",
+    "malloc_zone_pressure_relief returned zero bytes in every measured run",
+    "one process was observed; future engine routes require complete descendant attribution",
+    "no external browser baseline is meaningful for this engine-neutral state"
+  ],
+  "measurement": {
+    "median_post_release_minus_empty_physical_footprint_bytes": 966680,
+    "median_post_release_minus_empty_resident_bytes": 983040,
+    "median_post_trim_minus_empty_physical_footprint_bytes": 966680,
+    "median_post_trim_minus_empty_resident_bytes": 983040,
+    "post_release_minus_empty_physical_footprint_bytes": [
+      933912,
+      983064,
+      950296,
+      966680,
+      966680,
+      933912,
+      983064
+    ],
+    "post_release_minus_empty_resident_bytes": [
+      950272,
+      999424,
+      966656,
+      983040,
+      983040,
+      950272,
+      999424
+    ],
+    "post_trim_minus_empty_physical_footprint_bytes": [
+      933912,
+      983064,
+      950296,
+      966680,
+      966680,
+      933912,
+      983064
+    ],
+    "post_trim_minus_empty_resident_bytes": [
+      950272,
+      999424,
+      966656,
+      983040,
+      983040,
+      950272,
+      999424
+    ],
+    "states": {
+      "empty": {
+        "logical_accounted_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maximum_logical_accounted_bytes": 0,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1065272,
+        "maximum_peak_tree_resident_bytes": 1982464,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1065272,
+        "median_logical_accounted_bytes": 0,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1048888,
+        "median_peak_tree_resident_bytes": 1966080,
+        "median_reported_process_peak_physical_footprint_bytes": 1065272,
+        "owners": {
+          "profiles": 0,
+          "sessions": 0,
+          "surfaces": 0,
+          "targets": 0
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1048888,
+          1048888,
+          1048888,
+          1048888,
+          1048888,
+          1048888,
+          1065272
+        ],
+        "peak_tree_resident_bytes": [
+          1966080,
+          1966080,
+          1966080,
+          1966080,
+          1966080,
+          1966080,
+          1982464
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1065272,
+          1065272,
+          1065272,
+          1065272,
+          1065272,
+          1065272,
+          1065272
+        ]
+      },
+      "maximum_headed": {
+        "logical_accounted_bytes": [
+          1066348,
+          1066348,
+          1066348,
+          1066348,
+          1066348,
+          1066348,
+          1066348
+        ],
+        "maximum_logical_accounted_bytes": 1066348,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 2031952,
+        "maximum_peak_tree_resident_bytes": 2965504,
+        "maximum_reported_process_peak_physical_footprint_bytes": 2031952,
+        "median_logical_accounted_bytes": 1066348,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 2015568,
+        "median_peak_tree_resident_bytes": 2949120,
+        "median_reported_process_peak_physical_footprint_bytes": 2015568,
+        "owners": {
+          "profiles": 8,
+          "sessions": 16,
+          "surfaces": 8,
+          "targets": 32
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1982800,
+          2031952,
+          1999184,
+          2015568,
+          2015568,
+          1982800,
+          2031952
+        ],
+        "peak_tree_resident_bytes": [
+          2916352,
+          2965504,
+          2932736,
+          2949120,
+          2949120,
+          2916352,
+          2965504
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1982800,
+          2031952,
+          1999184,
+          2015568,
+          2015568,
+          1982800,
+          2031952
+        ]
+      },
+      "one_headed": {
+        "logical_accounted_bytes": [
+          66248,
+          66248,
+          66248,
+          66248,
+          66248,
+          66248,
+          66248
+        ],
+        "maximum_logical_accounted_bytes": 66248,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1114424,
+        "maximum_peak_tree_resident_bytes": 2048000,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1114424,
+        "median_logical_accounted_bytes": 66248,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1098040,
+        "median_peak_tree_resident_bytes": 2031616,
+        "median_reported_process_peak_physical_footprint_bytes": 1098040,
+        "owners": {
+          "profiles": 1,
+          "sessions": 1,
+          "surfaces": 1,
+          "targets": 1
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1081656,
+          1098040,
+          1098040,
+          1098040,
+          1098040,
+          1081656,
+          1114424
+        ],
+        "peak_tree_resident_bytes": [
+          2015232,
+          2031616,
+          2031616,
+          2031616,
+          2031616,
+          2015232,
+          2048000
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1081656,
+          1098040,
+          1098040,
+          1098040,
+          1098040,
+          1081656,
+          1114424
+        ]
+      },
+      "one_live": {
+        "logical_accounted_bytes": [
+          631,
+          631,
+          631,
+          631,
+          631,
+          631,
+          631
+        ],
+        "maximum_logical_accounted_bytes": 631,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1098040,
+        "maximum_peak_tree_resident_bytes": 2031616,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1098040,
+        "median_logical_accounted_bytes": 631,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1081656,
+        "median_peak_tree_resident_bytes": 2015232,
+        "median_reported_process_peak_physical_footprint_bytes": 1081656,
+        "owners": {
+          "profiles": 1,
+          "sessions": 1,
+          "surfaces": 0,
+          "targets": 1
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1065272,
+          1081656,
+          1081656,
+          1081656,
+          1081656,
+          1065272,
+          1098040
+        ],
+        "peak_tree_resident_bytes": [
+          1998848,
+          2015232,
+          2015232,
+          2015232,
+          2015232,
+          1998848,
+          2031616
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1065272,
+          1081656,
+          1081656,
+          1081656,
+          1081656,
+          1065272,
+          1098040
+        ]
+      },
+      "one_post_hide": {
+        "logical_accounted_bytes": [
+          631,
+          631,
+          631,
+          631,
+          631,
+          631,
+          631
+        ],
+        "maximum_logical_accounted_bytes": 631,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1130808,
+        "maximum_peak_tree_resident_bytes": 2064384,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1130808,
+        "median_logical_accounted_bytes": 631,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1114424,
+        "median_peak_tree_resident_bytes": 2048000,
+        "median_reported_process_peak_physical_footprint_bytes": 1114424,
+        "owners": {
+          "profiles": 1,
+          "sessions": 1,
+          "surfaces": 0,
+          "targets": 1
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1098040,
+          1114424,
+          1114424,
+          1114424,
+          1114424,
+          1098040,
+          1130808
+        ],
+        "peak_tree_resident_bytes": [
+          2031616,
+          2048000,
+          2048000,
+          2048000,
+          2048000,
+          2031616,
+          2064384
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1098040,
+          1114424,
+          1114424,
+          1114424,
+          1114424,
+          1098040,
+          1130808
+        ]
+      },
+      "post_release": {
+        "logical_accounted_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maximum_logical_accounted_bytes": 0,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 2048336,
+        "maximum_peak_tree_resident_bytes": 2981888,
+        "maximum_reported_process_peak_physical_footprint_bytes": 2048336,
+        "median_logical_accounted_bytes": 0,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 2015568,
+        "median_peak_tree_resident_bytes": 2949120,
+        "median_reported_process_peak_physical_footprint_bytes": 2015568,
+        "owners": {
+          "profiles": 0,
+          "sessions": 0,
+          "surfaces": 0,
+          "targets": 0
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1982800,
+          2031952,
+          1999184,
+          2015568,
+          2015568,
+          1982800,
+          2048336
+        ],
+        "peak_tree_resident_bytes": [
+          2916352,
+          2965504,
+          2932736,
+          2949120,
+          2949120,
+          2916352,
+          2981888
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1982800,
+          2031952,
+          1999184,
+          2015568,
+          2015568,
+          1982800,
+          2048336
+        ]
+      },
+      "post_trim": {
+        "allocator_reported_released_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "logical_accounted_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maximum_logical_accounted_bytes": 0,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 2048336,
+        "maximum_peak_tree_resident_bytes": 2981888,
+        "maximum_reported_process_peak_physical_footprint_bytes": 2048336,
+        "median_allocator_reported_released_bytes": 0,
+        "median_logical_accounted_bytes": 0,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 2015568,
+        "median_peak_tree_resident_bytes": 2949120,
+        "median_reported_process_peak_physical_footprint_bytes": 2015568,
+        "owners": {
+          "profiles": 0,
+          "sessions": 0,
+          "surfaces": 0,
+          "targets": 0
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1982800,
+          2031952,
+          1999184,
+          2015568,
+          2015568,
+          1982800,
+          2048336
+        ],
+        "peak_tree_resident_bytes": [
+          2916352,
+          2965504,
+          2932736,
+          2949120,
+          2949120,
+          2916352,
+          2981888
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1982800,
+          2031952,
+          1999184,
+          2015568,
+          2015568,
+          1982800,
+          2048336
+        ]
+      }
+    },
+    "trim_verdict": "ineffective"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.synthetic-staged-memory-receipt/0.0.1",
+  "status": "incomplete",
+  "workload": {
+    "maximum_state": {
+      "cookie_entries": 256,
+      "local_storage_entries": 256,
+      "profiles": 8,
+      "sessions": 16,
+      "surfaces": 8,
+      "targets": 32,
+      "value_bytes_per_entry": 1024
+    },
+    "measured_repetitions": 7,
+    "samples_per_stage": 3,
+    "settle_ms": 100,
+    "stage_order": [
+      "empty",
+      "one_live",
+      "one_headed",
+      "one_post_hide",
+      "maximum_headed",
+      "post_release",
+      "post_trim"
+    ],
+    "warmups": 1
+  }
+}

@@ -22,7 +22,8 @@ same `Arc<Mutex<ControlState>>`; the ready record is kept off stdout.
 The first slice implements profile create/list/inspect/delete, bounded profile
 storage and policy, session open/list/close, target open/list/inspect/close,
 semantic snapshot, revision-scoped button click, bounded scroll, revision wait,
-surface show/hide, and memory report. Other reserved 0.0.1 operations return
+surface show/hide, memory report, and macOS allocator trim. Other reserved
+0.0.1 operations return
 `unsupported_operation`. With `--profile-root PATH`, named persistent profiles
 use bounded versioned JSON records and advisory single-writer locks; without an
 explicit root, persistent creation fails. The target is a deliberately tiny
@@ -53,6 +54,8 @@ python3 labs/synthetic-control/cdp-native-journey.py \
 python3 labs/synthetic-control/profile-isolation-journey.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
 labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
+python3 labs/synthetic-control/staged-capacity-memory-macos-arm64.py \
+  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
 ```
 
 ## Evidence boundary and next step
@@ -102,18 +105,31 @@ The lifecycle memory court runs empty, live, headed, post-hide, and post-close
 states through the same release binary and wrapper. Each mode
 has one warmup and seven measured runs; order alternates, setup must finish
 before the sampler's 300 ms warmup, and the following 1.2-second steady window
-is sampled every 10 ms. Maximum observed setup was 2.889 ms.
+is sampled every 10 ms. Maximum observed setup was 3.008 ms.
 
-Median steady-window complete-tree RSS was 1,982,464 bytes empty, 2,031,616
-live, 2,048,000 headed, 2,048,000 post-hide, and 2,031,616 post-close. The
+Median steady-window complete-tree RSS was 1,966,080 bytes empty, 2,015,232
+live, 2,031,616 headed, 2,031,616 post-hide, and 2,015,232 post-close. The
 bounded surface therefore observed +16 KiB headed versus live, while post-hide
 retained +16 KiB versus live despite logical surface ownership returning to
 zero. Logical accounted state was 0, 634, 66,251, 634, and 279 bytes. This is a
 useful retained-memory warning, not proof that presentation memory returns to
 the OS.
 
-The receipt remains `incomplete`. Modes are separate fresh processes rather
-than marked stages in one host, RSS is page-granular and not private/PSS,
-maximum-capacity RSS is unmeasured, and a two-node synthetic target cannot
-establish browser memory efficiency. These results exercise the G1 court
-mechanics but do not pass G1 or the product memory gate.
+The stronger same-process court drives one host through empty, one live target,
+one headed target, post-hide, full capacity, post-release, and post-trim. Full
+capacity is 8 profiles, 16 sessions, 32 targets, 8 surfaces, and 512 total
+1,024-byte storage values; all five attempted overflows returned
+`resource_limit` in every run. Across seven runs, median RSS grew from
+1,966,080 to 2,949,120 bytes and Apple physical footprint from 1,048,888 to
+2,015,568 bytes. After every logical owner returned to zero, both metrics still
+retained 983,040 and 966,680 bytes above the initial state. The experimental
+`memory.trim` called `malloc_zone_pressure_relief`, reported zero released
+bytes in all seven runs, and changed neither median. This trim strategy is
+therefore observed ineffective for the court, not presented as a solution.
+
+Both memory receipts remain `incomplete`. The lifecycle modes are separate
+fresh processes, while the staged companion supplies same-process capacity and
+retention evidence. RSS is page-granular rather than private/PSS, Apple
+physical footprint is platform-specific, and a two-node synthetic target
+cannot establish browser memory efficiency. Together they strengthen the G1
+court mechanics but do not pass G1 or the product memory gate.
