@@ -1,10 +1,19 @@
 # MiniCon Surf
 
-**A memory-first, agent-native browser.**
+**A memory-optimized, agent-use oriented browser.**
 
-MiniCon Surf is an early-stage browser in the MiniCon product family. It is
-intended to be implemented in Rust, account for and bound its memory use, and
-make automation a first-class interface rather than an afterthought.
+MiniCon Surf is an early-stage browser in the MiniCon product family. It has
+two co-equal, non-negotiable product outcomes: use materially less memory for
+named workloads, and make Agents first-class users rather than retrofit
+automation onto a human-only browser. It is intended to be implemented in
+Rust, but language choice is not accepted as memory evidence.
+
+Neither outcome can compensate for failure of the other. A browser with a
+good Agent API but ordinary browser memory use is not MiniCon Surf; neither is
+a small browser that Agents can control only through pixels, sleeps, or an
+aftermarket adapter. Web compatibility, implementation speed, framework
+convenience, and binary size are subordinate when they conflict with these two
+outcomes.
 
 The browser session is independent from its presentation surface: the same
 live page should be able to move between headless and headed operation without
@@ -18,7 +27,7 @@ MiniCon to be installed. Its place in the product family is deliberate:
 
 - [MiniCon](https://github.com/partnernetsoftware/minicon) is the one-file
   local terminal.
-- **MiniCon Surf** is the memory-first browser surface for humans and Agents.
+- **MiniCon Surf** is the memory-optimized, Agent-use oriented browser surface.
 - [AgenTerm](https://github.com/partnernetsoftware/agenterm) is the Agent-era
   workbench that can compose terminal and browser capabilities with durable
   identity, permissions, and workflows.

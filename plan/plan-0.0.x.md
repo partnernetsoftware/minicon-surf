@@ -1,22 +1,42 @@
 # MiniCon Surf 0.0.x product-definition plan
 
 Status: **planned — repository charter only; no engine or compatibility claim**  
-Outcome: establish whether a Rust browser can make memory bounds, Agent-native
-control, dynamic headed/headless presentation, CDP interoperability, and
-first-class profiles one coherent product rather than five unrelated features.
+Outcome: establish whether a Rust browser can be both demonstrably
+memory-optimized and Agent-use oriented while supporting dynamic
+headed/headless presentation, CDP interoperability, and first-class profiles.
 
 ## 1. Product ruling
 
-MiniCon Surf is an independent product in the MiniCon family: a memory-first,
-agent-native browser that can also be used directly by a human. MiniCon is not
+MiniCon Surf is an independent product in the MiniCon family: a
+memory-optimized, Agent-use oriented browser that can also be used directly by
+a human. MiniCon is not
 a prerequisite, and the MiniCon terminal binary does not absorb a browser
 engine or its dependency, security, and update surface. AgenTerm may later
 consume the same versioned control contract rather than fork the browser.
 
+The two product outcomes are a conjunction, not a weighted score:
+
+- **Memory-optimized:** on named, reproducible workloads, the complete process
+  tree uses materially less memory than named contemporary browser/system-
+  WebView baselines. Bounds and attribution are necessary but not sufficient;
+  an explainable large footprint still fails.
+- **Agent-use oriented:** profile, session, target, semantic observation,
+  action, wait, failure, and resource-control semantics are native from the
+  first executable, available through the CLI, and projected through a
+  qualified CDP compatibility endpoint.
+
+A route that fails either outcome cannot become the default engine or define
+the product architecture. Web compatibility may be narrowed before memory is
+surrendered; memory may not be hidden or waived because a route accelerates
+Agent automation. Conversely, low memory cannot excuse a pixel-only or
+sleep-driven Agent interface.
+
 Five contracts are fixed before implementation choices:
 
-1. **Memory is product state.** Major live and retained bytes have an owner,
-   budget, observable report, bounded failure, and recovery path. Rust is the
+1. **Memory optimization is measured product value.** Major live and retained
+   bytes have an owner, budget, observable report, bounded failure, and
+   recovery path. Every optimization claim compares the complete process tree
+   with a named baseline on the same workload and machine. Rust is the
    implementation language, but Rust alone is not accepted as memory evidence.
 2. **Agents are first-class users.** A bounded, structured CLI exists from the
    first executable. Stable target/node references, waits, snapshots, actions,
@@ -31,9 +51,10 @@ Five contracts are fixed before implementation choices:
    copy-on-write/readonly profiles have explicit identity, locking, budgets,
    policy, inspection, and lifecycle.
 
-The 0.0.x series is allowed to reject an engine route. It is not allowed to
-hide total memory behind process boundaries, call startup-only headed/headless
-selection a dynamic switch, or advertise unqualified CDP/Web compatibility.
+The 0.0.x series is allowed to reject every initial engine route. It is not
+allowed to dilute either primary outcome to select a winner, hide total memory
+behind process boundaries, call startup-only headed/headless selection a
+dynamic switch, or advertise unqualified CDP/Web compatibility.
 
 ## 2. Markdown-tree DAG PRD
 
@@ -42,19 +63,28 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 
 ```text
 [S00] MiniCon Surf 0.0.x — prove the product shape before building the product
+├── [N0] two non-negotiable outcomes — both must pass
+│   ├── memory-optimized: materially lower complete-process-tree memory on named courts
+│   ├── Agent-use oriented: native semantic control from the first executable
+│   ├── compatibility · schedule · framework convenience · binary size are subordinate
+│   ├── one outcome cannot compensate, average with, or serve as a proxy for the other
+│   └── any default/product-core route must satisfy ↳ [M2] and ↳ [A3]
 ├── [C1] charter and product-family boundary
-│   ├── Rust implementation; memory use is the leading optimization target
+│   ├── Rust implementation; language choice alone proves no outcome
 │   ├── independent MiniCon-family product; MiniCon installation not required
 │   ├── AgenTerm consumes a versioned contract, never CLI prose or UI internals
 │   ├── separate repository, binary, profiles, versioning and release cadence
 │   └── [-] no browser engine linked into the MiniCon terminal executable
 ├── [M2] accountable memory model
-│   ├── baseline: empty host, first target, representative page and per-target delta
+│   ├── comparative baselines: named Chrome/Brave/system-WebView versions and modes
+│   ├── workloads: empty host · first target · representative pages · per-target delta
 │   ├── owners: DOM · JS heap · network · decoded images · fonts · render · storage
-│   ├── measures: live · retained · resident/private · peak · post-close reuse
+│   ├── measures: complete process tree · live · retained · resident/private · peak
+│   ├── lifecycle: steady · post-close reuse · navigation soak · profile/target growth
 │   ├── limits: process · profile · target · response · DOM · image · cache
 │   ├── pressure ladder: evict → trim → hibernate → terminate one target
-│   └── adversarial courts: huge input · deep DOM · navigation loop · open/close soak
+│   ├── release budgets prevent a later feature from silently spending the advantage
+│   └── [-] attribution or hard caps without comparative reduction are not optimization
 ├── [A3] Agent-native control plane
 │   ├── CLI from first executable; bounded JSON input/output and typed errors
 │   ├── profile/session/target identity shared by every frontend
@@ -85,21 +115,25 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
+│   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
-│   └── route survives only if it can satisfy ↳ [M2] ↳ [A3] ↳ [H5] ↳ [P6]
+│   ├── a compatibility-only route is labelled and cannot set the product memory claim
+│   └── default route survives only if it satisfies ↳ [N0] ↳ [H5] ↳ [P6]
 ├── [G8] 0.0.x decision gates
 │   ├── G0 terminology: profile/session/target/surface/revision have one meaning
 │   ├── G1 memory court can attribute and cap a synthetic target
 │   ├── G2 one target is controlled interchangeably by CLI and a CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
 │   ├── G4 two profiles prove storage and policy isolation under one host
-│   └── G5 engine decision records measured wins, costs, gaps and rejected routes
+│   ├── G5 route decision records measured wins, costs, gaps and rejected routes
+│   └── G6 default eligibility requires memory and Agent gates independently green
 └── [-] explicit 0.0.x non-goals
     ├── no claim of full Web, Chrome, extension, media, DRM or CDP compatibility
     ├── no numeric memory promise before workload, OS and measurement are fixed
+    ├── no default route selected only because it is fastest to integrate or most compatible
     ├── no silent fallback from bounded native behavior to an unmeasured process
     ├── no remote-open control port, credential plaintext or shared unlocked profile
     └── no premature extraction/rewrite of MiniCon or AgenTerm platform layers
@@ -114,7 +148,7 @@ Every route passes through the Memory Court before an engine decision survives.
 
 ```mermaid
 flowchart LR
-    U["Users<br/>Agent first · human ready"]
+    U["Two required outcomes [N0]<br/>memory-optimized AND Agent-use oriented"]
 
     subgraph ENTRY["Control doors"]
         CLI["CLI door [A3]<br/>bounded JSON · waits · actions"]
@@ -142,13 +176,14 @@ flowchart LR
     subgraph MEM["Memory Court [M2]"]
         BOOK["ownership ledger<br/>live · retained · resident · peak"]
         LIMIT["budget judge<br/>process · profile · target · resource"]
-        PRESS{"within budget<br/>after pressure ladder?"}
+        BASE["comparative baseline<br/>same workload · machine · mode"]
+        PRESS{"bounded AND materially<br/>below named baseline?"}
     end
 
     subgraph LAB["Engine Lab [E7]"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
-        DECIDE["Gate G5<br/>keep · combine · reject"]
+        DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
 
     AT["AgenTerm<br/>later versioned consumer"]
@@ -165,10 +200,11 @@ flowchart LR
     ON -->|hide; same target| OFF
     OFF & ON -->|memory pressure| HIB
     PAGE --> BOOK --> LIMIT --> PRESS
+    BASE --> PRESS
     NATIVE & COMPAT --> BOOK
     PRESS -->|yes| DECIDE
     PRESS -->|no| FAIL
-    DECIDE --> CTRL
+    DECIDE -->|Agent gate also green| CTRL
     AT -. same protocol .-> CTRL
     MINI -. product family only .-> CLI
 ```
@@ -178,25 +214,27 @@ flowchart LR
 | Gate | Question | Minimum evidence | Safe failure |
 |---|---|---|---|
 | G0 vocabulary | Do all frontends name the same objects? | versioned schema plus CLI/CDP mapping examples | change the paper model before code depends on it |
-| G1 memory | Can bytes be owned and bounded? | deterministic synthetic workload with component, peak and post-close reports | reject the representation or engine route |
+| G1 memory | Is the route bounded and materially more memory-efficient? | deterministic workloads report complete process-tree component, peak and post-close values against named same-machine baselines | reject or narrow the route; attribution alone does not pass |
 | G2 control | Can existing automation share native targets? | one journey performed by CLI and a named CDP client against one target | narrow the compatibility matrix |
 | G3 surface | Is headed/headless truly dynamic? | stateful page retains target, realm, DOM mutation, scroll and profile across show/hide | repair ownership; do not relabel restart as switching |
 | G4 profile | Is identity isolated and durable? | two named profiles plus one ephemeral profile prove cookie/storage/policy separation and lock behavior | block persistence or multi-client use |
-| G5 engine | Which route earns implementation? | same workloads, platforms and total-process measurements for surviving candidates | record rejection; keep product contract intact |
+| G5 route | Which use, if any, has each route earned? | same workloads, platforms, protocol journeys and total-process measurements; verdict is keep/narrow/combine/reject | record rejection; compatibility-only routes remain labelled |
+| G6 default | Can the route represent MiniCon Surf? | G1 memory and G2 Agent control independently green, plus the required surface/profile gates | no default engine; continue labs without weakening either outcome |
 
 ## 5. First sequencing
 
 1. Write the vocabulary and protocol sketch for profile, browser session,
    target, frame, execution realm, surface, node reference and revision.
 2. Build the memory-court harness before selecting data structures or embedding
-   an engine; fix workloads and OS measurement semantics.
+   an engine; fix workloads, named baselines and OS measurement semantics.
 3. Prove one in-memory synthetic target through the native CLI and CDP transport.
 4. Prove surface attachment/detachment against that target without giving the
    surface ownership of page lifetime.
 5. Prove persistent and ephemeral profile isolation with a deliberately small
    storage model.
-6. Run bounded engine spikes behind the established contracts, publish the
-   measurement table, and keep or reject routes explicitly.
+6. Run independent `labs/{techName}` spikes behind the established contracts,
+   publish comparable memory and Agent-control evidence, and issue an explicit
+   keep/narrow/combine/reject verdict for every route.
 
 The first code milestone is therefore not “render a website.” It is “one
 bounded target has one identity and state while CLI, CDP, and an optional
