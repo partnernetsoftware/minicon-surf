@@ -1,8 +1,8 @@
 # MiniCon Surf control contract 0.0.1
 
-Status: **G0 vocabulary checked; transport unimplemented**. This freezes object
-meanings early enough to build the synthetic G2 target, but it does not claim
-that a product executable, CLI transport, or CDP adapter exists yet.
+Status: **G0 vocabulary checked; synthetic native/CDP subset implemented**.
+This freezes object meanings and is exercised by an engine-neutral host. It
+does not claim that a browser product executable or broad CDP adapter exists.
 
 The internal contract is not CDP. Native CLI and future in-process clients use
 this model; CDP is an adapter whose exact losses are recorded below.
@@ -54,12 +54,13 @@ Initial limits are deliberately conservative:
   response; the eventual transport must return a bounded resource handle or a
   caller-authorized output destination.
 
-The initial operation names reserve the product surface without claiming
-implementation: `profile.create`, `profile.list`, `profile.inspect`,
-`profile.delete`, `session.open`, `session.list`, `session.inspect`,
-`session.close`, `target.open`, `target.list`, `target.inspect`, `target.close`,
-`target.snapshot`, `target.act`, `target.wait`, `target.screenshot`,
-`surface.show`, `surface.hide`, and `memory.report`. A name outside this version
+The initial operation names reserve the product surface. The synthetic host
+implements `profile.create`, `profile.list`, `session.open`, `session.list`,
+`target.open`, `target.list`, `target.inspect`, `target.close`,
+`target.snapshot`, `target.act`, `target.wait`, `surface.show`, `surface.hide`,
+and `memory.report`. It explicitly rejects the remaining reserved operations:
+`profile.inspect`, `profile.delete`, `session.inspect`, `session.close`, and
+`target.screenshot`. A name outside this version
 is `invalid_request`; a listed operation unavailable on the selected backend is
 `unsupported_operation`. Neither falls through to engine-specific behavior.
 
@@ -99,9 +100,9 @@ The checked machine-readable form is
 | surface show/hide | no qualified CDP mapping | CDP target activation is not dynamic presentation attachment. |
 | revision/node reference | no exact standard mapping | The adapter maintains mappings and returns explicit stale/unsupported failures; it never equates a `NodeId` with a native reference. |
 
-CDP discovery, domains, method versions, and external Playwright/Puppeteer
-journeys remain D4/G2 evidence. This table is a mapping hypothesis, not that
-evidence.
+The synthetic G2 court qualifies discovery/WebSocket plus seven selected
+Target/DOM/Runtime methods against one shared target. External
+Playwright/Puppeteer journeys and HTML-engine behavior remain D4 evidence.
 
 ## Checked examples
 
@@ -119,5 +120,6 @@ It complements the JSON Schema; it is not a general-purpose JSON Schema
 implementation.
 
 This reviewed vocabulary, schema, checked examples, and explicit CDP mapping
-satisfy the paper-model minimum for G0. G2 remains red until two real frontends
-control one target; paper mappings cannot satisfy it.
+satisfy the paper-model minimum for G0. The separate synthetic journey now
+satisfies G2's engine-neutral two-frontend minimum; it does not broaden this
+paper contract into a general CDP compatibility claim.

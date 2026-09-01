@@ -105,6 +105,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── show attaches a native surface to the existing live target
 │   ├── hide releases presentation resources while page execution continues
 │   ├── repeated hide/show preserves page · realm · profile · scroll · Agent target
+│   ├── [~] synthetic buffer court proves ownership/state mechanics, not a native surface
 │   ├── hibernate is distinct: discard reconstructible state under memory pressure
 │   └── CLI, CDP and human input arbitrate focus and mutations deterministically
 ├── [P6] first-class profile system
@@ -191,7 +192,7 @@ flowchart LR
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
 
-    SYN["synthetic control court<br/>one shared ControlState<br/>native stdio + qualified CDP"]
+    SYN["synthetic control court<br/>one shared ControlState<br/>native + CDP + bounded surface mechanics"]
 
     AT["AgenTerm<br/>later versioned consumer"]
     MINI["MiniCon terminal<br/>independent · unchanged"]
@@ -248,7 +249,7 @@ flowchart LR
   `stale_revision`, satisfies a condition wait, and reports explicit profile,
   session and target memory owners; closing the target reduces both its owner
   count and logical accounted bytes. Fixed capacity limits and a streaming
-  oversized-line drain prevent unbounded request/state growth. Six library,
+  oversized-line drain prevent unbounded request/state growth. Eight library,
   one reader and one process integration test pass. Its logical memory ledger
   is a lower bound, not RSS/private/PSS, so G1 remains open.
 - [x] G2's stated synthetic minimum is now observed. One host exposes bounded
@@ -262,16 +263,23 @@ flowchart LR
   is synthetic rather than HTML, only seven methods are qualified, one CDP
   connection is supported, and Playwright/Puppeteer qualification remains D4
   work. There is no claim of broad CDP compatibility or remote-safe exposure.
-- [~] The synthetic lifecycle court now separates empty, live-target and
-  post-close steady windows with an explicit 300 ms sampler warmup; every
-  measured setup completed within 3.278 ms. Across seven runs per state,
-  median complete-tree RSS was 1,785,856, 1,802,240 and 1,802,240 bytes: a
-  +16 KiB live delta and +16 KiB post-close delta at `ps` page granularity.
-  Logical accounted bytes were 0, 418 and 107, with target ownership returning
-  to zero after close. This exercises attribution, bounds and lifecycle court
-  mechanics but does not pass G1: the modes are separate fresh processes,
-  maximum-capacity RSS and private/PSS are absent, and a two-node synthetic
-  state has no meaningful external browser-efficiency baseline.
+- [~] The synthetic surface mechanics court holds one CDP attachment while
+  native stdio performs three headless → headed → headless cycles. Target,
+  native session, realm, clicked DOM, revision 2 and scroll position 240 remain
+  unchanged. Each show creates one bounded 65,536-byte presentation owner;
+  each hide removes it and returns logical accounting to the live baseline.
+  This does not pass G3: the attachment is a synthetic buffer, not a native
+  window/rendering context, and therefore cannot prove GUI resource teardown.
+- [~] The expanded synthetic lifecycle court separates empty, live, headed,
+  post-hide and post-close steady windows with a 300 ms sampler warmup; every
+  measured setup completed within 3.132 ms. Across seven runs per state, median
+  complete-tree RSS was 1,900,544, 1,933,312, 1,949,696, 1,966,080 and
+  1,933,312 bytes. Headed was +16 KiB versus live, but post-hide retained
+  +32 KiB versus live even though logical surface ownership returned to zero.
+  Logical bytes were 0, 462, 66,079, 462 and 107. This exposes a real retained-
+  RSS gap and still does not pass G1: modes are separate fresh processes,
+  maximum-capacity RSS and private/PSS are absent, and the synthetic state has
+  no meaningful external browser-efficiency baseline.
 - [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
   redaction rules exist under `labs/` and `AGENTS.md`.
 - [x] The shared Rust process-tree sampler has deadline cleanup, recursively
@@ -325,8 +333,9 @@ flowchart LR
 2. Build the memory-court harness before selecting data structures or embedding
    an engine; fix workloads, named baselines and OS measurement semantics.
 3. [x] Prove one in-memory synthetic target through native CLI and CDP transport.
-4. Prove surface attachment/detachment against that target without giving the
-   surface ownership of page lifetime.
+4. [~] Prove surface attachment/detachment against that target without giving
+   the surface ownership of page lifetime; synthetic mechanics pass, native
+   presentation resources remain open.
 5. Prove persistent and ephemeral profile isolation with a deliberately small
    storage model.
 6. Run independent `labs/{techName}` spikes behind the established contracts,

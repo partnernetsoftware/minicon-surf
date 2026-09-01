@@ -16,7 +16,9 @@ pub const MAX_COLLECTION: usize = 10_000;
 pub const MAX_PROFILES: usize = 8;
 pub const MAX_SESSIONS: usize = 16;
 pub const MAX_TARGETS: usize = 32;
+pub const MAX_SURFACES: usize = 8;
 pub const MAX_NODES_PER_TARGET: usize = 128;
+pub const SYNTHETIC_PRESENTATION_BYTES: usize = 65_536;
 pub const KNOWN_OPERATIONS: &[&str] = &[
     "profile.create",
     "profile.list",
@@ -310,8 +312,17 @@ struct Session {
 struct Target {
     id: String,
     session_id: String,
+    realm_id: String,
     revision: u64,
+    scroll_y: u64,
     nodes: Vec<Node>,
+}
+
+#[derive(Debug)]
+struct Surface {
+    id: String,
+    target_id: String,
+    presentation: Box<[u8]>,
 }
 
 #[derive(Debug, Clone)]
@@ -326,9 +337,11 @@ pub struct ControlState {
     profiles: BTreeMap<String, Profile>,
     sessions: BTreeMap<String, Session>,
     targets: BTreeMap<String, Target>,
+    surfaces: BTreeMap<String, Surface>,
     next_profile: u64,
     next_session: u64,
     next_target: u64,
+    next_surface: u64,
 }
 
 impl ControlState {
@@ -346,6 +359,8 @@ impl ControlState {
             "target.snapshot" => self.target_snapshot(&request.arguments),
             "target.act" => self.target_act(&request.arguments),
             "target.wait" => self.target_wait(&request.arguments, request.deadline),
+            "surface.show" => self.surface_show(&request.arguments),
+            "surface.hide" => self.surface_hide(&request.arguments),
             "memory.report" => self.memory_report(&request.arguments),
             _ => Err(ControlError::new(
                 "unsupported_operation",
@@ -453,7 +468,9 @@ impl ControlState {
             Target {
                 id: id.clone(),
                 session_id: session.to_owned(),
+                realm_id: format!("realm_{}", self.next_target),
                 revision: 0,
+                scroll_y: 0,
                 nodes,
             },
         );
@@ -484,6 +501,8 @@ impl ControlState {
         self.targets
             .remove(target_id)
             .ok_or_else(|| not_found("target", target_id))?;
+        self.surfaces
+            .retain(|_, surface| surface.target_id != target_id);
         Ok(json!({"kind":"target_closed","target":target_id}))
     }
 
@@ -539,19 +558,11 @@ impl ControlState {
         if reference_target != target_id {
             return Err(invalid("reference target differs"));
         }
-        let action = exact_object(
-            object
-                .get("action")
-                .ok_or_else(|| invalid("action missing"))?,
-            &["kind"],
-        )?;
-        if string_field(action, "kind")? != "click" {
-            return Err(ControlError::new(
-                "unsupported_capability",
-                "synthetic target only supports click",
-                false,
-            ));
-        }
+        let action = object
+            .get("action")
+            .and_then(Value::as_object)
+            .ok_or_else(|| invalid("action missing"))?;
+        let action_kind = string_field(action, "kind")?;
         let target = self
             .targets
             .get_mut(target_id)
@@ -564,6 +575,30 @@ impl ControlState {
             )
             .scoped("target", target_id)
             .details(json!({"reference_revision":revision,"current_revision":target.revision})));
+        }
+        if !target.nodes.iter().any(|node| node.id == node_id) {
+            return Err(ControlError::new("not_found", "node does not exist", false)
+                .scoped("target", target_id));
+        }
+        if action_kind == "scroll" {
+            if action.len() != 2 {
+                return Err(invalid("scroll action fields differ"));
+            }
+            target.scroll_y = bounded_u64(action, "y", 0, 1_000_000)?;
+            target.revision += 1;
+            return Ok(
+                json!({"kind":"action","target":target.id,"revision":target.revision,"applied":true,"scroll_y":target.scroll_y}),
+            );
+        }
+        if action.len() != 1 {
+            return Err(invalid("click action fields differ"));
+        }
+        if action_kind != "click" {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "synthetic target only supports click and bounded scroll",
+                false,
+            ));
         }
         let node = target
             .nodes
@@ -583,6 +618,54 @@ impl ControlState {
         node.name = "Clicked".into();
         target.revision += 1;
         Ok(json!({"kind":"action","target":target.id,"revision":target.revision,"applied":true}))
+    }
+
+    fn surface_show(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["target"])?;
+        let target_id = typed_field(object, "target", "target")?;
+        if !self.targets.contains_key(target_id) {
+            return Err(not_found("target", target_id));
+        }
+        if self
+            .surfaces
+            .values()
+            .any(|surface| surface.target_id == target_id)
+        {
+            return Err(ControlError::new(
+                "conflict",
+                "target already has an attached surface",
+                false,
+            )
+            .scoped("target", target_id));
+        }
+        if self.surfaces.len() >= MAX_SURFACES {
+            return Err(limit("surface capacity reached"));
+        }
+        self.next_surface += 1;
+        let id = format!("surface_{}", self.next_surface);
+        self.surfaces.insert(
+            id.clone(),
+            Surface {
+                id: id.clone(),
+                target_id: target_id.to_owned(),
+                presentation: vec![0_u8; SYNTHETIC_PRESENTATION_BYTES].into_boxed_slice(),
+            },
+        );
+        Ok(
+            json!({"kind":"surface","surface":id,"target":target_id,"state":"headed","presentation_bytes":SYNTHETIC_PRESENTATION_BYTES}),
+        )
+    }
+
+    fn surface_hide(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["surface"])?;
+        let surface_id = typed_field(object, "surface", "surface")?;
+        let surface = self
+            .surfaces
+            .remove(surface_id)
+            .ok_or_else(|| not_found("surface", surface_id))?;
+        Ok(
+            json!({"kind":"surface_hidden","surface":surface.id,"target":surface.target_id,"state":"headless","released_presentation_bytes":surface.presentation.len()}),
+        )
     }
 
     fn target_wait(&self, arguments: &Value, deadline: Duration) -> Result<Value, ControlError> {
@@ -644,6 +727,7 @@ impl ControlState {
                 size_of::<Target>()
                     + item.id.capacity()
                     + item.session_id.capacity()
+                    + item.realm_id.capacity()
                     + item.nodes.capacity() * size_of::<Node>()
                     + item
                         .nodes
@@ -654,6 +738,16 @@ impl ControlState {
                         .sum::<usize>()
             })
             .sum::<usize>();
+        let surface_bytes = self
+            .surfaces
+            .values()
+            .map(|item| {
+                size_of::<Surface>()
+                    + item.id.capacity()
+                    + item.target_id.capacity()
+                    + item.presentation.len()
+            })
+            .sum::<usize>();
         Ok(json!({
             "kind":"memory_report",
             "semantic":"logical-owned-capacity-lower-bound",
@@ -661,8 +755,9 @@ impl ControlState {
                 "profiles":{"objects":self.profiles.len(),"bytes":profile_bytes,"object_limit":MAX_PROFILES},
                 "sessions":{"objects":self.sessions.len(),"bytes":session_bytes,"object_limit":MAX_SESSIONS},
                 "targets":{"objects":self.targets.len(),"bytes":target_bytes,"object_limit":MAX_TARGETS},
+                "surfaces":{"objects":self.surfaces.len(),"bytes":surface_bytes,"object_limit":MAX_SURFACES},
             },
-            "total_accounted_bytes":profile_bytes + session_bytes + target_bytes,
+            "total_accounted_bytes":profile_bytes + session_bytes + target_bytes + surface_bytes,
             "limitations":["excludes allocator and map overhead","not RSS/private/PSS/live heap"],
         }))
     }
@@ -673,7 +768,9 @@ fn target_summary(target: &Target) -> Value {
         "kind":"target",
         "target":target.id,
         "session":target.session_id,
+        "realm":target.realm_id,
         "revision":target.revision,
+        "scroll_y":target.scroll_y,
     })
 }
 
@@ -835,6 +932,137 @@ mod tests {
         let report = result(state.execute(request("req_memory", "memory.report", json!({}))));
         assert_eq!(report["owners"]["profiles"]["objects"], MAX_PROFILES);
         assert!(report["total_accounted_bytes"].as_u64().unwrap() > 0);
+    }
+
+    #[test]
+    fn surface_attachment_releases_memory_without_owning_target_state() {
+        let mut state = ControlState::default();
+        let profile = result(state.execute(request(
+            "req_surface_1",
+            "profile.create",
+            json!({"persistence":"ephemeral"}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let session = result(state.execute(request(
+            "req_surface_2",
+            "session.open",
+            json!({"profile":profile}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let target = result(state.execute(request(
+            "req_surface_3",
+            "target.open",
+            json!({"session":session}),
+        )))["target"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let initial = result(state.execute(request(
+            "req_surface_4",
+            "target.snapshot",
+            json!({"target":target,"format":"semantic","max_bytes":65536,"max_nodes":10}),
+        )));
+        let scroll = result(state.execute(request(
+            "req_surface_5",
+            "target.act",
+            json!({"target":target,"reference":initial["nodes"][0]["reference"],"action":{"kind":"scroll","y":240}}),
+        )));
+        assert_eq!(scroll["revision"], 1);
+        let before = result(state.execute(request("req_surface_6", "memory.report", json!({}))));
+        let before_bytes = before["total_accounted_bytes"].as_u64().unwrap();
+        let shown = result(state.execute(request(
+            "req_surface_7",
+            "surface.show",
+            json!({"target":target}),
+        )));
+        let surface = shown["surface"].as_str().unwrap().to_owned();
+        let duplicate = state.execute(request(
+            "req_surface_8",
+            "surface.show",
+            json!({"target":target}),
+        ));
+        assert_eq!(duplicate.error.unwrap().code, "conflict");
+        let headed = result(state.execute(request("req_surface_9", "memory.report", json!({}))));
+        assert_eq!(headed["owners"]["surfaces"]["objects"], 1);
+        assert!(
+            headed["total_accounted_bytes"].as_u64().unwrap()
+                >= before_bytes + SYNTHETIC_PRESENTATION_BYTES as u64
+        );
+        result(state.execute(request(
+            "req_surface_10",
+            "surface.hide",
+            json!({"surface":surface}),
+        )));
+        let after = result(state.execute(request(
+            "req_surface_11",
+            "target.inspect",
+            json!({"target":target}),
+        )));
+        assert_eq!(after["realm"], "realm_1");
+        assert_eq!(after["revision"], 1);
+        assert_eq!(after["scroll_y"], 240);
+        let headless = result(state.execute(request("req_surface_12", "memory.report", json!({}))));
+        assert_eq!(headless["owners"]["surfaces"]["objects"], 0);
+        assert_eq!(headless["total_accounted_bytes"], before_bytes);
+        let shown_again = result(state.execute(request(
+            "req_surface_13",
+            "surface.show",
+            json!({"target":target}),
+        )));
+        assert_ne!(shown_again["surface"], shown["surface"]);
+        result(state.execute(request(
+            "req_surface_14",
+            "target.close",
+            json!({"target":target}),
+        )));
+        let closed = result(state.execute(request("req_surface_15", "memory.report", json!({}))));
+        assert_eq!(closed["owners"]["surfaces"]["objects"], 0);
+        assert_eq!(closed["owners"]["targets"]["objects"], 0);
+    }
+
+    #[test]
+    fn surface_capacity_is_bounded() {
+        let mut state = ControlState::default();
+        let profile = result(state.execute(request(
+            "req_capacity_profile",
+            "profile.create",
+            json!({"persistence":"ephemeral"}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let session = result(state.execute(request(
+            "req_capacity_session",
+            "session.open",
+            json!({"profile":profile}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        for index in 0..=MAX_SURFACES {
+            let target = result(state.execute(request(
+                &format!("req_capacity_target_{index}"),
+                "target.open",
+                json!({"session":session}),
+            )))["target"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            let shown = state.execute(request(
+                &format!("req_capacity_surface_{index}"),
+                "surface.show",
+                json!({"target":target}),
+            ));
+            if index < MAX_SURFACES {
+                assert!(shown.ok);
+            } else {
+                assert_eq!(shown.error.unwrap().code, "resource_limit");
+            }
+        }
     }
 
     #[test]

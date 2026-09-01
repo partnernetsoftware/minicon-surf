@@ -104,6 +104,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True)
     parser.add_argument("--receipt")
+    parser.add_argument("--surface-receipt")
     args = parser.parse_args()
     with tempfile.TemporaryDirectory() as directory:
         ready_path = str(Path(directory) / "ready.json")
@@ -140,6 +141,34 @@ def main():
         stale = host.call("target.act", {"target": target, "reference": stale_reference,
                          "action": {"kind": "click"}})
         assert stale["error"]["code"] == "stale_revision"
+        scroll = host.call("target.act", {"target": target,
+                           "reference": after["nodes"][0]["reference"],
+                           "action": {"kind": "scroll", "y": 240}})["result"]
+        assert scroll["revision"] == 2 and scroll["scroll_y"] == 240
+        preserved = host.call("target.inspect", {"target": target})["result"]
+        baseline_memory = host.call("memory.report", {})["result"]
+        baseline_bytes = baseline_memory["total_accounted_bytes"]
+        assert baseline_memory["owners"]["surfaces"]["objects"] == 0
+        cycles = []
+        for cycle in range(3):
+            shown = host.call("surface.show", {"target": target})["result"]
+            headed_memory = host.call("memory.report", {})["result"]
+            assert headed_memory["owners"]["surfaces"]["objects"] == 1
+            assert headed_memory["total_accounted_bytes"] >= baseline_bytes + 65536
+            visible_targets = ws.call(20 + cycle, "Target.getTargets")["result"]["targetInfos"]
+            assert visible_targets[0]["targetId"] == target and visible_targets[0]["attached"] is True
+            hidden = host.call("surface.hide", {"surface": shown["surface"]})["result"]
+            assert hidden["target"] == target and hidden["released_presentation_bytes"] == 65536
+            headless_memory = host.call("memory.report", {})["result"]
+            assert headless_memory["owners"]["surfaces"]["objects"] == 0
+            assert headless_memory["total_accounted_bytes"] == baseline_bytes
+            observed = host.call("target.inspect", {"target": target})["result"]
+            assert observed == preserved
+            cycles.append({"cycle": cycle + 1, "surface": shown["surface"],
+                           "headed_surface_objects": 1, "headless_surface_objects": 0,
+                           "released_presentation_bytes": hidden["released_presentation_bytes"]})
+        root_after_cycles = ws.call(30, "DOM.getDocument", session_id=cdp_session)["result"]["root"]["nodeId"]
+        assert root_after_cycles == 1
         ws.call(8, "Target.detachFromTarget", {"sessionId": cdp_session})
         ws.close()
         host.call("target.close", {"target": target})
@@ -156,6 +185,26 @@ def main():
         encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"
         if args.receipt:
             Path(args.receipt).write_text(encoded)
+        surface_receipt = {
+            "schema": "minicon-surf.synthetic-surface-receipt/0.0.1",
+            "status": "mechanics-only",
+            "target_identity_preserved": target,
+            "native_session_preserved": preserved["session"],
+            "realm_preserved": preserved["realm"],
+            "revision_preserved_across_surface_cycles": preserved["revision"],
+            "scroll_y_preserved": preserved["scroll_y"],
+            "cdp_attachment_preserved": True,
+            "cycles": cycles,
+            "presentation_bytes_per_attachment": 65536,
+            "logical_bytes_returned_to_baseline_after_each_hide": True,
+            "limitations": ["synthetic presentation buffer, not a native window",
+                            "does not exercise renderer/GPU/window-server resources",
+                            "does not pass G3"],
+        }
+        if args.surface_receipt:
+            Path(args.surface_receipt).write_text(
+                json.dumps(surface_receipt, indent=2, sort_keys=True) + "\n"
+            )
         print(encoded, end="")
 
 

@@ -63,7 +63,9 @@ def create_target(host):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=("empty", "live", "post-close"), required=True)
+    parser.add_argument(
+        "--mode", choices=("empty", "live", "headed", "post-hide", "post-close"), required=True
+    )
     parser.add_argument("--binary", required=True)
     parser.add_argument("--hold-ms", type=int, required=True)
     parser.add_argument("--observation", required=True)
@@ -75,25 +77,40 @@ def main():
     host = Host(args.binary)
     try:
         target_closed = False
+        surface_hidden = False
         if args.mode == "empty":
             target = None
         else:
             target = create_target(host)
-            if args.mode == "post-close":
+            if args.mode in ("headed", "post-hide"):
+                surface = host.call("surface.show", {"target": target})["surface"]
+                if args.mode == "post-hide":
+                    hidden = host.call("surface.hide", {"surface": surface})
+                    if hidden["target"] != target:
+                        raise AssertionError("hidden surface target identity differed")
+                    surface_hidden = True
+            elif args.mode == "post-close":
                 closed = host.call("target.close", {"target": target})
                 if closed["target"] != target:
                     raise AssertionError("closed target identity differed")
                 target_closed = True
         memory = host.call("memory.report", {})
         expected_targets = 1 if args.mode == "live" else 0
+        if args.mode in ("headed", "post-hide"):
+            expected_targets = 1
         if memory["owners"]["targets"]["objects"] != expected_targets:
             raise AssertionError("target owner count differed")
+        expected_surfaces = 1 if args.mode == "headed" else 0
+        if memory["owners"]["surfaces"]["objects"] != expected_surfaces:
+            raise AssertionError("surface owner count differed")
         setup_ms = round((time.monotonic() - started) * 1000, 3)
         observation = {
             "mode": args.mode,
             "setup_ms": setup_ms,
             "target_objects": expected_targets,
             "target_closed": target_closed,
+            "surface_objects": expected_surfaces,
+            "surface_hidden": surface_hidden,
             "logical_accounted_bytes": memory["total_accounted_bytes"],
         }
         pathlib.Path(args.observation).write_text(

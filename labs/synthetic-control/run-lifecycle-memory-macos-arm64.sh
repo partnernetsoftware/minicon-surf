@@ -40,13 +40,13 @@ sample() {
         --observation "$court_tmp/$name-observation.json" >"$court_tmp/$name-sampler.json"
 }
 
-for mode in empty live post-close; do sample "$mode" "$mode-warmup"; done
+for mode in empty live headed post-hide post-close; do sample "$mode" "$mode-warmup"; done
 i=1
 while [ "$i" -le 7 ]; do
     if [ $((i % 2)) -eq 1 ]; then
-        order="empty live post-close"
+        order="empty live headed post-hide post-close"
     else
-        order="post-close live empty"
+        order="post-close post-hide headed live empty"
     fi
     for mode in $order; do sample "$mode" "$mode-$i"; done
     i=$((i + 1))
@@ -93,11 +93,15 @@ def load(mode):
         "maximum_setup_ms": max(setup),
         "target_objects": observations[0]["target_objects"],
         "target_closed": observations[0]["target_closed"],
+        "surface_objects": observations[0]["surface_objects"],
+        "surface_hidden": observations[0]["surface_hidden"],
     }
 
-states = {mode: load(mode) for mode in ("empty", "live", "post-close")}
+states = {mode: load(mode) for mode in ("empty", "live", "headed", "post-hide", "post-close")}
 empty = states["empty"]["median_peak_steady_tree_resident_bytes"]
 live = states["live"]["median_peak_steady_tree_resident_bytes"]
+headed = states["headed"]["median_peak_steady_tree_resident_bytes"]
+post_hide = states["post-hide"]["median_peak_steady_tree_resident_bytes"]
 post = states["post-close"]["median_peak_steady_tree_resident_bytes"]
 receipt = {
     "schema": 1,
@@ -108,10 +112,10 @@ receipt = {
     "platform": {"os": "macos", "architecture": "arm64"},
     "workload": {
         "id": "synthetic-target-lifecycle",
-        "modes": ["empty", "live", "post-close"],
+        "modes": ["empty", "live", "headed", "post-hide", "post-close"],
         "warmups_per_mode": 1,
         "measured_repetitions_per_mode": 7,
-        "order": "alternating forward/reverse; live always central",
+        "order": "alternating forward/reverse",
         "setup_warmup_ms": warmup_ms,
         "steady_hold_ms": int(hold_ms),
     },
@@ -120,12 +124,16 @@ receipt = {
         "process_scope": "complete synthetic host tree; Python lifecycle wrapper excluded",
         "states": states,
         "median_live_minus_empty_resident_bytes": live - empty,
+        "median_headed_minus_live_resident_bytes": headed - live,
+        "median_post_hide_minus_live_resident_bytes": post_hide - live,
         "median_post_close_minus_empty_resident_bytes": post - empty,
     },
     "bounds": {
         "profiles": 8,
         "sessions": 16,
         "targets": 32,
+        "surfaces": 8,
+        "synthetic_presentation_bytes_per_surface": 65536,
         "nodes_per_target": 128,
         "request_bytes": 65536,
         "response_bytes": 4194304,
@@ -134,8 +142,9 @@ receipt = {
         "summed RSS is neither private memory nor PSS and is page-granular",
         "each lifecycle mode uses a separate fresh process rather than marking stages in one process",
         "fixed warmup is accepted only because every recorded setup completed before it",
-        "one synthetic two-node target is not an HTML or browser-engine workload",
+        "one synthetic two-node target and presentation buffer are not an HTML or native-window workload",
         "logical accounted bytes exclude allocator and map overhead",
+        "post-hide logical ownership returns to live but median RSS remains 32768 bytes above live",
         "capacity rejection is unit-tested but maximum-capacity RSS is not measured",
         "no external browser baseline is meaningful for this engine-neutral control state",
     ],

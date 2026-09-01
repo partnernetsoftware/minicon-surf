@@ -1,0 +1,40 @@
+{
+  "cdp_attachment_preserved": true,
+  "cycles": [
+    {
+      "cycle": 1,
+      "headed_surface_objects": 1,
+      "headless_surface_objects": 0,
+      "released_presentation_bytes": 65536,
+      "surface": "surface_1"
+    },
+    {
+      "cycle": 2,
+      "headed_surface_objects": 1,
+      "headless_surface_objects": 0,
+      "released_presentation_bytes": 65536,
+      "surface": "surface_2"
+    },
+    {
+      "cycle": 3,
+      "headed_surface_objects": 1,
+      "headless_surface_objects": 0,
+      "released_presentation_bytes": 65536,
+      "surface": "surface_3"
+    }
+  ],
+  "limitations": [
+    "synthetic presentation buffer, not a native window",
+    "does not exercise renderer/GPU/window-server resources",
+    "does not pass G3"
+  ],
+  "logical_bytes_returned_to_baseline_after_each_hide": true,
+  "native_session_preserved": "session_1",
+  "presentation_bytes_per_attachment": 65536,
+  "realm_preserved": "realm_1",
+  "revision_preserved_across_surface_cycles": 2,
+  "schema": "minicon-surf.synthetic-surface-receipt/0.0.1",
+  "scroll_y_preserved": 240,
+  "status": "mechanics-only",
+  "target_identity_preserved": "target_1"
+}
