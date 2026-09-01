@@ -91,6 +91,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── semantic snapshot with revision-scoped stable node references
 │   ├── open · list · inspect · act · wait · screenshot · show · hide · memory
 │   ├── waits observe conditions; callers do not guess with sleeps
+│   ├── [~] synthetic stdio host preserves native identity/revision; CDP is absent
 │   └── local authority and authentication are explicit before remote exposure
 ├── [D4] CDP compatibility adapter
 │   ├── ↳ [A3] maps onto the same profile/session/target authority
@@ -190,11 +191,14 @@ flowchart LR
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
 
+    SYN["synthetic control court<br/>native stdio journey observed<br/>CDP transport pending"]
+
     AT["AgenTerm<br/>later versioned consumer"]
     MINI["MiniCon terminal<br/>independent · unchanged"]
     FAIL["local bounded failure<br/>evict · trim · hibernate<br/>terminate one target"]
 
     U --> CLI & CDP
+    SYN -. contract 0.0.1 .-> CTRL
     CLI & CDP --> CTRL
     PP & EP --> CTRL
     CP -. later .-> CTRL
@@ -234,8 +238,20 @@ flowchart LR
   Schema plus a dependency-free checker. Four paired snapshot/action examples
   and seven negative cases pass. The machine-readable CDP mapping explicitly
   leaves profile, surface and revision unmapped rather than borrowing Chromium
-  semantics. This closes the paper-model G0 minimum only; no executable honors
-  the contract yet, so A3, D4 and G2 remain open.
+  semantics. This closes the paper-model G0 minimum. The synthetic host now
+  honors a native subset, but no product executable or CDP projection does, so
+  A3, D4 and G2 remain open.
+- [~] The engine-neutral Rust synthetic-control host now consumes bounded
+  control `0.0.1` NDJSON and preserves profile → session → target identity in
+  one process. Its process-level journey snapshots revision 0, clicks a
+  revision-scoped button, observes revision 1, rejects the reused reference as
+  `stale_revision`, satisfies a condition wait, and reports explicit profile,
+  session and target memory owners; closing the target reduces both its owner
+  count and logical accounted bytes. Fixed capacity limits and a streaming
+  oversized-line drain prevent unbounded request/state growth. Four library,
+  one reader and one process integration test pass. This is native transport
+  evidence, not G2: no CDP client reaches the same `ControlState`; its logical
+  memory ledger is a lower bound, not RSS/private/PSS, so G1 also remains open.
 - [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
   redaction rules exist under `labs/` and `AGENTS.md`.
 - [x] The shared Rust process-tree sampler has deadline cleanup, recursively
