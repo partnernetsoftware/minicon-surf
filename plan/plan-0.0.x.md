@@ -116,7 +116,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: macOS arm64 W1/W2 + real CDP action observed
+│   ├── [~] Lightpanda 0.4.0: W1/W2 + same-CDP-live-target Chrome court observed
 │   ├── [~] Servo 0.5.0: macOS arm64 public embedding API compiles; runtime unmeasured
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -183,7 +183,7 @@ flowchart LR
     end
 
     subgraph LAB["Engine Lab [E7]"]
-        LP["Lightpanda 0.4.0<br/>W1/W2 · CDP action observed<br/>comparison incomplete"]
+        LP["Lightpanda 0.4.0<br/>W1/W2 · CDP action observed<br/>Chrome W1 court incomplete"]
         SERVO["Servo 0.5.0<br/>embedding API compiles<br/>runtime unmeasured"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
@@ -252,11 +252,17 @@ flowchart LR
   not runtime-memory evidence. Public `show`/`hide` does not prove a live
   rendering-context detach, profiles are not yet MiniCon Surf profile objects,
   and Servo devtools must not be called CDP.
-- [~] A first Chrome comparison attempt was rejected before promotion: a
-  short-lived Lightpanda fetch and persistent Chrome headless process have
-  different lifecycles, so sampled RSS values are not a valid ratio even under
-  one sampler. The next court must give both CDP servers one live W1 target for
-  the same fixed observation window, then close and reap both identically.
+- [~] The first unfair short-fetch/persistent-server comparison remains
+  rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
+  Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
+  condition, two-second hold, alternating order, seven measured repetitions
+  and recursive 10 ms sampler. Median summed-tree RSS was 28,131,328 bytes for
+  Lightpanda (one process) and 1,236,467,712 bytes for Chrome (nine processes),
+  an observed 43.953× court ratio. Status remains `incomplete`: summed RSS can
+  double-count shared pages; feature sets differ; this is one static fixture,
+  OS and ISA; installed Chrome is digest-identified but not a pinned download;
+  retention, soak and marginal-target cost remain unmeasured. This is strong
+  route-selection evidence, not yet the MiniCon Surf memory claim or G1 pass.
 
 ## 6. First sequencing
 
