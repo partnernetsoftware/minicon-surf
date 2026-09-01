@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-lab_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+lab_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 target_dir="$lab_dir/target"
 
 if [ "$(uname -s)" != "Darwin" ] || [ "$(uname -m)" != "arm64" ]; then

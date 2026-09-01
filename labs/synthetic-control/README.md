@@ -40,6 +40,7 @@ Run:
 ```sh
 cargo test --locked --manifest-path labs/synthetic-control/Cargo.toml
 cargo run --locked --manifest-path labs/synthetic-control/Cargo.toml -- serve --stdio
+labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
 ```
 
 ## Evidence boundary and next step
@@ -55,5 +56,22 @@ allocator overhead and is not RSS, private memory, PSS, or heap profiling.
 This is native stdio control evidence only. It does not satisfy G2 until a CDP
 adapter connects to this exact `ControlState` and an external journey proves
 both transports see and mutate one target identity. It also does not satisfy
-G1 until the process-tree court measures peak, post-close and comparative
-behavior.
+G1 until the process-tree evidence is strong enough to establish its full gate.
+
+The first lifecycle memory court runs empty, one-live-target, and
+create-then-close states through the same release binary and wrapper. Each mode
+has one warmup and seven measured runs; order alternates, setup must finish
+before the sampler's 300 ms warmup, and the following 1.2-second steady window
+is sampled every 10 ms. Maximum observed setup was 3.278 ms.
+
+Median steady-window complete-tree RSS was 1,785,856 bytes empty, 1,802,240
+bytes live, and 1,802,240 bytes post-close: an observed +16 KiB live delta and
++16 KiB retained delta at `ps` RSS granularity. Logical accounted state was 0,
+418, and 107 bytes respectively. The target owner fell to zero post-close; the
+remaining logical bytes belong to its profile/session.
+
+The receipt remains `incomplete`. Modes are separate fresh processes rather
+than marked stages in one host, RSS is page-granular and not private/PSS,
+maximum-capacity RSS is unmeasured, and a two-node synthetic target cannot
+establish browser memory efficiency. These results exercise the G1 court
+mechanics but do not pass G1 or the product memory gate.

@@ -10,11 +10,13 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const DEFAULT_DEADLINE_MS: u64 = 30_000;
 const DEFAULT_INTERVAL_MS: u64 = 25;
+const DEFAULT_WARMUP_MS: u64 = 0;
 
 #[derive(Debug)]
 struct Options {
     deadline: Duration,
     interval: Duration,
+    warmup: Duration,
     exclude_root: bool,
     command: Vec<String>,
 }
@@ -54,6 +56,8 @@ struct Measurement {
     semantic: &'static str,
     source: &'static str,
     interval_ms: u64,
+    warmup_ms: u64,
+    first_sample_wall_time_ms: Option<u128>,
     sample_count: u64,
     peak_tree_resident_bytes: u64,
     peak_process_count: usize,
@@ -84,7 +88,7 @@ struct Cleanup {
 }
 
 fn usage() -> &'static str {
-    "usage: process-tree-sampler [--deadline-ms N] [--interval-ms N] [--exclude-root] -- COMMAND [ARG ...]"
+    "usage: process-tree-sampler [--deadline-ms N] [--interval-ms N] [--warmup-ms N] [--exclude-root] -- COMMAND [ARG ...]"
 }
 
 fn parse_options<I>(args: I) -> Result<Options, String>
@@ -94,6 +98,7 @@ where
     let mut args = args.into_iter();
     let mut deadline_ms = DEFAULT_DEADLINE_MS;
     let mut interval_ms = DEFAULT_INTERVAL_MS;
+    let mut warmup_ms = DEFAULT_WARMUP_MS;
     let mut exclude_root = false;
     let mut command = Vec::new();
 
@@ -105,6 +110,7 @@ where
             }
             "--deadline-ms" => deadline_ms = parse_positive(&args.next(), "--deadline-ms")?,
             "--interval-ms" => interval_ms = parse_positive(&args.next(), "--interval-ms")?,
+            "--warmup-ms" => warmup_ms = parse_nonnegative(&args.next(), "--warmup-ms")?,
             "--exclude-root" => exclude_root = true,
             "-h" | "--help" => return Err(usage().to_owned()),
             _ => return Err(format!("unknown sampler argument: {arg}\n{}", usage())),
@@ -114,12 +120,27 @@ where
     if command.is_empty() {
         return Err(format!("missing command\n{}", usage()));
     }
+    if warmup_ms >= deadline_ms {
+        return Err(format!(
+            "invalid --warmup-ms: must be smaller than --deadline-ms\n{}",
+            usage()
+        ));
+    }
     Ok(Options {
         deadline: Duration::from_millis(deadline_ms),
         interval: Duration::from_millis(interval_ms),
+        warmup: Duration::from_millis(warmup_ms),
         exclude_root,
         command,
     })
+}
+
+fn parse_nonnegative(value: &Option<String>, flag: &str) -> Result<u64, String> {
+    value
+        .as_ref()
+        .ok_or_else(|| format!("missing value for {flag}"))?
+        .parse::<u64>()
+        .map_err(|_| format!("invalid value for {flag}: expected a non-negative integer"))
 }
 
 fn parse_positive(value: &Option<String>, flag: &str) -> Result<u64, String> {
@@ -262,9 +283,27 @@ fn run(options: Options) -> Result<Receipt, Box<dyn std::error::Error>> {
     let mut unique_pids = HashSet::new();
     let mut timed_out = false;
     let mut post_exit_cleanup = false;
+    let mut first_sample_wall_time_ms = None;
     let status;
 
     loop {
+        let elapsed = started.elapsed();
+        if elapsed < options.warmup {
+            if let Some(observed) = child.try_wait()? {
+                status = observed;
+                post_exit_cleanup = true;
+                let _ = terminate_process_group(root);
+                break;
+            }
+            if elapsed >= options.deadline {
+                timed_out = true;
+                terminate_process_group(root)?;
+                status = child.wait()?;
+                break;
+            }
+            thread::sleep(options.interval.min(options.warmup - elapsed));
+            continue;
+        }
         let rows = match process_rows() {
             Ok(rows) => rows,
             Err(error) => {
@@ -273,6 +312,7 @@ fn run(options: Options) -> Result<Receipt, Box<dyn std::error::Error>> {
                 return Err(error.into());
             }
         };
+        first_sample_wall_time_ms.get_or_insert_with(|| started.elapsed().as_millis());
         let mut tree = attributable_tree(root, &rows);
         if options.exclude_root {
             tree.retain(|row| row.pid != root);
@@ -317,6 +357,8 @@ fn run(options: Options) -> Result<Receipt, Box<dyn std::error::Error>> {
             semantic: "sampled sum of resident set size for processes in the selected scope",
             source: "ps -axo pid=,ppid=,rss= (RSS reported in KiB)",
             interval_ms: options.interval.as_millis() as u64,
+            warmup_ms: options.warmup.as_millis() as u64,
+            first_sample_wall_time_ms,
             sample_count: samples,
             peak_tree_resident_bytes: peak_bytes,
             peak_process_count: peak_processes,
@@ -385,6 +427,21 @@ mod tests {
     fn options_require_separator_and_command() {
         assert!(parse_options(["--".into()]).is_err());
         assert!(parse_options(["sleep".into(), "1".into()]).is_err());
+        assert!(parse_options([
+            "--deadline-ms".into(),
+            "10".into(),
+            "--warmup-ms".into(),
+            "10".into(),
+            "--".into(),
+            "true".into(),
+        ])
+        .is_err());
+        assert_eq!(
+            parse_options(["--warmup-ms".into(), "0".into(), "--".into(), "true".into(),])
+                .unwrap()
+                .warmup,
+            Duration::ZERO
+        );
     }
 
     #[test]

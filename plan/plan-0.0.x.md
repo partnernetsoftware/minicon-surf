@@ -252,12 +252,24 @@ flowchart LR
   one reader and one process integration test pass. This is native transport
   evidence, not G2: no CDP client reaches the same `ControlState`; its logical
   memory ledger is a lower bound, not RSS/private/PSS, so G1 also remains open.
+- [~] The synthetic lifecycle court now separates empty, live-target and
+  post-close steady windows with an explicit 300 ms sampler warmup; every
+  measured setup completed within 3.278 ms. Across seven runs per state,
+  median complete-tree RSS was 1,785,856, 1,802,240 and 1,802,240 bytes: a
+  +16 KiB live delta and +16 KiB post-close delta at `ps` page granularity.
+  Logical accounted bytes were 0, 418 and 107, with target ownership returning
+  to zero after close. This exercises attribution, bounds and lifecycle court
+  mechanics but does not pass G1: the modes are separate fresh processes,
+  maximum-capacity RSS and private/PSS are absent, and a two-node synthetic
+  state has no meaningful external browser-efficiency baseline.
 - [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
   redaction rules exist under `labs/` and `AGENTS.md`.
 - [x] The shared Rust process-tree sampler has deadline cleanup, recursively
   sampled RSS, argument-redacted JSON, and a wrapper-exclusion mode; three unit
-  and four process-level integration tests qualify those mechanics on the
-  current Unix/macOS cell. RSS remains neither private memory nor PSS.
+  and seven process-level integration tests qualify those mechanics on the
+  current Unix/macOS cell. Warmup selection proves delayed first sampling and
+  zero samples for warmup-time exit without extending the launch-time deadline.
+  RSS remains neither private memory nor PSS.
 - [~] Lightpanda `0.4.0` macOS arm64 W1 is the first observed reference:
   the pinned official artifact passed its SHA-256 check, emitted the expected
   semantic heading/button, and exposed CDP 1.3 discovery on loopback.

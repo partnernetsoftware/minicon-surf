@@ -160,3 +160,89 @@ fn exclude_root_counts_descendants_but_not_wrapper() {
             > 0
     );
 }
+
+#[test]
+fn warmup_delays_measurement() {
+    let output = sampler()
+        .args([
+            "--deadline-ms",
+            "2000",
+            "--interval-ms",
+            "10",
+            "--warmup-ms",
+            "150",
+            "--exclude-root",
+            "--",
+            "/bin/sh",
+            "-c",
+            "sleep 0.1; sleep 0.3",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let json: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let measurement = &json["receipt"]["measurement"];
+    assert_eq!(measurement["warmup_ms"], 150);
+    assert!(measurement["first_sample_wall_time_ms"].as_u64().unwrap() >= 150);
+    assert!(measurement["sample_count"].as_u64().unwrap() > 0);
+    assert_eq!(measurement["peak_process_count"], 1);
+    assert_eq!(json["receipt"]["outcome"]["timed_out"], false);
+}
+
+#[test]
+fn warmup_does_not_extend_launch_time_deadline() {
+    let output = sampler()
+        .args([
+            "--deadline-ms",
+            "250",
+            "--interval-ms",
+            "10",
+            "--warmup-ms",
+            "150",
+            "--",
+            "/bin/sh",
+            "-c",
+            "sleep 10",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let json: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["receipt"]["outcome"]["timed_out"], true);
+    let wall_time = json["receipt"]["outcome"]["wall_time_ms"].as_u64().unwrap();
+    assert!(wall_time >= 250);
+    assert!(wall_time < 500, "warmup appears to have extended deadline");
+    assert!(
+        json["receipt"]["measurement"]["sample_count"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
+}
+
+#[test]
+fn process_that_exits_during_warmup_has_no_measured_sample() {
+    let output = sampler()
+        .args([
+            "--deadline-ms",
+            "1000",
+            "--interval-ms",
+            "10",
+            "--warmup-ms",
+            "300",
+            "--",
+            "/bin/sh",
+            "-c",
+            "exit 0",
+        ])
+        .output()
+        .unwrap();
+    assert!(output.status.success(), "{:?}", output);
+    let json: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["receipt"]["measurement"]["sample_count"], 0);
+    assert_eq!(
+        json["receipt"]["measurement"]["first_sample_wall_time_ms"],
+        Value::Null
+    );
+    assert_eq!(json["receipt"]["outcome"]["exit"]["code"], 0);
+}

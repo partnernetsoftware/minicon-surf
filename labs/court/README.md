@@ -59,6 +59,11 @@ attributes descendants by PPID, samples summed RSS, enforces a deadline and
 emits argument-redacted JSON. `--exclude-root` permits two candidates to use
 the same orchestration wrapper without charging that wrapper to either one.
 
+The sampler also supports an explicitly reported startup warmup for lifecycle
+state courts. It never extends the total deadline, and a candidate that exits
+during warmup produces zero samples. Courts using it must record setup time and
+reject any run whose setup crosses the sampling boundary.
+
 The sampler does not make dissimilar lifecycles comparable. The initial short
 `fetch` versus persistent Chrome attempt was rejected. The promoted W1 court
 instead creates one live target through each CDP server, verifies the same

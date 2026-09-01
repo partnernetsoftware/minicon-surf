@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-lab_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-repo_dir=$(CDPATH= cd -- "$lab_dir/../.." && pwd)
+lab_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+repo_dir=$(CDPATH='' cd -- "$lab_dir/../.." && pwd)
 servo_target="$lab_dir/target"
 servo_binary="$servo_target/release/servo-w1-runtime"
 sampler_target="$repo_dir/target/labs/process-tree-sampler"

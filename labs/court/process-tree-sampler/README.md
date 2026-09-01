@@ -9,6 +9,7 @@ hosts whose `ps -axo pid=,ppid=,rss=` reports RSS in KiB.
 cargo run --release -- \
   --deadline-ms 30000 \
   --interval-ms 25 \
+  --warmup-ms 0 \
   -- /path/to/candidate arg1
 ```
 
@@ -26,6 +27,13 @@ The receipt records either `root and recursive descendants` or `recursive
 descendants only (root excluded)` in `measurement.scope`. `--exclude-root`
 does not alter the deadline or process-group cleanup behavior.
 
+`--warmup-ms N` starts and polls the candidate but deliberately records no
+process/memory samples until at least N milliseconds after launch. Warmup must
+be smaller than the deadline, and the deadline still begins at launch; it is
+not extended. Receipts record the requested warmup and actual first-sample wall
+time. A process that exits during warmup has zero measured samples rather than
+a fabricated zero-memory steady state.
+
 The JSON includes only the executable basename and argument count. Arguments,
 environment values, stdout, stderr, absolute paths, and host identity are not
 recorded. Candidate output is inherited neither into the receipt nor the
@@ -39,6 +47,11 @@ sampled sum, not private memory, proportional set size, or live heap. Shared
 pages can be counted in more than one process. Processes shorter than the
 sampling interval and processes that reparent before observation can be
 missed.
+
+Warmup is a lifecycle selection mechanism, not an optimization: the candidate
+or wrapper must independently prove that setup completed before the requested
+warmup. Otherwise a receipt can exclude relevant work without actually
+representing a stable state and must be rejected.
 
 On deadline, the sampler sends `SIGKILL` to the dedicated process group and
 reaps the root process. If the root exits by itself, the sampler preserves that
