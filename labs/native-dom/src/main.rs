@@ -2,10 +2,12 @@
 //!
 //! `native-dom-control` serves the control 0.0.1 vocabulary from an
 //! html5ever-parsed document mirrored into a QuickJS realm (`rquickjs`) with a
-//! minimal DOM shim. Inline `<script>` elements run after parsing, DOM events
-//! and `MutationObserver` work, and the same in-page instrumentation the engine
-//! hosts inject runs unchanged. There is still no layout, network, storage or
-//! timers beyond microtasks; those remain typed failures or documented gaps.
+//! minimal DOM shim. Inline and same-origin external `<script>` elements run
+//! after parsing, DOM events and `MutationObserver` work, `fetch()` is served
+//! by the bounded network module between evaluation turns, and the same
+//! in-page instrumentation the engine hosts inject runs unchanged. There is
+//! still no layout, storage or timers beyond microtasks; those remain typed
+//! failures or documented gaps.
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -17,6 +19,9 @@ use std::time::{Duration, Instant};
 use dom_query::{Document, NodeRef};
 use rquickjs::{Context, Runtime};
 use serde_json::{Map, Value, json};
+use url::Url;
+
+mod net;
 
 const PROTOCOL: &str = "minicon-surf.control";
 const VERSION: &str = "0.0.1";
@@ -29,6 +34,7 @@ const MAX_SNAPSHOT_NODES: u64 = 128;
 const MAX_FIXTURE_BYTES: u64 = 1_048_576;
 const REALM_MEMORY_LIMIT: usize = 16 * 1024 * 1024;
 const REALM_STACK_LIMIT: usize = 512 * 1024;
+const MAX_NETWORK_ROUNDS: usize = 64;
 const DOM_SHIM_JS: &str = include_str!("dom_shim.js");
 const OPERATIONS: &[&str] = &[
     "profile.create",
@@ -478,16 +484,6 @@ fn serialize_children(node: &NodeRef, out: &mut Vec<Value>) {
     }
 }
 
-fn inline_scripts(document: &Document) -> Vec<String> {
-    document
-        .select("script")
-        .nodes()
-        .iter()
-        .filter(|node| !node.has_attr("src"))
-        .map(|node| node.text().to_string())
-        .collect()
-}
-
 // ------------------------------------------------------------------- host
 
 struct Profile {
@@ -504,15 +500,119 @@ struct Target {
     id: String,
     session_id: String,
     fixture: String,
+    url: Option<Url>,
     fixture_bytes: usize,
     element_count: usize,
     script_count: usize,
+    skipped_scripts: Vec<Value>,
+    budget: net::Budget,
     realm: Realm,
     last_snapshot: Option<(u64, usize)>,
 }
 
+impl Target {
+    /// Evaluate in the realm, then serve every `fetch()` the script queued
+    /// under the network policy and per-target budget before returning.
+    fn eval(
+        &mut self,
+        script: &str,
+        deadline: Instant,
+        policy: &net::Policy,
+    ) -> Result<String, ControlError> {
+        let result = self.realm.eval(script, deadline, &self.id)?;
+        self.pump_network(deadline, policy)?;
+        Ok(result)
+    }
+
+    fn pump_network(
+        &mut self,
+        deadline: Instant,
+        policy: &net::Policy,
+    ) -> Result<(), ControlError> {
+        for _ in 0..MAX_NETWORK_ROUNDS {
+            let queued = self.realm.eval("__mcsNetTake()", deadline, &self.id)?;
+            let requests: Vec<Value> = serde_json::from_str(&queued).unwrap_or_default();
+            if requests.is_empty() {
+                return Ok(());
+            }
+            for (index, request) in requests.iter().enumerate() {
+                let Some(id) = request.get("id").and_then(Value::as_u64) else {
+                    continue;
+                };
+                let raw = request
+                    .get("url")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default();
+                let outcome = if index >= net::MAX_PENDING_PER_TURN {
+                    self.budget.denied += 1;
+                    Err(net::NetError {
+                        code: "resource_limit",
+                        reason: "pending-count",
+                        detail: format!(
+                            "more than {} fetches queued in one turn",
+                            net::MAX_PENDING_PER_TURN
+                        ),
+                    })
+                } else {
+                    match self.resolve(raw) {
+                        Ok(url) => net::fetch(url.as_str(), policy, &mut self.budget, deadline),
+                        Err(error) => Err(error),
+                    }
+                };
+                let settle = match outcome {
+                    Ok(response) => {
+                        let body = String::from_utf8_lossy(&response.body).into_owned();
+                        let mut headers = Map::new();
+                        if let Some(content_type) = &response.content_type {
+                            headers.insert("content-type".into(), json!(content_type));
+                        }
+                        format!(
+                            "__mcsNetSettle({id}, true, {})",
+                            json!({"status":response.status,"url":response.url.as_str(),"redirects":response.redirects,"headers":headers,"body":body})
+                        )
+                    }
+                    Err(error) => format!(
+                        "__mcsNetSettle({id}, false, {})",
+                        json!({"code":error.code,"reason":error.reason,"detail":error.detail})
+                    ),
+                };
+                self.realm.eval(&settle, deadline, &self.id)?;
+            }
+        }
+        Err(ControlError::new(
+            "resource_limit",
+            "script kept queueing fetches across the round limit",
+            false,
+        )
+        .scoped("target", &self.id))
+    }
+
+    fn resolve(&self, raw: &str) -> Result<Url, net::NetError> {
+        let parsed = match &self.url {
+            Some(base) => base.join(raw),
+            None => Url::parse(raw),
+        };
+        parsed.map_err(|e| net::NetError {
+            code: "invalid_request",
+            reason: "url",
+            detail: format!("URL is malformed: {e}"),
+        })
+    }
+}
+
+fn net_error(error: net::NetError, target_id: &str) -> ControlError {
+    ControlError::new(
+        error.code,
+        format!("network policy: {}", error.reason),
+        error.code == "deadline_exceeded",
+    )
+    .scoped("target", target_id)
+    .details(json!({"reason":error.reason,"detail":error.detail}))
+}
+
 struct Host {
     fixture_root: PathBuf,
+    policy: net::Policy,
     profiles: BTreeMap<String, Profile>,
     session: Option<Session>,
     targets: BTreeMap<String, Target>,
@@ -522,12 +622,18 @@ struct Host {
 }
 
 impl Host {
-    fn target(&self, id: &str) -> Result<&Target, ControlError> {
-        self.targets.get(id).ok_or_else(|| not_found("target", id))
+    fn target_mut(&mut self, id: &str) -> Result<&mut Target, ControlError> {
+        self.targets
+            .get_mut(id)
+            .ok_or_else(|| not_found("target", id))
     }
 
-    fn revision(target: &Target, deadline: Instant) -> Result<u64, ControlError> {
-        let text = target.realm.eval(REVISION_JS, deadline, &target.id)?;
+    fn revision(
+        target: &mut Target,
+        deadline: Instant,
+        policy: &net::Policy,
+    ) -> Result<u64, ControlError> {
+        let text = target.eval(REVISION_JS, deadline, policy)?;
         text.parse::<i64>()
             .ok()
             .filter(|r| *r >= 0)
@@ -542,8 +648,13 @@ impl Host {
             })
     }
 
-    fn eval_json(target: &Target, script: &str, deadline: Instant) -> Result<Value, ControlError> {
-        let text = target.realm.eval(script, deadline, &target.id)?;
+    fn eval_json(
+        target: &mut Target,
+        script: &str,
+        deadline: Instant,
+        policy: &net::Policy,
+    ) -> Result<Value, ControlError> {
+        let text = target.eval(script, deadline, policy)?;
         serde_json::from_str(&text).map_err(|_| {
             ControlError::new("internal", "engine returned malformed snapshot JSON", false)
                 .scoped("target", &target.id)
@@ -591,16 +702,20 @@ impl Host {
             "session.close" => self.session_close(a),
             "target.open" => self.target_open(a, deadline),
             "target.list" => Ok(
-                json!({"kind":"target_list","targets":self.targets.values().map(|t| json!({"target":t.id,"session":t.session_id,"fixture":t.fixture})).collect::<Vec<_>>()}),
+                json!({"kind":"target_list","targets":self.targets.values().map(|t| json!({"target":t.id,"session":t.session_id,"fixture":t.fixture,"url":t.url.as_ref().map(Url::as_str)})).collect::<Vec<_>>()}),
             ),
             "target.inspect" => {
                 let object = exact_object(a, &["target"])?;
-                let id = typed_field(object, "target", "target")?;
-                let target = self.target(id)?;
-                let revision = Self::revision(target, deadline)?;
-                Ok(
-                    json!({"kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,"revision":revision,"load_complete":true,"crashed":false,"script_realm":true,"scripts_run":target.script_count}),
-                )
+                let id = typed_field(object, "target", "target")?.to_owned();
+                let policy = self.policy.clone();
+                let target = self.target_mut(&id)?;
+                let revision = Self::revision(target, deadline, &policy)?;
+                Ok(json!({
+                    "kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,
+                    "url":target.url.as_ref().map(Url::as_str),"revision":revision,"load_complete":true,"crashed":false,
+                    "script_realm":true,"scripts_run":target.script_count,"scripts_skipped":target.skipped_scripts,
+                    "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
+                }))
             }
             "target.close" => {
                 let object = exact_object(a, &["target"])?;
@@ -727,32 +842,22 @@ impl Host {
     }
 
     fn target_open(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
-        let object = exact_object(arguments, &["session", "fixture"])?;
+        let object = arguments
+            .as_object()
+            .ok_or_else(|| invalid("arguments must be an object"))?;
+        let by_fixture =
+            object.len() == 2 && object.contains_key("session") && object.contains_key("fixture");
+        let by_url =
+            object.len() == 2 && object.contains_key("session") && object.contains_key("url");
+        if !by_fixture && !by_url {
+            return Err(invalid(
+                "target.open takes session plus exactly one of fixture or url",
+            ));
+        }
         let session = typed_field(object, "session", "session")?;
         if self.session.as_ref().map(|s| s.id.as_str()) != Some(session) {
             return Err(not_found("session", session));
         }
-        let fixture = string_field(object, "fixture")?;
-        if !fixture.ends_with(".html")
-            || !fixture
-                .bytes()
-                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
-            || fixture.contains("..")
-        {
-            return Err(invalid("fixture must be a court fixture file name"));
-        }
-        let path = self.fixture_root.join(fixture);
-        let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-        if size > MAX_FIXTURE_BYTES {
-            return Err(ControlError::new(
-                "resource_limit",
-                "fixture exceeds the bounded document size",
-                false,
-            ));
-        }
-        let bytes = std::fs::read(&path).map_err(|_| {
-            ControlError::new("not_found", "fixture does not exist in the court", false)
-        })?;
         if self.targets.len() >= MAX_TARGETS {
             return Err(ControlError::new(
                 "resource_limit",
@@ -760,16 +865,114 @@ impl Host {
                 true,
             ));
         }
+        self.next_target += 1;
+        let id = format!("target_{}", self.next_target);
+        let mut budget = net::Budget::default();
+        let policy = self.policy.clone();
+
+        let (label, base, bytes) = if by_fixture {
+            let fixture = string_field(object, "fixture")?;
+            if !fixture.ends_with(".html")
+                || !fixture
+                    .bytes()
+                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
+                || fixture.contains("..")
+            {
+                return Err(invalid("fixture must be a court fixture file name"));
+            }
+            let path = self.fixture_root.join(fixture);
+            let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+            if size > MAX_FIXTURE_BYTES {
+                return Err(ControlError::new(
+                    "resource_limit",
+                    "fixture exceeds the bounded document size",
+                    false,
+                ));
+            }
+            let bytes = std::fs::read(&path).map_err(|_| {
+                ControlError::new("not_found", "fixture does not exist in the court", false)
+            })?;
+            (fixture.to_owned(), None, bytes)
+        } else {
+            let raw = string_field(object, "url")?;
+            let response = net::fetch(raw, &policy, &mut budget, deadline)
+                .map_err(|error| net_error(error, &id))?;
+            if response.status >= 400 {
+                return Err(ControlError::new(
+                    "not_found",
+                    "document request was not successful",
+                    false,
+                )
+                .scoped("target", &id)
+                .details(json!({"status":response.status,"url":response.url.as_str()})));
+            }
+            if response
+                .content_type
+                .as_deref()
+                .is_some_and(|t| !t.starts_with("text/html"))
+            {
+                return Err(ControlError::new(
+                    "unsupported_capability",
+                    "document is not text/html",
+                    false,
+                )
+                .scoped("target", &id)
+                .details(json!({"content_type":response.content_type})));
+            }
+            ("url".to_owned(), Some(response.url.clone()), response.body)
+        };
+
         let text = String::from_utf8_lossy(&bytes).into_owned();
         let document = Document::from(text.as_str());
         let element_count = document.select("*").nodes().len();
         let mut tree = Vec::new();
         serialize_children(&document.root(), &mut tree);
-        let scripts = inline_scripts(&document);
+        // Scripts in document order: inline text, or a same-origin external
+        // source fetched under the same policy and budget.
+        let mut scripts: Vec<(String, String)> = Vec::new();
+        let mut skipped = Vec::new();
+        let mut external = 0usize;
+        for node in document.select("script").nodes() {
+            match node.attr("src") {
+                None => scripts.push(("inline".into(), node.text().to_string())),
+                Some(src) => {
+                    let src = src.to_string();
+                    let Some(base_url) = &base else {
+                        skipped.push(
+                            json!({"src":src,"reason":"external scripts need a network origin"}),
+                        );
+                        continue;
+                    };
+                    let Ok(resolved) = base_url.join(&src) else {
+                        skipped.push(json!({"src":src,"reason":"malformed src"}));
+                        continue;
+                    };
+                    if !net::same_origin(base_url, &resolved) {
+                        budget.denied += 1;
+                        skipped.push(json!({"src":src,"reason":"cross-origin script refused"}));
+                        continue;
+                    }
+                    if external >= net::MAX_EXTERNAL_SCRIPTS {
+                        budget.denied += 1;
+                        skipped.push(json!({"src":src,"reason":"external script limit"}));
+                        continue;
+                    }
+                    external += 1;
+                    match net::fetch(resolved.as_str(), &policy, &mut budget, deadline) {
+                        Ok(response) if response.status < 400 => scripts
+                            .push((src, String::from_utf8_lossy(&response.body).into_owned())),
+                        Ok(response) => skipped.push(
+                            json!({"src":src,"reason":format!("status {}", response.status)}),
+                        ),
+                        Err(error) => {
+                            skipped.push(json!({"src":src,"reason":error.reason,"code":error.code}))
+                        }
+                    }
+                }
+            }
+        }
         drop(document);
 
-        self.next_target += 1;
-        let id = format!("target_{}", self.next_target);
         let realm = Realm::new()?;
         realm.eval(DOM_SHIM_JS, deadline, &id)?;
         let seed = format!(
@@ -777,38 +980,49 @@ impl Host {
             serde_json::to_string(&tree).expect("tree serializes")
         );
         realm.eval(&seed, deadline, &id)?;
-        for (index, script) in scripts.iter().enumerate() {
-            if let Err(error) = realm.eval(script, deadline, &id) {
+        if let Some(base_url) = &base {
+            realm.eval(
+                &format!("__mcsLocation({})", json!(base_url.as_str())),
+                deadline,
+                &id,
+            )?;
+        }
+        let mut target = Target {
+            id: id.clone(),
+            session_id: session.to_owned(),
+            fixture: label,
+            url: base,
+            fixture_bytes: bytes.len(),
+            element_count,
+            script_count: scripts.len(),
+            skipped_scripts: skipped,
+            budget,
+            realm,
+            last_snapshot: None,
+        };
+        for (index, (origin, script)) in scripts.iter().enumerate() {
+            if let Err(error) = target.eval(script, deadline, &policy) {
                 let mut details = error.details.clone().unwrap_or_else(|| json!({}));
                 details["script_index"] = json!(index);
-                return Err(
-                    ControlError::new("target_crashed", "an inline script threw", false)
-                        .scoped("target", &id)
-                        .details(details),
-                );
+                details["script"] = json!(origin);
+                return Err(ControlError::new("target_crashed", "a script threw", false)
+                    .scoped("target", &id)
+                    .details(details));
             }
         }
-        realm.eval("__mcsComplete()", deadline, &id)?;
-        let revision = realm
-            .eval(INSTALL_JS, deadline, &id)?
+        target.eval("__mcsComplete()", deadline, &policy)?;
+        let revision = target
+            .eval(INSTALL_JS, deadline, &policy)?
             .parse::<u64>()
             .unwrap_or(0);
-        self.targets.insert(
-            id.clone(),
-            Target {
-                id: id.clone(),
-                session_id: session.to_owned(),
-                fixture: fixture.to_owned(),
-                fixture_bytes: bytes.len(),
-                element_count,
-                script_count: scripts.len(),
-                realm,
-                last_snapshot: None,
-            },
-        );
-        Ok(
-            json!({"kind":"target","target":id,"session":session,"revision":revision,"fixture":fixture}),
-        )
+        let summary = json!({
+            "kind":"target","target":id,"session":session,"revision":revision,"fixture":target.fixture,
+            "url":target.url.as_ref().map(Url::as_str),"scripts_run":target.script_count,
+            "scripts_skipped":target.skipped_scripts.len(),
+            "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
+        });
+        self.targets.insert(id, target);
+        Ok(summary)
     }
 
     fn target_snapshot(
@@ -827,8 +1041,9 @@ impl Host {
         }
         let max_bytes = bounded_u64(object, "max_bytes", 1, MAX_RESPONSE_BYTES as u64)? as usize;
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
-        let target = self.target(&id)?;
-        let raw = Self::eval_json(target, &snapshot_script(max_nodes), deadline)?;
+        let policy = self.policy.clone();
+        let target = self.target_mut(&id)?;
+        let raw = Self::eval_json(target, &snapshot_script(max_nodes), deadline, &policy)?;
         if raw.get("error").is_some() {
             return Err(ControlError::new(
                 "internal",
@@ -921,8 +1136,9 @@ impl Host {
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             })?
             - 1;
-        let target = self.target(&id)?;
-        let current = Self::revision(target, deadline)?;
+        let policy = self.policy.clone();
+        let target = self.target_mut(&id)?;
+        let current = Self::revision(target, deadline, &policy)?;
         if current != revision {
             return Err(ControlError::new(
                 "stale_revision",
@@ -940,7 +1156,7 @@ impl Host {
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             );
         }
-        let outcome = Self::eval_json(target, &act_script(revision, index), deadline)?;
+        let outcome = Self::eval_json(target, &act_script(revision, index), deadline, &policy)?;
         if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
             return Err(ControlError::new(
                 "stale_revision",
@@ -968,7 +1184,7 @@ impl Host {
                     .scoped("target", &id),
             );
         }
-        let after = Self::revision(target, deadline)?;
+        let after = Self::revision(target, deadline, &policy)?;
         Ok(json!({"kind":"action","target":id,"revision":after,"applied":true}))
     }
 
@@ -989,9 +1205,10 @@ impl Host {
             ));
         }
         let expected = bounded_u64(condition, "revision", 0, u64::MAX)?;
+        let policy = self.policy.clone();
         loop {
-            let target = self.target(&id)?;
-            let revision = Self::revision(target, deadline)?;
+            let target = self.target_mut(&id)?;
+            let revision = Self::revision(target, deadline, &policy)?;
             if revision >= expected {
                 return Ok(json!({"kind":"wait","target":id,"revision":revision,"matched":true}));
             }
@@ -1003,8 +1220,8 @@ impl Host {
                 )
                 .scoped("target", &id));
             }
-            // Nothing runs between requests in this slice, so only queued
-            // microtasks can still change the revision.
+            // Only queued microtasks and fetch settlements, both served by
+            // the revision poll above, can still change the revision.
             std::thread::sleep(Duration::from_millis(5));
         }
     }
@@ -1013,6 +1230,9 @@ impl Host {
         let fixture_bytes: usize = self.targets.values().map(|t| t.fixture_bytes).sum();
         let elements: usize = self.targets.values().map(|t| t.element_count).sum();
         let realm_bytes: usize = self.targets.values().map(|t| t.realm.malloc_bytes()).sum();
+        let fetches: usize = self.targets.values().map(|t| t.budget.fetches).sum();
+        let network_bytes: usize = self.targets.values().map(|t| t.budget.bytes).sum();
+        let denied: usize = self.targets.values().map(|t| t.budget.denied).sum();
         json!({
             "kind":"memory_report",
             "semantic":"native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics",
@@ -1021,9 +1241,10 @@ impl Host {
                 "sessions":{"objects":self.session.iter().count(),"object_limit":1},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT},
+                "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()}},
             },
             "libmalloc":libmalloc_statistics(),
-            "limitations":["logical owners are document sizes and QuickJS malloc bytes, not process memory","no layout, image, network or storage owners exist in this slice","not process RSS/private/PSS"],
+            "limitations":["logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory","no layout, image or storage owners exist in this slice","not process RSS/private/PSS"],
         })
     }
 }
@@ -1074,17 +1295,20 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Line> {
 }
 
 fn usage() -> ! {
-    eprintln!("usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR");
+    eprintln!(
+        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]..."
+    );
     std::process::exit(64);
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<String> = std::env::args().skip(1).collect();
-    if arguments.len() != 6
+    if arguments.len() < 6
         || arguments[0] != "serve"
         || arguments[1] != "--stdio"
         || arguments[2] != "--fixture-root"
         || arguments[4] != "--config-dir"
+        || !(arguments.len() - 6).is_multiple_of(2)
     {
         usage();
     }
@@ -1092,8 +1316,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     if !fixture_root.is_dir() {
         usage();
     }
+    let mut policy = net::Policy::default();
+    for pair in arguments[6..].chunks_exact(2) {
+        if pair[0] != "--allow-origin" {
+            usage();
+        }
+        match net::AllowedOrigin::parse(&pair[1]) {
+            Ok(origin) => policy.allowed_origins.push(origin),
+            Err(message) => {
+                eprintln!("--allow-origin: {message}");
+                std::process::exit(64);
+            }
+        }
+    }
     let mut host = Host {
         fixture_root,
+        policy,
         profiles: BTreeMap::new(),
         session: None,
         targets: BTreeMap::new(),

@@ -187,6 +187,39 @@
   const document = new Document();
   g.__mcsSeed = (entries) => { build(document, entries); return document.__descendants().length; };
   g.__mcsComplete = () => { document.readyState = "complete"; };
+  // Bounded fetch bridge: scripts queue requests, the host performs them
+  // between evaluation turns under its network policy, then settles them.
+  const net = { queue: [], pending: new Map(), next: 0 };
+  class Headers_ {
+    constructor(entries) { this.__map = new Map(Object.entries(entries || {}).map(([k, v]) => [String(k).toLowerCase(), String(v)])); }
+    get(name) { const v = this.__map.get(String(name).toLowerCase()); return v === undefined ? null : v; }
+    has(name) { return this.__map.has(String(name).toLowerCase()); }
+  }
+  class Response_ {
+    constructor(payload) { this.status = payload.status; this.ok = payload.status >= 200 && payload.status < 300; this.url = payload.url; this.redirected = payload.redirects > 0; this.headers = new Headers_(payload.headers); this.__body = payload.body; this.bodyUsed = false; }
+    text() { this.bodyUsed = true; return Promise.resolve(this.__body); }
+    json() { this.bodyUsed = true; try { return Promise.resolve(JSON.parse(this.__body)); } catch (e) { return Promise.reject(new SyntaxError("response body is not JSON")); } }
+  }
+  g.fetch = (input, init) => {
+    const url = typeof input === "string" ? input : (input && input.url) ? String(input.url) : String(input);
+    const method = init && init.method ? String(init.method).toUpperCase() : "GET";
+    if (method !== "GET") return Promise.reject(new TypeError("native-dom fetch offers GET only"));
+    if (init && init.body !== undefined && init.body !== null) return Promise.reject(new TypeError("native-dom fetch does not send bodies"));
+    return new Promise((resolve, reject) => {
+      const id = ++net.next;
+      net.pending.set(id, { resolve, reject });
+      net.queue.push({ id, url });
+    });
+  };
+  g.Headers = Headers_; g.Response = Response_;
+  g.__mcsNetTake = () => { const q = net.queue; net.queue = []; return JSON.stringify(q); };
+  g.__mcsNetSettle = (id, ok, payload) => {
+    const entry = net.pending.get(id); if (!entry) return false; net.pending.delete(id);
+    if (ok) entry.resolve(new Response_(payload)); else { const e = new TypeError("fetch failed: " + payload.code + " (" + payload.reason + ")"); e.code = payload.code; e.reason = payload.reason; entry.reject(e); }
+    return true;
+  };
+  g.__mcsNetPending = () => net.pending.size;
+  g.__mcsLocation = (href) => { try { const u = new URL(href); g.location = { href: u.href, origin: u.origin, protocol: u.protocol, host: u.host, hostname: u.hostname, port: u.port, pathname: u.pathname, search: u.search, hash: u.hash, toString() { return u.href; } }; } catch (e) { g.location = { href, toString() { return href; } }; } };
   g.window = g; g.self = g; g.document = document;
   g.Node = Node; g.Element = Element; g.Text = Text; g.Document = Document; g.Event = Event; g.MutationObserver = MutationObserver;
   g.queueMicrotask = (fn) => { Promise.resolve().then(fn); };
@@ -194,5 +227,5 @@
   g.clearTimeout = () => {};
   g.console = { log() {}, warn() {}, error() {}, debug() {}, info() {} };
   g.navigator = { userAgent: "MiniCon Surf native-dom (QuickJS)" };
-  g.location = { href: "minicon-surf://court/fixture", protocol: "minicon-surf:" };
+  g.location = { href: "minicon-surf://court/fixture", protocol: "minicon-surf:", origin: "null", toString() { return "minicon-surf://court/fixture"; } };
 })();
