@@ -17,5 +17,8 @@ path = "src/w3.rs"
 dpi = "=0.1.2"
 percent-encoding = "=2.3.2"
 rustls = { version = "=0.23.43", default-features = false, features = ["aws_lc_rs", "std"] }
+serde_json = "=1.0.151"
 servo = { version = "=0.5.0", default-features = false, features = ["baked-in-resources", "bundled_freetype", "js_jit"] }
+servo-base = "=0.5.0"
+servo-profile-traits = "=0.5.0"
 url = "=2.5.8"

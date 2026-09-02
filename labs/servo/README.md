@@ -57,7 +57,7 @@ On macOS arm64:
 labs/servo/run-api-probe.sh
 labs/servo/run-w1-runtime-macos-arm64.sh
 labs/servo/run-w3-memory-macos-arm64.sh \
-  --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-memory.json
+  --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-memory-attribution.json
 ```
 
 All generated build state stays in the ignored `labs/servo/target/` directory.
@@ -100,14 +100,28 @@ sequential `WebView`s. This is a real close path: in the pinned source,
 `WebViewInner::drop` sends `CloseWebView` and removes the paint webview; the
 host continues spinning Servo's event loop during every measured stage.
 
-Across seven measured runs after one warmup, median complete-tree RSS was
-44,056,576 bytes empty, 86,638,592 with the first target, 85,983,232 after its
-close, 97,730,560 with the eighth target, and 95,174,656 after all eight
-closes. The final closed state retained a 51,101,696-byte median above empty;
+The initial RSS-only receipt is preserved as historical evidence. The promoted
+attribution court runs RSS and Servo's public memory reporter in separate
+processes so reporter allocations cannot contaminate RSS windows. Across seven
+measured runs per mode after one warmup, median complete-tree RSS was
+44,220,416 bytes empty, 86,786,048 with the first target, 86,245,376 after its
+close, 98,664,448 with the eighth target, and 96,256,000 after all eight
+closes. The final closed state retained a 51,888,128-byte median above empty;
 all stage samples observed one process. Dropping a WebView therefore does not
 make its first-target resident cost promptly return to the empty baseline in
 this court. This is **retention**, not a proven leak: engine caches, allocator
 retention and asynchronously reclaimable state are not yet separated.
+
+Servo's explicit owner reports tell a different and useful story. Explicit
+reported bytes were 2,746,696 empty, 9,448,352 live, 2,751,088 after the first
+close, 9,456,136 on the eighth target, and 2,759,160 after all closes. Every
+run retained exactly 12,464 explicit reported bytes above empty. The live JS,
+image, layout and display-list prefixes disappear from the largest explicit
+reports after close. Meanwhile the separately reported system-heap reservation
+rose from a 37,748,736-byte empty median to 62,914,560 bytes after eight closes.
+Thus roughly 51.9 MB of retained RSS is not explained by Servo's explicit-
+owner delta; allocator reservation or other unreported/reclaimable state is
+now the leading hypothesis, not a still-live DOM/JS ownership claim.
 
 Verdict remains `keep`, but the route is now conditioned on internal memory-
 report attribution and an effective pressure/recovery experiment. A Rust API
@@ -143,9 +157,10 @@ and one-target CLI/CDP interoperability remain unproven.
   reduction needs its own compile/runtime comparison rather than assumptions.
 
 The next Servo memory experiment should consume its public
-`create_memory_report` callback before and after WebView close, then test
-whether an allocator/engine pressure action materially reduces the observed
-51.1 MB retained RSS. In parallel, its lifecycle still needs the shared native
+`create_memory_report` evidence now attributes the retained RSS away from
+reported live target owners. The next experiment should test jemalloc purge or
+an engine pressure action against the observed 51.9 MB retained RSS while
+checking that explicit ownership remains closed. In parallel, its lifecycle still needs the shared native
 target vocabulary and bounded JSON CLI. A separate experiment must attempt
 context detachment while preserving JavaScript state; visibility-only `hide`
 is an explicit failure for that question.

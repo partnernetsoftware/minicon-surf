@@ -3546,7 +3546,10 @@ dependencies = [
  "dpi",
  "percent-encoding",
  "rustls",
+ "serde_json",
  "servo",
+ "servo-base",
+ "servo-profile-traits",
  "url",
 ]
 

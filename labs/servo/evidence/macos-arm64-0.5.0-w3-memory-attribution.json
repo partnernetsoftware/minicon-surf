@@ -1,0 +1,1515 @@
+{
+  "agent_observation": {
+    "interface": "direct Rust WebView evaluate_javascript callback",
+    "semantic_expected_present_on_all_eight_targets": true
+  },
+  "binary_sha256": "c8e17823580a17d6703ffee230ead7ca5577637392ee1c29ff13170f5f1880ff",
+  "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "limitations": [
+    "summed RSS is neither private memory nor PSS and can double-count shared pages",
+    "process-table sampling can miss short-lived or reparented processes",
+    "one synthetic data URL, one operating system and one architecture only",
+    "software rendering is not a headed or GPU-offscreen comparison",
+    "the rendering context is reused, so this isolates WebView churn rather than surface allocation churn",
+    "direct Rust callbacks do not prove native CLI, stable semantic nodes or CDP compatibility",
+    "no like-for-like external browser uses this direct embedding and software-rendering path",
+    "no explicit allocator trim or memory-pressure signal is exercised",
+    "internal reports run in separate processes so reporter allocations do not contaminate RSS runs",
+    "within internal-report runs, an earlier report may affect later report state",
+    "sanitized path-prefix medians cover only each run's twelve largest explicit and non-explicit prefixes"
+  ],
+  "measurement": {
+    "eighth_target_minus_post_one_close_resident_bytes": [
+      10584064,
+      12910592,
+      12419072,
+      14958592,
+      12484608,
+      11993088,
+      12664832
+    ],
+    "first_target_minus_empty_resident_bytes": [
+      42237952,
+      42778624,
+      42549248,
+      42876928,
+      42385408,
+      42876928,
+      42369024
+    ],
+    "internal_reports": {
+      "median_post_eight_closes_minus_empty_explicit_reported_bytes": 12464,
+      "post_eight_closes_minus_empty_explicit_reported_bytes": [
+        12464,
+        12464,
+        12464,
+        12464,
+        12464,
+        12464,
+        12464
+      ],
+      "semantic": "Servo memory reporter; explicit kinds are summed, each non-explicit report remains separate because resident/vsize and other global measures may overlap",
+      "states": {
+        "eighth_target": {
+          "bytes_by_kind": {
+            "explicit_jemalloc_heap": {
+              "median": 2758276,
+              "values": [
+                2758276,
+                2758276,
+                2758276,
+                2758276,
+                2758276,
+                2758276,
+                2758276
+              ]
+            },
+            "explicit_non_heap": {
+              "median": 1310720,
+              "values": [
+                1310720,
+                1310720,
+                1310720,
+                1310720,
+                1310720,
+                1310720,
+                1310720
+              ]
+            },
+            "explicit_system_heap": {
+              "median": 5387140,
+              "values": [
+                5387140,
+                5387140,
+                5387140,
+                5387140,
+                5387140,
+                5387140,
+                5387140
+              ]
+            }
+          },
+          "explicit_reported_bytes": [
+            9456136,
+            9456136,
+            9456136,
+            9456136,
+            9456136,
+            9456136,
+            9456136
+          ],
+          "largest_sanitized_explicit_path_prefixes": {
+            "hsts-list/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-list/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-preload-list": {
+              "median": 2097152,
+              "values": [
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152
+              ]
+            },
+            "indexeddb": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "paint/scroll-tree": {
+              "median": 1808,
+              "values": [
+                1808,
+                1808,
+                1808,
+                1808,
+                1808,
+                1808,
+                1808
+              ]
+            },
+            "public-suffix-list": {
+              "median": 602536,
+              "values": [
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536
+              ]
+            },
+            "redacted/image-cache": {
+              "median": 239157,
+              "values": [
+                239157,
+                239157,
+                239157,
+                239157,
+                239157,
+                239157,
+                239157
+              ]
+            },
+            "redacted/js": {
+              "median": 6399231,
+              "values": [
+                6399231,
+                6399231,
+                6399231,
+                6399231,
+                6399231,
+                6399231,
+                6399231
+              ]
+            },
+            "redacted/layout-thread": {
+              "median": 49100,
+              "values": [
+                49100,
+                49100,
+                49100,
+                49100,
+                49100,
+                49100,
+                49100
+              ]
+            },
+            "system-fonts": {
+              "median": 59472,
+              "values": [
+                59472,
+                59472,
+                59472,
+                59472,
+                59472,
+                59472,
+                59472
+              ]
+            },
+            "webrender/display-list": {
+              "median": 7680,
+              "values": [
+                7680,
+                7680,
+                7680,
+                7680,
+                7680,
+                7680,
+                7680
+              ]
+            }
+          },
+          "median_explicit_reported_bytes": 9456136,
+          "process_report_count": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "report_count": [
+            35,
+            35,
+            35,
+            35,
+            35,
+            35,
+            35
+          ],
+          "sanitized_non_explicit_reports": {
+            "resident": {
+              "median": 104660992,
+              "values": [
+                104349696,
+                104660992,
+                104529920,
+                106790912,
+                105627648,
+                107102208,
+                102793216
+              ]
+            },
+            "system-heap-allocated": {
+              "median": 11695504,
+              "values": [
+                11707232,
+                11687424,
+                11694800,
+                11696016,
+                11692176,
+                11705072,
+                11695504
+              ]
+            },
+            "system-heap-reserved": {
+              "median": 62914560,
+              "values": [
+                67108864,
+                58720256,
+                54525952,
+                62914560,
+                67108864,
+                62914560,
+                58720256
+              ]
+            },
+            "vsize": {
+              "median": 448414154752,
+              "values": [
+                448414154752,
+                448406044672,
+                448410238976,
+                448414875648,
+                448415170560,
+                448410845184,
+                448414547968
+              ]
+            }
+          }
+        },
+        "empty": {
+          "bytes_by_kind": {
+            "explicit_jemalloc_heap": {
+              "median": 2699688,
+              "values": [
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688
+              ]
+            },
+            "explicit_system_heap": {
+              "median": 47008,
+              "values": [
+                47008,
+                47008,
+                47008,
+                47008,
+                47008,
+                47008,
+                47008
+              ]
+            }
+          },
+          "explicit_reported_bytes": [
+            2746696,
+            2746696,
+            2746696,
+            2746696,
+            2746696,
+            2746696,
+            2746696
+          ],
+          "largest_sanitized_explicit_path_prefixes": {
+            "hsts-list/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-list/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-preload-list": {
+              "median": 2097152,
+              "values": [
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152
+              ]
+            },
+            "indexeddb": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "paint/scroll-tree": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "public-suffix-list": {
+              "median": 602536,
+              "values": [
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536
+              ]
+            },
+            "storage/local": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "storage/session": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "system-fonts": {
+              "median": 47008,
+              "values": [
+                47008,
+                47008,
+                47008,
+                47008,
+                47008,
+                47008,
+                47008
+              ]
+            },
+            "webrender/display-list": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "median_explicit_reported_bytes": 2746696,
+          "process_report_count": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "report_count": [
+            21,
+            21,
+            21,
+            21,
+            21,
+            21,
+            21
+          ],
+          "sanitized_non_explicit_reports": {
+            "resident": {
+              "median": 50233344,
+              "values": [
+                44564480,
+                50429952,
+                50446336,
+                50233344,
+                44498944,
+                44744704,
+                50233344
+              ]
+            },
+            "system-heap-allocated": {
+              "median": 2357632,
+              "values": [
+                2357632,
+                2357696,
+                2360256,
+                2355072,
+                2355072,
+                2359744,
+                2354624
+              ]
+            },
+            "system-heap-reserved": {
+              "median": 37748736,
+              "values": [
+                41943040,
+                29360128,
+                37748736,
+                29360128,
+                33554432,
+                37748736,
+                41943040
+              ]
+            },
+            "vsize": {
+              "median": 448259620864,
+              "values": [
+                448253952000,
+                448260210688,
+                448259719168,
+                448259620864,
+                448255033344,
+                448258834432,
+                448263307264
+              ]
+            }
+          }
+        },
+        "one_target": {
+          "bytes_by_kind": {
+            "explicit_jemalloc_heap": {
+              "median": 2758276,
+              "values": [
+                2758276,
+                2758276,
+                2758276,
+                2758276,
+                2758276,
+                2758276,
+                2758276
+              ]
+            },
+            "explicit_non_heap": {
+              "median": 1310720,
+              "values": [
+                1310720,
+                1310720,
+                1310720,
+                1310720,
+                1310720,
+                1310720,
+                1310720
+              ]
+            },
+            "explicit_system_heap": {
+              "median": 5379356,
+              "values": [
+                5379356,
+                5379356,
+                5379356,
+                5379356,
+                5379356,
+                5379356,
+                5379356
+              ]
+            }
+          },
+          "explicit_reported_bytes": [
+            9448352,
+            9448352,
+            9448352,
+            9448352,
+            9448352,
+            9448352,
+            9448352
+          ],
+          "largest_sanitized_explicit_path_prefixes": {
+            "hsts-list/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-list/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-preload-list": {
+              "median": 2097152,
+              "values": [
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152
+              ]
+            },
+            "indexeddb": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "paint/scroll-tree": {
+              "median": 1808,
+              "values": [
+                1808,
+                1808,
+                1808,
+                1808,
+                1808,
+                1808,
+                1808
+              ]
+            },
+            "public-suffix-list": {
+              "median": 602536,
+              "values": [
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536
+              ]
+            },
+            "redacted/image-cache": {
+              "median": 239157,
+              "values": [
+                239157,
+                239157,
+                239157,
+                239157,
+                239157,
+                239157,
+                239157
+              ]
+            },
+            "redacted/js": {
+              "median": 6399519,
+              "values": [
+                6399519,
+                6399519,
+                6399519,
+                6399519,
+                6399519,
+                6399519,
+                6399519
+              ]
+            },
+            "redacted/layout-thread": {
+              "median": 49100,
+              "values": [
+                49100,
+                49100,
+                49100,
+                49100,
+                49100,
+                49100,
+                49100
+              ]
+            },
+            "system-fonts": {
+              "median": 51400,
+              "values": [
+                51400,
+                51400,
+                51400,
+                51400,
+                51400,
+                51400,
+                51400
+              ]
+            },
+            "webrender/display-list": {
+              "median": 7680,
+              "values": [
+                7680,
+                7680,
+                7680,
+                7680,
+                7680,
+                7680,
+                7680
+              ]
+            }
+          },
+          "median_explicit_reported_bytes": 9448352,
+          "process_report_count": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "report_count": [
+            35,
+            35,
+            35,
+            35,
+            35,
+            35,
+            35
+          ],
+          "sanitized_non_explicit_reports": {
+            "resident": {
+              "median": 92946432,
+              "values": [
+                92798976,
+                92946432,
+                92684288,
+                93782016,
+                92733440,
+                93077504,
+                93323264
+              ]
+            },
+            "system-heap-allocated": {
+              "median": 7937792,
+              "values": [
+                7937792,
+                7936416,
+                7937328,
+                7940576,
+                7937888,
+                7939888,
+                7936640
+              ]
+            },
+            "system-heap-reserved": {
+              "median": 50331648,
+              "values": [
+                58720256,
+                37748736,
+                50331648,
+                58720256,
+                50331648,
+                50331648,
+                54525952
+              ]
+            },
+            "vsize": {
+              "median": 448405798912,
+              "values": [
+                448409993216,
+                448402046976,
+                448401752064,
+                448409878528,
+                448406552576,
+                448405684224,
+                448405798912
+              ]
+            }
+          }
+        },
+        "post_eight_closes": {
+          "bytes_by_kind": {
+            "explicit_jemalloc_heap": {
+              "median": 2699688,
+              "values": [
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688
+              ]
+            },
+            "explicit_system_heap": {
+              "median": 59472,
+              "values": [
+                59472,
+                59472,
+                59472,
+                59472,
+                59472,
+                59472,
+                59472
+              ]
+            }
+          },
+          "explicit_reported_bytes": [
+            2759160,
+            2759160,
+            2759160,
+            2759160,
+            2759160,
+            2759160,
+            2759160
+          ],
+          "largest_sanitized_explicit_path_prefixes": {
+            "hsts-list/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-list/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-preload-list": {
+              "median": 2097152,
+              "values": [
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152
+              ]
+            },
+            "indexeddb": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "paint/scroll-tree": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "public-suffix-list": {
+              "median": 602536,
+              "values": [
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536
+              ]
+            },
+            "storage/local": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "storage/session": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "system-fonts": {
+              "median": 59472,
+              "values": [
+                59472,
+                59472,
+                59472,
+                59472,
+                59472,
+                59472,
+                59472
+              ]
+            },
+            "webrender/display-list": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "median_explicit_reported_bytes": 2759160,
+          "process_report_count": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "report_count": [
+            21,
+            21,
+            21,
+            21,
+            21,
+            21,
+            21
+          ],
+          "sanitized_non_explicit_reports": {
+            "resident": {
+              "median": 102088704,
+              "values": [
+                101679104,
+                102088704,
+                102055936,
+                104071168,
+                103022592,
+                104480768,
+                100024320
+              ]
+            },
+            "system-heap-allocated": {
+              "median": 7675072,
+              "values": [
+                7678144,
+                7667904,
+                7666528,
+                7675488,
+                7671744,
+                7675072,
+                7675072
+              ]
+            },
+            "system-heap-reserved": {
+              "median": 62914560,
+              "values": [
+                67108864,
+                58720256,
+                54525952,
+                62914560,
+                67108864,
+                62914560,
+                58720256
+              ]
+            },
+            "vsize": {
+              "median": 448339148800,
+              "values": [
+                448339148800,
+                448331153408,
+                448335888384,
+                448339607552,
+                448340115456,
+                448336265216,
+                448339197952
+              ]
+            }
+          }
+        },
+        "post_one_close": {
+          "bytes_by_kind": {
+            "explicit_jemalloc_heap": {
+              "median": 2699688,
+              "values": [
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688,
+                2699688
+              ]
+            },
+            "explicit_system_heap": {
+              "median": 51400,
+              "values": [
+                51400,
+                51400,
+                51400,
+                51400,
+                51400,
+                51400,
+                51400
+              ]
+            }
+          },
+          "explicit_reported_bytes": [
+            2751088,
+            2751088,
+            2751088,
+            2751088,
+            2751088,
+            2751088,
+            2751088
+          ],
+          "largest_sanitized_explicit_path_prefixes": {
+            "hsts-list/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-list/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "hsts-preload-list": {
+              "median": 2097152,
+              "values": [
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152,
+                2097152
+              ]
+            },
+            "indexeddb": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/private": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "memory-cache/public": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "paint/scroll-tree": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "public-suffix-list": {
+              "median": 602536,
+              "values": [
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536,
+                602536
+              ]
+            },
+            "storage/local": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "storage/session": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "system-fonts": {
+              "median": 51400,
+              "values": [
+                51400,
+                51400,
+                51400,
+                51400,
+                51400,
+                51400,
+                51400
+              ]
+            },
+            "webrender/display-list": {
+              "median": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "median_explicit_reported_bytes": 2751088,
+          "process_report_count": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "report_count": [
+            21,
+            21,
+            21,
+            21,
+            21,
+            21,
+            21
+          ],
+          "sanitized_non_explicit_reports": {
+            "resident": {
+              "median": 92504064,
+              "values": [
+                92504064,
+                92274688,
+                92405760,
+                93077504,
+                92569600,
+                92274688,
+                92553216
+              ]
+            },
+            "system-heap-allocated": {
+              "median": 3911200,
+              "values": [
+                3912384,
+                3907360,
+                3906080,
+                3912432,
+                3911200,
+                3914480,
+                3909408
+              ]
+            },
+            "system-heap-reserved": {
+              "median": 58720256,
+              "values": [
+                58720256,
+                37748736,
+                54525952,
+                58720256,
+                58720256,
+                50331648,
+                58720256
+              ]
+            },
+            "vsize": {
+              "median": 448335331328,
+              "values": [
+                448335331328,
+                448327761920,
+                448331431936,
+                448335396864,
+                448336216064,
+                448331153408,
+                448335511552
+              ]
+            }
+          }
+        }
+      }
+    },
+    "median_eighth_target_minus_post_one_close_resident_bytes": 12484608,
+    "median_first_target_minus_empty_resident_bytes": 42549248,
+    "median_post_eight_closes_minus_empty_resident_bytes": 51888128,
+    "median_post_one_close_minus_empty_resident_bytes": 41877504,
+    "post_eight_closes_minus_empty_resident_bytes": [
+      49463296,
+      52559872,
+      51888128,
+      54558720,
+      51740672,
+      51675136,
+      52002816
+    ],
+    "post_one_close_minus_empty_resident_bytes": [
+      41533440,
+      42237952,
+      41877504,
+      42319872,
+      41811968,
+      42221568,
+      41877504
+    ],
+    "semantic": "peak of sampled sum of BSD ps RSS over Servo root and recursively observed descendants per stage",
+    "states": {
+      "eighth_target": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 101498880,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 98664448,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          96419840,
+          99155968,
+          98664448,
+          101498880,
+          98385920,
+          98238464,
+          98811904
+        ]
+      },
+      "empty": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 44367872,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 44220416,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          44302336,
+          44007424,
+          44367872,
+          44220416,
+          44089344,
+          44023808,
+          44269568
+        ]
+      },
+      "one_target": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 87097344,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 86786048,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          86540288,
+          86786048,
+          86917120,
+          87097344,
+          86474752,
+          86900736,
+          86638592
+        ]
+      },
+      "post_eight_closes": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 98779136,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 96256000,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          93765632,
+          96567296,
+          96256000,
+          98779136,
+          95830016,
+          95698944,
+          96272384
+        ]
+      },
+      "post_one_close": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 86540288,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 86245376,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          85835776,
+          86245376,
+          86245376,
+          86540288,
+          85901312,
+          86245376,
+          86147072
+        ]
+      }
+    }
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.servo-staged-w3-memory-receipt/0.0.2",
+  "status": "incomplete",
+  "technology": "servo",
+  "technology_version": "0.5.0",
+  "workload": {
+    "close_semantic": "WebViewInner drop sends CloseWebView and removes its paint webview",
+    "engine_lifecycle": "one Servo instance; eight sequential WebView build/drop cycles",
+    "fixture_sha256": "1d562146735fcb83bb7086769135c3db8ac795c1c0e3776aaf687022c86ec9e5",
+    "id": "W3",
+    "internal_report_warmups": 1,
+    "measured_repetitions": 7,
+    "profile": "fresh temporary config and temporary_storage per repetition",
+    "rendering_context": "one shared SoftwareRenderingContext-800x600",
+    "samples_per_stage": 3,
+    "settle_ms": 200,
+    "stage_ms": 1000,
+    "stage_order": [
+      "empty",
+      "one_target",
+      "post_one_close",
+      "eighth_target",
+      "post_eight_closes"
+    ],
+    "transport": "percent-encoded-data-url",
+    "warmups": 1
+  }
+}

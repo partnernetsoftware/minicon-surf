@@ -121,7 +121,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3 observed; same-instance retained-RSS risk measured
+│   ├── [~] Servo 0.5.0: W1/W3 observed; 51.9 MB RSS retention, only 12.5 KB explicit-owner delta
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -189,7 +189,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>51.1 MB retained-risk · Agent edge open"]
+        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>51.9 MB RSS vs 12.5 KB explicit retained<br/>allocator recovery · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -362,6 +362,18 @@ flowchart LR
   reclaimable engine state are not separated. Servo remains `keep`, conditional
   on internal memory-report attribution and effective pressure recovery; W3
   does not pass G1 and direct Rust callbacks still do not pass G2/D4.
+- [~] Servo's promoted W3 attribution court isolates RSS sampling from its
+  public memory reporter in separate runs. Seven repetitions measured median
+  RSS of 44,220,416 bytes empty and 96,256,000 after eight closes, a 51,888,128-
+  byte retained delta. Explicit reported ownership was 2,746,696 bytes empty,
+  9,448,352 live, and 2,759,160 after eight closes: only 12,464 bytes retained
+  above empty in every run. Live JS/image/layout/display-list prefixes vanish
+  after close, while non-explicit system-heap reservation rises from a
+  37,748,736-byte to 62,914,560-byte median. This materially narrows the cause:
+  retained RSS is not explained by Servo's reported live target owners and is
+  more consistent with allocator reservation or unreported/reclaimable state.
+  It is still not proof of a leak or of recoverability. Servo stays `keep`, and
+  a measured jemalloc/engine pressure court becomes its next G1 dependency.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
