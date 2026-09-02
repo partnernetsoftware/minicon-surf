@@ -16,6 +16,8 @@ use std::rc::Rc;
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
+mod cdp_edge;
+
 use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
 use profile_traits::mem::{MemoryReportResult, ReportKind};
 use serde_json::{Map, Value, json};
@@ -840,23 +842,37 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Line> {
 }
 
 fn usage() -> ! {
-    eprintln!("usage: servo-control serve --stdio --fixture-root DIR --config-dir DIR");
+    eprintln!(
+        "usage: servo-control serve --stdio --fixture-root DIR --config-dir DIR [--cdp-port PORT --ready-file PATH]"
+    );
     std::process::exit(64);
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<String> = std::env::args().skip(1).collect();
-    if arguments.len() != 6
+    if arguments.len() < 6
         || arguments[0] != "serve"
         || arguments[1] != "--stdio"
         || arguments[2] != "--fixture-root"
         || arguments[4] != "--config-dir"
+        || !(arguments.len() - 6).is_multiple_of(2)
     {
         usage();
     }
     let fixture_root = PathBuf::from(&arguments[3]);
     let config_dir = PathBuf::from(&arguments[5]);
-    if !fixture_root.is_dir() {
+    let mut cdp_port = None;
+    let mut ready_file = None;
+    for pair in arguments[6..].chunks_exact(2) {
+        match pair[0].as_str() {
+            "--cdp-port" if cdp_port.is_none() => {
+                cdp_port = Some(pair[1].parse::<u16>().unwrap_or_else(|_| usage()));
+            }
+            "--ready-file" if ready_file.is_none() => ready_file = Some(PathBuf::from(&pair[1])),
+            _ => usage(),
+        }
+    }
+    if cdp_port.is_some() != ready_file.is_some() || !fixture_root.is_dir() {
         usage();
     }
     rustls::crypto::aws_lc_rs::default_provider()
@@ -884,6 +900,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_target: 0,
     };
 
+    let (bridge_sender, bridge_receiver) = mpsc::channel::<cdp_edge::BridgeRequest>();
+    let _cdp_server = if let (Some(port), Some(ready_file)) = (cdp_port, ready_file) {
+        let server = cdp_edge::Server::start(port, bridge_sender)?;
+        let receipt = json!({
+            "cdp_port":server.port(),
+            "browser_websocket_url":server.browser_websocket_url(),
+        });
+        std::fs::write(ready_file, serde_json::to_vec(&receipt)?)?;
+        Some(server)
+    } else {
+        drop(bridge_sender);
+        None
+    };
+    let mut next_bridge_request = 0u64;
+
     let (sender, receiver) = mpsc::channel::<Line>();
     std::thread::spawn(move || {
         let stdin = io::stdin();
@@ -908,6 +939,18 @@ fn main() -> Result<(), Box<dyn Error>> {
     out.write_all(b"")?;
     loop {
         host.spin();
+        // CDP requests reach the same host at operation boundaries.
+        while let Ok(bridge) = bridge_receiver.try_recv() {
+            next_bridge_request += 1;
+            let request = Request {
+                request_id: format!("req_cdp_{next_bridge_request}"),
+                deadline: Duration::from_millis(5000),
+                operation: bridge.operation,
+                arguments: bridge.arguments,
+            };
+            let outcome = host.execute(&request).map_err(|error| error.code.to_owned());
+            let _ = bridge.reply.send(outcome);
+        }
         let line = match receiver.try_recv() {
             Ok(line) => line,
             Err(mpsc::TryRecvError::Empty) => {

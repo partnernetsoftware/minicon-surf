@@ -1,0 +1,632 @@
+{
+  "binary_sha256": "9199a40e50ace5d3a6a063ab5d048ea5da621544989d3085314663afb3457c5b",
+  "checks": [
+    {
+      "check": "native snapshot starts at revision 0",
+      "detail": 0,
+      "passed": true
+    },
+    {
+      "check": "CDP 1.3 discovery names a loopback browser endpoint",
+      "detail": {
+        "Browser": "MiniCon Surf servo-control/0.0.1",
+        "Protocol-Version": "1.3",
+        "webSocketDebuggerUrl": "ws://127.0.0.1:63962/devtools/browser/servo-control"
+      },
+      "passed": true
+    },
+    {
+      "check": "/json/list exposes exactly the native-created target",
+      "detail": [
+        {
+          "id": "target_1",
+          "title": "semantic-interactive.html",
+          "type": "page",
+          "url": "minicon-surf://court/semantic-interactive.html",
+          "webSocketDebuggerUrl": "ws://127.0.0.1:63962/devtools/browser/servo-control"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "check": "Target.getTargets returns the native target id",
+      "detail": [
+        {
+          "attached": false,
+          "canAccessOpener": false,
+          "targetId": "target_1",
+          "title": "semantic-interactive.html",
+          "type": "page",
+          "url": "minicon-surf://court/semantic-interactive.html"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "check": "attached flag reflects the flattened session",
+      "detail": [
+        {
+          "attached": true,
+          "canAccessOpener": false,
+          "targetId": "target_1",
+          "title": "semantic-interactive.html",
+          "type": "page",
+          "url": "minicon-surf://court/semantic-interactive.html"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "check": "DOM.getDocument returns a document root with child count",
+      "detail": {
+        "backendNodeId": 1,
+        "childNodeCount": 5,
+        "localName": "",
+        "nodeId": 1,
+        "nodeName": "#document",
+        "nodeType": 9,
+        "nodeValue": ""
+      },
+      "passed": true
+    },
+    {
+      "check": "DOM.querySelector resolves #continue to a node id",
+      "detail": 2,
+      "passed": true
+    },
+    {
+      "check": "Runtime.callFunctionOn click succeeds",
+      "detail": {
+        "id": 7,
+        "result": {
+          "result": {
+            "type": "undefined"
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "Page.navigate is an explicit -32601",
+      "detail": {
+        "error": {
+          "code": -32601,
+          "message": "Method not found"
+        },
+        "id": 8
+      },
+      "passed": true
+    },
+    {
+      "check": "unqualified selector is an explicit -32602",
+      "detail": {
+        "error": {
+          "code": -32602,
+          "message": "only button and #id selectors are qualified"
+        },
+        "id": 9
+      },
+      "passed": true
+    },
+    {
+      "check": "native stdio observes revision 1 after the CDP click",
+      "detail": 1,
+      "passed": true
+    },
+    {
+      "check": "native snapshot shows the CDP-clicked button and status text",
+      "detail": [
+        [
+          "heading",
+          "Memory and Agent Court"
+        ],
+        [
+          "label",
+          "Query"
+        ],
+        [
+          "textbox",
+          "Query"
+        ],
+        [
+          "button",
+          "Clicked"
+        ],
+        [
+          "link",
+          "Example result"
+        ],
+        [
+          "text",
+          "Continued"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "check": "pre-CDP native reference is stale_revision",
+      "detail": {
+        "error": {
+          "code": "stale_revision",
+          "details": {
+            "current_revision": 1,
+            "reference_revision": 0
+          },
+          "message": "node reference revision no longer matches the target",
+          "retryable": true,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_6",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "CDP remote object from revision 0 fails after the mutation",
+      "detail": {
+        "error": {
+          "code": -32000,
+          "message": "native control operation failed"
+        },
+        "id": 10
+      },
+      "passed": true
+    },
+    {
+      "check": "Target.detachFromTarget succeeds",
+      "detail": {
+        "id": 11,
+        "result": {}
+      },
+      "passed": true
+    },
+    {
+      "check": "native close succeeds",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "host exits cleanly",
+      "detail": 0,
+      "passed": true
+    }
+  ],
+  "client": "servo-g2-court-client",
+  "control_contract": "0.0.1",
+  "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "limitations": [
+    "custom court client, not Playwright or Puppeteer",
+    "single CDP connection; loopback only",
+    "DOM.querySelector qualifies only `button` and `#id` selectors over the semantic snapshot",
+    "CDP node and object ids are adapter mappings onto native revision-scoped references, not engine DOM ids",
+    "navigation, frames, Input and Network domains are not offered"
+  ],
+  "passed": true,
+  "qualified_methods": [
+    "Target.getTargets",
+    "Target.attachToTarget",
+    "Target.detachFromTarget",
+    "DOM.getDocument",
+    "DOM.querySelector",
+    "DOM.resolveNode",
+    "Runtime.callFunctionOn"
+  ],
+  "revision_transition": [
+    0,
+    1
+  ],
+  "same_target_identity": true,
+  "schema": "minicon-surf.servo-control-g2-receipt/0.0.1",
+  "status": "observed",
+  "technology": "servo",
+  "technology_version": "0.5.0",
+  "transcript": [
+    {
+      "door": "native",
+      "operation": "profile.create",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_1",
+        "result": {
+          "created": true,
+          "kind": "profile",
+          "name": null,
+          "persistence": "ephemeral",
+          "profile": "profile_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "session.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_2",
+        "result": {
+          "kind": "session",
+          "profile": "profile_1",
+          "session": "session_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_3",
+        "result": {
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_4",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Memory and Agent Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "label"
+            },
+            {
+              "dom_id": "query",
+              "name": "Query",
+              "reference": {
+                "node": "node_3",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "textbox",
+              "value": "bounded browser"
+            },
+            {
+              "dom_id": "continue",
+              "name": "Continue",
+              "reference": {
+                "node": "node_4",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "button"
+            },
+            {
+              "name": "Example result",
+              "reference": {
+                "node": "node_5",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            }
+          ],
+          "revision": 0,
+          "target": "target_1",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_5",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Memory and Agent Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_2",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "label"
+            },
+            {
+              "dom_id": "query",
+              "name": "Query",
+              "reference": {
+                "node": "node_3",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "textbox",
+              "value": "bounded browser"
+            },
+            {
+              "dom_id": "continue",
+              "name": "Clicked",
+              "reference": {
+                "node": "node_4",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "button"
+            },
+            {
+              "name": "Example result",
+              "reference": {
+                "node": "node_5",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "dom_id": "status",
+              "name": "Continued",
+              "reference": {
+                "node": "node_6",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            }
+          ],
+          "revision": 1,
+          "target": "target_1",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "target.act",
+      "response": {
+        "error": {
+          "code": "stale_revision",
+          "details": {
+            "current_revision": 1,
+            "reference_revision": 0
+          },
+          "message": "node reference revision no longer matches the target",
+          "retryable": true,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_6",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_7",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "native",
+      "operation": "session.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_g2_8",
+        "result": {
+          "closed_targets": 0,
+          "kind": "session_closed",
+          "profile": "profile_1",
+          "session": "session_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Target.getTargets",
+      "response": {
+        "id": 1,
+        "result": {
+          "targetInfos": [
+            {
+              "attached": false,
+              "canAccessOpener": false,
+              "targetId": "target_1",
+              "title": "semantic-interactive.html",
+              "type": "page",
+              "url": "minicon-surf://court/semantic-interactive.html"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Target.attachToTarget",
+      "response": {
+        "id": 2,
+        "result": {
+          "sessionId": "cdp_session_1"
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Target.getTargets",
+      "response": {
+        "id": 3,
+        "result": {
+          "targetInfos": [
+            {
+              "attached": true,
+              "canAccessOpener": false,
+              "targetId": "target_1",
+              "title": "semantic-interactive.html",
+              "type": "page",
+              "url": "minicon-surf://court/semantic-interactive.html"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "DOM.getDocument",
+      "response": {
+        "id": 4,
+        "result": {
+          "root": {
+            "backendNodeId": 1,
+            "childNodeCount": 5,
+            "localName": "",
+            "nodeId": 1,
+            "nodeName": "#document",
+            "nodeType": 9,
+            "nodeValue": ""
+          }
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "DOM.querySelector",
+      "response": {
+        "id": 5,
+        "result": {
+          "nodeId": 2
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "DOM.resolveNode",
+      "response": {
+        "id": 6,
+        "result": {
+          "object": {
+            "className": "HTMLElement",
+            "description": "element",
+            "objectId": "object_2",
+            "subtype": "node",
+            "type": "object"
+          }
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Runtime.callFunctionOn",
+      "response": {
+        "id": 7,
+        "result": {
+          "result": {
+            "type": "undefined"
+          }
+        }
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Page.navigate",
+      "response": {
+        "error": {
+          "code": -32601,
+          "message": "Method not found"
+        },
+        "id": 8
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "DOM.querySelector",
+      "response": {
+        "error": {
+          "code": -32602,
+          "message": "only button and #id selectors are qualified"
+        },
+        "id": 9
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Runtime.callFunctionOn",
+      "response": {
+        "error": {
+          "code": -32000,
+          "message": "native control operation failed"
+        },
+        "id": 10
+      }
+    },
+    {
+      "door": "cdp",
+      "method": "Target.detachFromTarget",
+      "response": {
+        "id": 11,
+        "result": {}
+      }
+    }
+  ],
+  "transport": [
+    "native-stdio",
+    "cdp-loopback-websocket"
+  ],
+  "unsupported_method": {
+    "code": -32601,
+    "method": "Page.navigate"
+  },
+  "workload": {
+    "fixture": "semantic-interactive.html",
+    "fixture_sha256": "cbedae940d4940fb261689f9f24f2e18850d7079f6c22db0f8c070ac56ac5c30",
+    "id": "W7"
+  }
+}

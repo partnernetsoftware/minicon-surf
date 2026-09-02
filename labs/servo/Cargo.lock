@@ -3543,6 +3543,7 @@ dependencies = [
 name = "minicon-surf-servo-api-probe"
 version = "0.0.0"
 dependencies = [
+ "base64 0.22.1",
  "dpi",
  "percent-encoding",
  "rustls",
@@ -3550,6 +3551,7 @@ dependencies = [
  "servo",
  "servo-base",
  "servo-profile-traits",
+ "sha1 0.10.7",
  "tikv-jemalloc-sys",
  "url",
 ]

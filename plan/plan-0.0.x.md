@@ -93,7 +93,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── open · list · inspect · act · wait · screenshot · show · hide · memory
 │   ├── waits observe conditions; callers do not guess with sleeps
 │   ├── [x] synthetic stdio/CDP host shares one target identity and revision
-│   ├── [~] Servo control host: HTML target · semantic snapshot · revision-scoped click · wait; native stdio only
+│   ├── [~] Servo control host: HTML target · semantic snapshot · revision-scoped click · wait; stdio and loopback CDP share one target
 │   └── local authority and authentication are explicit before remote exposure
 ├── [D4] CDP compatibility adapter
 │   ├── ↳ [A3] maps onto the same profile/session/target authority
@@ -122,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3/W7-native; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
+│   ├── [~] Servo 0.5.0: W1/W3/W7; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -132,7 +132,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
 │   ├── G1 memory court can attribute/cap synthetic state; allocator purge/relief rejected as recovery path for Servo, gate open
-│   ├── [x] G2 synthetic target is controlled interchangeably by CLI and a named CDP client
+│   ├── [x] G2 synthetic and Servo HTML targets are controlled interchangeably by CLI and a named CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
 │   ├── [x] G4 synthetic profiles prove restart, storage/policy isolation and lock behavior
 │   ├── G5 route decision records measured wins, costs, gaps and rejected routes
@@ -190,7 +190,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 native control 0.0.1<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · CDP edge open"]
+        SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 stdio + CDP on one target<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · D4 clients open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -458,6 +458,20 @@ flowchart LR
   summed RSS, one fixture, native rather than CDP transport, a CGL-backed
   context, and Servo's own linear retention. Court discovery now bypasses
   environment proxies after a loopback proxy masqueraded as an engine `503`.
+- [x] G2's mechanism is now observed on an HTML document. The Servo control
+  host opens a loopback CDP 1.3 edge whose seven qualified methods are
+  translated into native operations delivered to the same main loop. The
+  checked journey passes 17 of 17: native stdio opens `semantic-interactive`
+  and snapshots revision 0; the CDP client finds exactly that target through
+  discovery and `Target.getTargets`, attaches flattened, resolves `#continue`
+  through DOM methods and clicks it with `Runtime.callFunctionOn`; native
+  stdio observes revision 1, the mutated button and new status text, and
+  rejects the pre-CDP reference as `stale_revision`; the revision-0 remote
+  object fails on a second click, `Page.navigate` is `-32601`. G2 therefore
+  holds for both the synthetic and the Servo HTML target with one target
+  identity and revision across both doors. D4 remains open: court client
+  rather than Playwright/Puppeteer, one connection, `button`/`#id` selectors
+  only, no navigation, frames, Input or Network domains.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

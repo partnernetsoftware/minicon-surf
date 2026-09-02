@@ -2,8 +2,8 @@
 
 Status: `exploring`
 Decision: `narrow` to a bounded-session Rust-engine candidate. W1 and
-same-instance W3 runtime are observed and the native half of W7 passes
-through a control `0.0.1` host, but the W3 attribution-closure court measures
+same-instance W3 runtime are observed and W7 passes through a control `0.0.1`
+host with a qualified loopback CDP edge, but the W3 attribution-closure court measures
 linear per-cycle accumulation owned by Apple's GL-on-Metal driver that no
 allocator pressure action recovers, plus a roughly 290 MB graphics-owned
 footprint spike at every WebView close. Comparative memory, CDP,
@@ -334,14 +334,41 @@ growth measured above. This is Servo's first same-machine named baseline; it
 is not a G1 pass because the court is one fixture, summed RSS, a native rather
 than CDP transport, and a CGL-backed context.
 
-This closes the native half of W7 for Servo and gives the route its first
-[A3] evidence: an HTML target has one identity and revision under the same
-vocabulary the synthetic host implements. It does not pass G2 or D4: no CDP
-edge shares this target, navigation and frames are not covered, click and
-`revision_at_least` are the only action and condition kinds, and profiles are
-not engine cookie jars. The checked crate has Servo's own devtools server, but
-this lab found no official claim that it implements Chrome DevTools Protocol;
-Servo devtools must not be described as CDP.
+With `--cdp-port PORT --ready-file PATH` the same host also opens a
+loopback-only CDP 1.3 edge (`src/cdp_edge.rs`). The edge owns no engine
+state: each qualified method becomes a native control operation delivered to
+the main loop over a channel, so CDP and stdio reach the same targets at
+operation boundaries. The qualified methods are `Target.getTargets`,
+`Target.attachToTarget` (flattened), `Target.detachFromTarget`,
+`DOM.getDocument`, `DOM.querySelector` (`button` and `#id` over the semantic
+snapshot), `DOM.resolveNode` and `Runtime.callFunctionOn` with the click
+function; everything else is an explicit `-32601`.
+
+```sh
+python3 labs/servo/control-cdp-journey.py \
+  --binary labs/servo/target/release/servo-control \
+  --receipt labs/servo/evidence/servo-control-0.0.1-g2.json
+```
+
+The G2 journey (`servo-control-0.0.1-g2` receipt) passes 17 of 17 checks on
+the interactive fixture: native stdio opens the target and snapshots revision
+0; the CDP client finds exactly that target through `/json/version`,
+`/json/list` and `Target.getTargets`, attaches, resolves `#continue` through
+`DOM.getDocument`/`DOM.querySelector`/`DOM.resolveNode` and clicks it with
+`Runtime.callFunctionOn`; native stdio then observes revision 1, the `Clicked`
+button and `Continued` text, and rejects the pre-CDP reference as
+`stale_revision` with `{reference_revision: 0, current_revision: 1}`; the
+revision-0 remote object fails on a second CDP click, `Page.navigate` is
+`-32601` and an unqualified selector is `-32602`.
+
+This closes W7 for Servo at the same seven-method slice the synthetic host
+qualified, now on an HTML document: one target has one identity and revision
+across both doors. It does not pass D4: the client is the court's own, not
+Playwright or Puppeteer; one CDP connection; navigation, frames, Input and
+Network are not offered; profiles are not engine cookie jars. The checked
+crate has Servo's own devtools server, but this lab found no official claim
+that it implements Chrome DevTools Protocol; Servo devtools must not be
+described as CDP.
 
 ## Exact limitations and next experiment
 
