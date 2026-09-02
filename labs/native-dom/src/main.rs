@@ -501,6 +501,7 @@ struct Target {
     session_id: String,
     fixture: String,
     url: Option<Url>,
+    document_framing: &'static str,
     fixture_bytes: usize,
     element_count: usize,
     script_count: usize,
@@ -712,7 +713,7 @@ impl Host {
                 let revision = Self::revision(target, deadline, &policy)?;
                 Ok(json!({
                     "kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,
-                    "url":target.url.as_ref().map(Url::as_str),"revision":revision,"load_complete":true,"crashed":false,
+                    "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"revision":revision,"load_complete":true,"crashed":false,
                     "script_realm":true,"scripts_run":target.script_count,"scripts_skipped":target.skipped_scripts,
                     "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
                 }))
@@ -870,7 +871,7 @@ impl Host {
         let mut budget = net::Budget::default();
         let policy = self.policy.clone();
 
-        let (label, base, bytes) = if by_fixture {
+        let (label, base, bytes, framing) = if by_fixture {
             let fixture = string_field(object, "fixture")?;
             if !fixture.ends_with(".html")
                 || !fixture
@@ -892,7 +893,7 @@ impl Host {
             let bytes = std::fs::read(&path).map_err(|_| {
                 ControlError::new("not_found", "fixture does not exist in the court", false)
             })?;
-            (fixture.to_owned(), None, bytes)
+            (fixture.to_owned(), None, bytes, "fixture")
         } else {
             let raw = string_field(object, "url")?;
             let response = net::fetch(raw, &policy, &mut budget, deadline)
@@ -919,7 +920,12 @@ impl Host {
                 .scoped("target", &id)
                 .details(json!({"content_type":response.content_type})));
             }
-            ("url".to_owned(), Some(response.url.clone()), response.body)
+            (
+                "url".to_owned(),
+                Some(response.url.clone()),
+                response.body,
+                response.framing.as_str(),
+            )
         };
 
         let text = String::from_utf8_lossy(&bytes).into_owned();
@@ -992,6 +998,7 @@ impl Host {
             session_id: session.to_owned(),
             fixture: label,
             url: base,
+            document_framing: framing,
             fixture_bytes: bytes.len(),
             element_count,
             script_count: scripts.len(),
@@ -1017,7 +1024,7 @@ impl Host {
             .unwrap_or(0);
         let summary = json!({
             "kind":"target","target":id,"session":session,"revision":revision,"fixture":target.fixture,
-            "url":target.url.as_ref().map(Url::as_str),"scripts_run":target.script_count,
+            "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"scripts_run":target.script_count,
             "scripts_skipped":target.skipped_scripts.len(),
             "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
         });

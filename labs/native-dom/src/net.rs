@@ -1,12 +1,16 @@
 //! Bounded network fetch for the native route.
 //!
-//! Every fetch is limited by scheme (`http` only), by address policy (no
-//! loopback, private, link-local, carrier-grade NAT, multicast, reserved or
-//! unspecified addresses unless the exact origin is on the host's explicit
-//! allowlist), by redirect count, by header and body bytes, by a per-fetch
-//! deadline, and by per-target fetch and byte budgets. Requests are plain
-//! HTTP/1.0 `GET` over a fresh TCP connection so the reader never has to
-//! trust chunked framing, and no environment proxy is consulted.
+//! Every fetch is limited by scheme (`http` only), by address policy (fail
+//! closed: only addresses outside every IANA special-purpose range are
+//! reachable unless the exact origin is on the host's explicit allowlist), by
+//! redirect count with re-authorization at every hop, by header and body
+//! bytes, by a per-fetch deadline, and by per-target fetch and byte budgets.
+//! Requests are plain HTTP/1.0 `GET` over a fresh TCP connection; the client
+//! connects only to the addresses `authorize` vetted, so a name cannot be
+//! re-resolved to a different address between the check and the connect. No
+//! environment proxy is consulted. Responses with informational status,
+//! `Transfer-Encoding`, or malformed or conflicting `Content-Length` are
+//! refused rather than guessed at.
 
 use std::io::{self, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, ToSocketAddrs};
@@ -98,6 +102,24 @@ pub struct Budget {
     pub denied: usize,
 }
 
+/// How the body length was established.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Framing {
+    ContentLength,
+    NoBody,
+    UntilClose,
+}
+
+impl Framing {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Framing::ContentLength => "content-length",
+            Framing::NoBody => "no-body",
+            Framing::UntilClose => "until-close",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Response {
     pub status: u16,
@@ -105,57 +127,72 @@ pub struct Response {
     pub content_type: Option<String>,
     pub body: Vec<u8>,
     pub redirects: usize,
+    pub framing: Framing,
+}
+
+/// IPv4 addresses outside every IANA special-purpose range (RFC 6890 and
+/// successors). Anything listed there is refused.
+fn is_public_v4(v4: Ipv4Addr) -> bool {
+    let [a, b, c, _] = v4.octets();
+    let special = a == 0                                  // 0.0.0.0/8 this network
+        || a == 10                                        // 10.0.0.0/8 private
+        || (a == 100 && (64..=127).contains(&b))          // 100.64.0.0/10 shared address space
+        || a == 127                                       // 127.0.0.0/8 loopback
+        || (a == 169 && b == 254)                         // 169.254.0.0/16 link local
+        || (a == 172 && (16..=31).contains(&b))           // 172.16.0.0/12 private
+        || (a == 192 && b == 0 && c == 0)                 // 192.0.0.0/24 IETF protocol assignments
+        || (a == 192 && b == 0 && c == 2)                 // 192.0.2.0/24 TEST-NET-1
+        || (a == 192 && b == 88 && c == 99)               // 192.88.99.0/24 6to4 relay anycast (deprecated)
+        || (a == 192 && b == 168)                         // 192.168.0.0/16 private
+        || (a == 198 && (b == 18 || b == 19))             // 198.18.0.0/15 benchmarking
+        || (a == 198 && b == 51 && c == 100)              // 198.51.100.0/24 TEST-NET-2
+        || (a == 203 && b == 0 && c == 113)               // 203.0.113.0/24 TEST-NET-3
+        || a >= 224; // 224.0.0.0/4 multicast, 240.0.0.0/4 reserved, 255.255.255.255 broadcast
+    !special
+}
+
+/// IPv6 fails closed: only 2000::/3 global unicast can be public, and the
+/// special-purpose blocks inside it are refused as well. Addresses that
+/// embed an IPv4 address are judged by that address.
+fn is_public_v6(v6: Ipv6Addr) -> bool {
+    if let Some(mapped) = v6.to_ipv4_mapped() {
+        return is_public_v4(mapped);
+    }
+    let s = v6.segments();
+    // IPv4-compatible ::a.b.c.d (deprecated) and NAT64 64:ff9b::/96 embed IPv4.
+    if s[..6] == [0, 0, 0, 0, 0, 0] || (s[0] == 0x64 && s[1] == 0xff9b && s[2..6] == [0, 0, 0, 0]) {
+        return false;
+    }
+    if (s[0] & 0xe000) != 0x2000 {
+        // Outside 2000::/3: loopback, unspecified, ULA fc00::/7, link-local
+        // fe80::/10, deprecated site-local fec0::/10, multicast ff00::/8,
+        // discard 100::/64, NAT64 local-use 64:ff9b:1::/48 and anything else.
+        return false;
+    }
+    let teredo = s[0] == 0x2001 && s[1] == 0;
+    let benchmarking = s[0] == 0x2001 && s[1] == 0x0002 && s[2] == 0;
+    let orchid =
+        s[0] == 0x2001 && (s[1] & 0xfff0) == 0x0010 || s[0] == 0x2001 && (s[1] & 0xfff0) == 0x0020;
+    let documentation =
+        (s[0] == 0x2001 && s[1] == 0x0db8) || (s[0] == 0x3fff && (s[1] & 0xf000) == 0);
+    if s[0] == 0x2002 {
+        // 6to4: judge the embedded IPv4 address.
+        let embedded = Ipv4Addr::new((s[1] >> 8) as u8, s[1] as u8, (s[2] >> 8) as u8, s[2] as u8);
+        return is_public_v4(embedded);
+    }
+    !(teredo || benchmarking || orchid || documentation)
 }
 
 pub fn is_public_ip(ip: IpAddr) -> bool {
     match ip {
         IpAddr::V4(v4) => is_public_v4(v4),
-        IpAddr::V6(v6) => {
-            if let Some(mapped) = v6.to_ipv4_mapped() {
-                return is_public_v4(mapped);
-            }
-            let segments = v6.segments();
-            let unique_local = (segments[0] & 0xfe00) == 0xfc00;
-            let link_local = (segments[0] & 0xffc0) == 0xfe80;
-            let documentation = segments[0] == 0x2001 && segments[1] == 0x0db8;
-            let discard = segments[0] == 0x0100 && segments[1..4] == [0, 0, 0];
-            !(v6.is_loopback()
-                || v6.is_unspecified()
-                || v6.is_multicast()
-                || unique_local
-                || link_local
-                || documentation
-                || discard
-                || v6 == Ipv6Addr::new(0, 0, 0, 0, 0, 0xffff, 0, 0))
-        }
+        IpAddr::V6(v6) => is_public_v6(v6),
     }
 }
 
-fn is_public_v4(v4: Ipv4Addr) -> bool {
-    let octets = v4.octets();
-    let cgnat = octets[0] == 100 && (64..=127).contains(&octets[1]);
-    let this_network = octets[0] == 0;
-    let reserved = octets[0] >= 240;
-    let documentation = matches!(
-        octets,
-        [192, 0, 2, _] | [198, 51, 100, _] | [203, 0, 113, _]
-    );
-    let benchmarking = octets[0] == 198 && (octets[1] & 0xfe) == 18;
-    !(v4.is_loopback()
-        || v4.is_private()
-        || v4.is_link_local()
-        || v4.is_broadcast()
-        || v4.is_multicast()
-        || v4.is_unspecified()
-        || cgnat
-        || this_network
-        || reserved
-        || documentation
-        || benchmarking)
-}
-
-/// Validate a URL against scheme and address policy and return the addresses
-/// a connection may use. Allowlisted origins skip address classification.
+/// Validate a URL against scheme and address policy and return the exact
+/// addresses a connection may use. Allowlisted origins skip address
+/// classification; every other host must resolve only to public addresses.
 pub fn authorize(url: &Url, policy: &Policy) -> Result<Vec<SocketAddr>, NetError> {
     if url.scheme() != "http" {
         return Err(NetError::new(
@@ -177,20 +214,13 @@ pub fn authorize(url: &Url, policy: &Policy) -> Result<Vec<SocketAddr>, NetError
     let port = url
         .port_or_known_default()
         .ok_or_else(|| NetError::new("invalid_request", "port", "URL lacks a port"))?;
-    if policy.allowed_origins.iter().any(|o| o.matches(url)) {
-        let addresses = match host {
-            Host::Ipv4(ip) => vec![SocketAddr::new(IpAddr::V4(ip), port)],
-            Host::Ipv6(ip) => vec![SocketAddr::new(IpAddr::V6(ip), port)],
-            Host::Domain(name) => resolve(name, port)?,
-        };
-        return Ok(addresses);
-    }
     let addresses = match host {
         Host::Ipv4(ip) => vec![SocketAddr::new(IpAddr::V4(ip), port)],
         Host::Ipv6(ip) => vec![SocketAddr::new(IpAddr::V6(ip), port)],
         Host::Domain(name) => {
             let lowered = name.to_ascii_lowercase();
-            if lowered == "localhost" || lowered.ends_with(".localhost") {
+            let allowlisted = policy.allowed_origins.iter().any(|o| o.matches(url));
+            if !allowlisted && (lowered == "localhost" || lowered.ends_with(".localhost")) {
                 return Err(NetError::new(
                     "permission_denied",
                     "address",
@@ -207,6 +237,9 @@ pub fn authorize(url: &Url, policy: &Policy) -> Result<Vec<SocketAddr>, NetError
             "host resolved to no addresses",
         ));
     }
+    if policy.allowed_origins.iter().any(|o| o.matches(url)) {
+        return Ok(addresses);
+    }
     if let Some(blocked) = addresses.iter().find(|a| !is_public_ip(a.ip())) {
         return Err(NetError::new(
             "permission_denied",
@@ -222,11 +255,11 @@ fn classify(ip: IpAddr) -> &'static str {
         IpAddr::V4(v4) if v4.is_loopback() => "loopback",
         IpAddr::V4(v4) if v4.is_private() => "private",
         IpAddr::V4(v4) if v4.is_link_local() => "link-local (includes metadata services)",
-        IpAddr::V4(_) => "non-public IPv4",
+        IpAddr::V4(_) => "special-purpose IPv4",
         IpAddr::V6(v6) if v6.is_loopback() => "loopback",
         IpAddr::V6(v6) if (v6.segments()[0] & 0xfe00) == 0xfc00 => "unique-local",
         IpAddr::V6(v6) if (v6.segments()[0] & 0xffc0) == 0xfe80 => "link-local",
-        IpAddr::V6(_) => "non-public IPv6",
+        IpAddr::V6(_) => "non-global IPv6",
     }
 }
 
@@ -305,17 +338,22 @@ pub fn fetch(
             content_type: hop.content_type,
             body: hop.body,
             redirects,
+            framing: hop.framing,
         });
     }
 }
 
+#[derive(Debug)]
 struct Hop {
     status: u16,
     content_type: Option<String>,
     location: Option<String>,
     body: Vec<u8>,
+    framing: Framing,
 }
 
+/// Connect to one of the vetted addresses only. This function never resolves
+/// a name, so the address `authorize` checked is the address used.
 fn connect(addresses: &[SocketAddr], deadline: Instant) -> Result<TcpStream, NetError> {
     let mut last = None;
     for address in addresses {
@@ -404,13 +442,25 @@ fn get_once(
             ));
         }
     }
-    let (status, headers) = parse_head(&buffer[..header_end])?;
-    let content_length =
-        header_value(&headers, "content-length").and_then(|v| v.parse::<usize>().ok());
-    let content_type = header_value(&headers, "content-type").map(|v| v.to_ascii_lowercase());
-    let location = header_value(&headers, "location").map(str::to_owned);
+    let head = parse_head(&buffer[..header_end])?;
+    let content_type = head.content_type.clone();
+    let location = head.location.clone();
     let mut body = buffer[header_end + 4..].to_vec();
-    if body.len() > body_cap || content_length.is_some_and(|len| len > body_cap) {
+    let framing = match head.content_length {
+        _ if matches!(head.status, 204 | 304) => Framing::NoBody,
+        Some(_) => Framing::ContentLength,
+        None => Framing::UntilClose,
+    };
+    if framing == Framing::NoBody {
+        return Ok(Hop {
+            status: head.status,
+            content_type,
+            location,
+            body: Vec::new(),
+            framing,
+        });
+    }
+    if body.len() > body_cap || head.content_length.is_some_and(|len| len > body_cap) {
         return Err(NetError::new(
             "resource_limit",
             "response-bytes",
@@ -418,8 +468,10 @@ fn get_once(
         ));
     }
     loop {
-        if content_length.is_some_and(|len| body.len() >= len) {
-            body.truncate(content_length.unwrap_or(body.len()));
+        if let Some(len) = head.content_length
+            && body.len() >= len
+        {
+            body.truncate(len);
             break;
         }
         if Instant::now() >= deadline {
@@ -431,6 +483,16 @@ fn get_once(
         }
         let read = stream.read(&mut chunk).map_err(|e| io_error("read", e))?;
         if read == 0 {
+            if let Some(len) = head.content_length {
+                return Err(NetError::new(
+                    "not_found",
+                    "response",
+                    format!(
+                        "connection closed after {} of {len} declared body bytes",
+                        body.len()
+                    ),
+                ));
+            }
             break;
         }
         if body.len() + read > body_cap {
@@ -443,10 +505,11 @@ fn get_once(
         body.extend_from_slice(&chunk[..read]);
     }
     Ok(Hop {
-        status,
+        status: head.status,
         content_type,
         location,
         body,
+        framing,
     })
 }
 
@@ -463,37 +526,103 @@ fn find_header_end(buffer: &[u8]) -> Option<usize> {
     buffer.windows(4).position(|w| w == b"\r\n\r\n")
 }
 
-fn parse_head(head: &[u8]) -> Result<(u16, Vec<(String, String)>), NetError> {
+struct Head {
+    status: u16,
+    content_length: Option<usize>,
+    content_type: Option<String>,
+    location: Option<String>,
+}
+
+/// Parse the status line and headers strictly: HTTP/1.x only, no
+/// informational status, no `Transfer-Encoding`, and at most one distinct
+/// well-formed `Content-Length` value.
+fn parse_head(head: &[u8]) -> Result<Head, NetError> {
     let text = std::str::from_utf8(head)
         .map_err(|_| NetError::new("not_found", "response", "response head is not UTF-8"))?;
     let mut lines = text.split("\r\n");
     let status_line = lines.next().unwrap_or_default();
     let mut parts = status_line.splitn(3, ' ');
     let version = parts.next().unwrap_or_default();
-    if !version.starts_with("HTTP/1.") {
+    if version != "HTTP/1.0" && version != "HTTP/1.1" {
         return Err(NetError::new(
             "not_found",
             "response",
-            "response is not HTTP/1.x",
+            "response is not HTTP/1.0 or HTTP/1.1",
         ));
     }
     let status = parts
         .next()
-        .and_then(|s| s.parse::<u16>().ok())
+        .and_then(|s| (s.len() == 3).then(|| s.parse::<u16>().ok()).flatten())
         .filter(|s| (100..=599).contains(s))
         .ok_or_else(|| NetError::new("not_found", "response", "status code is malformed"))?;
-    let headers = lines
-        .filter_map(|line| line.split_once(':'))
-        .map(|(name, value)| (name.trim().to_ascii_lowercase(), value.trim().to_owned()))
-        .collect();
-    Ok((status, headers))
-}
-
-fn header_value<'a>(headers: &'a [(String, String)], name: &str) -> Option<&'a str> {
-    headers
-        .iter()
-        .find(|(n, _)| n == name)
-        .map(|(_, v)| v.as_str())
+    if (100..200).contains(&status) {
+        return Err(NetError::new(
+            "not_found",
+            "response",
+            "informational responses are not supported by an HTTP/1.0 client",
+        ));
+    }
+    let mut content_length: Option<usize> = None;
+    let mut content_type = None;
+    let mut location = None;
+    for line in lines {
+        let Some((name, value)) = line.split_once(':') else {
+            if line.is_empty() {
+                continue;
+            }
+            return Err(NetError::new(
+                "not_found",
+                "response",
+                "malformed header line",
+            ));
+        };
+        let name = name.trim().to_ascii_lowercase();
+        let value = value.trim();
+        match name.as_str() {
+            "transfer-encoding" => {
+                return Err(NetError::new(
+                    "not_found",
+                    "response",
+                    "Transfer-Encoding is refused; the client speaks HTTP/1.0",
+                ));
+            }
+            "content-length" => {
+                for candidate in value.split(',') {
+                    let candidate = candidate.trim();
+                    let parsed =
+                        if !candidate.is_empty() && candidate.bytes().all(|b| b.is_ascii_digit()) {
+                            candidate.parse::<usize>().ok()
+                        } else {
+                            None
+                        };
+                    let Some(parsed) = parsed else {
+                        return Err(NetError::new(
+                            "not_found",
+                            "response",
+                            "Content-Length is malformed",
+                        ));
+                    };
+                    if content_length.is_some_and(|existing| existing != parsed) {
+                        return Err(NetError::new(
+                            "not_found",
+                            "response",
+                            "conflicting Content-Length values",
+                        ));
+                    }
+                    content_length = Some(parsed);
+                }
+            }
+            "content-type" => content_type = Some(value.to_ascii_lowercase()),
+            "location" => location = Some(value.to_owned()),
+            _ => {}
+        }
+    }
+    Ok(Head {
+        status,
+        content_length,
+        content_type,
+        location,
+    })
 }
 
 /// True when `other` shares scheme, host and port with `base`.
@@ -507,6 +636,9 @@ pub fn same_origin(base: &Url, other: &Url) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::net::TcpListener;
+    use std::sync::mpsc;
+    use std::thread;
 
     fn policy_with(origin: &str) -> Policy {
         Policy {
@@ -514,36 +646,120 @@ mod tests {
         }
     }
 
+    /// Serve one canned response on a loopback listener and hand back the
+    /// request line the client sent.
+    fn serve_once(response: &'static [u8]) -> (SocketAddr, mpsc::Receiver<String>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let (sender, receiver) = mpsc::channel();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = Vec::new();
+            let mut chunk = [0u8; 1024];
+            while !request.windows(4).any(|w| w == b"\r\n\r\n") {
+                let n = stream.read(&mut chunk).unwrap();
+                if n == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..n]);
+            }
+            // Tests that only care about the response drop the receiver.
+            let _ = sender.send(String::from_utf8_lossy(&request).into_owned());
+            let _ = stream.write_all(response);
+        });
+        (address, receiver)
+    }
+
+    fn soon() -> Instant {
+        Instant::now() + Duration::from_secs(5)
+    }
+
     #[test]
-    fn refuses_every_non_public_address_class() {
+    fn refuses_every_special_purpose_ipv4_range() {
         for text in [
-            "127.0.0.1",
-            "10.0.0.1",
-            "172.16.5.5",
-            "192.168.1.1",
-            "169.254.169.254",
-            "100.64.0.1",
             "0.0.0.0",
-            "255.255.255.255",
-            "224.0.0.1",
-            "240.0.0.1",
+            "0.1.2.3",
+            "10.0.0.1",
+            "100.64.0.1",
+            "100.127.255.255",
+            "127.0.0.1",
+            "127.255.255.254",
+            "169.254.1.1",
+            "169.254.169.254",
+            "172.16.0.1",
+            "172.31.255.255",
+            "192.0.0.1",
+            "192.0.0.170",
             "192.0.2.1",
+            "192.88.99.1",
+            "192.168.1.1",
             "198.18.0.1",
-            "::1",
-            "::",
-            "fd00::1",
-            "fe80::1",
-            "ff02::1",
-            "::ffff:10.0.0.1",
-            "2001:db8::1",
+            "198.19.255.255",
+            "198.51.100.1",
+            "203.0.113.1",
+            "224.0.0.1",
+            "239.255.255.255",
+            "240.0.0.1",
+            "255.255.255.255",
         ] {
             let ip: IpAddr = text.parse().unwrap();
             assert!(!is_public_ip(ip), "{text} must not be public");
         }
         for text in [
             "93.184.216.34",
-            "2606:2800:220:1:248:1893:25c8:1946",
             "8.8.8.8",
+            "100.63.255.255",
+            "100.128.0.1",
+            "172.32.0.1",
+            "198.17.0.1",
+            "198.20.0.1",
+            "192.0.1.1",
+            "192.0.3.1",
+        ] {
+            let ip: IpAddr = text.parse().unwrap();
+            assert!(is_public_ip(ip), "{text} must be public");
+        }
+    }
+
+    #[test]
+    fn ipv6_fails_closed_outside_global_unicast_and_inside_special_blocks() {
+        for text in [
+            "::1",
+            "::",
+            "::ffff:10.0.0.1",
+            "::ffff:127.0.0.1",
+            "::10.0.0.1",
+            "::93.184.216.34",
+            "64:ff9b::10.0.0.1",
+            "64:ff9b::5db8:d822",
+            "64:ff9b:1::1",
+            "100::1",
+            "fc00::1",
+            "fd12::1",
+            "fe80::1",
+            "fec0::1",
+            "ff02::1",
+            "2001::1",
+            "2001:2::1",
+            "2001:10::1",
+            "2001:20::1",
+            "2001:db8::1",
+            "3fff::1",
+            "2002:0a00:0001::1",
+            "2002:7f00:0001::1",
+            "1::1",
+            "4000::1",
+            "e000::1",
+        ] {
+            let ip: IpAddr = text.parse().unwrap();
+            assert!(!is_public_ip(ip), "{text} must not be public");
+        }
+        for text in [
+            "2606:2800:220:1:248:1893:25c8:1946",
+            "2001:4860:4860::8888",
+            "2002:5db8:d822::1",
+            "2a00::1",
+            "3ffe::1",
         ] {
             let ip: IpAddr = text.parse().unwrap();
             assert!(is_public_ip(ip), "{text} must be public");
@@ -573,6 +789,7 @@ mod tests {
         assert_eq!(err("http://[fd00::1]/").code, "permission_denied");
         assert_eq!(err("http://[::1]:9/").code, "permission_denied");
         assert_eq!(err("http://10.0.0.1/").code, "permission_denied");
+        assert_eq!(err("http://192.0.0.170/").code, "permission_denied");
     }
 
     #[test]
@@ -595,15 +812,39 @@ mod tests {
     }
 
     #[test]
-    fn parses_status_and_headers() {
-        let (status, headers) =
-            parse_head(b"HTTP/1.0 302 Found\r\nLocation: /next\r\nContent-Type: text/html\r\n")
-                .unwrap();
-        assert_eq!(status, 302);
-        assert_eq!(header_value(&headers, "location"), Some("/next"));
-        assert_eq!(header_value(&headers, "content-type"), Some("text/html"));
-        assert!(parse_head(b"SMTP 220 hi\r\n").is_err());
-        assert!(parse_head(b"HTTP/1.1 999 no\r\n").is_err());
+    fn head_parser_refuses_ambiguous_framing() {
+        let ok = parse_head(b"HTTP/1.0 302 Found\r\nLocation: /next\r\nContent-Type: text/html\r\nContent-Length: 12\r\n").unwrap();
+        assert_eq!((ok.status, ok.content_length), (302, Some(12)));
+        assert_eq!(ok.location.as_deref(), Some("/next"));
+        assert_eq!(ok.content_type.as_deref(), Some("text/html"));
+        let same_twice =
+            parse_head(b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 5\r\n").unwrap();
+        assert_eq!(same_twice.content_length, Some(5));
+        for (head, why) in [
+            (&b"SMTP 220 hi\r\n"[..], "not http"),
+            (b"HTTP/2 200 OK\r\n", "http/2"),
+            (b"HTTP/1.1 999 no\r\n", "status range"),
+            (b"HTTP/1.1 20 no\r\n", "status width"),
+            (b"HTTP/1.1 100 Continue\r\n", "informational"),
+            (
+                b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n",
+                "transfer-encoding",
+            ),
+            (
+                b"HTTP/1.1 200 OK\r\nContent-Length: 5\r\nContent-Length: 6\r\n",
+                "conflict",
+            ),
+            (
+                b"HTTP/1.1 200 OK\r\nContent-Length: 5, 6\r\n",
+                "list conflict",
+            ),
+            (b"HTTP/1.1 200 OK\r\nContent-Length: -1\r\n", "negative"),
+            (b"HTTP/1.1 200 OK\r\nContent-Length: 1e3\r\n", "not digits"),
+            (b"HTTP/1.1 200 OK\r\nContent-Length: 0x10\r\n", "hex"),
+            (b"HTTP/1.1 200 OK\r\nnot a header\r\n", "malformed line"),
+        ] {
+            assert!(parse_head(head).is_err(), "{why} must be refused");
+        }
     }
 
     #[test]
@@ -630,14 +871,122 @@ mod tests {
             fetches: MAX_FETCHES_PER_TARGET,
             ..Budget::default()
         };
+        let err = fetch("http://10.0.0.1/", &policy, &mut budget, soon()).unwrap_err();
+        assert_eq!((err.code, err.reason), ("resource_limit", "fetch-count"));
+    }
+
+    #[test]
+    fn connect_uses_only_the_vetted_addresses() {
+        // The URL names a public host, but the only address handed to the
+        // connector is the local listener: the request must land there with
+        // the URL's host in the Host header, proving no second resolution.
+        let (address, received) = serve_once(
+            b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok",
+        );
+        let url = Url::parse("http://example.com/vetted").unwrap();
+        let hop = get_once(&url, &[address], 1024, soon()).unwrap();
+        assert_eq!(
+            (hop.status, hop.body.as_slice(), hop.framing),
+            (200, &b"ok"[..], Framing::ContentLength)
+        );
+        let request = received.recv().unwrap();
+        assert!(request.starts_with("GET /vetted HTTP/1.0\r\n"), "{request}");
+        assert!(request.contains("Host: example.com\r\n"), "{request}");
+    }
+
+    #[test]
+    fn redirect_hops_are_reauthorized_against_the_policy() {
+        let (private_hop, _) = serve_once(
+            b"HTTP/1.0 302 Found\r\nLocation: http://10.0.0.1/secret\r\nContent-Length: 0\r\n\r\n",
+        );
+        let policy = policy_with(&format!("http://127.0.0.1:{}", private_hop.port()));
+        let mut budget = Budget::default();
         let err = fetch(
-            "http://10.0.0.1/",
+            &format!("http://127.0.0.1:{}/start", private_hop.port()),
             &policy,
             &mut budget,
-            Instant::now() + Duration::from_secs(1),
+            soon(),
         )
         .unwrap_err();
-        assert_eq!(err.code, "resource_limit");
-        assert_eq!(err.reason, "fetch-count");
+        assert_eq!((err.code, err.reason), ("permission_denied", "address"));
+        assert_eq!(budget.denied, 1);
+
+        // A redirect to a loopback port that is not allowlisted is refused too.
+        let (other_port, _) = serve_once(b"HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
+        let location = format!(
+            "HTTP/1.0 302 Found\r\nLocation: http://127.0.0.1:{}/\r\nContent-Length: 0\r\n\r\n",
+            other_port.port()
+        );
+        let leaked: &'static [u8] = Box::leak(location.into_bytes().into_boxed_slice());
+        let (first_hop, _) = serve_once(leaked);
+        let policy = policy_with(&format!("http://127.0.0.1:{}", first_hop.port()));
+        let mut budget = Budget::default();
+        let err = fetch(
+            &format!("http://127.0.0.1:{}/", first_hop.port()),
+            &policy,
+            &mut budget,
+            soon(),
+        )
+        .unwrap_err();
+        assert_eq!((err.code, err.reason), ("permission_denied", "address"));
+    }
+
+    #[test]
+    fn bodies_are_framed_strictly() {
+        let (truncated, _) = serve_once(b"HTTP/1.0 200 OK\r\nContent-Length: 10\r\n\r\nshort");
+        let err = get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[truncated],
+            1024,
+            soon(),
+        )
+        .unwrap_err();
+        assert_eq!((err.code, err.reason), ("not_found", "response"));
+
+        let (until_close, _) =
+            serve_once(b"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n<h1>x</h1>");
+        let hop = get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[until_close],
+            1024,
+            soon(),
+        )
+        .unwrap();
+        assert_eq!(
+            (hop.framing, hop.body.as_slice()),
+            (Framing::UntilClose, &b"<h1>x</h1>"[..])
+        );
+
+        let (too_big, _) = serve_once(b"HTTP/1.0 200 OK\r\nContent-Length: 2048\r\n\r\n");
+        let err = get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[too_big],
+            1024,
+            soon(),
+        )
+        .unwrap_err();
+        assert_eq!((err.code, err.reason), ("resource_limit", "response-bytes"));
+
+        let (chunked, _) = serve_once(
+            b"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n",
+        );
+        let err = get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[chunked],
+            1024,
+            soon(),
+        )
+        .unwrap_err();
+        assert_eq!((err.code, err.reason), ("not_found", "response"));
+
+        let (no_body, _) = serve_once(b"HTTP/1.1 204 No Content\r\nContent-Length: 99\r\n\r\n");
+        let hop = get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[no_body],
+            1024,
+            soon(),
+        )
+        .unwrap();
+        assert_eq!((hop.framing, hop.body.len()), (Framing::NoBody, 0));
     }
 }
