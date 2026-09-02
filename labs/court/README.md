@@ -66,7 +66,11 @@ labs/court/run-target-retention-macos-arm64.sh \
 
 Pass `--servo-control labs/servo/target/release/servo-control` to add the
 Servo lab's native control `0.0.1` host as a third candidate driven through
-NDJSON rather than CDP; the candidate order then rotates by repetition. CDP
+NDJSON rather than CDP; the candidate order then rotates by repetition.
+`--sequential-cycles N` changes the number of create/observe/close cycles
+(stages are then `last_target` and `post_all_closes`), `--candidates`
+selects a subset, and `retention-slope.py` fits retained-above-empty against
+cycle count across receipts from several cycle counts. CDP
 discovery requests to `127.0.0.1` deliberately bypass any `http_proxy`
 environment: a proxy answering for loopback returned `503` for a healthy
 Lightpanda endpoint and would have looked like an engine failure.
@@ -93,6 +97,23 @@ second concurrent target. Servo's retention is the driver-owned growth
 measured in its own lab, not Rust heap. The receipt stays `incomplete`: the
 Servo candidate is driven natively rather than through CDP, renders through a
 CGL context, and every candidate remains one fixture, platform and summed RSS.
+
+The per-cycle slope receipt
+(`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
+fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles
+(seven runs per cycle count and candidate, one warm-up each):
+
+| candidate | retained after 1 / 8 / 32 cycles | intercept (warm-up) | slope per cycle |
+|---|---|---|---|
+| Servo 0.5.0 (control) | 42,713,088 / 50,577,408 / 68,452,352 | 43,050,609 | 791,477 |
+| Lightpanda 0.4.0 | 5,292,032 / 6,782,976 / 6,864,896 | 5,783,352 | 39,062 |
+| Chrome 152.0.7977.75 | 112,738,304 / 126,189,568 / 139,280,384 | 115,322,685 | 799,476 |
+
+Servo's slope matches the 765,990 bytes per cycle its own lab measured, and
+Chrome accumulates at almost the same rate per navigation cycle; Lightpanda's
+per-cycle growth is about one twentieth of either. Retention therefore
+separates cleanly into a one-time warm-up and a per-cycle term, and the
+per-cycle term is the number a long Agent session pays.
 
 The concurrency probe does not force candidates into an unsupported common
 count. Lightpanda 0.4.0 is measured at its observed one-target limit and its

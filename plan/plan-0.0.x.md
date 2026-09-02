@@ -122,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; low memory, concurrency narrowed to one target, no memory reporter
+│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; 5.8 MB warm-up + 39 KB/cycle, concurrency narrowed to one target, no memory reporter
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -136,7 +136,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── [x] G2 synthetic and Servo HTML targets are controlled interchangeably by CLI and a named CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
 │   ├── [x] G4 synthetic profiles prove restart, storage/policy isolation and lock behavior
-│   ├── G5 route decision records measured wins, costs, gaps and rejected routes
+│   ├── [~] G5 route ledger records measured wins, costs, gaps and verdicts per route; no route is default-eligible
 │   └── G6 default eligibility requires memory and Agent gates independently green
 └── [-] explicit 0.0.x non-goals
     ├── no claim of full Web, Chrome, extension, media, DRM or CDP compatibility
@@ -234,6 +234,22 @@ flowchart LR
 | G4 profile | Is identity isolated and durable? | two named profiles plus one ephemeral profile prove cookie/storage/policy separation and lock behavior | block persistence or multi-client use |
 | G5 route | Which use, if any, has each route earned? | same workloads, platforms, protocol journeys and total-process measurements; verdict is keep/narrow/combine/reject | record rejection; compatibility-only routes remain labelled |
 | G6 default | Can the route represent MiniCon Surf? | G1 memory and G2 Agent control independently green, plus the required surface/profile gates | no default engine; continue labs without weakening either outcome |
+
+## 4b. G5 route ledger
+
+One row per route, same courts, same machine (macOS arm64, one hermetic
+fixture set, summed process-tree RSS). Verdicts are `keep · narrow · combine ·
+reject`; none is default-eligible because no route has passed G1.
+
+| Route | Measured wins | Measured costs | Gaps | Verdict |
+|---|---|---|---|---|
+| Servo 0.5.0 (Rust engine, direct embedding) | W1/W3 rendered; W7 through control `0.0.1` with stdio and loopback CDP on one HTML target (27/27, 17/17); 8 concurrent targets in one process at 137.0 MB vs Chrome 2,206.9 MB; one target 87.5 MB vs 1,232 MB | ~36 MB warm-up plus ~0.9 MB per navigation cycle owned by Apple's GL-on-Metal driver under the CGL "software" context; ~290 MB graphics spike at every close; no allocator action recovers it; 800-crate graph, ~1.5 GiB build | no CPU-only rendering path in the pinned release; `hide` is visibility only, no context detach (G3); profiles are not engine cookie jars; D4 external clients | **narrow** to bounded sessions; reopen only with a driver-free rendering context measured by the same slope/peak courts |
+| Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, 5.8 MB warm-up plus 39 KB per cycle (Servo 791 KB, Chrome 799 KB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference and measurement target; **narrowed** to one concurrent target |
+| Chrome 152 (compatibility/system baseline) | full Web compatibility; 8 concurrent targets; qualified CDP | 803 MB empty, 1,232 MB one target, 115.3 MB warm-up plus 799 KB per cycle, 2,206.9 MB at eight targets across nine processes | not a candidate engine; digest-identified install rather than pinned artifact | **baseline only**; labelled compatibility reference, cannot set the memory claim |
+| Synthetic control host (engine-neutral Rust) | G0 vocabulary, G2 mechanism, G4 profile isolation, surface mechanics; capacity/allocator courts | not HTML; no rendering, no real cookie jar | G3 native surface; G1 has no browser baseline | **keep** as the court and contract reference, not a product crate |
+| Native bounded route (own HTML/DOM/layout/JS slices) | none yet | none measured | not started; must reuse the proven control boundary and the same courts | **open** |
+
+G6 stays closed: no route is independently green on both G1 and G2/A3.
 
 ## 5. Current experimental frontier
 
@@ -484,6 +500,16 @@ flowchart LR
   precondition that two real routes prove the shared boundary before any
   product crate absorbs it; extraction remains deliberately deferred until a
   route also passes G1.
+- [~] The shared retention court now takes a cycle count and a candidate
+  subset, and a slope receipt fits retained summed RSS against 1, 8 and 32
+  sequential cycles for all three routes (seven runs each). Warm-up intercept
+  and per-cycle slope in bytes: Servo 43,050,609 and 791,477; Lightpanda
+  5,783,352 and 39,062; Chrome 115,322,685 and 799,476. Servo's slope
+  reproduces its own lab's 765,990, Chrome accumulates at nearly the same
+  rate, and Lightpanda's per-cycle term is about one twentieth of either.
+  [M2]'s "navigation soak" lifecycle measure therefore has a comparable
+  number per route; G1 stays open because the measure is summed RSS on one
+  fixture and no route is both low-slope and multi-target.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

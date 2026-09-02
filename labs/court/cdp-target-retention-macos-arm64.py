@@ -19,8 +19,9 @@ import time
 import urllib.parse
 
 
-STAGES = ("empty", "one_target", "post_one_close", "eighth_target", "post_eight_closes")
+STAGES = ("empty", "one_target", "post_one_close", "last_target", "post_all_closes")
 TARGET_COUNT = 8
+CONCURRENT_PROBE_LIMIT = 8
 
 
 def load_cdp_support():
@@ -119,7 +120,7 @@ def close_target(cdp, target_id):
     wait_targets_closed(cdp, [target_id])
 
 
-def run_once(engine, browser, fixture, samples, settle_ms):
+def run_once(engine, browser, fixture, samples, settle_ms, cycles=TARGET_COUNT):
     fixture_url = "data:text/html," + urllib.parse.quote_from_bytes(fixture, safe="")
     with tempfile.TemporaryDirectory(prefix="minicon-surf-retention-") as directory:
         process = None
@@ -135,16 +136,18 @@ def run_once(engine, browser, fixture, samples, settle_ms):
             result["one_target"] = sample_stage(process, samples, settle_ms)
             close_target(cdp, targets.pop())
             result["post_one_close"] = sample_stage(process, samples, settle_ms)
-            for _ in range(2, TARGET_COUNT):
+            for _ in range(2, cycles):
                 target_id = open_ready_target(cdp, fixture_url)
                 close_target(cdp, target_id)
-            targets.append(open_ready_target(cdp, fixture_url))
-            result["eighth_target"] = sample_stage(process, samples, settle_ms)
-            close_target(cdp, targets.pop())
-            result["post_eight_closes"] = sample_stage(process, samples, settle_ms)
+            if cycles > 1:
+                targets.append(open_ready_target(cdp, fixture_url))
+            result["last_target"] = sample_stage(process, samples, settle_ms)
+            if targets:
+                close_target(cdp, targets.pop())
+            result["post_all_closes"] = sample_stage(process, samples, settle_ms)
 
             capacity_error = None
-            while len(targets) < TARGET_COUNT:
+            while len(targets) < CONCURRENT_PROBE_LIMIT:
                 try:
                     targets.append(open_ready_target(cdp, fixture_url))
                 except RuntimeError as error:
@@ -152,8 +155,8 @@ def run_once(engine, browser, fixture, samples, settle_ms):
                     break
             capacity = {
                 "observed_concurrent_targets_at_probe_stop": len(targets),
-                "attempted_limit": TARGET_COUNT,
-                "probe_reached_limit": len(targets) == TARGET_COUNT,
+                "attempted_limit": CONCURRENT_PROBE_LIMIT,
+                "probe_reached_limit": len(targets) == CONCURRENT_PROBE_LIMIT,
                 "next_create_error": capacity_error,
                 "state": sample_stage(process, samples, settle_ms),
             }
@@ -215,7 +218,7 @@ def open_ready_control_target(host, session_id, fixture_name):
     return target_id
 
 
-def run_once_control(binary, fixture_root, fixture_name, samples, settle_ms):
+def run_once_control(binary, fixture_root, fixture_name, samples, settle_ms, cycles=TARGET_COUNT):
     with tempfile.TemporaryDirectory(prefix="minicon-surf-retention-control-") as directory:
         host = ControlHost(binary, fixture_root, directory)
         targets = []
@@ -227,16 +230,18 @@ def run_once_control(binary, fixture_root, fixture_name, samples, settle_ms):
             result["one_target"] = sample_stage(host.process, samples, settle_ms)
             host.expect("target.close", {"target": targets.pop()})
             result["post_one_close"] = sample_stage(host.process, samples, settle_ms)
-            for _ in range(2, TARGET_COUNT):
+            for _ in range(2, cycles):
                 target_id = open_ready_control_target(host, session, fixture_name)
                 host.expect("target.close", {"target": target_id})
-            targets.append(open_ready_control_target(host, session, fixture_name))
-            result["eighth_target"] = sample_stage(host.process, samples, settle_ms)
-            host.expect("target.close", {"target": targets.pop()})
-            result["post_eight_closes"] = sample_stage(host.process, samples, settle_ms)
+            if cycles > 1:
+                targets.append(open_ready_control_target(host, session, fixture_name))
+            result["last_target"] = sample_stage(host.process, samples, settle_ms)
+            if targets:
+                host.expect("target.close", {"target": targets.pop()})
+            result["post_all_closes"] = sample_stage(host.process, samples, settle_ms)
 
             capacity_error = None
-            while len(targets) < TARGET_COUNT:
+            while len(targets) < CONCURRENT_PROBE_LIMIT:
                 try:
                     targets.append(open_ready_control_target(host, session, fixture_name))
                 except RuntimeError as error:
@@ -244,8 +249,8 @@ def run_once_control(binary, fixture_root, fixture_name, samples, settle_ms):
                     break
             capacity = {
                 "observed_concurrent_targets_at_probe_stop": len(targets),
-                "attempted_limit": TARGET_COUNT,
-                "probe_reached_limit": len(targets) == TARGET_COUNT,
+                "attempted_limit": CONCURRENT_PROBE_LIMIT,
+                "probe_reached_limit": len(targets) == CONCURRENT_PROBE_LIMIT,
                 "next_create_error": capacity_error,
                 "state": sample_stage(host.process, samples, settle_ms),
             }
@@ -281,12 +286,12 @@ def aggregate(run_results):
         for run in runs
     ]
     reused_delta = [
-        run["eighth_target"]["peak_tree_resident_bytes"]
+        run["last_target"]["peak_tree_resident_bytes"]
         - run["post_one_close"]["peak_tree_resident_bytes"]
         for run in runs
     ]
     retained = [
-        run["post_eight_closes"]["peak_tree_resident_bytes"]
+        run["post_all_closes"]["peak_tree_resident_bytes"]
         - run["empty"]["peak_tree_resident_bytes"]
         for run in runs
     ]
@@ -298,10 +303,10 @@ def aggregate(run_results):
         "states": stages,
         "first_target_delta_resident_bytes": one_delta,
         "median_first_target_delta_resident_bytes": int(statistics.median(one_delta)),
-        "eighth_target_minus_post_one_close_resident_bytes": reused_delta,
-        "median_eighth_target_minus_post_one_close_resident_bytes": int(statistics.median(reused_delta)),
-        "post_eight_closes_minus_empty_resident_bytes": retained,
-        "median_post_eight_closes_minus_empty_resident_bytes": int(statistics.median(retained)),
+        "last_target_minus_post_one_close_resident_bytes": reused_delta,
+        "median_last_target_minus_post_one_close_resident_bytes": int(statistics.median(reused_delta)),
+        "post_all_closes_minus_empty_resident_bytes": retained,
+        "median_post_all_closes_minus_empty_resident_bytes": int(statistics.median(retained)),
         "concurrent_capacity_probe": {
             "observed_concurrent_targets_at_probe_stop": observed,
             "probe_reached_limit": reached_limit,
@@ -322,12 +327,17 @@ def main():
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--samples-per-stage", type=int, default=3)
     parser.add_argument("--settle-ms", type=int, default=500)
+    parser.add_argument("--sequential-cycles", type=int, default=TARGET_COUNT,
+                        help="sequential create/observe/close cycles per run")
+    parser.add_argument("--candidates", default="lightpanda,google_chrome,servo_control",
+                        help="comma-separated subset of candidates to measure")
     parser.add_argument("--receipt")
     args = parser.parse_args()
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         parser.error("this court requires macOS arm64")
-    if min(args.repetitions, args.samples_per_stage, args.settle_ms) <= 0:
-        parser.error("repetitions, samples, and settle time must be positive")
+    if min(args.repetitions, args.samples_per_stage, args.settle_ms, args.sequential_cycles) <= 0:
+        parser.error("repetitions, samples, settle time and cycles must be positive")
+    selected = [name for name in args.candidates.split(",") if name]
 
     fixture = pathlib.Path(args.fixture).read_bytes()
     lightpanda_sha = hashlib.sha256(pathlib.Path(args.lightpanda).read_bytes()).hexdigest()
@@ -336,21 +346,26 @@ def main():
     chrome_path = pathlib.Path(args.chrome)
     chrome_sha = hashlib.sha256(chrome_path.read_bytes()).hexdigest()
     chrome_version = subprocess.check_output([args.chrome, "--version"], text=True).strip()
-    candidates = {"lightpanda": [], "google_chrome": []}
+    candidates = {}
     paths = {"lightpanda": args.lightpanda, "google_chrome": args.chrome}
     engine_names = {"lightpanda": "lightpanda", "google_chrome": "chrome"}
     fixture_path = pathlib.Path(args.fixture)
     servo_sha = None
-    if args.servo_control:
-        candidates["servo_control"] = []
-        servo_sha = hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest()
+    for name in selected:
+        if name == "servo_control":
+            if not args.servo_control:
+                parser.error("servo_control candidate requires --servo-control")
+            servo_sha = hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest()
+        elif name not in paths:
+            parser.error(f"unknown candidate {name}")
+        candidates[name] = []
 
     def run_candidate(candidate):
         if candidate == "servo_control":
             return run_once_control(args.servo_control, fixture_path.parent, fixture_path.name,
-                                    args.samples_per_stage, args.settle_ms)
+                                    args.samples_per_stage, args.settle_ms, args.sequential_cycles)
         return run_once(engine_names[candidate], paths[candidate], fixture,
-                        args.samples_per_stage, args.settle_ms)
+                        args.samples_per_stage, args.settle_ms, args.sequential_cycles)
 
     for candidate in candidates:
         run_candidate(candidate)
@@ -369,20 +384,21 @@ def main():
         raise RuntimeError("Chrome version changed during the measured court")
     if servo_sha and hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest() != servo_sha:
         raise RuntimeError("servo-control binary changed during the measured court")
-    candidate_reports = {
-        "lightpanda": {
+    candidate_reports = {}
+    if "lightpanda" in candidates:
+        candidate_reports["lightpanda"] = {
             "version": "0.4.0",
             "artifact_sha256": lightpanda_sha,
             "transport": "CDP over loopback WebSocket",
             **aggregate(candidates["lightpanda"]),
-        },
-        "google_chrome": {
+        }
+    if "google_chrome" in candidates:
+        candidate_reports["google_chrome"] = {
             "version": chrome_version.removeprefix("Google Chrome "),
             "executable_sha256": chrome_sha,
             "transport": "CDP over loopback WebSocket",
             **aggregate(candidates["google_chrome"]),
-        },
-    }
+        }
     if servo_sha:
         candidate_reports["servo_control"] = {
             "version": "0.5.0",
@@ -399,8 +415,8 @@ def main():
         "workload": {
             "fixture_sha256": hashlib.sha256(fixture).hexdigest(),
             "stage_order": list(STAGES),
-            "sequential_target_cycles": TARGET_COUNT,
-            "concurrent_target_probe_limit": TARGET_COUNT,
+            "sequential_target_cycles": args.sequential_cycles,
+            "concurrent_target_probe_limit": CONCURRENT_PROBE_LIMIT,
             "warmups_per_candidate": 1,
             "measured_repetitions": args.repetitions,
             "samples_per_stage": args.samples_per_stage,

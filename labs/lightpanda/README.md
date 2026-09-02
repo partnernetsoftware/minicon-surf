@@ -87,6 +87,15 @@ vocabulary is therefore engine-neutral for these two engines and this fixture
 set. It is not a native CLI inside Lightpanda, and it inherits the same D4
 limits as the Servo host.
 
+## Per-cycle retention slope
+
+On the shared slope court (1, 8 and 32 sequential cycles, seven runs each),
+Lightpanda retained 5,292,032, 6,782,976 and 6,864,896 bytes above empty, a
+5,783,352-byte warm-up intercept and a 39,062-byte-per-cycle slope, against
+791,477 for Servo and 799,476 for Chrome. Lightpanda is the only measured
+route whose per-cycle accumulation is small enough for a long single-target
+Agent session; its one-target limit remains the constraint.
+
 ## Open gates
 
 - Extend the named same-machine Chrome comparison beyond one small semantic
