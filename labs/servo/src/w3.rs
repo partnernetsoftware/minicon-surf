@@ -58,8 +58,17 @@ fn spin_until(
     Ok(())
 }
 
-fn observe_rss_stage(servo: &servo::Servo, stage: &str, duration: Duration) -> io::Result<()> {
-    println!("{{\"stage\":\"{stage}\"}}");
+fn observe_rss_stage(
+    servo: &servo::Servo,
+    stage: &str,
+    action: &str,
+    action_result_code: Option<i32>,
+    duration: Duration,
+) -> io::Result<()> {
+    println!(
+        "{}",
+        json!({"stage":stage,"action":action,"action_result_code":action_result_code})
+    );
     io::stdout().flush()?;
     let deadline = Instant::now() + duration;
     while Instant::now() < deadline {
@@ -155,6 +164,8 @@ fn collect_internal_memory(servo: &servo::Servo) -> Result<Value, Box<dyn Error>
 fn observe_internal_stage(
     servo: &servo::Servo,
     stage: &str,
+    action: &str,
+    action_result_code: Option<i32>,
     settle: Duration,
 ) -> Result<(), Box<dyn Error>> {
     let deadline = Instant::now() + settle;
@@ -164,7 +175,12 @@ fn observe_internal_stage(
     }
     println!(
         "{}",
-        json!({"stage":stage,"internal_memory":collect_internal_memory(servo)?})
+        json!({
+            "stage":stage,
+            "action":action,
+            "action_result_code":action_result_code,
+            "internal_memory":collect_internal_memory(servo)?
+        })
     );
     io::stdout().flush()?;
     Ok(())
@@ -219,9 +235,15 @@ fn parse_arguments() -> Result<(PathBuf, PathBuf, Duration, String), Box<dyn Err
         .ok_or("missing measurement mode")?
         .to_string_lossy()
         .into_owned();
-    if arguments.next().is_some() || stage_ms == 0 || !matches!(mode.as_str(), "rss" | "internal") {
+    if arguments.next().is_some()
+        || stage_ms == 0
+        || !matches!(
+            mode.as_str(),
+            "rss-control" | "rss-purge" | "internal-control" | "internal-purge"
+        )
+    {
         return Err(
-            "usage: servo-w3-runtime FIXTURE CONFIG_DIRECTORY STAGE_MS rss|internal".into(),
+            "usage: servo-w3-runtime FIXTURE CONFIG_DIRECTORY STAGE_MS rss-control|rss-purge|internal-control|internal-purge".into(),
         );
     }
     Ok((
@@ -259,33 +281,57 @@ fn main() -> Result<(), Box<dyn Error>> {
         })
         .build();
 
-    let observe = |servo: &servo::Servo, stage: &str| -> Result<(), Box<dyn Error>> {
-        if mode == "rss" {
-            observe_rss_stage(servo, stage, stage_duration)?;
+    let observe = |servo: &servo::Servo,
+                   stage: &str,
+                   action: &str,
+                   action_result_code: Option<i32>|
+     -> Result<(), Box<dyn Error>> {
+        if mode.starts_with("rss-") {
+            observe_rss_stage(servo, stage, action, action_result_code, stage_duration)?;
             Ok(())
         } else {
-            observe_internal_stage(servo, stage, stage_duration)
+            observe_internal_stage(servo, stage, action, action_result_code, stage_duration)
         }
     };
-    observe(&servo, "empty")?;
+    observe(&servo, "empty", "none", None)?;
     for index in 1..=TARGET_COUNT {
         let (webview, delegate) =
             open_verified_target(&servo, rendering_context.clone(), url.clone())?;
         if index == 1 {
-            observe(&servo, "one_target")?;
+            observe(&servo, "one_target", "none", None)?;
         } else if index == TARGET_COUNT {
-            observe(&servo, "eighth_target")?;
+            observe(&servo, "eighth_target", "none", None)?;
         }
         drop(webview);
         drop(delegate);
         if index == 1 {
-            observe(&servo, "post_one_close")?;
+            observe(&servo, "post_one_close", "none", None)?;
         } else if index == TARGET_COUNT {
-            observe(&servo, "post_eight_closes")?;
+            observe(&servo, "post_eight_closes", "none", None)?;
         } else {
             // Process CloseWebView before constructing the next target.
             servo.spin_event_loop();
         }
+    }
+    let (action, result_code) = if mode.ends_with("-purge") {
+        // SAFETY: this invokes the no-argument arena.<i>.purge command for
+        // jemalloc's MALLCTL_ARENAS_ALL sentinel. All pointers are null.
+        let code = unsafe {
+            tikv_jemalloc_sys::mallctl(
+                c"arena.4096.purge".as_ptr(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                0,
+            )
+        };
+        ("jemalloc_all_arenas_purge", Some(code))
+    } else {
+        ("control_wait", Some(0))
+    };
+    observe(&servo, "post_action", action, result_code)?;
+    if result_code != Some(0) {
+        return Err(format!("jemalloc purge mallctl failed with code {result_code:?}").into());
     }
     drop(servo);
     Ok(())

@@ -3550,6 +3550,7 @@ dependencies = [
  "servo",
  "servo-base",
  "servo-profile-traits",
+ "tikv-jemalloc-sys",
  "url",
 ]
 

@@ -2,9 +2,9 @@
 
 Status: `exploring`
 Decision: `keep` as a running Rust-engine candidate with a material retained-
-RSS risk; W1 and same-instance W3 software-rendered runtime are observed,
-while comparative memory, native Agent control, CDP, surface-detachment, and
-profile claims remain open.
+RSS risk and an effective-but-insufficient jemalloc purge; W1 and same-instance
+W3 software-rendered runtime are observed, while comparative memory, native
+Agent control, CDP, surface-detachment, and profile claims remain open.
 
 ## Hypothesis
 
@@ -20,6 +20,9 @@ release be consumed directly by an isolated Rust project on macOS arm64?
 - tag commit: `1d44e5dd6a8b64c02f9dbf7fcbdf4ebdd0740019`
 - crates.io package checksum recorded by Cargo:
   `331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8`
+- Servo allocator backend on this platform: `tikv-jemalloc-sys`
+  `0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7`, checksum
+  `cd8aa5b2ab86a2cefa406d889139c162cbb230092f7d1d7cbc1716405d852a3b`
 - minimum Rust version declared by the package: `1.88.0`
 
 The dependency uses an exact version and `Cargo.lock` is tracked. Default
@@ -36,6 +39,7 @@ Only Servo-owned sources define the API interpretation:
 - [Servo 0.5.0 `WebView` documentation](https://doc.servo.org/servo/webview/struct.WebView.html)
 - [official Servo repository](https://github.com/servo/servo/tree/v0.5.0)
 - [official minimal winit embedder](https://github.com/servo/servo/blob/v0.5.0/components/servo/examples/winit_minimal.rs)
+- [official tikv-jemallocator project](https://github.com/tikv/jemallocator)
 
 ## Scope and reproduction
 
@@ -57,7 +61,7 @@ On macOS arm64:
 labs/servo/run-api-probe.sh
 labs/servo/run-w1-runtime-macos-arm64.sh
 labs/servo/run-w3-memory-macos-arm64.sh \
-  --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-memory-attribution.json
+  --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-jemalloc-purge.json
 ```
 
 All generated build state stays in the ignored `labs/servo/target/` directory.
@@ -123,6 +127,21 @@ Thus roughly 51.9 MB of retained RSS is not explained by Servo's explicit-
 owner delta; allocator reservation or other unreported/reclaimable state is
 now the leading hypothesis, not a still-live DOM/JS ownership claim.
 
+The promoted purge court adds a sixth stage after all eight closes. Independent
+fresh-process branches either wait for the same interval or invoke the linked
+jemalloc 5.3.0 lineage's `arena.4096.purge` (`4096` is
+`MALLCTL_ARENAS_ALL`). Every mallctl returned success. Across seven runs,
+control RSS changed by exactly zero in all runs; purge reduced RSS in all seven
+by 1,638,400 bytes at the median. Purge explicit-owner delta was zero, so the
+closed ownership state stayed stable. However, post-purge RSS still retained a
+49,692,672-byte median above empty: purge recovered only about 3.193% of the
+purge branch's 51,314,688-byte post-close retention.
+
+Verdict: **jemalloc all-arena purge is effective but insufficient** for this
+W3 route. It is safe to keep as one pressure-ladder action, but it does not
+repair Servo's retained-memory risk or pass G1. Decay/tcache behavior, engine
+caches, hibernation and target termination remain separate recovery options.
+
 Verdict remains `keep`, but the route is now conditioned on internal memory-
 report attribution and an effective pressure/recovery experiment. A Rust API
 and a successful software-rendered page do not waive that requirement.
@@ -157,10 +176,11 @@ and one-target CLI/CDP interoperability remain unproven.
   reduction needs its own compile/runtime comparison rather than assumptions.
 
 The next Servo memory experiment should consume its public
-`create_memory_report` evidence now attributes the retained RSS away from
-reported live target owners. The next experiment should test jemalloc purge or
-an engine pressure action against the observed 51.9 MB retained RSS while
-checking that explicit ownership remains closed. In parallel, its lifecycle still needs the shared native
-target vocabulary and bounded JSON CLI. A separate experiment must attempt
+`create_memory_report` evidence attributes the retained RSS away from reported
+live target owners, and forced all-arena purge recovers only 3.193%. The next
+memory experiment should separate jemalloc decay/tcache from Servo engine
+caches and test the next pressure-ladder actions rather than repeating purge.
+In parallel, its lifecycle still needs the shared native target vocabulary and
+bounded JSON CLI. A separate experiment must attempt
 context detachment while preserving JavaScript state; visibility-only `hide`
 is an explicit failure for that question.

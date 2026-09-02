@@ -12,7 +12,10 @@ import time
 from pathlib import Path
 
 
-STAGES = ("empty", "one_target", "post_one_close", "eighth_target", "post_eight_closes")
+STAGES = (
+    "empty", "one_target", "post_one_close", "eighth_target",
+    "post_eight_closes", "post_action",
+)
 
 
 def process_tree(root):
@@ -49,9 +52,9 @@ def launch(binary, fixture, stage_ms, mode, directory):
     )
 
 
-def run_once(binary, fixture, samples, settle_ms, stage_ms):
+def run_once(binary, fixture, samples, settle_ms, stage_ms, action):
     with tempfile.TemporaryDirectory(prefix="minicon-surf-servo-w3-") as directory:
-        process = launch(binary, fixture, stage_ms, "rss", directory)
+        process = launch(binary, fixture, stage_ms, f"rss-{action}", directory)
         states = {}
         try:
             for expected_stage in STAGES:
@@ -59,7 +62,12 @@ def run_once(binary, fixture, samples, settle_ms, stage_ms):
                 if not line:
                     raise RuntimeError(f"Servo exited before {expected_stage}: {process.stderr.read()}")
                 marker = json.loads(line)
-                if marker != {"stage": expected_stage}:
+                expected_action = (
+                    "jemalloc_all_arenas_purge" if action == "purge" else "control_wait"
+                ) if expected_stage == "post_action" else "none"
+                expected_code = 0 if expected_stage == "post_action" else None
+                if marker != {"stage": expected_stage, "action": expected_action,
+                              "action_result_code": expected_code}:
                     raise RuntimeError(f"unexpected Servo stage marker: {marker}")
                 time.sleep(settle_ms / 1000.0)
                 rss_values = []
@@ -84,9 +92,9 @@ def run_once(binary, fixture, samples, settle_ms, stage_ms):
                 process.wait()
 
 
-def run_internal_once(binary, fixture, stage_ms):
+def run_internal_once(binary, fixture, stage_ms, action):
     with tempfile.TemporaryDirectory(prefix="minicon-surf-servo-w3-report-") as directory:
-        process = launch(binary, fixture, stage_ms, "internal", directory)
+        process = launch(binary, fixture, stage_ms, f"internal-{action}", directory)
         reports = {}
         try:
             for expected_stage in STAGES:
@@ -98,6 +106,12 @@ def run_internal_once(binary, fixture, stage_ms):
                 marker = json.loads(line)
                 if marker.get("stage") != expected_stage or "internal_memory" not in marker:
                     raise RuntimeError(f"unexpected Servo internal marker: {marker}")
+                expected_action = (
+                    "jemalloc_all_arenas_purge" if action == "purge" else "control_wait"
+                ) if expected_stage == "post_action" else "none"
+                expected_code = 0 if expected_stage == "post_action" else None
+                if marker.get("action") != expected_action or marker.get("action_result_code") != expected_code:
+                    raise RuntimeError(f"unexpected Servo action result: {marker}")
                 reports[expected_stage] = marker["internal_memory"]
             if process.wait(timeout=15) != 0:
                 raise RuntimeError(f"Servo W3 internal report failed: {process.stderr.read()}")
@@ -138,6 +152,16 @@ def aggregate(runs):
         - run["empty"]["peak_tree_resident_bytes"]
         for run in runs
     ]
+    action_delta = [
+        run["post_action"]["peak_tree_resident_bytes"]
+        - run["post_eight_closes"]["peak_tree_resident_bytes"]
+        for run in runs
+    ]
+    post_action_retained = [
+        run["post_action"]["peak_tree_resident_bytes"]
+        - run["empty"]["peak_tree_resident_bytes"]
+        for run in runs
+    ]
     return {
         "states": states,
         "first_target_minus_empty_resident_bytes": first_delta,
@@ -148,6 +172,14 @@ def aggregate(runs):
         "median_eighth_target_minus_post_one_close_resident_bytes": int(statistics.median(eighth_delta)),
         "post_eight_closes_minus_empty_resident_bytes": retained,
         "median_post_eight_closes_minus_empty_resident_bytes": int(statistics.median(retained)),
+        "post_action_minus_post_eight_closes_resident_bytes": action_delta,
+        "median_post_action_minus_post_eight_closes_resident_bytes": int(
+            statistics.median(action_delta)
+        ),
+        "post_action_minus_empty_resident_bytes": post_action_retained,
+        "median_post_action_minus_empty_resident_bytes": int(
+            statistics.median(post_action_retained)
+        ),
     }
 
 
@@ -213,12 +245,30 @@ def aggregate_internal(runs):
         - runs[index]["empty"]["explicit_reported_bytes"]
         for index in range(len(runs))
     ]
+    action_delta = [
+        runs[index]["post_action"]["explicit_reported_bytes"]
+        - runs[index]["post_eight_closes"]["explicit_reported_bytes"]
+        for index in range(len(runs))
+    ]
+    post_action_retained = [
+        runs[index]["post_action"]["explicit_reported_bytes"]
+        - runs[index]["empty"]["explicit_reported_bytes"]
+        for index in range(len(runs))
+    ]
     return {
         "semantic": "Servo memory reporter; explicit kinds are summed, each non-explicit report remains separate because resident/vsize and other global measures may overlap",
         "states": stages,
         "post_eight_closes_minus_empty_explicit_reported_bytes": retained,
         "median_post_eight_closes_minus_empty_explicit_reported_bytes": int(
             statistics.median(retained)
+        ),
+        "post_action_minus_post_eight_closes_explicit_reported_bytes": action_delta,
+        "median_post_action_minus_post_eight_closes_explicit_reported_bytes": int(
+            statistics.median(action_delta)
+        ),
+        "post_action_minus_empty_explicit_reported_bytes": post_action_retained,
+        "median_post_action_minus_empty_explicit_reported_bytes": int(
+            statistics.median(post_action_retained)
         ),
     }
 
@@ -244,24 +294,36 @@ def main():
     fixture = Path(args.fixture)
     binary = Path(args.binary)
     binary_sha = hashlib.sha256(binary.read_bytes()).hexdigest()
-    run_once(str(binary), str(fixture), args.samples_per_stage, args.settle_ms, args.stage_ms)
-    run_internal_once(str(binary), str(fixture), args.stage_ms)
-    runs = [
-        run_once(str(binary), str(fixture), args.samples_per_stage, args.settle_ms, args.stage_ms)
-        for _ in range(args.repetitions)
-    ]
-    internal_runs = [
-        run_internal_once(str(binary), str(fixture), args.stage_ms)
-        for _ in range(args.repetitions)
-    ]
+    rss_runs = {}
+    internal_runs = {}
+    for action in ("control", "purge"):
+        run_once(str(binary), str(fixture), args.samples_per_stage,
+                 args.settle_ms, args.stage_ms, action)
+        run_internal_once(str(binary), str(fixture), args.stage_ms, action)
+        rss_runs[action] = [
+            run_once(str(binary), str(fixture), args.samples_per_stage,
+                     args.settle_ms, args.stage_ms, action)
+            for _ in range(args.repetitions)
+        ]
+        internal_runs[action] = [
+            run_internal_once(str(binary), str(fixture), args.stage_ms, action)
+            for _ in range(args.repetitions)
+        ]
     if hashlib.sha256(binary.read_bytes()).hexdigest() != binary_sha:
         raise RuntimeError("Servo binary changed during the measured court")
     receipt = {
-        "schema": "minicon-surf.servo-staged-w3-memory-receipt/0.0.2",
+        "schema": "minicon-surf.servo-staged-w3-memory-receipt/0.0.3",
         "status": "incomplete",
         "technology": "servo",
         "technology_version": "0.5.0",
         "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+        "allocator": {
+            "control_crate": "tikv-jemalloc-sys",
+            "control_crate_version": "0.6.1+5.3.0-1-ge13ca993e8ccb9ba9847cc330696e02839f328f7",
+            "control_crate_sha256": "cd8aa5b2ab86a2cefa406d889139c162cbb230092f7d1d7cbc1716405d852a3b",
+            "purge_mallctl": "arena.4096.purge",
+            "purge_result_codes": [0] * args.repetitions,
+        },
         "binary_sha256": binary_sha,
         "platform": {"os": "macos", "architecture": "arm64"},
         "workload": {
@@ -272,18 +334,20 @@ def main():
             "engine_lifecycle": "one Servo instance; eight sequential WebView build/drop cycles",
             "close_semantic": "WebViewInner drop sends CloseWebView and removes its paint webview",
             "stage_order": list(STAGES),
-            "warmups": 1,
-            "internal_report_warmups": 1,
-            "measured_repetitions": args.repetitions,
+            "warmups_per_mode": 1,
+            "measured_repetitions_per_mode": args.repetitions,
+            "pressure_modes": ["control_wait", "jemalloc_all_arenas_purge"],
             "samples_per_stage": args.samples_per_stage,
             "settle_ms": args.settle_ms,
             "stage_ms": args.stage_ms,
             "profile": "fresh temporary config and temporary_storage per repetition",
         },
         "measurement": {
-            "semantic": "peak of sampled sum of BSD ps RSS over Servo root and recursively observed descendants per stage",
-            **aggregate(runs),
-            "internal_reports": aggregate_internal(internal_runs),
+            "semantic": "peak of sampled sum of BSD ps RSS over Servo root and recursively observed descendants per stage; control and purge use separate fresh processes",
+            "rss": {action: aggregate(runs) for action, runs in rss_runs.items()},
+            "internal_reports": {
+                action: aggregate_internal(runs) for action, runs in internal_runs.items()
+            },
         },
         "agent_observation": {
             "interface": "direct Rust WebView evaluate_javascript callback",
@@ -297,7 +361,8 @@ def main():
             "the rendering context is reused, so this isolates WebView churn rather than surface allocation churn",
             "direct Rust callbacks do not prove native CLI, stable semantic nodes or CDP compatibility",
             "no like-for-like external browser uses this direct embedding and software-rendering path",
-            "no explicit allocator trim or memory-pressure signal is exercised",
+            "the purge branch exercises allocator purge only; no broader engine memory-pressure signal exists in this court",
+            "purge invokes jemalloc arena.4096.purge, where 4096 is MALLCTL_ARENAS_ALL for the linked jemalloc 5.3.0 lineage",
             "internal reports run in separate processes so reporter allocations do not contaminate RSS runs",
             "within internal-report runs, an earlier report may affect later report state",
             "sanitized path-prefix medians cover only each run's twelve largest explicit and non-explicit prefixes",

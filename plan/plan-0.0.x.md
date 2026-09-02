@@ -121,7 +121,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3 observed; 51.9 MB RSS retention, only 12.5 KB explicit-owner delta
+│   ├── [~] Servo 0.5.0: W1/W3; 51.9 MB retained, purge recovers only 3.193%
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -189,7 +189,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>51.9 MB RSS vs 12.5 KB explicit retained<br/>allocator recovery · Agent edge open"]
+        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>51.9 MB retained · purge recovers 3.193%<br/>recovery · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -374,6 +374,16 @@ flowchart LR
   more consistent with allocator reservation or unreported/reclaimable state.
   It is still not proof of a leak or of recoverability. Servo stays `keep`, and
   a measured jemalloc/engine pressure court becomes its next G1 dependency.
+- [~] Servo's paired pressure court now gives control-wait and forced jemalloc
+  purge separate fresh processes, each with one warmup and seven measured W3
+  runs. Control `post_close → post_action` RSS changed by zero in all runs.
+  `arena.4096.purge` succeeded and reduced RSS in all seven, with a 1,638,400-
+  byte median, while explicit reported ownership changed by zero. Yet the
+  post-purge state retained 49,692,672 bytes above empty: only about 3.193% of
+  its 51,314,688-byte post-close retention was recovered. Verdict: **effective
+  but insufficient**. Keep purge as one pressure-ladder action, but Servo's G1
+  recovery dependency remains red; decay/tcache, engine cache, hibernate and
+  terminate-one-target routes require distinct evidence.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
