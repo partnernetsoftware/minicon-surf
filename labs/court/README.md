@@ -201,6 +201,20 @@ measured 2,260,992 bytes summed RSS (1,343,800 footprint) empty, 4,489,216
 6,471,680 (4,440,376) with eight concurrent targets, now passing the full
 journey including click, wait and stale-revision semantics.
 
+The native route's third slice (bounded `http` fetch, same-origin scripts
+and `fetch()`, `macos-arm64-target-retention-native-dom-0.0.2-network-slice-lightpanda-0.4.0`)
+is reported beside Lightpanda's single server stage by stage, medians of
+physical footprint with summed RSS in brackets: empty 1,343,800 (2,342,912)
+against 8,356,392 (22,642,688); one target 2,408,760 (4,587,520) against
+9,077,336 (27,885,568); after eight closes 3,211,576 (5,390,336) against
+9,912,920 (29,474,816); retained above empty 1,867,776 (3,047,424) against
+1,540,144 (6,799,360); eight concurrent targets 4,718,904 (6,897,664) against
+Lightpanda's one-target limit. Lower at every live stage, but the post-close
+footprint equals the live footprint and the retained term exceeds
+Lightpanda's, so the slice's lifecycle is a retention risk, not an
+optimization. The representative-page comparison in the native lab's
+network court reads the same way.
+
 The per-cycle slope receipt
 (`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
 fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles

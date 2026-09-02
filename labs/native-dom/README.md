@@ -127,17 +127,45 @@ exactly that origin to `--allow-origin`. It passes 34 of 34 checks:
   reported, and never requested from the server; fixture targets still open
   beside url targets and eight representative pages are live at once.
 
-Physical footprint of the host (`proc_pid_rusage`, single readings after a
-500 ms settle): 1,343,800 bytes with a session open, 2,572,600 with the
-representative page rendered, 5,947,824 with eight representative pages and
-5,947,824 after closing them. Lightpanda 0.4.0 as a single server reached
-the same terminal state (`8 results`, eight links) on the same page at
-9,192,024 bytes from an 8,372,776-byte empty server, once the court stripped
-the inherited `http_proxy`/`https_proxy` variables from its environment; the
-native host never consults them. The native page is therefore about 3.6×
-below Lightpanda at the shared terminal state, while its per-page increment
-(1,228,800 bytes) is larger than Lightpanda's (819,248), and its host does
-not return realm memory to the OS after closes.
+Footprint is reported stage by stage beside Lightpanda 0.4.0 as a single
+server, never as one absolute number. Fixture court, eight sequential cycles,
+seven runs, medians of summed physical footprint (summed RSS in brackets),
+from `macos-arm64-target-retention-native-dom-0.0.2-network-slice-lightpanda-0.4.0`:
+
+| stage | native slice 3 | Lightpanda single server |
+|---|---|---|
+| empty | 1,343,800 (2,342,912) | 8,356,392 (22,642,688) |
+| one target live | 2,408,760 (4,587,520) | 9,077,336 (27,885,568) |
+| after that close | 2,408,760 (4,587,520) | 9,077,336 (27,918,336) |
+| eighth target live | 3,211,576 (5,390,336) | 9,912,920 (29,474,816) |
+| after all closes | 3,211,576 (5,390,336) | 9,912,920 (29,474,816) |
+| retained above empty | 1,867,776 (3,047,424) | 1,540,144 (6,799,360) |
+| eight concurrent targets | 4,718,904 (6,897,664) | one target only |
+
+Representative page, single readings after a 500 ms settle, both engines at
+the same terminal state (`8 results`, eight links; the court strips inherited
+proxy variables from Lightpanda's environment, the native host never reads
+them):
+
+| stage | native slice 3 | Lightpanda single server |
+|---|---|---|
+| empty (session open) | 1,343,800 | 8,487,464 |
+| representative page live | 2,720,056 | 9,486,936 |
+| eight representative pages live | 5,964,232 | one target only |
+| after closing | 5,964,232 | 9,503,320 |
+| retained above empty | 4,620,432 | 1,015,856 |
+
+Two readings follow, and only together. The native slice's live footprint
+is lower at every stage. Its lifecycle is not optimized: after every close
+the footprint equals the live footprint, so nothing is returned to the OS,
+and its retained-above-empty is larger than Lightpanda's on the fixture court
+(1,867,776 against 1,540,144) and much larger on the representative page
+(4,620,432 against 1,015,856). `memory.report` shows every logical owner at
+zero after the closes (targets, script realms and their malloc bytes,
+network fetches and bytes), which says the host released what it tracks and
+nothing about recovery; the difference is QuickJS runtime, parsed-tree and
+network-buffer memory kept by the system allocator. That is a retention risk
+to be measured and repaired before any lifecycle claim, and G1 stays open.
 
 ## Findings against product contracts
 

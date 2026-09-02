@@ -21,7 +21,7 @@ Planned first landscape:
 | `chrome` | named contemporary comparison baseline | active — same-CDP-live-target W1 observed |
 | `servo` | Rust embeddable full-engine candidate | active — API + software W1 runtime observed |
 | `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + lifecycle RSS observed; CDP pending |
-| `native-dom` | native bounded route: html5ever DOM plus a bounded QuickJS script realm | active — control 0.0.1 journey 27/27 with the script realm; retention court rows observed for both slices |
+| `native-dom` | native bounded route: html5ever DOM, bounded QuickJS realm, bounded `http` fetch | active — control 0.0.1 journey 27/27; network court 35/35 on a hermetic representative page; footprint lower than Lightpanda at every live stage but post-close retention unrecovered |
 | `blitz` | modular Rust HTML/CSS/native-component candidate | planned |
 | `wpe` | embedded low-consumption WebKit candidate | planned |
 | `wry` | system-WebView compatibility candidate | planned |

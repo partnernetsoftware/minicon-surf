@@ -227,6 +227,9 @@ def lightpanda_comparison(binary, url):
             time.sleep(0.05)
         time.sleep(0.5)
         loaded = footprint(process.pid)
+        cdp.call("Target.closeTarget", {"targetId": target})
+        time.sleep(0.5)
+        closed = footprint(process.pid)
         websocket.close()
         same_state = bool(state) and state.get("results") == 8 and state.get("status") == "8 results"
         return {"engine": "lightpanda", "version": "0.4.0",
@@ -234,8 +237,9 @@ def lightpanda_comparison(binary, url):
                 "proxy_variables_stripped": stripped,
                 "terminal_state": state, "same_terminal_state_as_native": same_state,
                 "comparison": "same-workload footprint" if same_state else "not comparable: engine did not reach the native terminal state",
-                "empty": empty, "representative_page": loaded,
-                "note": "Lightpanda applies its own network policy; only page footprint at the shared terminal state is compared"}
+                "empty": empty, "representative_page": loaded, "after_close": closed,
+                "retained_above_empty_bytes": (closed or {}).get("physical_footprint_bytes", 0) - (empty or {}).get("physical_footprint_bytes", 0),
+                "note": "Lightpanda applies its own network policy; only page footprint at the shared terminal states is compared"}
     finally:
             if process.poll() is None:
                 process.terminate()
@@ -391,6 +395,13 @@ def main():
                 host.call("target.close", {"target": page})
             time.sleep(0.5)
             footprints["after_closes"] = footprint(host.process.pid)
+            owners = host.call("memory.report", {})["result"]["owners"]
+            owners_after_closes = {"targets": owners["targets"]["objects"], "script_realms": owners["script_realms"]["objects"],
+                                   "script_realm_malloc_bytes": owners["script_realms"]["malloc_bytes"],
+                                   "network_fetches": owners["network"]["fetches"], "network_bytes": owners["network"]["bytes"]}
+            expect(checks, "logical owners return to zero after closes (not a footprint recovery claim)",
+                   owners_after_closes == {"targets": 0, "script_realms": 0, "script_realm_malloc_bytes": 0,
+                                           "network_fetches": 0, "network_bytes": 0}, owners_after_closes)
             host.call("session.close", {"session": session})
             exit_code = host.finish()
             expect(checks, "host exits cleanly", exit_code == 0, exit_code)
@@ -420,6 +431,9 @@ def main():
         "checks": checks,
         "passed": passed,
         "footprint": footprints,
+        "footprint_retained_above_empty_bytes": (footprints["after_closes"] or {}).get("physical_footprint_bytes", 0)
+                                                 - (footprints["empty"] or {}).get("physical_footprint_bytes", 0),
+        "owners_after_closes": owners_after_closes,
         "native_terminal_state": native_state,
         "server_hits": {path: Handler.hits.count(path) for path in sorted(set(Handler.hits))},
         "server_broken_pipes_reclaimed": Handler.broken_pipes,
@@ -432,6 +446,7 @@ def main():
             "the .invalid negative depends on the system resolver returning no address",
             "footprint samples are single readings after a 500 ms settle, not the seven-run court",
             "the native host never consults proxy variables; the engine comparison strips them from its environment and records which",
+            "logical owners reaching zero after closes says nothing about footprint recovery; footprint retained above empty is reported separately and is a QuickJS, network-buffer and allocator retention risk",
         ],
     }
     encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"

@@ -43,7 +43,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_1",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       },
@@ -312,7 +312,7 @@
           "scripts_skipped": [],
           "session": "session_1",
           "target": "target_1",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       },
@@ -774,7 +774,7 @@
           "code": "not_found",
           "details": {
             "status": 404,
-            "url": "http://127.0.0.1:57574/notfound"
+            "url": "http://127.0.0.1:58410/notfound"
           },
           "message": "document request was not successful",
           "retryable": false,
@@ -832,7 +832,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_21",
-          "url": "http://127.0.0.1:57574/redirect/0"
+          "url": "http://127.0.0.1:58410/redirect/0"
         },
         "version": "0.0.1"
       },
@@ -918,7 +918,7 @@
           ],
           "session": "session_1",
           "target": "target_24",
-          "url": "http://127.0.0.1:57574/xorigin.html"
+          "url": "http://127.0.0.1:58410/xorigin.html"
         },
         "version": "0.0.1"
       },
@@ -956,6 +956,17 @@
       "passed": true
     },
     {
+      "check": "logical owners return to zero after closes (not a footprint recovery claim)",
+      "detail": {
+        "network_bytes": 0,
+        "network_fetches": 0,
+        "script_realm_malloc_bytes": 0,
+        "script_realms": 0,
+        "targets": 0
+      },
+      "passed": true
+    },
+    {
       "check": "host exits cleanly",
       "detail": 0,
       "passed": true
@@ -964,13 +975,13 @@
   "control_contract": "0.0.1",
   "footprint": {
     "after_closes": {
-      "lifetime_max_physical_footprint_bytes": 5947824,
-      "physical_footprint_bytes": 5947824,
+      "lifetime_max_physical_footprint_bytes": 5964232,
+      "physical_footprint_bytes": 5964232,
       "resident_bytes": 15024128
     },
     "eight_representative_pages": {
-      "lifetime_max_physical_footprint_bytes": 5947824,
-      "physical_footprint_bytes": 5947824,
+      "lifetime_max_physical_footprint_bytes": 5964232,
+      "physical_footprint_bytes": 5964232,
       "resident_bytes": 15024128
     },
     "empty": {
@@ -979,30 +990,37 @@
       "resident_bytes": 2457600
     },
     "representative_page": {
-      "lifetime_max_physical_footprint_bytes": 2572600,
-      "physical_footprint_bytes": 2572600,
-      "resident_bytes": 4882432
+      "lifetime_max_physical_footprint_bytes": 2720056,
+      "physical_footprint_bytes": 2720056,
+      "resident_bytes": 5029888
     }
   },
+  "footprint_retained_above_empty_bytes": 4620432,
   "host_sha256": "2a275f1a2af0e910210544ba556d2d4cfef4d4361ec15c47a3307ef9087fb17a",
   "lightpanda_comparison": {
+    "after_close": {
+      "lifetime_max_physical_footprint_bytes": 9503320,
+      "physical_footprint_bytes": 9503320,
+      "resident_bytes": 29704192
+    },
     "comparison": "same-workload footprint",
     "empty": {
-      "lifetime_max_physical_footprint_bytes": 8372776,
-      "physical_footprint_bytes": 8372776,
-      "resident_bytes": 22937600
+      "lifetime_max_physical_footprint_bytes": 8487464,
+      "physical_footprint_bytes": 8487464,
+      "resident_bytes": 23052288
     },
     "engine": "lightpanda",
-    "note": "Lightpanda applies its own network policy; only page footprint at the shared terminal state is compared",
+    "note": "Lightpanda applies its own network policy; only page footprint at the shared terminal states is compared",
     "proxy_variables_stripped": [
       "http_proxy",
       "https_proxy"
     ],
     "representative_page": {
-      "lifetime_max_physical_footprint_bytes": 9192024,
-      "physical_footprint_bytes": 9192024,
-      "resident_bytes": 29360128
+      "lifetime_max_physical_footprint_bytes": 9486936,
+      "physical_footprint_bytes": 9486936,
+      "resident_bytes": 29655040
     },
+    "retained_above_empty_bytes": 1015856,
     "same_terminal_state_as_native": true,
     "terminal_state": {
       "results": 8,
@@ -1017,11 +1035,19 @@
     "public-address negatives are refused before any connection, so they exercise policy, not reachability",
     "the .invalid negative depends on the system resolver returning no address",
     "footprint samples are single readings after a 500 ms settle, not the seven-run court",
-    "the native host never consults proxy variables; the engine comparison strips them from its environment and records which"
+    "the native host never consults proxy variables; the engine comparison strips them from its environment and records which",
+    "logical owners reaching zero after closes says nothing about footprint recovery; footprint retained above empty is reported separately and is a QuickJS, network-buffer and allocator retention risk"
   ],
   "native_terminal_state": {
     "results": 8,
     "status": "8 results"
+  },
+  "owners_after_closes": {
+    "network_bytes": 0,
+    "network_fetches": 0,
+    "script_realm_malloc_bytes": 0,
+    "script_realms": 0,
+    "targets": 0
   },
   "passed": true,
   "platform": {
@@ -1029,7 +1055,7 @@
     "os": "macos"
   },
   "schema": "minicon-surf.native-dom-network-court-receipt/0.0.1",
-  "server_broken_pipes_reclaimed": 2,
+  "server_broken_pipes_reclaimed": 1,
   "server_hits": {
     "/app.js": 9,
     "/big": 1,
@@ -1059,7 +1085,7 @@
       "arguments": {
         "persistence": "ephemeral"
       },
-      "elapsed_ms": 1.06,
+      "elapsed_ms": 1.208,
       "operation": "profile.create",
       "response": {
         "ok": true,
@@ -1096,9 +1122,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 3.137,
+      "elapsed_ms": 3.044,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -1118,7 +1144,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_1",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -1130,7 +1156,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.286,
+      "elapsed_ms": 0.278,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -1379,7 +1405,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 2.281,
+      "elapsed_ms": 3.872,
       "operation": "target.act",
       "response": {
         "ok": true,
@@ -1402,7 +1428,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.102,
+      "elapsed_ms": 0.434,
       "operation": "target.wait",
       "response": {
         "ok": true,
@@ -1424,7 +1450,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 1.156,
+      "elapsed_ms": 1.083,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -1675,7 +1701,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.248,
+      "elapsed_ms": 0.137,
       "operation": "target.inspect",
       "response": {
         "ok": true,
@@ -1698,14 +1724,14 @@
           "scripts_skipped": [],
           "session": "session_1",
           "target": "target_1",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.248,
+      "elapsed_ms": 0.503,
       "operation": "memory.report",
       "response": {
         "ok": true,
@@ -1765,9 +1791,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "https://127.0.0.1:57574/index.html"
+        "url": "https://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 0.066,
+      "elapsed_ms": 0.156,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1794,7 +1820,7 @@
         "session": "session_1",
         "url": "file:///etc/hosts"
       },
-      "elapsed_ms": 0.039,
+      "elapsed_ms": 0.049,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1821,7 +1847,7 @@
         "session": "session_1",
         "url": "ftp://example.com/"
       },
-      "elapsed_ms": 0.034,
+      "elapsed_ms": 0.071,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1848,7 +1874,7 @@
         "session": "session_1",
         "url": "http://10.0.0.1/"
       },
-      "elapsed_ms": 0.049,
+      "elapsed_ms": 0.062,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1875,7 +1901,7 @@
         "session": "session_1",
         "url": "http://169.254.169.254/latest/meta-data/"
       },
-      "elapsed_ms": 0.068,
+      "elapsed_ms": 0.062,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1902,7 +1928,7 @@
         "session": "session_1",
         "url": "http://100.64.0.1/"
       },
-      "elapsed_ms": 0.048,
+      "elapsed_ms": 0.038,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1929,7 +1955,7 @@
         "session": "session_1",
         "url": "http://192.0.0.170/"
       },
-      "elapsed_ms": 0.045,
+      "elapsed_ms": 0.037,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1956,7 +1982,7 @@
         "session": "session_1",
         "url": "http://[fd00::1]/"
       },
-      "elapsed_ms": 0.043,
+      "elapsed_ms": 0.036,
       "operation": "target.open",
       "response": {
         "error": {
@@ -1981,9 +2007,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://[::1]:57574/index.html"
+        "url": "http://[::1]:58410/index.html"
       },
-      "elapsed_ms": 0.05,
+      "elapsed_ms": 0.044,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2008,9 +2034,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://localhost:57574/index.html"
+        "url": "http://localhost:58410/index.html"
       },
-      "elapsed_ms": 0.057,
+      "elapsed_ms": 0.034,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2037,7 +2063,7 @@
         "session": "session_1",
         "url": "http://127.0.0.1:1/"
       },
-      "elapsed_ms": 0.044,
+      "elapsed_ms": 0.033,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2064,7 +2090,7 @@
         "session": "session_1",
         "url": "http://court.invalid/"
       },
-      "elapsed_ms": 9.979,
+      "elapsed_ms": 13.327,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2089,9 +2115,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/redirect/5"
+        "url": "http://127.0.0.1:58410/redirect/5"
       },
-      "elapsed_ms": 1.594,
+      "elapsed_ms": 2.647,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2116,9 +2142,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/redirect-loop"
+        "url": "http://127.0.0.1:58410/redirect-loop"
       },
-      "elapsed_ms": 1.411,
+      "elapsed_ms": 1.819,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2143,9 +2169,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/redirect-private"
+        "url": "http://127.0.0.1:58410/redirect-private"
       },
-      "elapsed_ms": 0.524,
+      "elapsed_ms": 0.525,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2170,9 +2196,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/big"
+        "url": "http://127.0.0.1:58410/big"
       },
-      "elapsed_ms": 0.9,
+      "elapsed_ms": 0.842,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2197,9 +2223,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/slow"
+        "url": "http://127.0.0.1:58410/slow"
       },
-      "elapsed_ms": 3000.928,
+      "elapsed_ms": 3000.611,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2224,16 +2250,16 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/notfound"
+        "url": "http://127.0.0.1:58410/notfound"
       },
-      "elapsed_ms": 2.115,
+      "elapsed_ms": 2.003,
       "operation": "target.open",
       "response": {
         "error": {
           "code": "not_found",
           "details": {
             "status": 404,
-            "url": "http://127.0.0.1:57574/notfound"
+            "url": "http://127.0.0.1:58410/notfound"
           },
           "message": "document request was not successful",
           "retryable": false,
@@ -2251,9 +2277,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/data.json"
+        "url": "http://127.0.0.1:58410/data.json"
       },
-      "elapsed_ms": 1.543,
+      "elapsed_ms": 1.712,
       "operation": "target.open",
       "response": {
         "error": {
@@ -2277,9 +2303,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/redirect/3"
+        "url": "http://127.0.0.1:58410/redirect/3"
       },
-      "elapsed_ms": 6.431,
+      "elapsed_ms": 7.103,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2299,7 +2325,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_21",
-          "url": "http://127.0.0.1:57574/redirect/0"
+          "url": "http://127.0.0.1:58410/redirect/0"
         },
         "version": "0.0.1"
       }
@@ -2311,7 +2337,7 @@
         "max_nodes": 64,
         "target": "target_21"
       },
-      "elapsed_ms": 0.643,
+      "elapsed_ms": 0.54,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -2341,7 +2367,7 @@
       "arguments": {
         "target": "target_21"
       },
-      "elapsed_ms": 0.46,
+      "elapsed_ms": 0.409,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -2357,9 +2383,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/many.html"
+        "url": "http://127.0.0.1:58410/many.html"
       },
-      "elapsed_ms": 11.519,
+      "elapsed_ms": 11.053,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2379,7 +2405,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_22",
-          "url": "http://127.0.0.1:57574/many.html"
+          "url": "http://127.0.0.1:58410/many.html"
         },
         "version": "0.0.1"
       }
@@ -2391,7 +2417,7 @@
         "max_nodes": 64,
         "target": "target_22"
       },
-      "elapsed_ms": 0.664,
+      "elapsed_ms": 0.66,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -2485,7 +2511,7 @@
       "arguments": {
         "target": "target_22"
       },
-      "elapsed_ms": 0.307,
+      "elapsed_ms": 1.357,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -2501,9 +2527,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/count.html"
+        "url": "http://127.0.0.1:58410/count.html"
       },
-      "elapsed_ms": 21.571,
+      "elapsed_ms": 19.729,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2523,7 +2549,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_23",
-          "url": "http://127.0.0.1:57574/count.html"
+          "url": "http://127.0.0.1:58410/count.html"
         },
         "version": "0.0.1"
       }
@@ -2535,7 +2561,7 @@
         "max_nodes": 64,
         "target": "target_23"
       },
-      "elapsed_ms": 0.304,
+      "elapsed_ms": 0.259,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -2575,7 +2601,7 @@
       "arguments": {
         "target": "target_23"
       },
-      "elapsed_ms": 0.281,
+      "elapsed_ms": 0.226,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -2591,9 +2617,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/xorigin.html"
+        "url": "http://127.0.0.1:58410/xorigin.html"
       },
-      "elapsed_ms": 2.637,
+      "elapsed_ms": 2.585,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2613,7 +2639,7 @@
           "scripts_skipped": 1,
           "session": "session_1",
           "target": "target_24",
-          "url": "http://127.0.0.1:57574/xorigin.html"
+          "url": "http://127.0.0.1:58410/xorigin.html"
         },
         "version": "0.0.1"
       }
@@ -2622,7 +2648,7 @@
       "arguments": {
         "target": "target_24"
       },
-      "elapsed_ms": 0.063,
+      "elapsed_ms": 0.09,
       "operation": "target.inspect",
       "response": {
         "ok": true,
@@ -2650,7 +2676,7 @@
           ],
           "session": "session_1",
           "target": "target_24",
-          "url": "http://127.0.0.1:57574/xorigin.html"
+          "url": "http://127.0.0.1:58410/xorigin.html"
         },
         "version": "0.0.1"
       }
@@ -2662,7 +2688,7 @@
         "max_nodes": 64,
         "target": "target_24"
       },
-      "elapsed_ms": 0.225,
+      "elapsed_ms": 0.253,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -2702,7 +2728,7 @@
       "arguments": {
         "target": "target_24"
       },
-      "elapsed_ms": 0.223,
+      "elapsed_ms": 0.235,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -2720,7 +2746,7 @@
         "fixture": "semantic-interactive.html",
         "session": "session_1"
       },
-      "elapsed_ms": 1.911,
+      "elapsed_ms": 2.037,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2749,7 +2775,7 @@
       "arguments": {
         "target": "target_25"
       },
-      "elapsed_ms": 0.203,
+      "elapsed_ms": 0.211,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -2765,9 +2791,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 3.547,
+      "elapsed_ms": 3.792,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2787,7 +2813,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_26",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2795,9 +2821,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 3.883,
+      "elapsed_ms": 3.646,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2817,7 +2843,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_27",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2825,9 +2851,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 3.311,
+      "elapsed_ms": 2.84,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2847,7 +2873,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_28",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2855,9 +2881,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 2.766,
+      "elapsed_ms": 2.731,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2877,7 +2903,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_29",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2885,9 +2911,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 3.068,
+      "elapsed_ms": 2.445,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2907,7 +2933,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_30",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2915,9 +2941,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 2.886,
+      "elapsed_ms": 2.585,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2937,7 +2963,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_31",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2945,9 +2971,9 @@
     {
       "arguments": {
         "session": "session_1",
-        "url": "http://127.0.0.1:57574/index.html"
+        "url": "http://127.0.0.1:58410/index.html"
       },
-      "elapsed_ms": 2.832,
+      "elapsed_ms": 2.9,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -2967,7 +2993,7 @@
           "scripts_skipped": 0,
           "session": "session_1",
           "target": "target_32",
-          "url": "http://127.0.0.1:57574/index.html"
+          "url": "http://127.0.0.1:58410/index.html"
         },
         "version": "0.0.1"
       }
@@ -2976,7 +3002,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.716,
+      "elapsed_ms": 0.278,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -2993,7 +3019,7 @@
       "arguments": {
         "target": "target_26"
       },
-      "elapsed_ms": 0.683,
+      "elapsed_ms": 0.201,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3010,7 +3036,7 @@
       "arguments": {
         "target": "target_27"
       },
-      "elapsed_ms": 0.63,
+      "elapsed_ms": 0.232,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3027,7 +3053,7 @@
       "arguments": {
         "target": "target_28"
       },
-      "elapsed_ms": 0.579,
+      "elapsed_ms": 0.228,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3044,7 +3070,7 @@
       "arguments": {
         "target": "target_29"
       },
-      "elapsed_ms": 0.573,
+      "elapsed_ms": 0.208,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3061,7 +3087,7 @@
       "arguments": {
         "target": "target_30"
       },
-      "elapsed_ms": 0.678,
+      "elapsed_ms": 0.199,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3078,7 +3104,7 @@
       "arguments": {
         "target": "target_31"
       },
-      "elapsed_ms": 0.585,
+      "elapsed_ms": 0.211,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3095,7 +3121,7 @@
       "arguments": {
         "target": "target_32"
       },
-      "elapsed_ms": 0.597,
+      "elapsed_ms": 0.159,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -3109,15 +3135,74 @@
       }
     },
     {
-      "arguments": {
-        "session": "session_1"
-      },
-      "elapsed_ms": 0.067,
-      "operation": "session.close",
+      "arguments": {},
+      "elapsed_ms": 0.182,
+      "operation": "memory.report",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_net_59",
+        "result": {
+          "kind": "memory_report",
+          "libmalloc": {
+            "size_allocated": 29360128,
+            "size_in_use": 119264
+          },
+          "limitations": [
+            "logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory",
+            "no layout, image or storage owners exist in this slice",
+            "not process RSS/private/PSS"
+          ],
+          "owners": {
+            "network": {
+              "bytes": 0,
+              "denied": 0,
+              "fetches": 0,
+              "limits": {
+                "allowed_origins": 1,
+                "bytes_per_target": 4194304,
+                "fetches_per_target": 32,
+                "pending_per_turn": 4,
+                "per_fetch_ms": 3000,
+                "redirects": 3,
+                "response_bytes": 1048576
+              }
+            },
+            "profiles": {
+              "object_limit": 8,
+              "objects": 1
+            },
+            "script_realms": {
+              "malloc_bytes": 0,
+              "memory_limit_bytes": 16777216,
+              "objects": 0
+            },
+            "sessions": {
+              "object_limit": 1,
+              "objects": 1
+            },
+            "targets": {
+              "elements": 0,
+              "fixture_bytes": 0,
+              "object_limit": 8,
+              "objects": 0
+            }
+          },
+          "semantic": "native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.043,
+      "operation": "session.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_60",
         "result": {
           "closed_targets": 0,
           "kind": "session_closed",
