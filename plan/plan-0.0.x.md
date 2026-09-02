@@ -130,7 +130,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   └── default route survives only if it satisfies ↳ [N0] ↳ [H5] ↳ [P6]
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
-│   ├── G1 memory court can attribute and cap a synthetic target
+│   ├── G1 memory court can attribute/cap synthetic state; allocator purge candidate narrowed, gate open
 │   ├── [x] G2 synthetic target is controlled interchangeably by CLI and a named CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
 │   ├── [x] G4 synthetic profiles prove restart, storage/policy isolation and lock behavior
@@ -181,7 +181,7 @@ flowchart LR
 
     subgraph MEM["Memory Court [M2]"]
         BOOK["ownership ledger<br/>live · retained · resident · peak"]
-        RETAIN["same-process retention court<br/>maximum capacity · post-release · trim"]
+        RETAIN["same-process retention court<br/>maximum capacity · post-release · trim<br/>system vs mimalloc lab"]
         LIMIT["budget judge<br/>process · profile · target · resource"]
         BASE["comparative baseline<br/>same workload · machine · mode"]
         PRESS{"bounded AND materially<br/>below named baseline?"}
@@ -306,6 +306,17 @@ flowchart LR
   ineffective for the court. G1 remains open: this is still synthetic rather
   than HTML/engine work, has no meaningful browser baseline, and does not yet
   provide an effective retained-memory recovery path.
+- [~] A controlled allocator branch now tests the recovery-path hypothesis
+  without changing the default allocator. Seven same-source runs per binary
+  show `mimalloc` 0.1.52 forced collection reducing post-release Apple physical
+  footprint by a 704,512-byte median versus zero for the system allocator, but
+  no RSS reduction in either branch. Mimalloc also starts 573,512 physical-
+  footprint bytes above system and remains 524,336 bytes higher at maximum
+  capacity (its RSS is likewise higher). Verdict: **narrow/keep only as an
+  allocator-purge lab**; do not make it default. This is useful evidence that
+  an explicit purge path can work, not evidence of overall memory optimization.
+  Secure mode, real engine allocations and non-macOS cells remain untested, so
+  G1 stays open.
 - [x] The public lab governance, hermetic W1/W2 fixtures, receipt schema and
   redaction rules exist under `labs/` and `AGENTS.md`.
 - [x] The shared Rust process-tree sampler has deadline cleanup, recursively

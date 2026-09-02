@@ -4,9 +4,15 @@ version = "0.0.0"
 edition = "2024"
 publish = false
 
+[features]
+default = []
+mimalloc-lab = ["dep:libmimalloc-sys", "dep:mimalloc"]
+
 [dependencies]
 base64 = "=0.22.1"
 fs2 = "=0.4.3"
+libmimalloc-sys = { version = "=0.1.49", default-features = false, features = ["extended"], optional = true }
+mimalloc = { version = "=0.1.52", default-features = false, features = ["extended"], optional = true }
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.151"
 sha1 = "=0.10.6"

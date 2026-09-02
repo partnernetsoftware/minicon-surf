@@ -181,7 +181,10 @@ def run_once(binary, samples, settle_ms):
         assert all(value == 0 for value in result["post_release"]["owners"].values())
         trim = host.call("memory.trim", {})
         result["post_trim"] = sample_stage(host, samples, settle_ms)
-        result["post_trim"]["allocator_reported_released_bytes"] = trim["released_bytes"]
+        result["post_trim"]["allocator_trim_strategy"] = trim["strategy"]
+        result["post_trim"]["allocator_release_reporting"] = trim["release_reporting"]
+        if "released_bytes" in trim:
+            result["post_trim"]["allocator_reported_released_bytes"] = trim["released_bytes"]
         host.finish()
         return result, overflow
 
@@ -200,9 +203,12 @@ def aggregate(runs):
             state[f"maximum_{key}"] = max(values)
         state["owners"] = rows[0]["owners"]
         if stage == "post_trim":
-            released = [row["allocator_reported_released_bytes"] for row in rows]
-            state["allocator_reported_released_bytes"] = released
-            state["median_allocator_reported_released_bytes"] = int(statistics.median(released))
+            state["allocator_trim_strategy"] = rows[0]["allocator_trim_strategy"]
+            state["allocator_release_reporting"] = rows[0]["allocator_release_reporting"]
+            released = [row.get("allocator_reported_released_bytes") for row in rows]
+            if all(value is not None for value in released):
+                state["allocator_reported_released_bytes"] = released
+                state["median_allocator_reported_released_bytes"] = int(statistics.median(released))
         states[stage] = state
     return states
 
@@ -213,6 +219,7 @@ def main():
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--samples-per-stage", type=int, default=3)
     parser.add_argument("--settle-ms", type=int, default=100)
+    parser.add_argument("--allocator-label", default="system")
     parser.add_argument("--receipt")
     args = parser.parse_args()
     if platform.system() != "Darwin" or platform.machine() != "arm64":
@@ -231,11 +238,16 @@ def main():
     release_physical = [run["post_release"]["peak_tree_physical_footprint_bytes"] - run["empty"]["peak_tree_physical_footprint_bytes"] for run in runs]
     trim_rss = [run["post_trim"]["peak_tree_resident_bytes"] - run["empty"]["peak_tree_resident_bytes"] for run in runs]
     trim_physical = [run["post_trim"]["peak_tree_physical_footprint_bytes"] - run["empty"]["peak_tree_physical_footprint_bytes"] for run in runs]
-    trim_released = states["post_trim"]["allocator_reported_released_bytes"]
+    trim_vs_release_rss = [run["post_trim"]["peak_tree_resident_bytes"] - run["post_release"]["peak_tree_resident_bytes"] for run in runs]
+    trim_vs_release_physical = [run["post_trim"]["peak_tree_physical_footprint_bytes"] - run["post_release"]["peak_tree_physical_footprint_bytes"] for run in runs]
+    median_trim_physical = int(statistics.median(trim_vs_release_physical))
+    trim_effective = median_trim_physical <= -16384
+    trim_state = states["post_trim"]
     receipt = {
         "schema": "minicon-surf.synthetic-staged-memory-receipt/0.0.1",
         "status": "incomplete",
         "binary_sha256": hashlib.sha256(Path(args.binary).read_bytes()).hexdigest(),
+        "allocator_label": args.allocator_label,
         "platform": {"os": "macos", "architecture": "arm64"},
         "workload": {"stage_order": list(STAGES), "warmups": 1,
                      "measured_repetitions": args.repetitions,
@@ -254,13 +266,19 @@ def main():
                         "median_post_trim_minus_empty_resident_bytes": int(statistics.median(trim_rss)),
                         "post_trim_minus_empty_physical_footprint_bytes": trim_physical,
                         "median_post_trim_minus_empty_physical_footprint_bytes": int(statistics.median(trim_physical)),
-                        "trim_verdict": ("ineffective" if not any(trim_released) else "released_some_bytes")},
+                        "post_trim_minus_post_release_resident_bytes": trim_vs_release_rss,
+                        "median_post_trim_minus_post_release_resident_bytes": int(statistics.median(trim_vs_release_rss)),
+                        "post_trim_minus_post_release_physical_footprint_bytes": trim_vs_release_physical,
+                        "median_post_trim_minus_post_release_physical_footprint_bytes": median_trim_physical,
+                        "trim_verdict": ("effective" if trim_effective else "ineffective"),
+                        "trim_effectiveness_threshold_bytes": -16384},
         "capacity_rejections": overflows,
         "limitations": ["synthetic state is not an HTML/browser-engine workload",
                         "footprint physical footprint is Apple platform-specific",
                         "20ms gaps and command overhead exist between stage samples",
-                        ("malloc_zone_pressure_relief returned zero bytes in every measured run"
-                         if not any(trim_released) else "allocator trim results varied by measured run"),
+                        ("allocator release reporting is unavailable; verdict uses measured footprint"
+                         if trim_state["allocator_release_reporting"] == "unavailable"
+                         else "allocator-reported bytes are retained separately from the measured verdict"),
                         "one process was observed; future engine routes require complete descendant attribution",
                         "no external browser baseline is meaningful for this engine-neutral state"],
     }

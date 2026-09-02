@@ -1,0 +1,602 @@
+{
+  "allocator_label": "mimalloc-0.1.52",
+  "binary_sha256": "b600a62cc01f2c02b7c2cd93c72cd0b5aac7963060561ec05c05618f5d1bc68a",
+  "capacity_rejections": [
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    },
+    {
+      "profile": "resource_limit",
+      "session": "resource_limit",
+      "storage": "resource_limit",
+      "surface": "resource_limit",
+      "target": "resource_limit"
+    }
+  ],
+  "limitations": [
+    "synthetic state is not an HTML/browser-engine workload",
+    "footprint physical footprint is Apple platform-specific",
+    "20ms gaps and command overhead exist between stage samples",
+    "allocator release reporting is unavailable; verdict uses measured footprint",
+    "one process was observed; future engine routes require complete descendant attribution",
+    "no external browser baseline is meaningful for this engine-neutral state"
+  ],
+  "measurement": {
+    "median_post_release_minus_empty_physical_footprint_bytes": 950272,
+    "median_post_release_minus_empty_resident_bytes": 1015808,
+    "median_post_trim_minus_empty_physical_footprint_bytes": 245760,
+    "median_post_trim_minus_empty_resident_bytes": 1015808,
+    "median_post_trim_minus_post_release_physical_footprint_bytes": -704512,
+    "median_post_trim_minus_post_release_resident_bytes": 0,
+    "post_release_minus_empty_physical_footprint_bytes": [
+      950272,
+      950272,
+      950272,
+      950272,
+      950272,
+      950272,
+      950272
+    ],
+    "post_release_minus_empty_resident_bytes": [
+      1015808,
+      1015808,
+      999424,
+      1015808,
+      1015808,
+      1015808,
+      1015808
+    ],
+    "post_trim_minus_empty_physical_footprint_bytes": [
+      245760,
+      245760,
+      245760,
+      245760,
+      245760,
+      245760,
+      245760
+    ],
+    "post_trim_minus_empty_resident_bytes": [
+      1015808,
+      1015808,
+      999424,
+      1015808,
+      1015808,
+      1015808,
+      1015808
+    ],
+    "post_trim_minus_post_release_physical_footprint_bytes": [
+      -704512,
+      -704512,
+      -704512,
+      -704512,
+      -704512,
+      -704512,
+      -704512
+    ],
+    "post_trim_minus_post_release_resident_bytes": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "states": {
+      "empty": {
+        "logical_accounted_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maximum_logical_accounted_bytes": 0,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1622400,
+        "maximum_peak_tree_resident_bytes": 2539520,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1622400,
+        "median_logical_accounted_bytes": 0,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1622400,
+        "median_peak_tree_resident_bytes": 2539520,
+        "median_reported_process_peak_physical_footprint_bytes": 1622400,
+        "owners": {
+          "profiles": 0,
+          "sessions": 0,
+          "surfaces": 0,
+          "targets": 0
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1622400,
+          1622400,
+          1622400,
+          1622400,
+          1622400,
+          1622400,
+          1622400
+        ],
+        "peak_tree_resident_bytes": [
+          2539520,
+          2539520,
+          2539520,
+          2539520,
+          2539520,
+          2539520,
+          2539520
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1622400,
+          1622400,
+          1622400,
+          1622400,
+          1622400,
+          1622400,
+          1622400
+        ]
+      },
+      "maximum_headed": {
+        "logical_accounted_bytes": [
+          1066348,
+          1066348,
+          1066348,
+          1066348,
+          1066348,
+          1066348,
+          1066348
+        ],
+        "maximum_logical_accounted_bytes": 1066348,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 2572672,
+        "maximum_peak_tree_resident_bytes": 3555328,
+        "maximum_reported_process_peak_physical_footprint_bytes": 2572672,
+        "median_logical_accounted_bytes": 1066348,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 2572672,
+        "median_peak_tree_resident_bytes": 3555328,
+        "median_reported_process_peak_physical_footprint_bytes": 2572672,
+        "owners": {
+          "profiles": 8,
+          "sessions": 16,
+          "surfaces": 8,
+          "targets": 32
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672
+        ],
+        "peak_tree_resident_bytes": [
+          3555328,
+          3555328,
+          3538944,
+          3555328,
+          3555328,
+          3555328,
+          3555328
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672
+        ]
+      },
+      "one_headed": {
+        "logical_accounted_bytes": [
+          66248,
+          66248,
+          66248,
+          66248,
+          66248,
+          66248,
+          66248
+        ],
+        "maximum_logical_accounted_bytes": 66248,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1720704,
+        "maximum_peak_tree_resident_bytes": 2686976,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1720704,
+        "median_logical_accounted_bytes": 66248,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1720704,
+        "median_peak_tree_resident_bytes": 2686976,
+        "median_reported_process_peak_physical_footprint_bytes": 1720704,
+        "owners": {
+          "profiles": 1,
+          "sessions": 1,
+          "surfaces": 1,
+          "targets": 1
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704
+        ],
+        "peak_tree_resident_bytes": [
+          2686976,
+          2686976,
+          2670592,
+          2686976,
+          2686976,
+          2686976,
+          2686976
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704
+        ]
+      },
+      "one_live": {
+        "logical_accounted_bytes": [
+          631,
+          631,
+          631,
+          631,
+          631,
+          631,
+          631
+        ],
+        "maximum_logical_accounted_bytes": 631,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1704320,
+        "maximum_peak_tree_resident_bytes": 2670592,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1704320,
+        "median_logical_accounted_bytes": 631,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1704320,
+        "median_peak_tree_resident_bytes": 2670592,
+        "median_reported_process_peak_physical_footprint_bytes": 1704320,
+        "owners": {
+          "profiles": 1,
+          "sessions": 1,
+          "surfaces": 0,
+          "targets": 1
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1704320,
+          1704320,
+          1704320,
+          1704320,
+          1704320,
+          1704320,
+          1704320
+        ],
+        "peak_tree_resident_bytes": [
+          2670592,
+          2670592,
+          2670592,
+          2670592,
+          2670592,
+          2670592,
+          2670592
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1704320,
+          1704320,
+          1704320,
+          1704320,
+          1704320,
+          1704320,
+          1704320
+        ]
+      },
+      "one_post_hide": {
+        "logical_accounted_bytes": [
+          631,
+          631,
+          631,
+          631,
+          631,
+          631,
+          631
+        ],
+        "maximum_logical_accounted_bytes": 631,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1720704,
+        "maximum_peak_tree_resident_bytes": 2686976,
+        "maximum_reported_process_peak_physical_footprint_bytes": 1720704,
+        "median_logical_accounted_bytes": 631,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1720704,
+        "median_peak_tree_resident_bytes": 2686976,
+        "median_reported_process_peak_physical_footprint_bytes": 1720704,
+        "owners": {
+          "profiles": 1,
+          "sessions": 1,
+          "surfaces": 0,
+          "targets": 1
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704
+        ],
+        "peak_tree_resident_bytes": [
+          2686976,
+          2686976,
+          2670592,
+          2686976,
+          2686976,
+          2686976,
+          2686976
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704,
+          1720704
+        ]
+      },
+      "post_release": {
+        "logical_accounted_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maximum_logical_accounted_bytes": 0,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 2572672,
+        "maximum_peak_tree_resident_bytes": 3555328,
+        "maximum_reported_process_peak_physical_footprint_bytes": 2572672,
+        "median_logical_accounted_bytes": 0,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 2572672,
+        "median_peak_tree_resident_bytes": 3555328,
+        "median_reported_process_peak_physical_footprint_bytes": 2572672,
+        "owners": {
+          "profiles": 0,
+          "sessions": 0,
+          "surfaces": 0,
+          "targets": 0
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672
+        ],
+        "peak_tree_resident_bytes": [
+          3555328,
+          3555328,
+          3538944,
+          3555328,
+          3555328,
+          3555328,
+          3555328
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672
+        ]
+      },
+      "post_trim": {
+        "allocator_release_reporting": "unavailable",
+        "allocator_trim_strategy": "mimalloc_collect_force",
+        "logical_accounted_bytes": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "maximum_logical_accounted_bytes": 0,
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_physical_footprint_bytes": 1868160,
+        "maximum_peak_tree_resident_bytes": 3555328,
+        "maximum_reported_process_peak_physical_footprint_bytes": 2572672,
+        "median_logical_accounted_bytes": 0,
+        "median_peak_process_count": 1,
+        "median_peak_tree_physical_footprint_bytes": 1868160,
+        "median_peak_tree_resident_bytes": 3555328,
+        "median_reported_process_peak_physical_footprint_bytes": 2572672,
+        "owners": {
+          "profiles": 0,
+          "sessions": 0,
+          "surfaces": 0,
+          "targets": 0
+        },
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_physical_footprint_bytes": [
+          1868160,
+          1868160,
+          1868160,
+          1868160,
+          1868160,
+          1868160,
+          1868160
+        ],
+        "peak_tree_resident_bytes": [
+          3555328,
+          3555328,
+          3538944,
+          3555328,
+          3555328,
+          3555328,
+          3555328
+        ],
+        "reported_process_peak_physical_footprint_bytes": [
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672,
+          2572672
+        ]
+      }
+    },
+    "trim_effectiveness_threshold_bytes": -16384,
+    "trim_verdict": "effective"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.synthetic-staged-memory-receipt/0.0.1",
+  "status": "incomplete",
+  "workload": {
+    "maximum_state": {
+      "cookie_entries": 256,
+      "local_storage_entries": 256,
+      "profiles": 8,
+      "sessions": 16,
+      "surfaces": 8,
+      "targets": 32,
+      "value_bytes_per_entry": 1024
+    },
+    "measured_repetitions": 7,
+    "samples_per_stage": 3,
+    "settle_ms": 100,
+    "stage_order": [
+      "empty",
+      "one_live",
+      "one_headed",
+      "one_post_hide",
+      "maximum_headed",
+      "post_release",
+      "post_trim"
+    ],
+    "warmups": 1
+  }
+}

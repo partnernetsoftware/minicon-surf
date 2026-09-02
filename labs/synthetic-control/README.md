@@ -55,7 +55,17 @@ python3 labs/synthetic-control/profile-isolation-journey.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
 labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
 python3 labs/synthetic-control/staged-capacity-memory-macos-arm64.py \
-  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
+  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
+  --allocator-label system
+```
+
+The optional `mimalloc-lab` Cargo feature exists only for allocator comparison;
+the default remains the system allocator. Build it into a separate target
+directory so the two court binaries cannot be confused:
+
+```sh
+cargo build --release --locked --manifest-path labs/synthetic-control/Cargo.toml \
+  --features mimalloc-lab --target-dir labs/synthetic-control/target/mimalloc
 ```
 
 ## Evidence boundary and next step
@@ -127,7 +137,25 @@ retained 983,040 and 966,680 bytes above the initial state. The experimental
 bytes in all seven runs, and changed neither median. This trim strategy is
 therefore observed ineffective for the court, not presented as a solution.
 
-Both memory receipts remain `incomplete`. The lifecycle modes are separate
+A same-build-source allocator comparison then repeated that court seven times
+per binary. The system allocator measured 1,966,080 bytes median empty RSS and
+1,048,888 bytes empty Apple physical footprint; its maximum-capacity medians
+were 2,981,888 and 2,048,336 bytes. Forced system trim changed neither
+post-release median. `mimalloc` 0.1.52 with `libmimalloc-sys` 0.1.49 measured
+2,539,520 bytes empty RSS and 1,622,400 bytes empty physical footprint, rising
+to 3,555,328 and 2,572,672 bytes at capacity. Its forced collect reduced
+post-release physical footprint by a 704,512-byte median, but RSS did not
+change; post-trim physical footprint still remained 245,760 bytes above its
+own empty state.
+
+Verdict: **narrow/keep as an allocator-purge lab, not as the default**. It
+proves that the court can distinguish an effective physical-footprint purge,
+but its empty and maximum-capacity totals are worse than the system allocator
+for this workload. Secure mode, browser-engine allocations, portability and
+dependency/security maintenance are untested. The feature therefore cannot
+support a product allocator decision or a G1 pass.
+
+All memory receipts remain `incomplete`. The lifecycle modes are separate
 fresh processes, while the staged companion supplies same-process capacity and
 retention evidence. RSS is page-granular rather than private/PSS, Apple
 physical footprint is platform-specific, and a two-node synthetic target

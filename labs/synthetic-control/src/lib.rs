@@ -9,6 +9,10 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(feature = "mimalloc-lab")]
+#[global_allocator]
+static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 pub mod cdp;
 
 pub const PROTOCOL: &str = "minicon-surf.control";
@@ -1138,7 +1142,17 @@ impl ControlState {
 
     fn memory_trim(&self, arguments: &Value) -> Result<Value, ControlError> {
         exact_object(arguments, &[])?;
-        #[cfg(target_os = "macos")]
+        #[cfg(feature = "mimalloc-lab")]
+        {
+            // SAFETY: forced collection is process-global and accepts no pointers.
+            unsafe { libmimalloc_sys::mi_collect(true) };
+            Ok(json!({
+                "kind":"memory_trim",
+                "strategy":"mimalloc_collect_force",
+                "release_reporting":"unavailable"
+            }))
+        }
+        #[cfg(all(not(feature = "mimalloc-lab"), target_os = "macos"))]
         {
             unsafe extern "C" {
                 fn malloc_zone_pressure_relief(zone: *mut std::ffi::c_void, goal: usize) -> usize;
@@ -1147,10 +1161,10 @@ impl ControlState {
             // the function accepts no Rust-owned pointer and does not retain one.
             let released = unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) };
             Ok(
-                json!({"kind":"memory_trim","strategy":"malloc_zone_pressure_relief","released_bytes":released}),
+                json!({"kind":"memory_trim","strategy":"malloc_zone_pressure_relief","release_reporting":"bytes","released_bytes":released}),
             )
         }
-        #[cfg(not(target_os = "macos"))]
+        #[cfg(all(not(feature = "mimalloc-lab"), not(target_os = "macos")))]
         {
             Err(ControlError::new(
                 "unsupported_capability",
