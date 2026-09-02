@@ -190,9 +190,9 @@ flowchart LR
     end
 
     subgraph LAB["Engine Lab [E7]"]
-        LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
+        LP["Lightpanda 0.4.0<br/>W1/W2/W3/W7 · lowest RSS · 39 KB/cycle<br/>one target per server → process-per-target combine: 8 targets 237 MB engines"]
         SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 stdio + CDP on one target<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · D4 clients open"]
-        NATIVE["bounded native route<br/>measured feature slices"]
+        NATIVE["bounded native route<br/>DOM slice: 2.5 MB one target · 3.1 MB eight<br/>static snapshot only · script realm next"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
@@ -579,9 +579,19 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
 5. [x] Prove persistent and ephemeral profile isolation with a deliberately
    small synthetic storage model; product/engine-backed profile breadth remains
    P6 work.
-6. Run independent `labs/{techName}` spikes behind the established contracts,
-   publish comparable memory and Agent-control evidence, and issue an explicit
-   keep/narrow/combine/reject verdict for every route.
+6. [~] Run independent `labs/{techName}` spikes behind the established
+   contracts, publish comparable memory and Agent-control evidence, and issue
+   an explicit keep/narrow/combine/reject verdict for every route. The G5
+   ledger now holds Servo (narrow), Lightpanda (keep + combine), Chrome
+   (baseline), synthetic (keep) and the native DOM slice (keep as floor);
+   every route except Chrome runs the same control `0.0.1` journey and the
+   same retention court.
+7. Next, in order: a Rust control host for the process-per-target combine so
+   the court host stops being Python; the native route's script-realm slice
+   measured by the unchanged journey and court; D4 qualification of a named
+   external CDP client against the shared edge; and a Servo rerun only when
+   a driver-free rendering context exists. G1 closes only when one route is
+   both materially below the baselines and low-slope on the shared court.
 
 The first code milestone is therefore not “render a website.” It is “one
 bounded target has one identity and state while CLI, CDP, and an optional
