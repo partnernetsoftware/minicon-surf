@@ -41,6 +41,12 @@ log, which every memory reading below depends on:
 - `tikv-jemalloc-sys` defaults to `--disable-stats`; until this lab enabled the
   `stats` feature, `servo-allocator::heap_reports()` returned nothing and no
   receipt contained a jemalloc figure.
+- `SoftwareRenderingContext` on macOS is not a CPU-only path: allocation
+  stacks show `paint_api::rendering_context::SoftwareRenderingContext` calling
+  `surfman::cgl::device::Device::create_context`, which enters `CGLCreateContext`
+  and Apple's Metal-backed OpenGL renderer. Its GL driver, Metal pipeline
+  cache and IOGPU resources live in libmalloc and IOKit, not in Servo's
+  allocators.
 
 The dependency uses an exact version and `Cargo.lock` is tracked. Default
 features are written explicitly so a later release cannot silently add a
@@ -79,6 +85,15 @@ labs/servo/run-api-probe.sh
 labs/servo/run-w1-runtime-macos-arm64.sh
 labs/servo/run-w3-memory-macos-arm64.sh \
   --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-attribution-closure.json
+```
+
+The allocation-owner court runs the same runtime under `MallocStackLogging`:
+
+```sh
+python3 labs/servo/libmalloc-growth-owner-macos-arm64.py \
+  --binary labs/servo/target/release/servo-w3-runtime \
+  --fixture labs/court/fixtures/semantic-static.html \
+  --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-libmalloc-growth-owner.json
 ```
 
 The W3 runtime takes `FIXTURE CONFIG_DIRECTORY STAGE_MS CYCLES MODE`, where
@@ -227,12 +242,45 @@ software rendering context on this platform therefore still tears down through
 Apple's GL driver, and every close is a transient memory-pressure event roughly
 eight times the live footprint.
 
+#### Growth-owner court
+
+The `w3-libmalloc-growth-owner` receipt runs the same runtime under
+`MallocStackLogging` for 1 and 17 cycles (one warmup plus seven runs each),
+takes `malloc_history -allBySize` at the settled empty and post-all-closes
+stages, and groups live allocations by primitive and by the innermost
+non-allocator frame's family. Tracked libmalloc bytes agree with
+`malloc_zone_statistics` (4,086,336 versus 4,039,808 after one cycle;
+13,067,808 versus 13,129,056 after seventeen).
+
+Per-cycle libmalloc growth was 561,383 bytes at the median, and the
+`apple-gl-metal` family held a 0.9997 to 0.9999 share of it in every run pair:
+`GLDPipelineProgramRec::updateMetalFunctionBase` → `newFunctionWithGLIR`,
+`AGX::UserCommonShaderFactory` render-pipeline construction,
+`GLRRenderPipelineKey` dictionary entries and their `std::string` payloads.
+SpiderMonkey, sqlite, fonts, aws-lc and every Rust crate grew by zero bytes per
+cycle in libmalloc. Per-cycle mmap growth was 264,192 bytes, led by jemalloc
+slabs allocated from `wr_glyph_rasterizer`. The one-time warm-up in the same
+snapshots is 17,170,432 bytes of SpiderMonkey mmap (JIT executable memory and
+GC chunks), 6,078,464 bytes of IOGPU resources, 5,586,944 bytes of font
+mappings and 3,325,952 bytes of Rust thread stacks.
+
+The gate therefore passes and names the owner: Servo's `SoftwareRenderingContext`
+asks surfman for a software adapter, which on macOS is a CGL context served by
+Apple's Metal-backed OpenGL renderer; that driver compiles and caches a fresh
+Metal pipeline for every WebView's GL programs and never evicts them. Servo
+0.5.0 does not enable WebRender's `sw_compositor`/swgl feature, so the pinned
+release has no CPU-only rendering path on this platform. The per-cycle
+accumulation and the close-time graphics spike are costs of that context
+choice, not of Servo's Rust allocations or of SpiderMonkey.
+
 Verdict: **narrow**. Servo stays a running Rust-engine candidate only for
-bounded sessions. Its G1 recovery dependency is red: accumulation is linear at
-roughly 0.9 MB per navigation cycle, no pressure action recovers it, and the
-close-time peak is unbounded by the live state. Reopening the route requires
-either an upstream fix for the system-heap growth or a process-per-target
-termination design that this lab has not measured.
+bounded sessions on this platform. Its G1 recovery dependency is red: with the
+pinned release's only rendering path, accumulation is linear at roughly 0.9 MB
+per navigation cycle, no allocator pressure action recovers driver-owned
+state, and the close-time peak is unbounded by the live state. Reopening the
+route requires a rendering context that does not enter the platform GL driver
+(a swgl-enabled WebRender build or an upstream context that reuses compiled
+pipelines), measured by the same court.
 
 ### Profiles
 
@@ -263,14 +311,13 @@ and one-target CLI/CDP interoperability remain unproven.
 - The exact dependency graph contains 800 packages on this toolchain; feature
   reduction needs its own compile/runtime comparison rather than assumptions.
 
-The next Servo memory experiment must name the owner of the 538,212 bytes per
-cycle of live libmalloc growth: run the W3 runtime under `MallocStackLogging`
-and attribute `leaks`/`heap` output by library and call-stack family at the
-settled post-close state, then repeat with `js_jit` disabled. It passes only if
-at least 70% of the per-cycle growth is attributed to one named library or
-call-site family in all seven runs; otherwise the route narrows further. The
-close-time graphics spike needs its own court against an offscreen or
-GPU-backed context before any headed claim.
+The next Servo memory experiment must rebuild the lab with a rendering path
+that never enters the platform GL driver and rerun the attribution-closure and
+growth-owner courts unchanged. It passes only if the footprint slope falls
+below 256 KB per cycle, the lifetime peak stays within 2× the live footprint,
+and the `apple-gl-metal` family disappears from per-cycle growth in all seven
+runs. If Servo 0.5.0 cannot be built that way, the route stays narrowed and
+the finding is recorded as a platform dependency of the pinned release.
 
 In parallel, its lifecycle still needs the shared native target vocabulary and
 bounded JSON CLI. A separate experiment must attempt

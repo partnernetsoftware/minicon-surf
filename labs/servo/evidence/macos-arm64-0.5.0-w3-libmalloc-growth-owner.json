@@ -1,0 +1,4336 @@
+{
+  "binary_sha256": "b51fd29f0500568a3b242ce792f8ff3a2a2f3fe095079805e4dbf8fa87a483c3",
+  "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "limitations": [
+    "MallocStackLogging records libmalloc and VM allocations; Rust allocations reach it only as jemalloc extent mmaps",
+    "family classification is regex-based on symbol names; unclassified and image:* rows are reported rather than guessed",
+    "malloc_history itself perturbs the process and the settled state is sampled once per stage",
+    "one synthetic data URL, one operating system, one architecture and one Servo release",
+    "run pairing across cells is by index, not by shared process"
+  ],
+  "measurement": {
+    "gate": {
+      "criterion": "leading libmalloc family holds at least 0.70 of per-cycle libmalloc growth in every run pair",
+      "leading_family": "apple-gl-metal",
+      "passed": true,
+      "shares": [
+        0.999886010251953,
+        0.9998146904171782,
+        0.9998784185290162,
+        0.9998860264917173,
+        0.9996722380264454,
+        0.9997433475323935,
+        0.9998860264917173
+      ]
+    },
+    "growth_by_primitive_and_family": {
+      "gpu": {
+        "families": {
+          "apple-gl-metal": {
+            "median_share": 1.0,
+            "per_cycle_bytes": {
+              "maximum": 2048,
+              "median": 2048,
+              "minimum": 2048,
+              "values": [
+                2048,
+                2048,
+                2048,
+                2048,
+                2048,
+                2048,
+                2048
+              ]
+            },
+            "share_of_primitive_growth": [
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 6078464,
+              "median": 6078464,
+              "minimum": 6078464,
+              "values": [
+                6078464,
+                6078464,
+                6078464,
+                6078464,
+                6078464,
+                6078464,
+                6078464
+              ]
+            }
+          }
+        },
+        "per_cycle_total_bytes": {
+          "maximum": 2048,
+          "median": 2048,
+          "minimum": 2048,
+          "values": [
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048,
+            2048
+          ]
+        },
+        "primitive": "gpu"
+      },
+      "libmalloc": {
+        "families": {
+          "apple-gl-metal": {
+            "median_share": 0.9998784185290162,
+            "per_cycle_bytes": {
+              "maximum": 561470,
+              "median": 561199,
+              "minimum": 526332,
+              "values": [
+                561390,
+                561119,
+                526332,
+                561470,
+                561199,
+                560926,
+                561470
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.999886010251953,
+              0.9998146904171782,
+              0.9998784185290162,
+              0.9998860264917173,
+              0.9996722380264454,
+              0.9997433475323935,
+              0.9998860264917173
+            ],
+            "warm_up_bytes": {
+              "maximum": 1472992,
+              "median": 1468624,
+              "minimum": 1459424,
+              "values": [
+                1468624,
+                1469904,
+                1463760,
+                1459424,
+                1468624,
+                1472992,
+                1462496
+              ]
+            }
+          },
+          "aws-lc": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "fonts-text": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 101008,
+              "median": 101008,
+              "minimum": 101008,
+              "values": [
+                101008,
+                101008,
+                101008,
+                101008,
+                101008,
+                101008,
+                101008
+              ]
+            }
+          },
+          "image:com.apple.AppKit": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.ColorSync": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 2288,
+              "median": 2288,
+              "minimum": 2288,
+              "values": [
+                2288,
+                2288,
+                2288,
+                2288,
+                2288,
+                2288,
+                2288
+              ]
+            }
+          },
+          "image:com.apple.CoreGraphics": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 83088,
+              "median": 83088,
+              "minimum": 83088,
+              "values": [
+                83088,
+                83088,
+                83088,
+                83088,
+                83088,
+                83088,
+                83088
+              ]
+            }
+          },
+          "image:com.apple.CoreML": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.CoreML.MLAssetIO": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.CoreSceneUnderstanding": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -176,
+              "median": -176,
+              "minimum": -176,
+              "values": [
+                -176,
+                -176,
+                -176,
+                -176,
+                -176,
+                -176,
+                -176
+              ]
+            }
+          },
+          "image:com.apple.CoreServices.CarbonCore": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.CoreServicesInternal": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.FramePacing": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 96,
+              "median": 96,
+              "minimum": 96,
+              "values": [
+                96,
+                96,
+                96,
+                96,
+                96,
+                96,
+                96
+              ]
+            }
+          },
+          "image:com.apple.LaunchServices": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -800,
+              "median": -800,
+              "minimum": -800,
+              "values": [
+                -800,
+                -800,
+                -800,
+                -800,
+                -800,
+                -800,
+                -800
+              ]
+            }
+          },
+          "image:com.apple.Network": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.QuartzCore": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -48,
+              "median": -48,
+              "minimum": -48,
+              "values": [
+                -48,
+                -48,
+                -48,
+                -48,
+                -48,
+                -48,
+                -48
+              ]
+            }
+          },
+          "image:com.apple.TCC": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.accessibility.AXCoreUtilities": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -1936,
+              "median": -1936,
+              "minimum": -1936,
+              "values": [
+                -1936,
+                -1936,
+                -1936,
+                -1936,
+                -1936,
+                -1936,
+                -1936
+              ]
+            }
+          },
+          "image:com.apple.analyticsd": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 10,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                10,
+                10,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              1.7813150736662847e-05,
+              1.782308802823177e-05,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -96,
+              "median": -96,
+              "minimum": -96,
+              "values": [
+                -96,
+                -96,
+                -96,
+                -96,
+                -96,
+                -96,
+                -96
+              ]
+            }
+          },
+          "image:com.apple.framework.IOKit": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:dyld": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -48,
+              "median": -48,
+              "minimum": -48,
+              "values": [
+                -48,
+                -48,
+                -48,
+                -48,
+                -48,
+                -48,
+                -48
+              ]
+            }
+          },
+          "image:libCoreVMClient.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 128,
+              "median": 128,
+              "minimum": 128,
+              "values": [
+                128,
+                128,
+                128,
+                128,
+                128,
+                128,
+                128
+              ]
+            }
+          },
+          "image:libGLProgrammability.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 400,
+              "median": 400,
+              "minimum": 400,
+              "values": [
+                400,
+                400,
+                400,
+                400,
+                400,
+                400,
+                400
+              ]
+            }
+          },
+          "image:libicucore.A.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:libswiftCore.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 4336,
+              "median": 4336,
+              "minimum": 4336,
+              "values": [
+                4336,
+                4336,
+                4336,
+                4336,
+                4336,
+                4336,
+                4336
+              ]
+            }
+          },
+          "image:libsystem_blocks.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 176,
+              "median": 176,
+              "minimum": 176,
+              "values": [
+                176,
+                176,
+                176,
+                176,
+                176,
+                176,
+                176
+              ]
+            }
+          },
+          "image:libsystem_c.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:libsystem_collections.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:libsystem_info.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:libsystem_notify.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "objc-foundation": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 110,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                40,
+                0,
+                0,
+                110,
+                70,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              7.127291646992372e-05,
+              0.0,
+              0.0,
+              0.00019594465810329132,
+              0.0001247616161976224,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 256,
+              "median": 256,
+              "minimum": 256,
+              "values": [
+                256,
+                256,
+                256,
+                256,
+                256,
+                256,
+                256
+              ]
+            }
+          },
+          "rust:alloc": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 240,
+              "median": 240,
+              "minimum": 240,
+              "values": [
+                240,
+                240,
+                240,
+                240,
+                240,
+                240,
+                240
+              ]
+            }
+          },
+          "rust:fonts": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 48,
+              "median": 48,
+              "minimum": 48,
+              "values": [
+                48,
+                48,
+                48,
+                48,
+                48,
+                48,
+                48
+              ]
+            }
+          },
+          "rust:objc": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 400,
+              "median": 400,
+              "minimum": 400,
+              "values": [
+                400,
+                400,
+                400,
+                400,
+                400,
+                400,
+                400
+              ]
+            }
+          },
+          "rust:paint_api": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": -224,
+              "median": -224,
+              "minimum": -224,
+              "values": [
+                -224,
+                -224,
+                -224,
+                -224,
+                -224,
+                -224,
+                -224
+              ]
+            }
+          },
+          "rust:script": {
+            "median_share": 5.700208235732112e-05,
+            "per_cycle_bytes": {
+              "maximum": 32,
+              "median": 32,
+              "minimum": 32,
+              "values": [
+                32,
+                32,
+                32,
+                32,
+                32,
+                32,
+                32
+              ]
+            },
+            "share_of_primitive_growth": [
+              5.699487402351751e-05,
+              5.7018333175938975e-05,
+              6.079073549191103e-05,
+              5.698675414133427e-05,
+              5.700208235732112e-05,
+              5.703388169034167e-05,
+              5.698675414133427e-05
+            ],
+            "warm_up_bytes": {
+              "maximum": 352,
+              "median": 352,
+              "minimum": 352,
+              "values": [
+                352,
+                352,
+                352,
+                352,
+                352,
+                352,
+                352
+              ]
+            }
+          },
+          "rust:script_bindings": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:std": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 6816,
+              "median": 6816,
+              "minimum": 6816,
+              "values": [
+                6816,
+                6816,
+                6816,
+                6816,
+                6816,
+                6816,
+                6816
+              ]
+            }
+          },
+          "spidermonkey": {
+            "median_share": 5.700208235732112e-05,
+            "per_cycle_bytes": {
+              "maximum": 32,
+              "median": 32,
+              "minimum": 32,
+              "values": [
+                32,
+                32,
+                32,
+                32,
+                32,
+                32,
+                32
+              ]
+            },
+            "share_of_primitive_growth": [
+              5.699487402351751e-05,
+              5.7018333175938975e-05,
+              6.079073549191103e-05,
+              5.698675414133427e-05,
+              5.700208235732112e-05,
+              5.703388169034167e-05,
+              5.698675414133427e-05
+            ],
+            "warm_up_bytes": {
+              "maximum": 9088,
+              "median": 9088,
+              "minimum": 9088,
+              "values": [
+                9088,
+                9088,
+                9088,
+                9088,
+                9088,
+                9088,
+                9088
+              ]
+            }
+          },
+          "sqlite": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "unclassified": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "per_cycle_total_bytes": {
+          "maximum": 561534,
+          "median": 561383,
+          "minimum": 526396,
+          "values": [
+            561454,
+            561223,
+            526396,
+            561534,
+            561383,
+            561070,
+            561534
+          ]
+        },
+        "primitive": "libmalloc"
+      },
+      "mmap": {
+        "families": {
+          "apple-gl-metal": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 3072,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                3072,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.011673151750972763,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 1392640,
+              "median": 1392640,
+              "minimum": 1392640,
+              "values": [
+                1392640,
+                1392640,
+                1392640,
+                1392640,
+                1392640,
+                1392640,
+                1392640
+              ]
+            }
+          },
+          "aws-lc": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "fonts-text": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 5586944,
+              "median": 5586944,
+              "minimum": 5586944,
+              "values": [
+                5586944,
+                5586944,
+                5586944,
+                5586944,
+                5586944,
+                5586944,
+                5586944
+              ]
+            }
+          },
+          "image:com.apple.LaunchServices": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:com.apple.MallocStackLogging": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 2048,
+              "median": 0,
+              "minimum": -2048,
+              "values": [
+                0,
+                2048,
+                0,
+                0,
+                1024,
+                0,
+                -2048
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.00851063829787234,
+              0.0,
+              0.0,
+              0.003257328990228013,
+              0.0,
+              -0.008438818565400843
+            ],
+            "warm_up_bytes": {
+              "maximum": 114688,
+              "median": 114688,
+              "minimum": 81920,
+              "values": [
+                114688,
+                81920,
+                114688,
+                114688,
+                114688,
+                114688,
+                114688
+              ]
+            }
+          },
+          "image:com.apple.analyticsd": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:dyld": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:libCoreVMClient.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 65536,
+              "median": 65536,
+              "minimum": 65536,
+              "values": [
+                65536,
+                65536,
+                65536,
+                65536,
+                65536,
+                65536,
+                65536
+              ]
+            }
+          },
+          "image:libGLProgrammability.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 262144,
+              "median": 262144,
+              "minimum": 262144,
+              "values": [
+                262144,
+                262144,
+                262144,
+                262144,
+                262144,
+                262144,
+                262144
+              ]
+            }
+          },
+          "image:libicucore.A.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "image:libsystem_notify.dylib": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "objc-foundation": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:alloc": {
+            "median_share": 0.46303501945525294,
+            "per_cycle_bytes": {
+              "maximum": 165888,
+              "median": 133120,
+              "minimum": 120832,
+              "values": [
+                133120,
+                141312,
+                121856,
+                165888,
+                137216,
+                121856,
+                120832
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.44368600682593856,
+              0.5872340425531914,
+              0.46303501945525294,
+              0.6113207547169811,
+              0.4364820846905538,
+              0.46124031007751937,
+              0.4978902953586498
+            ],
+            "warm_up_bytes": {
+              "maximum": 4538368,
+              "median": 4243456,
+              "minimum": 3833856,
+              "values": [
+                4112384,
+                4538368,
+                4407296,
+                3833856,
+                4243456,
+                4227072,
+                4390912
+              ]
+            }
+          },
+          "rust:crossbeam_channel": {
+            "median_share": 0.10212765957446808,
+            "per_cycle_bytes": {
+              "maximum": 54272,
+              "median": 24576,
+              "minimum": 7168,
+              "values": [
+                54272,
+                24576,
+                14336,
+                29696,
+                40960,
+                10240,
+                7168
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.18088737201365188,
+              0.10212765957446808,
+              0.054474708171206226,
+              0.10943396226415095,
+              0.13029315960912052,
+              0.03875968992248062,
+              0.029535864978902954
+            ],
+            "warm_up_bytes": {
+              "maximum": 1179648,
+              "median": 1064960,
+              "minimum": 933888,
+              "values": [
+                933888,
+                1163264,
+                1064960,
+                1179648,
+                1048576,
+                999424,
+                1081344
+              ]
+            }
+          },
+          "rust:crossbeam_deque": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 7168,
+              "median": 0,
+              "minimum": -8192,
+              "values": [
+                -8192,
+                5120,
+                -2048,
+                2048,
+                0,
+                7168,
+                -1024
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.027303754266211604,
+              0.02127659574468085,
+              -0.007782101167315175,
+              0.007547169811320755,
+              0.0,
+              0.027131782945736434,
+              -0.004219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 16384,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                16384,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:crossbeam_epoch": {
+            "median_share": -0.013651877133105802,
+            "per_cycle_bytes": {
+              "maximum": 4096,
+              "median": -4096,
+              "minimum": -8192,
+              "values": [
+                -4096,
+                0,
+                4096,
+                -7168,
+                -1024,
+                -8192,
+                -5120
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.013651877133105802,
+              0.0,
+              0.01556420233463035,
+              -0.026415094339622643,
+              -0.003257328990228013,
+              -0.031007751937984496,
+              -0.02109704641350211
+            ],
+            "warm_up_bytes": {
+              "maximum": 507904,
+              "median": 491520,
+              "minimum": 491520,
+              "values": [
+                507904,
+                507904,
+                507904,
+                491520,
+                491520,
+                491520,
+                491520
+              ]
+            }
+          },
+          "rust:foldhash": {
+            "median_share": -0.0034129692832764505,
+            "per_cycle_bytes": {
+              "maximum": 5120,
+              "median": -1024,
+              "minimum": -7168,
+              "values": [
+                -1024,
+                -7168,
+                0,
+                -1024,
+                5120,
+                -4096,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.0034129692832764505,
+              -0.029787234042553193,
+              0.0,
+              -0.0037735849056603774,
+              0.016286644951140065,
+              -0.015503875968992248,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:fontdb": {
+            "median_share": 0.0037735849056603774,
+            "per_cycle_bytes": {
+              "maximum": 8192,
+              "median": 1024,
+              "minimum": -1024,
+              "values": [
+                1024,
+                8192,
+                1024,
+                1024,
+                1024,
+                -1024,
+                1024
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0034129692832764505,
+              0.03404255319148936,
+              0.0038910505836575876,
+              0.0037735849056603774,
+              0.003257328990228013,
+              -0.003875968992248062,
+              0.004219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:fonts": {
+            "median_share": 0.05531914893617021,
+            "per_cycle_bytes": {
+              "maximum": 35840,
+              "median": 15360,
+              "minimum": 4096,
+              "values": [
+                35840,
+                13312,
+                28672,
+                11264,
+                15360,
+                4096,
+                16384
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.11945392491467577,
+              0.05531914893617021,
+              0.10894941634241245,
+              0.04150943396226415,
+              0.048859934853420196,
+              0.015503875968992248,
+              0.06751054852320675
+            ],
+            "warm_up_bytes": {
+              "maximum": 229376,
+              "median": 196608,
+              "minimum": 81920,
+              "values": [
+                81920,
+                114688,
+                229376,
+                212992,
+                196608,
+                196608,
+                114688
+              ]
+            }
+          },
+          "rust:glow": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:http": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 5120,
+              "median": 0,
+              "minimum": -5120,
+              "values": [
+                0,
+                0,
+                -5120,
+                0,
+                0,
+                5120,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              -0.019455252918287938,
+              0.0,
+              0.0,
+              0.01937984496124031,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 81920,
+              "median": 81920,
+              "minimum": 0,
+              "values": [
+                81920,
+                81920,
+                81920,
+                81920,
+                81920,
+                0,
+                81920
+              ]
+            }
+          },
+          "rust:layout": {
+            "median_share": 0.08139534883720931,
+            "per_cycle_bytes": {
+              "maximum": 26624,
+              "median": 21504,
+              "minimum": 14336,
+              "values": [
+                14336,
+                17408,
+                25600,
+                22528,
+                26624,
+                21504,
+                17408
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.04778156996587031,
+              0.07234042553191489,
+              0.09727626459143969,
+              0.0830188679245283,
+              0.08469055374592833,
+              0.08139534883720931,
+              0.07172995780590717
+            ],
+            "warm_up_bytes": {
+              "maximum": 344064,
+              "median": 311296,
+              "minimum": 229376,
+              "values": [
+                327680,
+                327680,
+                229376,
+                229376,
+                294912,
+                311296,
+                344064
+              ]
+            }
+          },
+          "rust:mio": {
+            "median_share": -0.00851063829787234,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": -2048,
+              "minimum": -9216,
+              "values": [
+                -3072,
+                -2048,
+                -9216,
+                -4096,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.010238907849829351,
+              -0.00851063829787234,
+              -0.03501945525291829,
+              -0.01509433962264151,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:mozjs": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 1024,
+              "median": 0,
+              "minimum": -1024,
+              "values": [
+                1024,
+                0,
+                0,
+                -1024,
+                0,
+                -1024,
+                1024
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0034129692832764505,
+              0.0,
+              0.0,
+              -0.0037735849056603774,
+              0.0,
+              -0.003875968992248062,
+              0.004219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 114688,
+              "median": 98304,
+              "minimum": 98304,
+              "values": [
+                98304,
+                98304,
+                98304,
+                114688,
+                98304,
+                114688,
+                98304
+              ]
+            }
+          },
+          "rust:net": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 17408,
+              "median": 0,
+              "minimum": -11264,
+              "values": [
+                17408,
+                -11264,
+                3072,
+                0,
+                0,
+                11264,
+                -5120
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.05802047781569966,
+              -0.04680851063829787,
+              0.011673151750972763,
+              0.0,
+              0.0,
+              0.04263565891472868,
+              -0.02109704641350211
+            ],
+            "warm_up_bytes": {
+              "maximum": 212992,
+              "median": 114688,
+              "minimum": 114688,
+              "values": [
+                114688,
+                163840,
+                114688,
+                163840,
+                114688,
+                114688,
+                212992
+              ]
+            }
+          },
+          "rust:net_traits": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 196608,
+              "median": 196608,
+              "minimum": 196608,
+              "values": [
+                196608,
+                196608,
+                196608,
+                196608,
+                196608,
+                196608,
+                196608
+              ]
+            }
+          },
+          "rust:objc": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 8192,
+              "median": 0,
+              "minimum": -21504,
+              "values": [
+                0,
+                -21504,
+                8192,
+                -21504,
+                1024,
+                0,
+                1024
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              -0.08936170212765958,
+              0.0311284046692607,
+              -0.07924528301886792,
+              0.003257328990228013,
+              0.0,
+              0.004219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 344064,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                344064,
+                0,
+                344064,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:once_cell": {
+            "median_share": 0.00851063829787234,
+            "per_cycle_bytes": {
+              "maximum": 7168,
+              "median": 2048,
+              "minimum": -7168,
+              "values": [
+                7168,
+                2048,
+                7168,
+                4096,
+                -6144,
+                2048,
+                -7168
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.023890784982935155,
+              0.00851063829787234,
+              0.027237354085603113,
+              0.01509433962264151,
+              -0.019543973941368076,
+              0.007751937984496124,
+              -0.029535864978902954
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:paint_api": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:profile": {
+            "median_share": -0.0034129692832764505,
+            "per_cycle_bytes": {
+              "maximum": 10240,
+              "median": -1024,
+              "minimum": -6144,
+              "values": [
+                -1024,
+                -6144,
+                -1024,
+                3072,
+                3072,
+                -6144,
+                10240
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.0034129692832764505,
+              -0.02553191489361702,
+              -0.0038910505836575876,
+              0.011320754716981131,
+              0.009771986970684038,
+              -0.023255813953488372,
+              0.04219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:profile_traits": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 6144,
+              "median": 0,
+              "minimum": -7168,
+              "values": [
+                3072,
+                6144,
+                -6144,
+                6144,
+                0,
+                0,
+                -7168
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.010238907849829351,
+              0.02553191489361702,
+              -0.023346303501945526,
+              0.022641509433962263,
+              0.0,
+              0.0,
+              -0.029535864978902954
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:rayon_core": {
+            "median_share": 0.010238907849829351,
+            "per_cycle_bytes": {
+              "maximum": 12288,
+              "median": 3072,
+              "minimum": -6144,
+              "values": [
+                3072,
+                4096,
+                12288,
+                -1024,
+                7168,
+                -4096,
+                -6144
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.010238907849829351,
+              0.01702127659574468,
+              0.04669260700389105,
+              -0.0037735849056603774,
+              0.02280130293159609,
+              -0.015503875968992248,
+              -0.02531645569620253
+            ],
+            "warm_up_bytes": {
+              "maximum": 180224,
+              "median": 114688,
+              "minimum": 0,
+              "values": [
+                180224,
+                114688,
+                0,
+                49152,
+                180224,
+                98304,
+                114688
+              ]
+            }
+          },
+          "rust:rustls": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 2048,
+              "median": 0,
+              "minimum": -2048,
+              "values": [
+                0,
+                1024,
+                0,
+                2048,
+                0,
+                -2048,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.00425531914893617,
+              0.0,
+              0.007547169811320755,
+              0.0,
+              -0.007751937984496124,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:script": {
+            "median_share": 0.011627906976744186,
+            "per_cycle_bytes": {
+              "maximum": 11264,
+              "median": 3072,
+              "minimum": 1024,
+              "values": [
+                2048,
+                5120,
+                3072,
+                2048,
+                1024,
+                3072,
+                11264
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.006825938566552901,
+              0.02127659574468085,
+              0.011673151750972763,
+              0.007547169811320755,
+              0.003257328990228013,
+              0.011627906976744186,
+              0.046413502109704644
+            ],
+            "warm_up_bytes": {
+              "maximum": 573440,
+              "median": 557056,
+              "minimum": 540672,
+              "values": [
+                573440,
+                540672,
+                573440,
+                557056,
+                540672,
+                557056,
+                540672
+              ]
+            }
+          },
+          "rust:script_bindings": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": -2048,
+              "values": [
+                0,
+                0,
+                -2048,
+                -2048,
+                0,
+                0,
+                -1024
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              -0.007782101167315175,
+              -0.007547169811320755,
+              0.0,
+              0.0,
+              -0.004219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 81920,
+              "median": 81920,
+              "minimum": 81920,
+              "values": [
+                81920,
+                81920,
+                81920,
+                81920,
+                81920,
+                81920,
+                81920
+              ]
+            }
+          },
+          "rust:selectors": {
+            "median_share": 0.027237354085603113,
+            "per_cycle_bytes": {
+              "maximum": 12288,
+              "median": 7168,
+              "minimum": 6144,
+              "values": [
+                7168,
+                6144,
+                7168,
+                7168,
+                12288,
+                9216,
+                12288
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.023890784982935155,
+              0.02553191489361702,
+              0.027237354085603113,
+              0.026415094339622643,
+              0.03908794788273615,
+              0.03488372093023256,
+              0.05063291139240506
+            ],
+            "warm_up_bytes": {
+              "maximum": 16384,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                16384,
+                0,
+                0,
+                16384,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:servo_background_hang_monitor": {
+            "median_share": 0.03875968992248062,
+            "per_cycle_bytes": {
+              "maximum": 15360,
+              "median": 10240,
+              "minimum": 5120,
+              "values": [
+                5120,
+                10240,
+                14336,
+                5120,
+                8192,
+                10240,
+                15360
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.017064846416382253,
+              0.0425531914893617,
+              0.054474708171206226,
+              0.018867924528301886,
+              0.026058631921824105,
+              0.03875968992248062,
+              0.06329113924050633
+            ],
+            "warm_up_bytes": {
+              "maximum": 147456,
+              "median": 131072,
+              "minimum": 131072,
+              "values": [
+                131072,
+                131072,
+                131072,
+                131072,
+                147456,
+                131072,
+                131072
+              ]
+            }
+          },
+          "rust:servo_base": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 16384,
+              "median": 0,
+              "minimum": -9216,
+              "values": [
+                -8192,
+                16384,
+                -9216,
+                2048,
+                6144,
+                -5120,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.027303754266211604,
+              0.06808510638297872,
+              -0.03501945525291829,
+              0.007547169811320755,
+              0.019543973941368076,
+              -0.01937984496124031,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 98304,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                98304,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:servo_constellation": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 9216,
+              "median": 0,
+              "minimum": -1024,
+              "values": [
+                2048,
+                1024,
+                0,
+                -1024,
+                0,
+                0,
+                9216
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.006825938566552901,
+              0.00425531914893617,
+              0.0,
+              -0.0037735849056603774,
+              0.0,
+              0.0,
+              0.0379746835443038
+            ],
+            "warm_up_bytes": {
+              "maximum": 262144,
+              "median": 212992,
+              "minimum": 81920,
+              "values": [
+                212992,
+                212992,
+                212992,
+                262144,
+                229376,
+                212992,
+                81920
+              ]
+            }
+          },
+          "rust:servo_default_resources": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 5120,
+              "median": 0,
+              "minimum": -1024,
+              "values": [
+                0,
+                0,
+                -1024,
+                0,
+                5120,
+                -1024,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              -0.0038910505836575876,
+              0.0,
+              0.016286644951140065,
+              -0.003875968992248062,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:servo_url": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 114688,
+              "median": 114688,
+              "minimum": 114688,
+              "values": [
+                114688,
+                114688,
+                114688,
+                114688,
+                114688,
+                114688,
+                114688
+              ]
+            }
+          },
+          "rust:servo_w3_runtime": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:std": {
+            "median_share": 0.0038910505836575876,
+            "per_cycle_bytes": {
+              "maximum": 43008,
+              "median": 1024,
+              "minimum": -22528,
+              "values": [
+                -4096,
+                -18432,
+                1024,
+                17408,
+                -22528,
+                43008,
+                8192
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.013651877133105802,
+              -0.07659574468085106,
+              0.0038910505836575876,
+              0.06415094339622641,
+              -0.07166123778501629,
+              0.16279069767441862,
+              0.03375527426160337
+            ],
+            "warm_up_bytes": {
+              "maximum": 22953984,
+              "median": 22577152,
+              "minimum": 22446080,
+              "values": [
+                22577152,
+                22560768,
+                22953984,
+                22478848,
+                22446080,
+                22593536,
+                22577152
+              ]
+            }
+          },
+          "rust:style": {
+            "median_share": 0.07172995780590717,
+            "per_cycle_bytes": {
+              "maximum": 27648,
+              "median": 21504,
+              "minimum": 13312,
+              "values": [
+                21504,
+                23552,
+                21504,
+                13312,
+                18432,
+                27648,
+                17408
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.07167235494880546,
+              0.09787234042553192,
+              0.08171206225680934,
+              0.04905660377358491,
+              0.05863192182410423,
+              0.10465116279069768,
+              0.07172995780590717
+            ],
+            "warm_up_bytes": {
+              "maximum": 360448,
+              "median": 163840,
+              "minimum": 131072,
+              "values": [
+                163840,
+                147456,
+                163840,
+                360448,
+                147456,
+                131072,
+                212992
+              ]
+            }
+          },
+          "rust:surfman": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 1024,
+              "median": 0,
+              "minimum": -2048,
+              "values": [
+                0,
+                0,
+                0,
+                -2048,
+                -1024,
+                0,
+                1024
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              -0.007547169811320755,
+              -0.003257328990228013,
+              0.0,
+              0.004219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "rust:thin_vec": {
+            "median_share": 0.02109704641350211,
+            "per_cycle_bytes": {
+              "maximum": 10240,
+              "median": 5120,
+              "minimum": 5120,
+              "values": [
+                5120,
+                5120,
+                5120,
+                10240,
+                5120,
+                6144,
+                5120
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.017064846416382253,
+              0.02127659574468085,
+              0.019455252918287938,
+              0.03773584905660377,
+              0.016286644951140065,
+              0.023255813953488372,
+              0.02109704641350211
+            ],
+            "warm_up_bytes": {
+              "maximum": 81920,
+              "median": 81920,
+              "minimum": 0,
+              "values": [
+                81920,
+                81920,
+                81920,
+                0,
+                81920,
+                81920,
+                81920
+              ]
+            }
+          },
+          "rust:tokio": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 10240,
+              "median": 0,
+              "minimum": -5120,
+              "values": [
+                -5120,
+                0,
+                -4096,
+                0,
+                6144,
+                3072,
+                10240
+              ]
+            },
+            "share_of_primitive_growth": [
+              -0.017064846416382253,
+              0.0,
+              -0.01556420233463035,
+              0.0,
+              0.019543973941368076,
+              0.011627906976744186,
+              0.04219409282700422
+            ],
+            "warm_up_bytes": {
+              "maximum": 376832,
+              "median": 327680,
+              "minimum": 212992,
+              "values": [
+                327680,
+                327680,
+                327680,
+                376832,
+                327680,
+                294912,
+                212992
+              ]
+            }
+          },
+          "rust:webrender": {
+            "median_share": 0.05106382978723404,
+            "per_cycle_bytes": {
+              "maximum": 21504,
+              "median": 13312,
+              "minimum": 7168,
+              "values": [
+                21504,
+                12288,
+                14336,
+                13312,
+                18432,
+                7168,
+                9216
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.07167235494880546,
+              0.05106382978723404,
+              0.054474708171206226,
+              0.04905660377358491,
+              0.05863192182410423,
+              0.027131782945736434,
+              0.0379746835443038
+            ],
+            "warm_up_bytes": {
+              "maximum": 2146304,
+              "median": 2097152,
+              "minimum": 1998848,
+              "values": [
+                2097152,
+                2080768,
+                1998848,
+                2097152,
+                2146304,
+                2129920,
+                2080768
+              ]
+            }
+          },
+          "rust:wr_glyph_rasterizer": {
+            "median_share": 0.012658227848101266,
+            "per_cycle_bytes": {
+              "maximum": 14336,
+              "median": 3072,
+              "minimum": -7168,
+              "values": [
+                0,
+                -2048,
+                7168,
+                -7168,
+                14336,
+                8192,
+                3072
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              -0.00851063829787234,
+              0.027237354085603113,
+              -0.026415094339622643,
+              0.04560260586319218,
+              0.031007751937984496,
+              0.012658227848101266
+            ],
+            "warm_up_bytes": {
+              "maximum": 229376,
+              "median": 16384,
+              "minimum": 16384,
+              "values": [
+                16384,
+                98304,
+                16384,
+                212992,
+                16384,
+                16384,
+                229376
+              ]
+            }
+          },
+          "spidermonkey": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "sqlite": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 11264,
+              "median": 0,
+              "minimum": -4096,
+              "values": [
+                0,
+                4096,
+                0,
+                1024,
+                11264,
+                -4096,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              0.0,
+              0.01702127659574468,
+              0.0,
+              0.0037735849056603774,
+              0.035830618892508145,
+              -0.015503875968992248,
+              0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 49152,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                49152,
+                0
+              ]
+            }
+          }
+        },
+        "per_cycle_total_bytes": {
+          "maximum": 314368,
+          "median": 264192,
+          "minimum": 240640,
+          "values": [
+            300032,
+            240640,
+            263168,
+            271360,
+            314368,
+            264192,
+            242688
+          ]
+        },
+        "primitive": "mmap"
+      },
+      "other": {
+        "families": {
+          "image:com.apple.MallocStackLogging": {
+            "median_share": null,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              null,
+              null,
+              null,
+              null,
+              null,
+              null,
+              null
+            ],
+            "warm_up_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "per_cycle_total_bytes": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "primitive": "other"
+      },
+      "thread": {
+        "families": {
+          "rust:std": {
+            "median_share": 1.0,
+            "per_cycle_bytes": {
+              "maximum": 35840,
+              "median": 0,
+              "minimum": -35840,
+              "values": [
+                0,
+                35840,
+                -35840,
+                35840,
+                -35840,
+                35840,
+                -35840
+              ]
+            },
+            "share_of_primitive_growth": [
+              null,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0,
+              1.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 3899392,
+              "median": 3325952,
+              "minimum": 3325952,
+              "values": [
+                3325952,
+                3325952,
+                3899392,
+                3325952,
+                3899392,
+                3325952,
+                3899392
+              ]
+            }
+          },
+          "spidermonkey": {
+            "median_share": 0.0,
+            "per_cycle_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "share_of_primitive_growth": [
+              null,
+              0.0,
+              -0.0,
+              0.0,
+              -0.0,
+              0.0,
+              -0.0
+            ],
+            "warm_up_bytes": {
+              "maximum": 17170432,
+              "median": 17170432,
+              "minimum": 17170432,
+              "values": [
+                17170432,
+                17170432,
+                17170432,
+                17170432,
+                17170432,
+                17170432,
+                17170432
+              ]
+            }
+          }
+        },
+        "per_cycle_total_bytes": {
+          "maximum": 35840,
+          "median": 0,
+          "minimum": -35840,
+          "values": [
+            0,
+            35840,
+            -35840,
+            35840,
+            -35840,
+            35840,
+            -35840
+          ]
+        },
+        "primitive": "thread"
+      }
+    },
+    "semantic": {
+      "families": [
+        "spidermonkey",
+        "apple-gl-metal",
+        "sqlite",
+        "aws-lc",
+        "fonts-text",
+        "thread-tls",
+        "objc-foundation",
+        "rust:<crate>",
+        "image:<library>",
+        "unclassified"
+      ],
+      "per_cycle": "(high-cycle bytes - low-cycle bytes) / (high cycles - low cycles), paired by run index",
+      "tool": "malloc_history -allBySize on the live process; live allocations grouped by allocation primitive and by the innermost non-allocator frame's family",
+      "warm_up": "post_all_closes minus empty in the low-cycle cell"
+    },
+    "top_growing_stacks": [
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 125312,
+        "owner_frames": "(libdispatch.dylib) dispatch_data_create < (com.apple.Metal) newFunctionWithGLIR < (com.apple.AppleMetalOpenGLRenderer) GLDPipelineProgramRec::updateMetalFunctionBase() < (com.apple.AppleMetalOpenGLRenderer) GLDPipelineProgramRec::update(GLDProgramRec*, unsigned int)",
+        "per_cycle_bytes": [
+          125312,
+          125312,
+          117480,
+          125312,
+          125312,
+          125312,
+          125312
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 56320,
+        "owner_frames": "(com.apple.AGXMetalG16X) void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses>::constructRenderPipeline<MTLRen < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses < (com.apple.AGXMetalG16X) invocation function for block in AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses>::cr < (com.apple.AGXMetalG16X) AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses>::createVertexProgramVariant(MTLRende",
+        "per_cycle_bytes": [
+          56320,
+          56320,
+          52800,
+          56320,
+          56320,
+          56320,
+          56320
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 56320,
+        "owner_frames": "(com.apple.AGXMetalG16X) invocation function for block in void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses>::com < (com.apple.AGXMetalG16X) invocation function for block in void AGX::Compiler::compileProgram<AGX::FragmentProgramKey, AGCDeserializedReply>(AGX::FragmentProgram",
+        "per_cycle_bytes": [
+          56320,
+          56320,
+          52800,
+          56320,
+          56320,
+          56320,
+          56320
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 50688,
+        "owner_frames": "(libc++.1.dylib) std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>::__grow_by_and_replace(unsigned long, unsigned long, unsig < (libc++.1.dylib) std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>::__assign_external(char const*, unsigned long) < (com.apple.AGXMetalG16X) AGX::FragmentProgramVariant<AGX::HAL200::Encoders, AGX::HAL200::Classes>::FragmentProgramVariant(AGX::HAL200::Device&, AGCDeserializedR < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses",
+        "per_cycle_bytes": [
+          50688,
+          50688,
+          47520,
+          50688,
+          50688,
+          50688,
+          50688
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 40960,
+        "owner_frames": "(com.apple.AGXMetalG16X) invocation function for block in AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses>::cr < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses>::com < (com.apple.AGXMetalG16X) invocation function for block in void AGX::Compiler::compileProgram<AGX::VertexProgramKey, AGCDeserializedReply>(AGX::VertexProgramKey  < (com.apple.AGXMetalG16X) invocation function for block in void AGX::Compiler::compileProgram<AGX::VertexProgramKey, AGCDeserializedReply>(AGX::VertexProgramKey ",
+        "per_cycle_bytes": [
+          40960,
+          40960,
+          38400,
+          40960,
+          40960,
+          40960,
+          40960
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 39424,
+        "owner_frames": "(com.apple.AGXMetalG16X) AGX::FragmentProgramVariantESLState<AGX::HAL200::Encoders, AGX::HAL200::Classes>::FragmentProgramVariantESLState(AGX::HAL200::Device&,  < (com.apple.AGXMetalG16X) AGX::FragmentProgramVariant<AGX::HAL200::Encoders, AGX::HAL200::Classes>::FragmentProgramVariant(AGX::HAL200::Device&, AGCDeserializedR < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses < (com.apple.AGXMetalG16X) invocation function for block in void AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses",
+        "per_cycle_bytes": [
+          39424,
+          39424,
+          36960,
+          39424,
+          39424,
+          39424,
+          39424
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "rust:alloc",
+        "median_per_cycle_bytes": 35840,
+        "owner_frames": "(servo-w3-runtime) _RNvXs_NtNtCs6SjEax68zxx_5alloc3vec21spec_from_iter_nestedINtB6_3VechEINtB4_18SpecFromIterNestedhINtNtNtNtCskumHb0IaX0X_4core4iter8adapters3m < (servo-w3-runtime) _RNvNtCsd77XYbBPTe7_19wr_glyph_rasterizer10rasterizer13process_glyph < (servo-w3-runtime) _RNvXs_NtNtNtCskumHb0IaX0X_4core3ops8function5implsRNCNCNvMs_NtCsd77XYbBPTe7_19wr_glyph_rasterizer10rasterizerNtBW_15GlyphRasterizer20flush_g < (servo-w3-runtime) _RINvNvNtNtCseafuIwx3bNN_5rayon4iter8plumbing24bridge_producer_consumer6helperINtNtB8_5slice12IterProducerNtNtCsd77XYbBPTe7_19wr_glyph_raster",
+        "per_cycle_bytes": [
+          48128,
+          9216,
+          46080,
+          40960,
+          30720,
+          35840,
+          23552
+        ],
+        "primitive": "mmap"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 32768,
+        "owner_frames": "(libc++.1.dylib) std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>::__grow_by_and_replace(unsigned long, unsigned long, unsig < (libc++.1.dylib) std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char>>::__assign_external(char const*, unsigned long) < (com.apple.AGXMetalG16X) AGX::ProgramVariant<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::UserVertexArgumentTableLayout, true, true, AGX::CombinedU < (com.apple.AGXMetalG16X) AGX::VertexProgramVariant<AGX::HAL200::Encoders, AGX::HAL200::Classes>::VertexProgramVariant(AGX::HAL200::Device&, AGCDeserializedReply",
+        "per_cycle_bytes": [
+          32768,
+          32768,
+          30720,
+          32768,
+          32768,
+          32768,
+          32768
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "rust:alloc",
+        "median_per_cycle_bytes": 31744,
+        "owner_frames": "(servo-w3-runtime) _RNvXs_NtNtCs6SjEax68zxx_5alloc3vec21spec_from_iter_nestedINtB6_3VechEINtB4_18SpecFromIterNestedhINtNtNtNtCskumHb0IaX0X_4core4iter8adapters3m < (servo-w3-runtime) _RNvNtCsd77XYbBPTe7_19wr_glyph_rasterizer10rasterizer13process_glyph < (servo-w3-runtime) _RNvXs_NtNtNtCskumHb0IaX0X_4core3ops8function5implsRNCNCNvMs_NtCsd77XYbBPTe7_19wr_glyph_rasterizer10rasterizerNtBW_15GlyphRasterizer20flush_g < (servo-w3-runtime) _RNCINvNtCsenaQRL6mFmj_10rayon_core4join12join_contextNCINvNvNtNtCseafuIwx3bNN_5rayon4iter8plumbing24bridge_producer_consumer6helperINtNtB10_",
+        "per_cycle_bytes": [
+          30720,
+          48128,
+          4096,
+          46080,
+          34816,
+          31744,
+          13312
+        ],
+        "primitive": "mmap"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 27008,
+        "owner_frames": "(libobjc.A.dylib) objc_alloc_init < (com.apple.AGXMetalG16X) invocation function for block in bool AGX::UserCommonShaderFactory<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::ObjClasses < (libdispatch.dylib) _dispatch_client_callout < (libdispatch.dylib) _dispatch_lane_barrier_sync_invoke_and_complete",
+        "per_cycle_bytes": [
+          27008,
+          27008,
+          25320,
+          27008,
+          27008,
+          27008,
+          27008
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 16896,
+        "owner_frames": "(com.apple.AGXMetalG16X) AGX::ESLStateLoadEncoderGen2<AGX::HAL200::Classes, AGX::HAL200::Encoders>::ESLStateLoadEncoderGen2(AGX::ProgramVariantType) < (com.apple.AGXMetalG16X) AGX::ProgramVariantESLState<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::UserFragmentArgumentTableLayout, true, 9ul>::Prog < (com.apple.AGXMetalG16X) AGX::FragmentProgramVariantESLState<AGX::HAL200::Encoders, AGX::HAL200::Classes>::FragmentProgramVariantESLState(AGX::HAL200::Device&,  < (com.apple.AGXMetalG16X) AGX::FragmentProgramVariant<AGX::HAL200::Encoders, AGX::HAL200::Classes>::FragmentProgramVariant(AGX::HAL200::Device&, AGCDeserializedR",
+        "per_cycle_bytes": [
+          16896,
+          16896,
+          15840,
+          16896,
+          16896,
+          16896,
+          16896
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 16896,
+        "owner_frames": "(libobjc.A.dylib) objc_opt_new < (com.apple.AppleMetalOpenGLRenderer) invocation function for block in GLDDeviceRec::getRenderPipelineStateFromKey(GLDPipelineProgramRec**, GLRRenderPipelineKey  < (libdispatch.dylib) _dispatch_client_callout < (libdispatch.dylib) _dispatch_lane_barrier_sync_invoke_and_complete",
+        "per_cycle_bytes": [
+          16896,
+          16896,
+          15840,
+          16896,
+          16896,
+          16896,
+          16896
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 14080,
+        "owner_frames": "(com.apple.AppleMetalOpenGLRenderer) GLRRenderPipelineKey::copy() const < (com.apple.CoreFoundation) __CFBasicHashAddValue < (com.apple.CoreFoundation) CFDictionarySetValue < (com.apple.AppleMetalOpenGLRenderer) GLDContextRec::buildPipelineState()",
+        "per_cycle_bytes": [
+          14080,
+          14080,
+          13200,
+          14080,
+          14080,
+          14080,
+          14080
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 14080,
+        "owner_frames": "(com.apple.AppleMetalOpenGLRenderer) GLRRenderPipelineKey::copy() const < (com.apple.CoreFoundation) __CFBasicHashAddValue < (com.apple.CoreFoundation) CFDictionarySetValue < (com.apple.AppleMetalOpenGLRenderer) invocation function for block in GLDDeviceRec::getRenderPipelineStateFromKey(GLDPipelineProgramRec**, GLRRenderPipelineKey ",
+        "per_cycle_bytes": [
+          14080,
+          14080,
+          13200,
+          14080,
+          14080,
+          14080,
+          14080
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "apple-gl-metal",
+        "median_per_cycle_bytes": 12288,
+        "owner_frames": "(com.apple.AGXMetalG16X) AGX::ESLStateLoadEncoderGen2<AGX::HAL200::Classes, AGX::HAL200::Encoders>::ESLStateLoadEncoderGen2(AGX::ProgramVariantType) < (com.apple.AGXMetalG16X) AGX::ProgramVariantESLState<AGX::HAL200::Encoders, AGX::HAL200::Classes, AGX::HAL200::UserVertexArgumentTableLayout, true, 8ul>::Progra < (com.apple.AGXMetalG16X) AGX::VertexProgramVariantESLState<AGX::HAL200::Encoders, AGX::HAL200::Classes>::VertexProgramVariantESLState(AGX::HAL200::Device&, AGCD < (com.apple.AGXMetalG16X) AGX::VertexProgramVariant<AGX::HAL200::Encoders, AGX::HAL200::Classes>::VertexProgramVariant(AGX::HAL200::Device&, AGCDeserializedReply",
+        "per_cycle_bytes": [
+          12288,
+          12288,
+          11520,
+          12288,
+          12288,
+          12288,
+          12288
+        ],
+        "primitive": "libmalloc"
+      },
+      {
+        "family": "rust:webrender",
+        "median_per_cycle_bytes": 11264,
+        "owner_frames": "(servo-w3-runtime) _RNvMs1_NtCsfAxnUpP8JzM_9webrender14bump_allocatorNtB5_9ChunkPool14allocate_chunk < (servo-w3-runtime) _RNvMNtCsfAxnUpP8JzM_9webrender14bump_allocatorNtB2_13BumpAllocator13allocate_item < (servo-w3-runtime) _RNvMs2_NtCsfAxnUpP8JzM_9webrender13frame_builderNtB5_12FrameBuilder5build < (servo-w3-runtime) _RNvMs0_NtCsfAxnUpP8JzM_9webrender14render_backendNtB5_8Document11build_frame",
+        "per_cycle_bytes": [
+          11264,
+          2048,
+          16384,
+          11264,
+          25600,
+          16384,
+          0
+        ],
+        "primitive": "mmap"
+      },
+      {
+        "family": "rust:layout",
+        "median_per_cycle_bytes": 11264,
+        "owner_frames": "(servo-w3-runtime) _RNvMs9_NtNtCsdOtwipDKxW8_6layout4flow6inlineNtB5_23InlineFormattingContext6layout < (servo-w3-runtime) _RNvMNtNtCsdOtwipDKxW8_6layout4flow29same_formatting_context_blockNtB2_26SameFormattingContextBlock39layout_in_flow_non_replaced_block_level < (servo-w3-runtime) _RINvMs_NtCsdOtwipDKxW8_6layout10positionedNtB5_18PositioningContext39layout_maybe_position_relative_fragmentNCNvMNtNtB7_4flow29same_formatti < (servo-w3-runtime) _RNvMNtNtCsdOtwipDKxW8_6layout4flow29same_formatting_context_blockNtB2_26SameFormattingContextBlock46layout_in_flow_non_replaced_block_level_",
+        "per_cycle_bytes": [
+          7168,
+          7168,
+          14336,
+          15360,
+          11264,
+          9216,
+          13312
+        ],
+        "primitive": "mmap"
+      },
+      {
+        "family": "rust:servo_background_hang_monitor",
+        "median_per_cycle_bytes": 10240,
+        "owner_frames": "(servo-w3-runtime) _RNvMs3_NtCs6kX8z1aUsEQ_29servo_background_hang_monitor23background_hang_monitorNtB5_27BackgroundHangMonitorWorker10handle_msg < (servo-w3-runtime) _RNvMs3_NtCs6kX8z1aUsEQ_29servo_background_hang_monitor23background_hang_monitorNtB5_27BackgroundHangMonitorWorker3run < (servo-w3-runtime) _RINvNtNtCsfiKLhsWjRsE_3std3sys9backtrace28___rust_begin_short_backtraceNCNvMNtCs6kX8z1aUsEQ_29servo_background_hang_monitor23background_hang < (servo-w3-runtime) _RNSNvYNCINvNtNtCsfiKLhsWjRsE_3std6thread9lifecycle15spawn_uncheckedNCNvMNtCs6kX8z1aUsEQ_29servo_background_hang_monitor23background_hang_mon",
+        "per_cycle_bytes": [
+          5120,
+          10240,
+          10240,
+          5120,
+          9216,
+          10240,
+          15360
+        ],
+        "primitive": "mmap"
+      },
+      {
+        "family": "rust:fonts",
+        "median_per_cycle_bytes": 10240,
+        "owner_frames": "(servo-w3-runtime) _RNvMNtCsizKp6eok47m_5fonts19system_font_serviceNtB2_17SystemFontService25fetch_font_keys_if_needed < (servo-w3-runtime) _RNvMNtCsizKp6eok47m_5fonts19system_font_serviceNtB2_17SystemFontService3run < (servo-w3-runtime) _RINvMs2_NtCs1W1GtQ5KpK8_14profile_traits3memNtB6_12ProfilerChan25run_with_memory_reportingNCNCNvMNtCsizKp6eok47m_5fonts19system_font_service < (servo-w3-runtime) _RINvNtNtCsfiKLhsWjRsE_3std3sys9backtrace28___rust_begin_short_backtraceNCNvMNtCsizKp6eok47m_5fonts19system_font_serviceNtB1c_17SystemFontSer",
+        "per_cycle_bytes": [
+          10240,
+          11264,
+          10240,
+          11264,
+          10240,
+          5120,
+          10240
+        ],
+        "primitive": "mmap"
+      },
+      {
+        "family": "rust:alloc",
+        "median_per_cycle_bytes": 10240,
+        "owner_frames": "(servo-w3-runtime) _RNvMs4_NtCs6SjEax68zxx_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsfAxnUpP8JzM_9webrender < (servo-w3-runtime) _RINvNvMs2_NtCs6SjEax68zxx_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECsfAxnUpP8JzM_9webrender < (servo-w3-runtime) _RNvNtNtCsfAxnUpP8JzM_9webrender10tile_cache13slice_builder17create_tile_cache < (servo-w3-runtime) _RNvMs1_NtNtCsfAxnUpP8JzM_9webrender10tile_cache13slice_builderNtB5_16TileCacheBuilder5build",
+        "per_cycle_bytes": [
+          11264,
+          4096,
+          10240,
+          17408,
+          13312,
+          3072,
+          2048
+        ],
+        "primitive": "mmap"
+      }
+    ],
+    "tracked_versus_zone_statistics": [
+      {
+        "cycles": 1,
+        "malloc_zone_size_in_use": {
+          "maximum": 4044160,
+          "median": 4039808,
+          "minimum": 4036736,
+          "values": [
+            4039152,
+            4040432,
+            4040432,
+            4036736,
+            4039152,
+            4044160,
+            4039808
+          ]
+        },
+        "tracked_libmalloc_bytes": {
+          "maximum": 4090688,
+          "median": 4086336,
+          "minimum": 4083264,
+          "values": [
+            4085680,
+            4086960,
+            4086960,
+            4083264,
+            4085680,
+            4090688,
+            4086336
+          ]
+        }
+      },
+      {
+        "cycles": 17,
+        "malloc_zone_size_in_use": {
+          "maximum": 13132128,
+          "median": 13129056,
+          "minimum": 12570544,
+          "values": [
+            13130192,
+            13127776,
+            12570544,
+            13129056,
+            13129056,
+            13129056,
+            13132128
+          ]
+        },
+        "tracked_libmalloc_bytes": {
+          "maximum": 13070880,
+          "median": 13067808,
+          "minimum": 12509296,
+          "values": [
+            13068944,
+            13066528,
+            12509296,
+            13067808,
+            13067808,
+            13067808,
+            13070880
+          ]
+        }
+      }
+    ]
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.servo-libmalloc-growth-owner-receipt/0.0.1",
+  "status": "incomplete",
+  "technology": "servo",
+  "technology_version": "0.5.0",
+  "workload": {
+    "cells": [
+      {
+        "cycles": 1
+      },
+      {
+        "cycles": 17
+      }
+    ],
+    "engine_lifecycle": "one Servo instance; N sequential WebView build/drop cycles under MallocStackLogging",
+    "fixture_sha256": "1d562146735fcb83bb7086769135c3db8ac795c1c0e3776aaf687022c86ec9e5",
+    "id": "W3",
+    "measured_repetitions_per_cell": 7,
+    "settle_ms": 3500,
+    "snapshot_stages": [
+      "empty",
+      "post_all_closes"
+    ],
+    "stage_ms": 7000,
+    "warmups_per_cell": 1
+  }
+}

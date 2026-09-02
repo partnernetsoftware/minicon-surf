@@ -121,7 +121,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3; narrowed to bounded sessions — ~36 MB warm-up plus ~0.9 MB/cycle live system-heap growth, no purge/relief recovers it, ~290 MB close-time graphics spike
+│   ├── [~] Servo 0.5.0: W1/W3; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver under its CGL "software" context; no CPU-only path in the pinned release
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -189,7 +189,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>narrow: ~0.9 MB/cycle live libmalloc growth<br/>~290 MB close spike · no recovery · Agent edge open"]
+        SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 rendered<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -410,6 +410,21 @@ flowchart LR
   name the libmalloc growth owner under `MallocStackLogging` and pass only if
   at least 70% of the per-cycle growth attributes to one library or call-site
   family in all seven runs.
+- [x] Servo's growth-owner court passes that gate and names the owner. Under
+  `MallocStackLogging`, `malloc_history` snapshots at the settled post-close
+  state for 1 and 17 cycles (seven run pairs) put a 0.9997 to 0.9999 share of
+  the 561,383-byte-per-cycle libmalloc growth in Apple's Metal-backed OpenGL
+  renderer (`GLDPipelineProgramRec`, `AGX::UserCommonShaderFactory`,
+  `GLRRenderPipelineKey`); SpiderMonkey, sqlite, fonts and every Rust crate
+  grew by zero. The pinned `SoftwareRenderingContext` is a CGL context on this
+  platform, Servo 0.5.0 does not enable WebRender's swgl compositor, so the
+  release has no CPU-only rendering path. This converts the Servo memory risk
+  from an engine-allocation question into a rendering-context dependency:
+  the route reopens only with a context that never enters the platform GL
+  driver, measured by the same slope and peak courts (footprint slope below
+  256 KB per cycle, lifetime peak within 2× live, `apple-gl-metal` absent from
+  per-cycle growth in all seven runs). [H5] inherits the same constraint: any
+  headed surface on macOS must budget the driver's per-context pipeline cache.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
