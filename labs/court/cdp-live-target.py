@@ -126,9 +126,12 @@ def free_port():
 
 def discover(port: int, deadline: float):
     url = f"http://127.0.0.1:{port}/json/version"
+    # Loopback discovery must never be routed through an environment proxy;
+    # a proxy answering for 127.0.0.1 turns a healthy endpoint into a 503.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     while time.monotonic() < deadline:
         try:
-            with urllib.request.urlopen(url, timeout=0.25) as response:
+            with opener.open(url, timeout=0.25) as response:
                 document = json.load(response)
             endpoint = document["webSocketDebuggerUrl"]
             if not endpoint.startswith(f"ws://127.0.0.1:{port}/"):

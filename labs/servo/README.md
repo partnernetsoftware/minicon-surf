@@ -324,6 +324,16 @@ heading click, `target.screenshot`, `memory.trim` and an unknown operation.
 Target open took 205.754 ms and every other operation under 13 ms in the
 recorded transcript.
 
+The same host also puts Servo on the shared W3 retention court beside
+Lightpanda and Chrome (see `labs/court/README.md`): median one-target tree
+87,457,792 bytes against 27,934,720 and 1,232,109,568; eight concurrent
+targets 136,953,856 bytes in one process against Chrome's 2,206,859,264 in
+nine, while Lightpanda rejects a second target. Servo retained 49,905,664
+bytes after eight closes on that court, consistent with the driver-owned
+growth measured above. This is Servo's first same-machine named baseline; it
+is not a G1 pass because the court is one fixture, summed RSS, a native rather
+than CDP transport, and a CGL-backed context.
+
 This closes the native half of W7 for Servo and gives the route its first
 [A3] evidence: an HTML target has one identity and revision under the same
 vocabulary the synthetic host implements. It does not pass G2 or D4: no CDP

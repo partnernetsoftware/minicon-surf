@@ -1,0 +1,634 @@
+{
+  "court": "same-server-cdp-target-churn-capacity-and-retention",
+  "limitations": [
+    "summed RSS is neither private memory nor PSS and can double-count shared pages",
+    "process-table sampling can miss short-lived or reparented processes",
+    "one synthetic data URL, one operating system and one architecture only",
+    "installed Chrome is digest-identified but is not a pinned downloadable artifact",
+    "browser feature sets and engine capabilities are not equivalent",
+    "stage samples are maxima and transitions occur between measured windows",
+    "concurrent capacity is reported per candidate rather than forced into a like-for-like target count",
+    "Lightpanda has no product-equivalent profile isolation in this court",
+    "no allocator trim or memory-pressure signal is available through the shared CDP journey",
+    "the Servo candidate is driven through native control 0.0.1 rather than CDP and renders through a CGL-backed context; its ready condition is a structured snapshot rather than Runtime.evaluate"
+  ],
+  "measurement": {
+    "candidates": {
+      "google_chrome": {
+        "concurrent_capacity_probe": {
+          "median_peak_tree_resident_bytes": 2206859264,
+          "next_create_errors": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "peak_tree_resident_bytes": [
+            2206859264,
+            2199617536,
+            2207678464,
+            2207318016,
+            2202222592,
+            2203893760,
+            2210742272
+          ],
+          "probe_reached_limit": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "eighth_target_minus_post_one_close_resident_bytes": [
+          339148800,
+          338132992,
+          337887232,
+          333561856,
+          331022336,
+          325713920,
+          335249408
+        ],
+        "executable_sha256": "11775604c341748d4e0bc3def5c6bb155818d236a1180f3d1cdd9e7730a9e6a5",
+        "first_target_delta_resident_bytes": [
+          425902080,
+          426885120,
+          429342720,
+          431849472,
+          431063040,
+          429719552,
+          429031424
+        ],
+        "median_eighth_target_minus_post_one_close_resident_bytes": 335249408,
+        "median_first_target_delta_resident_bytes": 429342720,
+        "median_post_eight_closes_minus_empty_resident_bytes": 130891776,
+        "post_eight_closes_minus_empty_resident_bytes": [
+          130629632,
+          131383296,
+          132431872,
+          130891776,
+          129269760,
+          126058496,
+          131743744
+        ],
+        "states": {
+          "eighth_target": {
+            "maximum_peak_process_count": 9,
+            "maximum_peak_tree_resident_bytes": 1254735872,
+            "median_peak_process_count": 9,
+            "median_peak_tree_resident_bytes": 1252966400,
+            "peak_process_count": [
+              9,
+              9,
+              9,
+              9,
+              9,
+              9,
+              9
+            ],
+            "peak_tree_resident_bytes": [
+              1254375424,
+              1253605376,
+              1252966400,
+              1252917248,
+              1254735872,
+              1246347264,
+              1252409344
+            ]
+          },
+          "empty": {
+            "maximum_peak_process_count": 7,
+            "maximum_peak_tree_resident_bytes": 807010304,
+            "median_peak_process_count": 7,
+            "median_peak_tree_resident_bytes": 803078144,
+            "peak_process_count": [
+              7,
+              7,
+              7,
+              7,
+              7,
+              7,
+              7
+            ],
+            "peak_tree_resident_bytes": [
+              804126720,
+              803045376,
+              801210368,
+              803028992,
+              807010304,
+              805928960,
+              803078144
+            ]
+          },
+          "one_target": {
+            "maximum_peak_process_count": 9,
+            "maximum_peak_tree_resident_bytes": 1238073344,
+            "median_peak_process_count": 9,
+            "median_peak_tree_resident_bytes": 1232109568,
+            "peak_process_count": [
+              9,
+              9,
+              9,
+              9,
+              9,
+              9,
+              9
+            ],
+            "peak_tree_resident_bytes": [
+              1230028800,
+              1229930496,
+              1230553088,
+              1234878464,
+              1238073344,
+              1235648512,
+              1232109568
+            ]
+          },
+          "post_eight_closes": {
+            "maximum_peak_process_count": 7,
+            "maximum_peak_tree_resident_bytes": 936280064,
+            "median_peak_process_count": 7,
+            "median_peak_tree_resident_bytes": 934428672,
+            "peak_process_count": [
+              7,
+              7,
+              7,
+              7,
+              7,
+              7,
+              7
+            ],
+            "peak_tree_resident_bytes": [
+              934756352,
+              934428672,
+              933642240,
+              933920768,
+              936280064,
+              931987456,
+              934821888
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_process_count": 7,
+            "maximum_peak_tree_resident_bytes": 923713536,
+            "median_peak_process_count": 7,
+            "median_peak_tree_resident_bytes": 917159936,
+            "peak_process_count": [
+              7,
+              7,
+              7,
+              7,
+              7,
+              7,
+              7
+            ],
+            "peak_tree_resident_bytes": [
+              915226624,
+              915472384,
+              915079168,
+              919355392,
+              923713536,
+              920633344,
+              917159936
+            ]
+          }
+        },
+        "transport": "CDP over loopback WebSocket",
+        "version": "152.0.7977.75"
+      },
+      "lightpanda": {
+        "artifact_sha256": "840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7",
+        "concurrent_capacity_probe": {
+          "median_peak_tree_resident_bytes": 29556736,
+          "next_create_errors": [
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}"
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "peak_tree_resident_bytes": [
+            29556736,
+            29556736,
+            29687808,
+            29474816,
+            29540352,
+            29360128,
+            29736960
+          ],
+          "probe_reached_limit": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "eighth_target_minus_post_one_close_resident_bytes": [
+          1507328,
+          1441792,
+          1638400,
+          1523712,
+          1490944,
+          1458176,
+          1622016
+        ],
+        "first_target_delta_resident_bytes": [
+          5226496,
+          5292032,
+          5275648,
+          5242880,
+          5242880,
+          5259264,
+          5292032
+        ],
+        "median_eighth_target_minus_post_one_close_resident_bytes": 1507328,
+        "median_first_target_delta_resident_bytes": 5259264,
+        "median_post_eight_closes_minus_empty_resident_bytes": 6766592,
+        "post_eight_closes_minus_empty_resident_bytes": [
+          6766592,
+          6766592,
+          6946816,
+          6799360,
+          6766592,
+          6766592,
+          6946816
+        ],
+        "states": {
+          "eighth_target": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 29605888,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 29523968,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              29523968,
+              29540352,
+              29605888,
+              29376512,
+              29523968,
+              29327360,
+              29589504
+            ]
+          },
+          "empty": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 22773760,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 22659072,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              22757376,
+              22773760,
+              22659072,
+              22577152,
+              22757376,
+              22577152,
+              22642688
+            ]
+          },
+          "one_target": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 28065792,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 27934720,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              27983872,
+              28065792,
+              27934720,
+              27820032,
+              28000256,
+              27836416,
+              27934720
+            ]
+          },
+          "post_eight_closes": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 29605888,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 29523968,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              29523968,
+              29540352,
+              29605888,
+              29376512,
+              29523968,
+              29343744,
+              29589504
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 28098560,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 27967488,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              28016640,
+              28098560,
+              27967488,
+              27852800,
+              28033024,
+              27869184,
+              27967488
+            ]
+          }
+        },
+        "transport": "CDP over loopback WebSocket",
+        "version": "0.4.0"
+      },
+      "servo_control": {
+        "binary_sha256": "9d8368dda25dd2c8de14dd3d172041d7c020caadbdf0abd2b465d4d024e1d6da",
+        "concurrent_capacity_probe": {
+          "median_peak_tree_resident_bytes": 136953856,
+          "next_create_errors": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "peak_tree_resident_bytes": [
+            136953856,
+            138952704,
+            136855552,
+            137740288,
+            136118272,
+            136708096,
+            137101312
+          ],
+          "probe_reached_limit": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+        "eighth_target_minus_post_one_close_resident_bytes": [
+          10305536,
+          10190848,
+          10338304,
+          10813440,
+          10223616,
+          10321920,
+          10633216
+        ],
+        "first_target_delta_resident_bytes": [
+          42795008,
+          42598400,
+          42844160,
+          43270144,
+          42844160,
+          43433984,
+          42647552
+        ],
+        "median_eighth_target_minus_post_one_close_resident_bytes": 10321920,
+        "median_first_target_delta_resident_bytes": 42844160,
+        "median_post_eight_closes_minus_empty_resident_bytes": 49905664,
+        "post_eight_closes_minus_empty_resident_bytes": [
+          49774592,
+          49676288,
+          49987584,
+          50872320,
+          49840128,
+          50397184,
+          49905664
+        ],
+        "states": {
+          "eighth_target": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 97927168,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 97206272,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              97157120,
+              97009664,
+              97206272,
+              97927168,
+              96944128,
+              97501184,
+              97386496
+            ]
+          },
+          "empty": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 44777472,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 44613632,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              44728320,
+              44744704,
+              44613632,
+              44482560,
+              44580864,
+              44433408,
+              44777472
+            ]
+          },
+          "one_target": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 87867392,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 87457792,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              87523328,
+              87343104,
+              87457792,
+              87752704,
+              87425024,
+              87867392,
+              87425024
+            ]
+          },
+          "post_eight_closes": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 95354880,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 94601216,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              94502912,
+              94420992,
+              94601216,
+              95354880,
+              94420992,
+              94830592,
+              94683136
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_resident_bytes": 87179264,
+            "median_peak_process_count": 1,
+            "median_peak_tree_resident_bytes": 86851584,
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_resident_bytes": [
+              86851584,
+              86818816,
+              86867968,
+              87113728,
+              86720512,
+              87179264,
+              86753280
+            ]
+          }
+        },
+        "transport": "native control 0.0.1 NDJSON on stdio; CGL-backed software rendering context",
+        "version": "0.5.0"
+      }
+    },
+    "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.cdp-target-retention-receipt/0.0.1",
+  "status": "incomplete",
+  "workload": {
+    "concurrent_target_probe_limit": 8,
+    "fixture_sha256": "1d562146735fcb83bb7086769135c3db8ac795c1c0e3776aaf687022c86ec9e5",
+    "measured_repetitions": 7,
+    "order": "rotating by repetition",
+    "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag; Servo uses an ephemeral control profile and a fresh temporary config directory per repetition",
+    "samples_per_stage": 3,
+    "sequential_target_cycles": 8,
+    "settle_ms": 500,
+    "stage_order": [
+      "empty",
+      "one_target",
+      "post_one_close",
+      "eighth_target",
+      "post_eight_closes"
+    ],
+    "target_ready_condition": "named semantic heading observed through Runtime.evaluate (CDP) or target.snapshot (control 0.0.1) for every sequential target",
+    "warmups_per_candidate": 1
+  }
+}

@@ -64,6 +64,36 @@ labs/court/run-target-retention-macos-arm64.sh \
   --receipt labs/court/evidence/macos-arm64-target-retention-lightpanda-0.4.0-vs-chrome-152.0.7977.75.json
 ```
 
+Pass `--servo-control labs/servo/target/release/servo-control` to add the
+Servo lab's native control `0.0.1` host as a third candidate driven through
+NDJSON rather than CDP; the candidate order then rotates by repetition. CDP
+discovery requests to `127.0.0.1` deliberately bypass any `http_proxy`
+environment: a proxy answering for loopback returned `503` for a healthy
+Lightpanda endpoint and would have looked like an engine failure.
+
+The three-way receipt
+(`macos-arm64-target-retention-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
+gives the Servo route its first same-machine named baseline on this shared
+court. Median complete-tree RSS in bytes over seven rotating repetitions:
+
+| stage | Servo 0.5.0 (control) | Lightpanda 0.4.0 (CDP) | Chrome 152.0.7977.75 (CDP) |
+|---|---|---|---|
+| empty | 44,613,632 | 22,659,072 | 803,078,144 |
+| one target | 87,457,792 | 27,934,720 | 1,232,109,568 |
+| post one close | 86,851,584 | 27,967,488 | 917,159,936 |
+| eighth target | 97,206,272 | 29,523,968 | 1,252,966,400 |
+| post eight closes | 94,601,216 | 29,523,968 | 934,428,672 |
+| retained above empty | 49,905,664 | 6,766,592 | 130,891,776 |
+| eight concurrent targets | 136,953,856 (1 process) | one target only | 2,206,859,264 (9 processes) |
+
+Servo held eight concurrent targets in one process at about one sixteenth of
+Chrome's summed tree, and its single-target tree was about one fourteenth of
+Chrome's; Lightpanda stayed about three times below Servo but still rejected a
+second concurrent target. Servo's retention is the driver-owned growth
+measured in its own lab, not Rust heap. The receipt stays `incomplete`: the
+Servo candidate is driven natively rather than through CDP, renders through a
+CGL context, and every candidate remains one fixture, platform and summed RSS.
+
 The concurrency probe does not force candidates into an unsupported common
 count. Lightpanda 0.4.0 is measured at its observed one-target limit and its
 second-create error is retained; Chrome is measured with eight concurrent

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Same-server CDP target churn, capacity, and post-close retention court."""
+"""Same-server target churn, capacity, and post-close retention court.
+
+Lightpanda and Chrome are driven through CDP; an optional Servo candidate is
+driven through the native control 0.0.1 NDJSON host so all three share one
+stage order, ready condition, sampler and receipt vocabulary.
+"""
 
 import argparse
 import hashlib
@@ -167,6 +172,97 @@ def run_once(engine, browser, fixture, samples, settle_ms):
                     process.wait()
 
 
+class ControlHost:
+    """Minimal native control 0.0.1 client over the host's stdio."""
+
+    def __init__(self, binary, fixture_root, directory):
+        self.process = subprocess.Popen(
+            [binary, "serve", "--stdio", "--fixture-root", str(fixture_root),
+             "--config-dir", str(pathlib.Path(directory) / "config")],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True,
+        )
+        self.counter = 0
+
+    def call(self, operation, arguments, deadline_ms=30000):
+        self.counter += 1
+        request = {"protocol": "minicon-surf.control", "version": "0.0.1",
+                   "request_id": f"req_{self.counter}", "deadline_ms": deadline_ms,
+                   "operation": operation, "arguments": arguments}
+        self.process.stdin.write(json.dumps(request) + "\n")
+        self.process.stdin.flush()
+        line = self.process.stdout.readline()
+        if not line:
+            raise RuntimeError(f"control host exited during {operation}")
+        response = json.loads(line)
+        if response.get("request_id") != request["request_id"]:
+            raise RuntimeError("control host response identity differs")
+        return response
+
+    def expect(self, operation, arguments, deadline_ms=30000):
+        response = self.call(operation, arguments, deadline_ms)
+        if not response.get("ok"):
+            raise RuntimeError(f"{operation} failed: {response.get('error', {}).get('code')}")
+        return response["result"]
+
+
+def open_ready_control_target(host, session_id, fixture_name):
+    target_id = host.expect("target.open", {"session": session_id, "fixture": fixture_name})["target"]
+    snapshot = host.expect("target.snapshot", {"target": target_id, "format": "semantic",
+                                               "max_bytes": 65536, "max_nodes": 64})
+    heading = [n for n in snapshot["nodes"] if n["role"] == "heading"]
+    if not heading or heading[0]["name"] != "Memory and Agent Court":
+        raise AssertionError("control target semantic state did not become ready")
+    return target_id
+
+
+def run_once_control(binary, fixture_root, fixture_name, samples, settle_ms):
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-retention-control-") as directory:
+        host = ControlHost(binary, fixture_root, directory)
+        targets = []
+        try:
+            profile = host.expect("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = host.expect("session.open", {"profile": profile})["session"]
+            result = {"empty": sample_stage(host.process, samples, settle_ms)}
+            targets.append(open_ready_control_target(host, session, fixture_name))
+            result["one_target"] = sample_stage(host.process, samples, settle_ms)
+            host.expect("target.close", {"target": targets.pop()})
+            result["post_one_close"] = sample_stage(host.process, samples, settle_ms)
+            for _ in range(2, TARGET_COUNT):
+                target_id = open_ready_control_target(host, session, fixture_name)
+                host.expect("target.close", {"target": target_id})
+            targets.append(open_ready_control_target(host, session, fixture_name))
+            result["eighth_target"] = sample_stage(host.process, samples, settle_ms)
+            host.expect("target.close", {"target": targets.pop()})
+            result["post_eight_closes"] = sample_stage(host.process, samples, settle_ms)
+
+            capacity_error = None
+            while len(targets) < TARGET_COUNT:
+                try:
+                    targets.append(open_ready_control_target(host, session, fixture_name))
+                except RuntimeError as error:
+                    capacity_error = str(error)
+                    break
+            capacity = {
+                "observed_concurrent_targets_at_probe_stop": len(targets),
+                "attempted_limit": TARGET_COUNT,
+                "probe_reached_limit": len(targets) == TARGET_COUNT,
+                "next_create_error": capacity_error,
+                "state": sample_stage(host.process, samples, settle_ms),
+            }
+            for target_id in targets:
+                host.expect("target.close", {"target": target_id})
+            host.expect("session.close", {"session": session})
+            return result, capacity
+        finally:
+            if host.process.poll() is None:
+                host.process.stdin.close()
+                try:
+                    host.process.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    host.process.kill()
+                    host.process.wait()
+
+
 def aggregate(run_results):
     runs = [item[0] for item in run_results]
     capacities = [item[1] for item in run_results]
@@ -222,6 +318,7 @@ def main():
     parser.add_argument("--chrome", required=True)
     parser.add_argument("--fixture", required=True)
     parser.add_argument("--lightpanda-sha256", required=True)
+    parser.add_argument("--servo-control", help="optional servo-control host binary driven through native control 0.0.1")
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--samples-per-stage", type=int, default=3)
     parser.add_argument("--settle-ms", type=int, default=500)
@@ -242,18 +339,27 @@ def main():
     candidates = {"lightpanda": [], "google_chrome": []}
     paths = {"lightpanda": args.lightpanda, "google_chrome": args.chrome}
     engine_names = {"lightpanda": "lightpanda", "google_chrome": "chrome"}
+    fixture_path = pathlib.Path(args.fixture)
+    servo_sha = None
+    if args.servo_control:
+        candidates["servo_control"] = []
+        servo_sha = hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest()
+
+    def run_candidate(candidate):
+        if candidate == "servo_control":
+            return run_once_control(args.servo_control, fixture_path.parent, fixture_path.name,
+                                    args.samples_per_stage, args.settle_ms)
+        return run_once(engine_names[candidate], paths[candidate], fixture,
+                        args.samples_per_stage, args.settle_ms)
+
     for candidate in candidates:
-        run_once(engine_names[candidate], paths[candidate], fixture,
-                 args.samples_per_stage, args.settle_ms)
+        run_candidate(candidate)
+    names = list(candidates)
     for repetition in range(args.repetitions):
-        order = list(candidates)
-        if repetition % 2:
-            order.reverse()
+        rotation = repetition % len(names)
+        order = names[rotation:] + names[:rotation]
         for candidate in order:
-            candidates[candidate].append(
-                run_once(engine_names[candidate], paths[candidate], fixture,
-                         args.samples_per_stage, args.settle_ms)
-            )
+            candidates[candidate].append(run_candidate(candidate))
 
     if hashlib.sha256(pathlib.Path(args.lightpanda).read_bytes()).hexdigest() != lightpanda_sha:
         raise RuntimeError("Lightpanda artifact changed during the measured court")
@@ -261,6 +367,30 @@ def main():
         raise RuntimeError("Chrome executable changed during the measured court")
     if subprocess.check_output([args.chrome, "--version"], text=True).strip() != chrome_version:
         raise RuntimeError("Chrome version changed during the measured court")
+    if servo_sha and hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest() != servo_sha:
+        raise RuntimeError("servo-control binary changed during the measured court")
+    candidate_reports = {
+        "lightpanda": {
+            "version": "0.4.0",
+            "artifact_sha256": lightpanda_sha,
+            "transport": "CDP over loopback WebSocket",
+            **aggregate(candidates["lightpanda"]),
+        },
+        "google_chrome": {
+            "version": chrome_version.removeprefix("Google Chrome "),
+            "executable_sha256": chrome_sha,
+            "transport": "CDP over loopback WebSocket",
+            **aggregate(candidates["google_chrome"]),
+        },
+    }
+    if servo_sha:
+        candidate_reports["servo_control"] = {
+            "version": "0.5.0",
+            "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+            "binary_sha256": servo_sha,
+            "transport": "native control 0.0.1 NDJSON on stdio; CGL-backed software rendering context",
+            **aggregate(candidates["servo_control"]),
+        }
     receipt = {
         "schema": "minicon-surf.cdp-target-retention-receipt/0.0.1",
         "status": "incomplete",
@@ -275,24 +405,13 @@ def main():
             "measured_repetitions": args.repetitions,
             "samples_per_stage": args.samples_per_stage,
             "settle_ms": args.settle_ms,
-            "order": "alternating by repetition",
-            "target_ready_condition": "named semantic heading observed through Runtime.evaluate for every sequential target",
-            "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag",
+            "order": "rotating by repetition",
+            "target_ready_condition": "named semantic heading observed through Runtime.evaluate (CDP) or target.snapshot (control 0.0.1) for every sequential target",
+            "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag; Servo uses an ephemeral control profile and a fresh temporary config directory per repetition",
         },
         "measurement": {
             "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage",
-            "candidates": {
-                "lightpanda": {
-                    "version": "0.4.0",
-                    "artifact_sha256": lightpanda_sha,
-                    **aggregate(candidates["lightpanda"]),
-                },
-                "google_chrome": {
-                    "version": chrome_version.removeprefix("Google Chrome "),
-                    "executable_sha256": chrome_sha,
-                    **aggregate(candidates["google_chrome"]),
-                },
-            },
+            "candidates": candidate_reports,
         },
         "limitations": [
             "summed RSS is neither private memory nor PSS and can double-count shared pages",
@@ -304,6 +423,7 @@ def main():
             "concurrent capacity is reported per candidate rather than forced into a like-for-like target count",
             "Lightpanda has no product-equivalent profile isolation in this court",
             "no allocator trim or memory-pressure signal is available through the shared CDP journey",
+            "the Servo candidate is driven through native control 0.0.1 rather than CDP and renders through a CGL-backed context; its ready condition is a structured snapshot rather than Runtime.evaluate",
         ],
     }
     encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"

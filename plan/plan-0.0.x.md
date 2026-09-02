@@ -122,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3/W7-native; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver under its CGL "software" context; no CPU-only path in the pinned release
+│   ├── [~] Servo 0.5.0: W1/W3/W7-native; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -444,6 +444,20 @@ flowchart LR
   can weigh both gates. It does not pass G2/D4: no CDP edge shares this
   target, navigation/frames are uncovered, click and `revision_at_least` are
   the only kinds, and profiles are not engine cookie jars.
+- [~] The shared W3 retention court now accepts the Servo control host as a
+  third candidate, rotating with Lightpanda `0.4.0` and Chrome
+  `152.0.7977.75` over seven repetitions. Median complete-tree RSS was
+  44,613,632 bytes empty, 87,457,792 with one target and 94,601,216 after
+  eight closes for Servo; 22,659,072, 27,934,720 and 29,523,968 for
+  Lightpanda; 803,078,144, 1,232,109,568 and 934,428,672 for Chrome. Eight
+  concurrent targets cost Servo 136,953,856 bytes in one process against
+  Chrome's 2,206,859,264 in nine; Lightpanda still rejects a second target.
+  This is Servo's first same-machine named baseline and the first multi-target
+  route below Chrome by more than an order of magnitude, satisfying the
+  "named baseline" clause of G1 for this cell while the gate stays open:
+  summed RSS, one fixture, native rather than CDP transport, a CGL-backed
+  context, and Servo's own linear retention. Court discovery now bypasses
+  environment proxies after a loopback proxy masqueraded as an engine `503`.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
