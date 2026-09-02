@@ -1,0 +1,6407 @@
+{
+  "design": {
+    "action": "memory.trim = malloc_zone_pressure_relief(NULL, 0)",
+    "allocators": {
+      "system": "Rust global system allocator; QuickJS via rquickjs default allocator into the default libmalloc zone",
+      "zone": "MINICON_SURF_NATIVE_REALM_ZONE=1: one libmalloc zone per QuickJS realm, destroyed after the runtime drops; macOS only"
+    },
+    "fresh_process_control": "every run is a fresh host process; empty and live are the fresh-process control, later stages are same-instance",
+    "measured_repetitions_per_cell": 7,
+    "reuse": "reopen_live opens the same targets again after the action; post_reclose closes them again",
+    "settle_ms": 500,
+    "stages": [
+      "empty",
+      "live",
+      "post_close",
+      "post_action",
+      "reopen_live",
+      "post_reclose"
+    ],
+    "targets_per_stage": 8,
+    "warmups_per_cell": 1,
+    "workloads": [
+      "fixture-static",
+      "fixture-interactive",
+      "representative-url"
+    ]
+  },
+  "host_sha256": "8c6b7930f654818d8cb6bb236d053fe234e8df8e79b90ae9d81125de4e128554",
+  "limitations": [
+    "single process on one macOS arm64 machine; footprint is the kernel's accounting, RSS counts shared pages",
+    "libmalloc size_in_use covers the default zone plus dedicated zones; dedicated zones vanish at close, which is the point of the zone cell",
+    "the dedicated-zone cell is a macOS libmalloc mechanism and says nothing about other platforms",
+    "settle windows are 500 ms; slower background reclamation is not measured"
+  ],
+  "measurement": {
+    "allocator_tests": {
+      "fixture-interactive": {
+        "n_a": 7,
+        "n_b": 7,
+        "p_two_sided": 0.0005827505827505828,
+        "retained_footprint_system": [
+          3457024,
+          3407872,
+          3407872,
+          3571712,
+          3407872,
+          3489792,
+          3424256
+        ],
+        "retained_footprint_zone": [
+          720896,
+          720896,
+          720896,
+          802816,
+          720896,
+          720896,
+          851968
+        ],
+        "u": 0.0
+      },
+      "fixture-static": {
+        "n_a": 7,
+        "n_b": 7,
+        "p_two_sided": 0.0005827505827505828,
+        "retained_footprint_system": [
+          3309568,
+          3211264,
+          3244032,
+          3325952,
+          3342336,
+          3440640,
+          3276800
+        ],
+        "retained_footprint_zone": [
+          770048,
+          671744,
+          720896,
+          720896,
+          753664,
+          737280,
+          720896
+        ],
+        "u": 0.0
+      },
+      "representative-url": {
+        "n_a": 7,
+        "n_b": 7,
+        "p_two_sided": 0.0005827505827505828,
+        "retained_footprint_system": [
+          3981312,
+          4014080,
+          4014080,
+          3915776,
+          3948544,
+          4096000,
+          3964928
+        ],
+        "retained_footprint_zone": [
+          999424,
+          933888,
+          983040,
+          933888,
+          966656,
+          1015808,
+          917504
+        ],
+        "u": 0.0
+      }
+    },
+    "capacity_at_first_oom": {
+      "allocators": {
+        "system": {
+          "page_reports": [
+            "values=727040 failure=out of memory",
+            "values=727040 failure=out of memory",
+            "values=727040 failure=out of memory",
+            "values=727040 failure=out of memory",
+            "values=727040 failure=out of memory",
+            "values=727040 failure=out of memory",
+            "values=727040 failure=out of memory"
+          ],
+          "ratio_of_hard_cap": {
+            "median": 0.7067,
+            "values": [
+              0.7067,
+              0.7067,
+              0.7067,
+              0.7067,
+              0.7067,
+              0.7067,
+              0.7067
+            ]
+          },
+          "realm_live_bytes_after_first_oom": {
+            "maximum": 11856928,
+            "median": 11856928,
+            "minimum": 11856928,
+            "values": [
+              11856928,
+              11856928,
+              11856928,
+              11856928,
+              11856928,
+              11856928,
+              11856928
+            ]
+          }
+        },
+        "zone": {
+          "page_reports": [
+            "values=484352 failure=out of memory",
+            "values=484352 failure=out of memory",
+            "values=484352 failure=out of memory",
+            "values=484352 failure=out of memory",
+            "values=484352 failure=out of memory",
+            "values=484352 failure=out of memory",
+            "values=484352 failure=out of memory"
+          ],
+          "ratio_of_hard_cap": {
+            "median": 0.4752,
+            "values": [
+              0.4752,
+              0.4752,
+              0.4752,
+              0.4752,
+              0.4752,
+              0.4752,
+              0.4752
+            ]
+          },
+          "realm_live_bytes_after_first_oom": {
+            "maximum": 7972784,
+            "median": 7972784,
+            "minimum": 7972784,
+            "values": [
+              7972784,
+              7972784,
+              7972784,
+              7972784,
+              7972784,
+              7972784,
+              7972784
+            ]
+          }
+        }
+      },
+      "hard_cap_bytes": 16777216,
+      "note": "the hard cap bounds the realm; it is not a guaranteed usable capacity. Under the zone allocator a reallocation is charged for the replacement before the old block is released, so large growth can fail below the cap",
+      "semantic": "capacity-growth.html grows one dense array until the realm throws; the realm's live bytes are read afterwards and divided by the 16 MiB hard cap"
+    },
+    "cells": {
+      "fixture-interactive/system": {
+        "action_post_action_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "allocator": "system",
+        "live_minus_empty": {
+          "libmalloc_size_in_use": {
+            "maximum": 1907968,
+            "median": 1907968,
+            "minimum": 1907968,
+            "values": [
+              1907968,
+              1907968,
+              1907968,
+              1907968,
+              1907968,
+              1907968,
+              1907968
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 3571712,
+            "median": 3424256,
+            "minimum": 3407872,
+            "values": [
+              3457024,
+              3407872,
+              3407872,
+              3571712,
+              3407872,
+              3489792,
+              3424256
+            ]
+          }
+        },
+        "retained_post_close_minus_empty": {
+          "libmalloc_size_allocated": {
+            "maximum": 12582912,
+            "median": 4194304,
+            "minimum": 0,
+            "values": [
+              12582912,
+              0,
+              4194304,
+              8388608,
+              0,
+              4194304,
+              0
+            ]
+          },
+          "libmalloc_size_in_use": {
+            "maximum": 4096,
+            "median": 4096,
+            "minimum": 4096,
+            "values": [
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 3571712,
+            "median": 3424256,
+            "minimum": 3407872,
+            "values": [
+              3457024,
+              3407872,
+              3407872,
+              3571712,
+              3407872,
+              3489792,
+              3424256
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 4751360,
+            "median": 4603904,
+            "minimum": 4587520,
+            "values": [
+              4636672,
+              4587520,
+              4587520,
+              4751360,
+              4587520,
+              4669440,
+              4603904
+            ]
+          }
+        },
+        "reuse_reopen_live_minus_live": {
+          "physical_footprint_bytes": {
+            "maximum": 344088,
+            "median": 147480,
+            "minimum": 114712,
+            "values": [
+              147480,
+              213016,
+              114712,
+              147480,
+              196632,
+              131096,
+              344088
+            ]
+          }
+        },
+        "second_close_post_reclose_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 344088,
+            "median": 147480,
+            "minimum": 114712,
+            "values": [
+              147480,
+              213016,
+              114712,
+              147480,
+              196632,
+              131096,
+              344088
+            ]
+          }
+        },
+        "states": {
+          "empty": {
+            "libmalloc_size_allocated": {
+              "maximum": 16777216,
+              "median": 12582912,
+              "minimum": 12582912,
+              "values": [
+                16777216,
+                12582912,
+                16777216,
+                12582912,
+                12582912,
+                16777216,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 28720,
+              "median": 28720,
+              "minimum": 28720,
+              "values": [
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 1392952,
+              "median": 1360184,
+              "minimum": 1360184,
+              "values": [
+                1360184,
+                1360184,
+                1392952,
+                1360184,
+                1360184,
+                1360184,
+                1360184
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 2375680,
+              "median": 2342912,
+              "minimum": 2342912,
+              "values": [
+                2342912,
+                2342912,
+                2375680,
+                2342912,
+                2342912,
+                2342912,
+                2342912
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "live": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                29360128,
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1936688,
+              "median": 1936688,
+              "minimum": 1936688,
+              "values": [
+                1936688,
+                1936688,
+                1936688,
+                1936688,
+                1936688,
+                1936688,
+                1936688
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1900672,
+                "median": 1900672,
+                "minimum": 1900672,
+                "values": [
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4931896,
+              "median": 4800824,
+              "minimum": 4768056,
+              "values": [
+                4817208,
+                4768056,
+                4800824,
+                4931896,
+                4768056,
+                4849976,
+                4784440
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7094272,
+              "median": 6963200,
+              "minimum": 6930432,
+              "values": [
+                6979584,
+                6930432,
+                6963200,
+                7094272,
+                6930432,
+                7012352,
+                6946816
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_action": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                29360128,
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4931896,
+              "median": 4800824,
+              "minimum": 4768056,
+              "values": [
+                4817208,
+                4768056,
+                4800824,
+                4931896,
+                4768056,
+                4849976,
+                4784440
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7094272,
+              "median": 6963200,
+              "minimum": 6930432,
+              "values": [
+                6979584,
+                6930432,
+                6963200,
+                7094272,
+                6930432,
+                7012352,
+                6946816
+              ]
+            },
+            "trim_released_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_close": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                29360128,
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4931896,
+              "median": 4800824,
+              "minimum": 4768056,
+              "values": [
+                4817208,
+                4768056,
+                4800824,
+                4931896,
+                4768056,
+                4849976,
+                4784440
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7094272,
+              "median": 6963200,
+              "minimum": 6930432,
+              "values": [
+                6979584,
+                6930432,
+                6963200,
+                7094272,
+                6930432,
+                7012352,
+                6946816
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_reclose": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 20971520,
+              "values": [
+                29360128,
+                20971520,
+                20971520,
+                29360128,
+                20971520,
+                20971520,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5128528,
+              "median": 4981072,
+              "minimum": 4915536,
+              "values": [
+                4964688,
+                4981072,
+                4915536,
+                5079376,
+                4964688,
+                4981072,
+                5128528
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7274496,
+              "median": 7127040,
+              "minimum": 7061504,
+              "values": [
+                7110656,
+                7127040,
+                7061504,
+                7225344,
+                7110656,
+                7127040,
+                7274496
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "reopen_live": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 20971520,
+              "values": [
+                29360128,
+                20971520,
+                20971520,
+                29360128,
+                20971520,
+                20971520,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1936688,
+              "median": 1936688,
+              "minimum": 1936688,
+              "values": [
+                1936688,
+                1936688,
+                1936688,
+                1936688,
+                1936688,
+                1936688,
+                1936688
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1900672,
+                "median": 1900672,
+                "minimum": 1900672,
+                "values": [
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672,
+                  1900672
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5128528,
+              "median": 4981072,
+              "minimum": 4915536,
+              "values": [
+                4964688,
+                4981072,
+                4915536,
+                5079376,
+                4964688,
+                4981072,
+                5128528
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7274496,
+              "median": 7127040,
+              "minimum": 7061504,
+              "values": [
+                7110656,
+                7127040,
+                7061504,
+                7225344,
+                7110656,
+                7127040,
+                7274496
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "workload": "fixture-interactive"
+      },
+      "fixture-interactive/zone": {
+        "action_post_action_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "allocator": "zone",
+        "live_minus_empty": {
+          "libmalloc_size_in_use": {
+            "maximum": 1908352,
+            "median": 1908352,
+            "minimum": 1908352,
+            "values": [
+              1908352,
+              1908352,
+              1908352,
+              1908352,
+              1908352,
+              1908352,
+              1908352
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 10600472,
+            "median": 7897112,
+            "minimum": 7864344,
+            "values": [
+              7880728,
+              7880728,
+              7897112,
+              10502168,
+              7864344,
+              7913496,
+              10600472
+            ]
+          }
+        },
+        "retained_post_close_minus_empty": {
+          "libmalloc_size_allocated": {
+            "maximum": 20971520,
+            "median": 12582912,
+            "minimum": 8388608,
+            "values": [
+              8388608,
+              8388608,
+              12582912,
+              12582912,
+              8388608,
+              12582912,
+              20971520
+            ]
+          },
+          "libmalloc_size_in_use": {
+            "maximum": 4096,
+            "median": 4096,
+            "minimum": 4096,
+            "values": [
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 851968,
+            "median": 720896,
+            "minimum": 720896,
+            "values": [
+              720896,
+              720896,
+              720896,
+              802816,
+              720896,
+              720896,
+              851968
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 10207232,
+            "median": 7503872,
+            "minimum": 7471104,
+            "values": [
+              7487488,
+              7487488,
+              7503872,
+              10108928,
+              7471104,
+              7520256,
+              10207232
+            ]
+          }
+        },
+        "reuse_reopen_live_minus_live": {
+          "physical_footprint_bytes": {
+            "maximum": -5324776,
+            "median": -5390312,
+            "minimum": -7995368,
+            "values": [
+              -5324776,
+              -5357544,
+              -5373928,
+              -7913448,
+              -5390312,
+              -5390312,
+              -7995368
+            ]
+          }
+        },
+        "second_close_post_reclose_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 196632,
+            "median": 163864,
+            "minimum": 98328,
+            "values": [
+              196632,
+              163864,
+              180248,
+              131096,
+              131096,
+              180248,
+              98328
+            ]
+          }
+        },
+        "states": {
+          "empty": {
+            "libmalloc_size_allocated": {
+              "maximum": 16777216,
+              "median": 12582912,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                12582912,
+                12582912,
+                16777216,
+                12582912,
+                16777216,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 28720,
+              "median": 28720,
+              "minimum": 28720,
+              "values": [
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 1376568,
+              "median": 1360184,
+              "minimum": 1360184,
+              "values": [
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1376568
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 2359296,
+              "median": 2342912,
+              "minimum": 2342912,
+              "values": [
+                2342912,
+                2342912,
+                2342912,
+                2342912,
+                2342912,
+                2342912,
+                2359296
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "live": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 20971520,
+              "values": [
+                20971520,
+                20971520,
+                25165824,
+                29360128,
+                20971520,
+                29360128,
+                33554432
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1937072,
+              "median": 1937072,
+              "minimum": 1937072,
+              "values": [
+                1937072,
+                1937072,
+                1937072,
+                1937072,
+                1937072,
+                1937072,
+                1937072
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1888896,
+                "median": 1888896,
+                "minimum": 1888896,
+                "values": [
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 11977040,
+              "median": 9257296,
+              "minimum": 9224528,
+              "values": [
+                9240912,
+                9240912,
+                9257296,
+                11862352,
+                9224528,
+                9273680,
+                11977040
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14123008,
+              "median": 11403264,
+              "minimum": 11370496,
+              "values": [
+                11386880,
+                11386880,
+                11403264,
+                14008320,
+                11370496,
+                11419648,
+                14123008
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_action": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 20971520,
+              "values": [
+                20971520,
+                20971520,
+                25165824,
+                29360128,
+                20971520,
+                29360128,
+                33554432
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2228536,
+              "median": 2081080,
+              "minimum": 2081080,
+              "values": [
+                2081080,
+                2081080,
+                2081080,
+                2163000,
+                2081080,
+                2081080,
+                2228536
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 12566528,
+              "median": 9846784,
+              "minimum": 9814016,
+              "values": [
+                9830400,
+                9830400,
+                9846784,
+                12451840,
+                9814016,
+                9863168,
+                12566528
+              ]
+            },
+            "trim_released_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_close": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 20971520,
+              "values": [
+                20971520,
+                20971520,
+                25165824,
+                29360128,
+                20971520,
+                29360128,
+                33554432
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2228536,
+              "median": 2081080,
+              "minimum": 2081080,
+              "values": [
+                2081080,
+                2081080,
+                2081080,
+                2163000,
+                2081080,
+                2081080,
+                2228536
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 12566528,
+              "median": 9846784,
+              "minimum": 9814016,
+              "values": [
+                9830400,
+                9830400,
+                9846784,
+                12451840,
+                9814016,
+                9863168,
+                12566528
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_reclose": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                29360128,
+                20971520,
+                25165824,
+                29360128,
+                20971520,
+                29360128,
+                33554432
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2326864,
+              "median": 2261328,
+              "minimum": 2212176,
+              "values": [
+                2277712,
+                2244944,
+                2261328,
+                2294096,
+                2212176,
+                2261328,
+                2326864
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 12713984,
+              "median": 10059776,
+              "minimum": 9961472,
+              "values": [
+                10059776,
+                10027008,
+                10043392,
+                12632064,
+                9961472,
+                10059776,
+                12713984
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "reopen_live": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                29360128,
+                20971520,
+                25165824,
+                29360128,
+                20971520,
+                29360128,
+                33554432
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1937072,
+              "median": 1937072,
+              "minimum": 1937072,
+              "values": [
+                1937072,
+                1937072,
+                1937072,
+                1937072,
+                1937072,
+                1937072,
+                1937072
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1888896,
+                "median": 1888896,
+                "minimum": 1888896,
+                "values": [
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896,
+                  1888896
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 3981672,
+              "median": 3883368,
+              "minimum": 3834216,
+              "values": [
+                3916136,
+                3883368,
+                3883368,
+                3948904,
+                3834216,
+                3883368,
+                3981672
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14286848,
+              "median": 11632640,
+              "minimum": 11534336,
+              "values": [
+                11632640,
+                11599872,
+                11616256,
+                14204928,
+                11534336,
+                11632640,
+                14286848
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "workload": "fixture-interactive"
+      },
+      "fixture-static/system": {
+        "action_post_action_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "allocator": "system",
+        "live_minus_empty": {
+          "libmalloc_size_in_use": {
+            "maximum": 1874176,
+            "median": 1874176,
+            "minimum": 1874176,
+            "values": [
+              1874176,
+              1874176,
+              1874176,
+              1874176,
+              1874176,
+              1874176,
+              1874176
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 3440640,
+            "median": 3309568,
+            "minimum": 3211264,
+            "values": [
+              3309568,
+              3211264,
+              3211264,
+              3325952,
+              3309568,
+              3440640,
+              3276800
+            ]
+          }
+        },
+        "retained_post_close_minus_empty": {
+          "libmalloc_size_allocated": {
+            "maximum": 16777216,
+            "median": 4194304,
+            "minimum": 0,
+            "values": [
+              4194304,
+              0,
+              4194304,
+              4194304,
+              4194304,
+              16777216,
+              4194304
+            ]
+          },
+          "libmalloc_size_in_use": {
+            "maximum": 4096,
+            "median": 4096,
+            "minimum": 4096,
+            "values": [
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 3440640,
+            "median": 3309568,
+            "minimum": 3211264,
+            "values": [
+              3309568,
+              3211264,
+              3244032,
+              3325952,
+              3342336,
+              3440640,
+              3276800
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 4620288,
+            "median": 4489216,
+            "minimum": 4390912,
+            "values": [
+              4489216,
+              4390912,
+              4423680,
+              4505600,
+              4521984,
+              4620288,
+              4456448
+            ]
+          }
+        },
+        "reuse_reopen_live_minus_live": {
+          "physical_footprint_bytes": {
+            "maximum": 213016,
+            "median": 163864,
+            "minimum": 114712,
+            "values": [
+              196632,
+              196632,
+              213016,
+              147480,
+              147480,
+              114712,
+              163864
+            ]
+          }
+        },
+        "second_close_post_reclose_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 229400,
+            "median": 180248,
+            "minimum": 131096,
+            "values": [
+              229400,
+              213016,
+              196632,
+              163864,
+              131096,
+              131096,
+              180248
+            ]
+          }
+        },
+        "states": {
+          "empty": {
+            "libmalloc_size_allocated": {
+              "maximum": 16777216,
+              "median": 12582912,
+              "minimum": 12582912,
+              "values": [
+                16777216,
+                12582912,
+                12582912,
+                16777216,
+                12582912,
+                12582912,
+                16777216
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 28720,
+              "median": 28720,
+              "minimum": 28720,
+              "values": [
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 1376568,
+              "median": 1360184,
+              "minimum": 1360184,
+              "values": [
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1376568,
+                1376568,
+                1360184
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 2359296,
+              "median": 2342912,
+              "minimum": 2342912,
+              "values": [
+                2342912,
+                2342912,
+                2342912,
+                2342912,
+                2359296,
+                2359296,
+                2342912
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "live": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                20971520,
+                12582912,
+                16777216,
+                20971520,
+                12582912,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1902896,
+              "median": 1902896,
+              "minimum": 1902896,
+              "values": [
+                1902896,
+                1902896,
+                1902896,
+                1902896,
+                1902896,
+                1902896,
+                1902896
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1866880,
+                "median": 1866880,
+                "minimum": 1866880,
+                "values": [
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4817208,
+              "median": 4669752,
+              "minimum": 4571448,
+              "values": [
+                4669752,
+                4571448,
+                4571448,
+                4686136,
+                4686136,
+                4817208,
+                4636984
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 6979584,
+              "median": 6832128,
+              "minimum": 6733824,
+              "values": [
+                6832128,
+                6733824,
+                6733824,
+                6848512,
+                6848512,
+                6979584,
+                6799360
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_action": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                20971520,
+                12582912,
+                16777216,
+                20971520,
+                16777216,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4817208,
+              "median": 4669752,
+              "minimum": 4571448,
+              "values": [
+                4669752,
+                4571448,
+                4604216,
+                4686136,
+                4718904,
+                4817208,
+                4636984
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 6979584,
+              "median": 6832128,
+              "minimum": 6733824,
+              "values": [
+                6832128,
+                6733824,
+                6766592,
+                6848512,
+                6881280,
+                6979584,
+                6799360
+              ]
+            },
+            "trim_released_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_close": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                20971520,
+                12582912,
+                16777216,
+                20971520,
+                16777216,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4817208,
+              "median": 4669752,
+              "minimum": 4571448,
+              "values": [
+                4669752,
+                4571448,
+                4604216,
+                4686136,
+                4718904,
+                4817208,
+                4636984
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 6979584,
+              "median": 6832128,
+              "minimum": 6733824,
+              "values": [
+                6832128,
+                6733824,
+                6766592,
+                6848512,
+                6881280,
+                6979584,
+                6799360
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_reclose": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 16777216,
+              "values": [
+                25165824,
+                16777216,
+                20971520,
+                20971520,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4948304,
+              "median": 4850000,
+              "minimum": 4784464,
+              "values": [
+                4899152,
+                4784464,
+                4800848,
+                4850000,
+                4850000,
+                4948304,
+                4817232
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7094272,
+              "median": 6995968,
+              "minimum": 6930432,
+              "values": [
+                7045120,
+                6930432,
+                6946816,
+                6995968,
+                6995968,
+                7094272,
+                6963200
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "reopen_live": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 16777216,
+              "values": [
+                20971520,
+                16777216,
+                20971520,
+                20971520,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1902896,
+              "median": 1902896,
+              "minimum": 1902896,
+              "values": [
+                1902896,
+                1902896,
+                1902896,
+                1902896,
+                1902896,
+                1902896,
+                1902896
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1866880,
+                "median": 1866880,
+                "minimum": 1866880,
+                "values": [
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880,
+                  1866880
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4931920,
+              "median": 4833616,
+              "minimum": 4768080,
+              "values": [
+                4866384,
+                4768080,
+                4784464,
+                4833616,
+                4833616,
+                4931920,
+                4800848
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7077888,
+              "median": 6979584,
+              "minimum": 6914048,
+              "values": [
+                7012352,
+                6914048,
+                6930432,
+                6979584,
+                6979584,
+                7077888,
+                6946816
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "workload": "fixture-static"
+      },
+      "fixture-static/zone": {
+        "action_post_action_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "allocator": "zone",
+        "live_minus_empty": {
+          "libmalloc_size_in_use": {
+            "maximum": 1876096,
+            "median": 1876096,
+            "minimum": 1876096,
+            "values": [
+              1876096,
+              1876096,
+              1876096,
+              1876096,
+              1876096,
+              1876096,
+              1876096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 10534936,
+            "median": 10387480,
+            "minimum": 10354712,
+            "values": [
+              10485784,
+              10354712,
+              10387480,
+              10387480,
+              10534936,
+              10403864,
+              10387480
+            ]
+          }
+        },
+        "retained_post_close_minus_empty": {
+          "libmalloc_size_allocated": {
+            "maximum": 20971520,
+            "median": 12582912,
+            "minimum": 8388608,
+            "values": [
+              20971520,
+              8388608,
+              8388608,
+              12582912,
+              16777216,
+              12582912,
+              16777216
+            ]
+          },
+          "libmalloc_size_in_use": {
+            "maximum": 4096,
+            "median": 4096,
+            "minimum": 4096,
+            "values": [
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 770048,
+            "median": 720896,
+            "minimum": 671744,
+            "values": [
+              770048,
+              671744,
+              720896,
+              720896,
+              753664,
+              737280,
+              720896
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 10174464,
+            "median": 10027008,
+            "minimum": 9977856,
+            "values": [
+              10125312,
+              9977856,
+              10027008,
+              10027008,
+              10174464,
+              10043392,
+              10027008
+            ]
+          }
+        },
+        "reuse_reopen_live_minus_live": {
+          "physical_footprint_bytes": {
+            "maximum": -7880680,
+            "median": -7897064,
+            "minimum": -8011752,
+            "values": [
+              -7978984,
+              -7897064,
+              -7897064,
+              -7913448,
+              -8011752,
+              -7880680,
+              -7897064
+            ]
+          }
+        },
+        "second_close_post_reclose_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 114712,
+            "median": 98328,
+            "minimum": 98328,
+            "values": [
+              98328,
+              98328,
+              114712,
+              98328,
+              98328,
+              98328,
+              114712
+            ]
+          }
+        },
+        "states": {
+          "empty": {
+            "libmalloc_size_allocated": {
+              "maximum": 16777216,
+              "median": 12582912,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                12582912,
+                12582912,
+                12582912,
+                12582912,
+                16777216,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 28720,
+              "median": 28720,
+              "minimum": 28720,
+              "values": [
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720,
+                28720
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 1376568,
+              "median": 1376568,
+              "minimum": 1360184,
+              "values": [
+                1376568,
+                1360184,
+                1376568,
+                1376568,
+                1376568,
+                1360184,
+                1376568
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 2359296,
+              "median": 2359296,
+              "minimum": 2342912,
+              "values": [
+                2359296,
+                2342912,
+                2359296,
+                2359296,
+                2359296,
+                2342912,
+                2359296
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "live": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                33554432,
+                20971520,
+                20971520,
+                25165824,
+                29360128,
+                29360128,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1904816,
+              "median": 1904816,
+              "minimum": 1904816,
+              "values": [
+                1904816,
+                1904816,
+                1904816,
+                1904816,
+                1904816,
+                1904816,
+                1904816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1856640,
+                "median": 1856640,
+                "minimum": 1856640,
+                "values": [
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 11911504,
+              "median": 11764048,
+              "minimum": 11714896,
+              "values": [
+                11862352,
+                11714896,
+                11764048,
+                11764048,
+                11911504,
+                11764048,
+                11764048
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14057472,
+              "median": 13910016,
+              "minimum": 13860864,
+              "values": [
+                14008320,
+                13860864,
+                13910016,
+                13910016,
+                14057472,
+                13910016,
+                13910016
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_action": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                33554432,
+                20971520,
+                20971520,
+                25165824,
+                29360128,
+                29360128,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2146616,
+              "median": 2097464,
+              "minimum": 2031928,
+              "values": [
+                2146616,
+                2031928,
+                2097464,
+                2097464,
+                2130232,
+                2097464,
+                2097464
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 12533760,
+              "median": 12386304,
+              "minimum": 12320768,
+              "values": [
+                12484608,
+                12320768,
+                12386304,
+                12386304,
+                12533760,
+                12386304,
+                12386304
+              ]
+            },
+            "trim_released_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_close": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                33554432,
+                20971520,
+                20971520,
+                25165824,
+                29360128,
+                29360128,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2146616,
+              "median": 2097464,
+              "minimum": 2031928,
+              "values": [
+                2146616,
+                2031928,
+                2097464,
+                2097464,
+                2130232,
+                2097464,
+                2097464
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 12533760,
+              "median": 12386304,
+              "minimum": 12320768,
+              "values": [
+                12484608,
+                12320768,
+                12386304,
+                12386304,
+                12533760,
+                12386304,
+                12386304
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_reclose": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                33554432,
+                20971520,
+                29360128,
+                25165824,
+                33554432,
+                29360128,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 32816,
+              "median": 32816,
+              "minimum": 32816,
+              "values": [
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816,
+                32816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2244944,
+              "median": 2212176,
+              "minimum": 2130256,
+              "values": [
+                2244944,
+                2130256,
+                2212176,
+                2195792,
+                2228560,
+                2195792,
+                2212176
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 12713984,
+              "median": 12582912,
+              "minimum": 12517376,
+              "values": [
+                12632064,
+                12517376,
+                12582912,
+                12550144,
+                12713984,
+                12582912,
+                12582912
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "reopen_live": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 29360128,
+              "minimum": 20971520,
+              "values": [
+                33554432,
+                20971520,
+                25165824,
+                25165824,
+                33554432,
+                29360128,
+                29360128
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 1904816,
+              "median": 1904816,
+              "minimum": 1904816,
+              "values": [
+                1904816,
+                1904816,
+                1904816,
+                1904816,
+                1904816,
+                1904816,
+                1904816
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 1856640,
+                "median": 1856640,
+                "minimum": 1856640,
+                "values": [
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640,
+                  1856640
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 3899752,
+              "median": 3866984,
+              "minimum": 3817832,
+              "values": [
+                3883368,
+                3817832,
+                3866984,
+                3850600,
+                3899752,
+                3883368,
+                3866984
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14270464,
+              "median": 14123008,
+              "minimum": 14073856,
+              "values": [
+                14188544,
+                14073856,
+                14123008,
+                14106624,
+                14270464,
+                14139392,
+                14123008
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "workload": "fixture-static"
+      },
+      "representative-url/system": {
+        "action_post_action_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "allocator": "system",
+        "live_minus_empty": {
+          "libmalloc_size_in_use": {
+            "maximum": 2373744,
+            "median": 2349776,
+            "minimum": 2345216,
+            "values": [
+              2349776,
+              2357936,
+              2349776,
+              2373744,
+              2345216,
+              2345216,
+              2345216
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 4096000,
+            "median": 3981312,
+            "minimum": 3915776,
+            "values": [
+              3981312,
+              4014080,
+              4014080,
+              3915776,
+              3932160,
+              4096000,
+              3964928
+            ]
+          }
+        },
+        "retained_post_close_minus_empty": {
+          "libmalloc_size_allocated": {
+            "maximum": 12582912,
+            "median": 4194304,
+            "minimum": 0,
+            "values": [
+              0,
+              4194304,
+              4194304,
+              0,
+              8388608,
+              12582912,
+              4194304
+            ]
+          },
+          "libmalloc_size_in_use": {
+            "maximum": 36560,
+            "median": 20416,
+            "minimum": 4096,
+            "values": [
+              20416,
+              20416,
+              20416,
+              36560,
+              4096,
+              4096,
+              4096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 4096000,
+            "median": 3981312,
+            "minimum": 3915776,
+            "values": [
+              3981312,
+              4014080,
+              4014080,
+              3915776,
+              3948544,
+              4096000,
+              3964928
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 5275648,
+            "median": 5160960,
+            "minimum": 5095424,
+            "values": [
+              5160960,
+              5193728,
+              5193728,
+              5095424,
+              5128192,
+              5275648,
+              5144576
+            ]
+          }
+        },
+        "reuse_reopen_live_minus_live": {
+          "physical_footprint_bytes": {
+            "maximum": 180248,
+            "median": 98328,
+            "minimum": 65560,
+            "values": [
+              98328,
+              131096,
+              98328,
+              131096,
+              180248,
+              65560,
+              98328
+            ]
+          }
+        },
+        "second_close_post_reclose_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 163864,
+            "median": 114712,
+            "minimum": 65560,
+            "values": [
+              98328,
+              131096,
+              98328,
+              131096,
+              163864,
+              65560,
+              114712
+            ]
+          }
+        },
+        "states": {
+          "empty": {
+            "libmalloc_size_allocated": {
+              "maximum": 16777216,
+              "median": 16777216,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                16777216,
+                16777216,
+                12582912,
+                12582912,
+                16777216,
+                16777216
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 29056,
+              "median": 29056,
+              "minimum": 29056,
+              "values": [
+                29056,
+                29056,
+                29056,
+                29056,
+                29056,
+                29056,
+                29056
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 1392952,
+              "median": 1360184,
+              "minimum": 1360184,
+              "values": [
+                1360184,
+                1360184,
+                1360184,
+                1376568,
+                1376568,
+                1392952,
+                1360184
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 2490368,
+              "median": 2457600,
+              "minimum": 2457600,
+              "values": [
+                2457600,
+                2457600,
+                2457600,
+                2473984,
+                2473984,
+                2490368,
+                2457600
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "live": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 2402800,
+              "median": 2378832,
+              "minimum": 2374272,
+              "values": [
+                2378832,
+                2386992,
+                2378832,
+                2402800,
+                2374272,
+                2374272,
+                2374272
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 22032,
+                "median": 22032,
+                "minimum": 22032,
+                "values": [
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032
+                ]
+              },
+              "network_fetches": {
+                "maximum": 24,
+                "median": 24,
+                "minimum": 24,
+                "values": [
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 2337664,
+                "median": 2337664,
+                "minimum": 2337664,
+                "values": [
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5488952,
+              "median": 5341496,
+              "minimum": 5292344,
+              "values": [
+                5341496,
+                5374264,
+                5374264,
+                5292344,
+                5308728,
+                5488952,
+                5325112
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7766016,
+              "median": 7618560,
+              "minimum": 7569408,
+              "values": [
+                7618560,
+                7651328,
+                7651328,
+                7569408,
+                7585792,
+                7766016,
+                7602176
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_action": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 65616,
+              "median": 49472,
+              "minimum": 33152,
+              "values": [
+                49472,
+                49472,
+                49472,
+                65616,
+                33152,
+                33152,
+                33152
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5488952,
+              "median": 5341496,
+              "minimum": 5292344,
+              "values": [
+                5341496,
+                5374264,
+                5374264,
+                5292344,
+                5325112,
+                5488952,
+                5325112
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7766016,
+              "median": 7618560,
+              "minimum": 7569408,
+              "values": [
+                7618560,
+                7651328,
+                7651328,
+                7569408,
+                7602176,
+                7766016,
+                7602176
+              ]
+            },
+            "trim_released_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_close": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 65616,
+              "median": 49472,
+              "minimum": 33152,
+              "values": [
+                49472,
+                49472,
+                49472,
+                65616,
+                33152,
+                33152,
+                33152
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5488952,
+              "median": 5341496,
+              "minimum": 5292344,
+              "values": [
+                5341496,
+                5374264,
+                5374264,
+                5292344,
+                5325112,
+                5488952,
+                5325112
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7766016,
+              "median": 7618560,
+              "minimum": 7569408,
+              "values": [
+                7618560,
+                7651328,
+                7651328,
+                7569408,
+                7602176,
+                7766016,
+                7602176
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_reclose": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 65616,
+              "median": 49472,
+              "minimum": 33152,
+              "values": [
+                49472,
+                49472,
+                49472,
+                65616,
+                33152,
+                33152,
+                33152
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5554512,
+              "median": 5472592,
+              "minimum": 5423440,
+              "values": [
+                5439824,
+                5505360,
+                5472592,
+                5423440,
+                5488976,
+                5554512,
+                5439824
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7815168,
+              "median": 7733248,
+              "minimum": 7684096,
+              "values": [
+                7700480,
+                7766016,
+                7733248,
+                7684096,
+                7749632,
+                7815168,
+                7700480
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "reopen_live": {
+            "libmalloc_size_allocated": {
+              "maximum": 29360128,
+              "median": 20971520,
+              "minimum": 12582912,
+              "values": [
+                12582912,
+                20971520,
+                20971520,
+                12582912,
+                20971520,
+                29360128,
+                20971520
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 2404752,
+              "median": 2388752,
+              "minimum": 2374272,
+              "values": [
+                2388912,
+                2388752,
+                2388912,
+                2404752,
+                2374272,
+                2374272,
+                2374272
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 22032,
+                "median": 22032,
+                "minimum": 22032,
+                "values": [
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032
+                ]
+              },
+              "network_fetches": {
+                "maximum": 24,
+                "median": 24,
+                "minimum": 24,
+                "values": [
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 2337664,
+                "median": 2337664,
+                "minimum": 2337664,
+                "values": [
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664,
+                  2337664
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 5554512,
+              "median": 5472592,
+              "minimum": 5423440,
+              "values": [
+                5439824,
+                5505360,
+                5472592,
+                5423440,
+                5488976,
+                5554512,
+                5423440
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 7815168,
+              "median": 7733248,
+              "minimum": 7684096,
+              "values": [
+                7700480,
+                7766016,
+                7733248,
+                7684096,
+                7749632,
+                7815168,
+                7684096
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "workload": "representative-url"
+      },
+      "representative-url/zone": {
+        "action_post_action_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 0,
+            "median": 0,
+            "minimum": 0,
+            "values": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        },
+        "allocator": "zone",
+        "live_minus_empty": {
+          "libmalloc_size_in_use": {
+            "maximum": 2342144,
+            "median": 2342144,
+            "minimum": 2342144,
+            "values": [
+              2342144,
+              2342144,
+              2342144,
+              2342144,
+              2342144,
+              2342144,
+              2342144
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 12140568,
+            "median": 11419672,
+            "minimum": 8781848,
+            "values": [
+              11485208,
+              11419672,
+              8863768,
+              8798232,
+              11485208,
+              12140568,
+              8781848
+            ]
+          }
+        },
+        "retained_post_close_minus_empty": {
+          "libmalloc_size_allocated": {
+            "maximum": 16777216,
+            "median": 12582912,
+            "minimum": 8388608,
+            "values": [
+              16777216,
+              12582912,
+              8388608,
+              8388608,
+              12582912,
+              12582912,
+              12582912
+            ]
+          },
+          "libmalloc_size_in_use": {
+            "maximum": 4096,
+            "median": 4096,
+            "minimum": 4096,
+            "values": [
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096,
+              4096
+            ]
+          },
+          "physical_footprint_bytes": {
+            "maximum": 1015808,
+            "median": 966656,
+            "minimum": 917504,
+            "values": [
+              999424,
+              933888,
+              983040,
+              933888,
+              966656,
+              1015808,
+              917504
+            ]
+          },
+          "resident_bytes": {
+            "maximum": 11747328,
+            "median": 11026432,
+            "minimum": 8388608,
+            "values": [
+              11091968,
+              11026432,
+              8470528,
+              8404992,
+              11091968,
+              11747328,
+              8388608
+            ]
+          }
+        },
+        "reuse_reopen_live_minus_live": {
+          "physical_footprint_bytes": {
+            "maximum": -6012904,
+            "median": -8667112,
+            "minimum": -9404392,
+            "values": [
+              -8716264,
+              -8667112,
+              -6111208,
+              -6012904,
+              -8765416,
+              -9404392,
+              -6045672
+            ]
+          }
+        },
+        "second_close_post_reclose_minus_post_close": {
+          "physical_footprint_bytes": {
+            "maximum": 180248,
+            "median": 114712,
+            "minimum": 98328,
+            "values": [
+              114712,
+              98328,
+              147480,
+              180248,
+              114712,
+              98328,
+              147480
+            ]
+          }
+        },
+        "states": {
+          "empty": {
+            "libmalloc_size_allocated": {
+              "maximum": 16777216,
+              "median": 16777216,
+              "minimum": 12582912,
+              "values": [
+                16777216,
+                12582912,
+                16777216,
+                16777216,
+                12582912,
+                16777216,
+                12582912
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 29056,
+              "median": 29056,
+              "minimum": 29056,
+              "values": [
+                29056,
+                29056,
+                29056,
+                29056,
+                29056,
+                29056,
+                29056
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 1376568,
+              "median": 1360184,
+              "minimum": 1360184,
+              "values": [
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1360184,
+                1376568
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 2473984,
+              "median": 2457600,
+              "minimum": 2457600,
+              "values": [
+                2457600,
+                2457600,
+                2457600,
+                2457600,
+                2457600,
+                2457600,
+                2473984
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "live": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 25165824,
+              "values": [
+                33554432,
+                25165824,
+                25165824,
+                25165824,
+                25165824,
+                29360128,
+                25165824
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 2371200,
+              "median": 2371200,
+              "minimum": 2371200,
+              "values": [
+                2371200,
+                2371200,
+                2371200,
+                2371200,
+                2371200,
+                2371200,
+                2371200
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 22032,
+                "median": 22032,
+                "minimum": 22032,
+                "values": [
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032
+                ]
+              },
+              "network_fetches": {
+                "maximum": 24,
+                "median": 24,
+                "minimum": 24,
+                "values": [
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 2322432,
+                "median": 2322432,
+                "minimum": 2322432,
+                "values": [
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 13500752,
+              "median": 12779856,
+              "minimum": 10158416,
+              "values": [
+                12845392,
+                12779856,
+                10223952,
+                10158416,
+                12845392,
+                13500752,
+                10158416
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 15761408,
+              "median": 15040512,
+              "minimum": 12419072,
+              "values": [
+                15106048,
+                15040512,
+                12484608,
+                12419072,
+                15106048,
+                15761408,
+                12419072
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_action": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 25165824,
+              "values": [
+                33554432,
+                25165824,
+                25165824,
+                25165824,
+                25165824,
+                29360128,
+                25165824
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 33152,
+              "median": 33152,
+              "minimum": 33152,
+              "values": [
+                33152,
+                33152,
+                33152,
+                33152,
+                33152,
+                33152,
+                33152
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2375992,
+              "median": 2326840,
+              "minimum": 2294072,
+              "values": [
+                2359608,
+                2294072,
+                2343224,
+                2294072,
+                2326840,
+                2375992,
+                2294072
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14204928,
+              "median": 13484032,
+              "minimum": 10862592,
+              "values": [
+                13549568,
+                13484032,
+                10928128,
+                10862592,
+                13549568,
+                14204928,
+                10862592
+              ]
+            },
+            "trim_released_bytes": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_close": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 25165824,
+              "values": [
+                33554432,
+                25165824,
+                25165824,
+                25165824,
+                25165824,
+                29360128,
+                25165824
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 33152,
+              "median": 33152,
+              "minimum": 33152,
+              "values": [
+                33152,
+                33152,
+                33152,
+                33152,
+                33152,
+                33152,
+                33152
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2375992,
+              "median": 2326840,
+              "minimum": 2294072,
+              "values": [
+                2359608,
+                2294072,
+                2343224,
+                2294072,
+                2326840,
+                2375992,
+                2294072
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14204928,
+              "median": 13484032,
+              "minimum": 10862592,
+              "values": [
+                13549568,
+                13484032,
+                10928128,
+                10862592,
+                13549568,
+                14204928,
+                10862592
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "post_reclose": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 25165824,
+              "values": [
+                33554432,
+                25165824,
+                25165824,
+                25165824,
+                25165824,
+                29360128,
+                25165824
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 33152,
+              "median": 33152,
+              "minimum": 33152,
+              "values": [
+                33152,
+                33152,
+                33152,
+                33152,
+                33152,
+                33152,
+                33152
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "network_fetches": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "script_realms": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              },
+              "targets": {
+                "maximum": 0,
+                "median": 0,
+                "minimum": 0,
+                "values": [
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 2490704,
+              "median": 2474320,
+              "minimum": 2392400,
+              "values": [
+                2474320,
+                2392400,
+                2490704,
+                2474320,
+                2441552,
+                2474320,
+                2441552
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 14319616,
+              "median": 13697024,
+              "minimum": 11075584,
+              "values": [
+                13713408,
+                13697024,
+                11091968,
+                11108352,
+                13697024,
+                14319616,
+                11075584
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          },
+          "reopen_live": {
+            "libmalloc_size_allocated": {
+              "maximum": 33554432,
+              "median": 25165824,
+              "minimum": 25165824,
+              "values": [
+                33554432,
+                25165824,
+                25165824,
+                25165824,
+                25165824,
+                29360128,
+                25165824
+              ]
+            },
+            "libmalloc_size_in_use": {
+              "maximum": 2371200,
+              "median": 2371200,
+              "minimum": 2371200,
+              "values": [
+                2371200,
+                2371200,
+                2371200,
+                2371200,
+                2371200,
+                2371200,
+                2371200
+              ]
+            },
+            "owners": {
+              "network_bytes": {
+                "maximum": 22032,
+                "median": 22032,
+                "minimum": 22032,
+                "values": [
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032,
+                  22032
+                ]
+              },
+              "network_fetches": {
+                "maximum": 24,
+                "median": 24,
+                "minimum": 24,
+                "values": [
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24,
+                  24
+                ]
+              },
+              "script_realm_bytes": {
+                "maximum": 2322432,
+                "median": 2322432,
+                "minimum": 2322432,
+                "values": [
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432,
+                  2322432
+                ]
+              },
+              "script_realms": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              },
+              "targets": {
+                "maximum": 8,
+                "median": 8,
+                "minimum": 8,
+                "values": [
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8,
+                  8
+                ]
+              }
+            },
+            "physical_footprint_bytes": {
+              "maximum": 4145512,
+              "median": 4112744,
+              "minimum": 4079976,
+              "values": [
+                4129128,
+                4112744,
+                4112744,
+                4145512,
+                4079976,
+                4096360,
+                4112744
+              ]
+            },
+            "resident_bytes": {
+              "maximum": 15892480,
+              "median": 15269888,
+              "minimum": 12648448,
+              "values": [
+                15286272,
+                15269888,
+                12664832,
+                12681216,
+                15269888,
+                15892480,
+                12648448
+              ]
+            },
+            "zone_blocks_leaked_total": {
+              "maximum": 0,
+              "median": 0,
+              "minimum": 0,
+              "values": [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+              ]
+            }
+          }
+        },
+        "workload": "representative-url"
+      }
+    },
+    "semantic": "physical footprint and RSS of the single host process per stage; memory.report logical owners and libmalloc size_in_use/size_allocated per stage; retained = post_close - empty"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.native-dom-retention-attribution-receipt/0.0.1",
+  "status": "observed",
+  "technology": "native-dom",
+  "technology_version": "0.0.2"
+}

@@ -39,7 +39,10 @@ realm?
 
 `native-dom-control serve --stdio --fixture-root DIR --config-dir DIR
 [--allow-origin http://HOST:PORT]...` accepts the same arguments as
-`servo-control` plus an explicit origin allowlist. It offers ephemeral
+`servo-control` plus an explicit origin allowlist. `memory.trim` runs
+`malloc_zone_pressure_relief` and reports released bytes; the environment
+knob `MINICON_SURF_NATIVE_REALM_ZONE=1` selects the macOS zone-per-realm
+experiment described under retention attribution. It offers ephemeral
 profiles, one session, hermetic fixture targets of at most 1 MiB or `url`
 targets fetched under the network policy, semantic snapshots, revision-scoped
 click actions, `revision_at_least` waits and a memory report that includes
@@ -160,12 +163,102 @@ is lower at every stage. Its lifecycle is not optimized: after every close
 the footprint equals the live footprint, so nothing is returned to the OS,
 and its retained-above-empty is larger than Lightpanda's on the fixture court
 (1,867,776 against 1,540,144) and much larger on the representative page
-(4,620,432 against 1,015,856). `memory.report` shows every logical owner at
-zero after the closes (targets, script realms and their malloc bytes,
-network fetches and bytes), which says the host released what it tracks and
-nothing about recovery; the difference is QuickJS runtime, parsed-tree and
-network-buffer memory kept by the system allocator. That is a retention risk
-to be measured and repaired before any lifecycle claim, and G1 stays open.
+(4,620,432 against 1,015,856). G1 stays open. The retention court below
+attributes that retention.
+
+### Post-close retention attribution
+
+[`retention-court.py`](retention-court.py) runs every measurement in a fresh
+host process (its `empty` and `live` stages are the fresh-process control),
+then closes the eight targets, runs `memory.trim`
+(`malloc_zone_pressure_relief`), reopens the same eight targets and closes
+them again. Each stage records physical footprint and RSS from outside and,
+from `memory.report`, the logical owners and libmalloc's `size_in_use`
+against `size_allocated`, which splits retained bytes into still-allocated
+and freed-but-reserved. Three workloads (static fixture, interactive fixture,
+representative page over the network) × two allocators, one warm-up plus
+seven measured runs each
+(`native-dom-control-0.0.2-retention-attribution` receipt).
+
+System allocator (the default), medians in bytes:
+
+| stage | static fixture fp | interactive fixture fp | representative page fp |
+|---|---|---|---|
+| empty | 1,360,184 | 1,360,184 | 1,360,184 |
+| live (8 targets) | 4,669,752 | 4,800,824 | 5,341,496 |
+| post-close | 4,669,752 | 4,800,824 | 5,341,496 |
+| post-trim | 4,669,752 (0 released) | 4,800,824 (0 released) | 5,341,496 (0 released) |
+| reopen live | 4,833,616 | 4,981,072 | 5,472,592 |
+| post-reclose | 4,850,000 | 4,981,072 | 5,472,592 |
+| retained fp | 3,309,568 | 3,424,256 | 3,981,312 |
+| retained libmalloc in-use | 4,096 | 4,096 | 20,416 |
+
+Attribution: after the closes libmalloc's in-use bytes return to within
+4,096 bytes of empty (20,416 on the representative page) in every run, every
+logical owner is zero, and the per-realm QuickJS bytes (1.87 to 2.34 MB
+across eight realms), the parsed tree and the network buffers are all
+released. The 3.3 to 4.0 MB that stay in the footprint are freed blocks that
+the default libmalloc zone keeps in its regions (`size_allocated` grows by 4
+to 8 MB and never shrinks); `malloc_zone_pressure_relief` releases nothing.
+Reopening eight targets costs only 98,328 to 163,864 bytes over the first
+live stage, and the second close retains the same amount as the first, so
+the retention is a bounded reservation that is reused, not per-cycle growth
+and did not grow again across the measured reopen; this court does not prove
+the absence of leaks in broader workloads. No QuickJS block was ever left in a dedicated zone at
+destruction (leak counter 0 across every zone-cell close).
+
+Repair candidate, macOS only: `MINICON_SURF_NATIVE_REALM_ZONE=1` gives each
+QuickJS realm its own libmalloc zone through rquickjs's allocator hook and
+destroys the zone after the runtime drops. Because rquickjs makes
+`set_memory_limit` a no-op under a custom allocator, the zone allocator
+carries its own accounting and `memory.report` reads that count; the hook
+is compiled only on macOS and other targets get `unsupported_capability`.
+The accounting contract, each point covered by a test: every block is
+charged by the size libmalloc actually served (a request that passes the
+pre-check but rounds over the limit is freed again and reported as out of
+memory); `calloc` multiplies with overflow checks; the count is updated with
+compare-and-swap loops; `realloc` allocates and charges the replacement
+first, copies `min(old, new)` bytes, and only then releases and frees the old
+block, so on any failure the old block stays valid, readable, writable and
+counted; a zero new size yields a minimal block like this platform's
+`realloc`; null is safe in `dealloc` and `usable_size`; and the zone is
+destroyed only after the runtime dropped, with the blocks still in use at
+that moment counted (zero in every run). Medians in bytes:
+
+| stage | static fixture | interactive fixture | representative page |
+|---|---|---|---|
+| empty | 1,376,568 | 1,360,184 | 1,360,184 |
+| live (8 targets) | 11,764,048 | 9,257,296 | 12,779,856 |
+| post-close | 2,097,464 | 2,081,080 | 2,326,840 |
+| reopen live | 3,866,984 | 3,883,368 | 4,112,744 |
+| post-reclose | 2,212,176 | 2,261,328 | 2,474,320 |
+| retained fp | 720,896 | 720,896 | 966,656 |
+| RSS after the closes | 12,386,304 | 9,846,784 | 13,484,032 |
+
+Retained footprint drops from 3.3 to 4.0 MB to 0.72 to 0.97 MB; the exact
+two-sided Mann-Whitney test against the system cells gives U = 0 and
+p = 0.00058 for all three workloads, and the 27-item journey and 35-item
+network court pass under the knob. The cost is the live axis: the first
+eight zones lift the live footprint to 9.3 to 12.8 MB (about 0.6 to 0.9 MB
+per realm of zone bootstrap, mostly not repeated on reopen, where live is
+3.9 to 4.1 MB) and RSS stays at 9.8 to 13.5 MB after the closes even though
+footprint falls. The repair therefore passes the post-close criterion and
+fails the live criterion, so it stays an opt-in experiment and the default
+allocator is unchanged; the retention is recorded as bounded allocator
+reservation rather than a tracked live owner in this court; broader leak
+absence is not claimed, and G1 stays open.
+
+The hard cap is not a guaranteed usable capacity. `capacity-growth.html`
+grows one dense array until the realm throws; the realm's live bytes read
+afterwards were 11,856,928 (0.7067 of 16 MiB) under the default allocator
+and 7,972,784 (0.4752) under the zone allocator, identical in all seven runs
+each. A growing array reallocates its backing store by about 1.5×, and the
+zone allocator holds old and new buffers at once while the replacement is
+charged, so the largest single growth step fails at roughly half the cap;
+QuickJS's default path reallocates in place and fails only when the new
+buffer itself exceeds the cap. This is the deliberate price of the failure
+contract; an atomic replace accounting with a separate transient-peak bound
+would be a further experiment, not a shortcut through that contract.
 
 ## Findings against product contracts
 
@@ -213,10 +306,13 @@ target by footprint. Every later slice is measured against this row.
 - Public-address negatives are refused before any connection, so they
   exercise policy rather than reachability; the `.invalid` negative depends
   on the system resolver returning no address.
-- Memory freed by closing realms stays in libmalloc: eight pages and the
-  post-close state read the same footprint.
+- Memory freed by closing realms stays in libmalloc as reserved regions:
+  attributed above; the only measured way to return it (a zone per realm)
+  costs live footprint and is not the default.
 - The next slice must add a bounded persistent-profile store (cookies and
   local storage) under the same journey and court, then `https` with pinned
-  roots; each passes only if the 27-item journey and the 34-item network
+  roots; each passes only if the 27-item journey and the 35-item network
   court stay green and the footprint court row stays below Lightpanda's
-  single server at one target.
+  single server at one target. A repair that returns reserved memory without
+  the zone's live cost (for example a realm heap arena unmapped at close)
+  is a separate experiment against the same retention court.

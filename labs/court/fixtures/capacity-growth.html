@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Capacity Growth Court</title></head>
+  <body>
+    <main>
+      <h1>Capacity Growth Court</h1>
+      <p id="capacity">running</p>
+    </main>
+    <script>
+      // Grow one dense array until the realm reports out of memory, then keep
+      // the live data and record how far it got. A dense array reallocates
+      // its backing store as it grows, which is where an allocator that
+      // charges a replacement before releasing the old block holds both.
+      const values = [];
+      let failure = "none";
+      try {
+        for (;;) {
+          values.push(values.length);
+        }
+      } catch (error) {
+        failure = String(error && error.message ? error.message : error).slice(0, 64);
+      }
+      document.getElementById("capacity").textContent =
+        "values=" + values.length + " failure=" + failure;
+    </script>
+  </body>
+</html>

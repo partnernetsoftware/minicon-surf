@@ -124,7 +124,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 37.7 MB footprint vs Chrome 597.6 MB · 8 concurrent 179 MB vs 868 MB (RSS 87.5/1,232 · 137/2,207); narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
-│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM slice 21/27; + bounded QuickJS realm 27/27; + bounded http fetch and representative page 35/35 — live footprint below Lightpanda at every stage, post-close equals live (retention risk, G1 open)
+│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live, not default; G1 open
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
@@ -192,7 +192,7 @@ flowchart LR
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3/W7 · lowest RSS · 39 KB/cycle<br/>one target per server → process-per-target combine: 8 targets 237 MB engines"]
         SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 stdio + CDP on one target<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · D4 clients open"]
-        NATIVE["bounded native route<br/>DOM + QuickJS realm + bounded http fetch<br/>2.4 MB one target · 4.7 MB eight (footprint)<br/>post-close = live: retention risk · layout/storage/https open"]
+        NATIVE["bounded native route<br/>DOM + QuickJS realm + bounded http fetch<br/>2.4 MB one target · 4.7 MB eight (footprint)<br/>post-close = live: attributed to allocator reservation, bounded and reused · zone repair opt-in only"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
@@ -247,7 +247,7 @@ reject`; none is default-eligible because no route has passed G1.
 | Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, retention bounded at ~7 MB through 128 cycles (Servo linear at ~0.7 MB per cycle to 130.6 MB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference; **combine** candidate: one engine process per target under a Rust control host gives eight targets at 76.0 MB physical footprint (240 MB summed RSS, which counts the executable eight times), 0.6 MB retained after eight closes, and per-target termination; 2.4× below Servo and 11× below Chrome at eight targets |
 | Chrome 152 (compatibility/system baseline) | full Web compatibility; 8 concurrent targets; qualified CDP | 288 MB empty and 597.6 MB one target by footprint (803 MB and 1,232 MB summed RSS), 115.3 MB warm-up plus 799 KB per cycle of RSS, 2,206.9 MB at eight targets across nine processes | not a candidate engine; digest-identified install rather than pinned artifact | **baseline only**; labelled compatibility reference, cannot set the memory claim |
 | Synthetic control host (engine-neutral Rust) | G0 vocabulary, G2 mechanism, G4 profile isolation, surface mechanics; capacity/allocator courts | not HTML; no rendering, no real cookie jar | G3 native surface; G1 has no browser baseline | **keep** as the court and contract reference, not a product crate |
-| Native bounded route: html5ever DOM, bounded QuickJS realm, bounded `http` fetch with fail-closed address policy | shared journey 27/27; network court 35/35 on a hermetic representative page (fetch-driven results, click-triggered fetch, nineteen typed policy negatives, concurrency and budget caps, cross-origin script refused); footprint beside Lightpanda single server: empty 1.3 vs 8.4 MB, one target 2.4 vs 9.1 MB, eight targets 4.7 MB vs one-target limit | post-close footprint equals live at every stage; retained above empty 1.9 MB on the fixture court (Lightpanda 1.5 MB) and 4.6 MB after eight representative pages (Lightpanda 1.0 MB after one); logical owners reach zero but nothing is returned to the OS | no layout, https, cookies, storage, images, fonts or real timers; scripts run after parse; DOM shim covers the fixtures and instrumentation only, not Web compatibility | **keep** as the route's measured base with a named retention risk; next: allocator/realm retention repair measured by the same courts, then a bounded profile store, then https |
+| Native bounded route: html5ever DOM, bounded QuickJS realm, bounded `http` fetch with fail-closed address policy | shared journey 27/27; network court 35/35 on a hermetic representative page (fetch-driven results, click-triggered fetch, nineteen typed policy negatives, concurrency and budget caps, cross-origin script refused); footprint beside Lightpanda single server: empty 1.3 vs 8.4 MB, one target 2.4 vs 9.1 MB, eight targets 4.7 MB vs one-target limit | post-close footprint equals live at every stage; retained above empty 1.9 MB on the fixture court (Lightpanda 1.5 MB) and 4.6 MB after eight representative pages (Lightpanda 1.0 MB after one); attribution court: libmalloc in-use returns to empty, owners zero, reopen reuses the reservation, no per-cycle growth; the retention is freed-but-reserved default-zone memory that pressure relief does not release; a zone-per-realm repair (macOS only, accounting proven, p = 0.00058) cuts it to 0.7–1.0 MB but lifts first-open live footprint to 9.3–12.8 MB and halves usable growth capacity under the cap, so it is opt-in and not adopted | no layout, https, cookies, storage, images, fonts or real timers; scripts run after parse; DOM shim covers the fixtures and instrumentation only, not Web compatibility | **keep** as the route's measured base with a named retention risk; next: allocator/realm retention repair measured by the same courts, then a bounded profile store, then https |
 
 G6 stays closed: no route is independently green on both G1 and G2/A3.
 
@@ -632,6 +632,35 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   against 1,540,144 on the court; 4,620,432 after eight pages against
   1,015,856 after one), so the lifecycle is a QuickJS, parsed-tree,
   network-buffer and allocator retention risk. G1, G3, P6 and G6 stay open.
+- [~] The native slice's post-close retention is now attributed. A
+  fresh-process court (static fixture, interactive fixture, representative
+  page; eight targets; empty → live → post-close → `memory.trim` → reopen →
+  reclose; one warm-up plus seven runs per cell) records footprint, RSS,
+  logical owners and libmalloc in-use versus reserved at every stage. Under
+  the default allocator libmalloc in-use returns to within 4,096 bytes of
+  empty after the closes, every owner is zero, and the 3,309,568 to
+  3,981,312 bytes retained are freed blocks kept in the default zone's
+  regions; `malloc_zone_pressure_relief` releases nothing, and reopening
+  eight targets costs only 98,328 to 163,864 bytes over the first live
+  stage, so the retention is consistent with a bounded reservation that is
+  reused, with no continued growth across one reopen; leak absence beyond
+  this court is not claimed. The only repair that returned it, one
+  libmalloc zone per QuickJS realm destroyed at close (macOS only; the
+  allocator carries checked accounting and the 16 MiB limit because rquickjs
+  disables its own under a custom allocator; reallocation charges the
+  replacement before releasing the old block so failures keep the old block
+  valid; zero blocks leaked at every destruction), cut retention to 720,896
+  to 966,656 bytes with U = 0 and p = 0.00058 in all three workloads and kept
+  the journey at 27 of 27 and the network court at 35 of 35, but lifted
+  first-open live footprint to 9,257,296 to 12,779,856 bytes and left RSS
+  at 9.8 to 13.5 MB after the closes. It fails the live criterion, so it
+  stays an opt-in knob and the default is unchanged. The hard cap is not a
+  guaranteed usable capacity: a dense array growing until the realm throws
+  reaches 0.7067 of 16 MiB under the default allocator and 0.4752 under the
+  zone allocator, because the zone path holds old and new buffers during a
+  growth step by design. G1, G3, P6 and G6 stay open; the next retention
+  experiment is a realm heap arena unmapped at close, measured by the same
+  court.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
