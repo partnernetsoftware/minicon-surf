@@ -122,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under the control host gives 8 targets at 280 MB (Servo 137 MB, Chrome 2,206 MB)
+│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 240 MB (Servo 137 MB, Chrome 2,206 MB)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM slice: 2.5 MB one target, 3.1 MB eight targets, actions typed unsupported (21/27)
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -244,7 +244,7 @@ reject`; none is default-eligible because no route has passed G1.
 | Route | Measured wins | Measured costs | Gaps | Verdict |
 |---|---|---|---|---|
 | Servo 0.5.0 (Rust engine, direct embedding) | W1/W3 rendered; W7 through control `0.0.1` with stdio and loopback CDP on one HTML target (27/27, 17/17); 8 concurrent targets in one process at 137.0 MB vs Chrome 2,206.9 MB; one target 87.5 MB vs 1,232 MB | ~36 MB warm-up plus ~0.9 MB per navigation cycle owned by Apple's GL-on-Metal driver under the CGL "software" context; ~290 MB graphics spike at every close; no allocator action recovers it; 800-crate graph, ~1.5 GiB build | no CPU-only rendering path in the pinned release; `hide` is visibility only, no context detach (G3); profiles are not engine cookie jars; D4 external clients | **narrow** to bounded sessions; reopen only with a driver-free rendering context measured by the same slope/peak courts |
-| Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, retention bounded at ~7 MB through 128 cycles (Servo linear at ~0.7 MB per cycle to 130.6 MB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference; **combine** candidate: one engine process per target under the native control host gives eight targets at 279.9 MB (host included), zero engine retention by construction, and per-target termination; about twice Servo at eight targets |
+| Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, retention bounded at ~7 MB through 128 cycles (Servo linear at ~0.7 MB per cycle to 130.6 MB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference; **combine** candidate: one engine process per target under a Rust control host gives eight targets at 239.9 MB (host 2.8 MB), 0.7 MB retained after eight closes, and per-target termination; about 1.75× Servo at eight targets, one ninth of Chrome |
 | Chrome 152 (compatibility/system baseline) | full Web compatibility; 8 concurrent targets; qualified CDP | 803 MB empty, 1,232 MB one target, 115.3 MB warm-up plus 799 KB per cycle, 2,206.9 MB at eight targets across nine processes | not a candidate engine; digest-identified install rather than pinned artifact | **baseline only**; labelled compatibility reference, cannot set the memory claim |
 | Synthetic control host (engine-neutral Rust) | G0 vocabulary, G2 mechanism, G4 profile isolation, surface mechanics; capacity/allocator courts | not HTML; no rendering, no real cookie jar | G3 native surface; G1 has no browser baseline | **keep** as the court and contract reference, not a product crate |
 | Native bounded route, DOM slice (html5ever, no layout/script/network) | 2.2 MB empty, 2.5 MB one target, 3.1 MB eight concurrent targets, 0.6 MB retained after eight closes; static semantic snapshot identical to the engines (21/27 on the shared journey) | none beyond the parser | no script realm, events, layout, network or storage: click, wait-for-mutation, W2 and W7 actions fail by design | **keep** as the route floor; next slice adds a bounded script realm and event dispatch, measured by the same journey and court |
@@ -565,6 +565,18 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   navigation-soak measure therefore distinguishes the routes qualitatively:
   Lightpanda is bounded, Servo (under the pinned rendering context) and
   Chrome are not within the measured range.
+- [x] The process-per-target combination now has a Rust host
+  (`labs/lightpanda/host`, 783 KB, three small dependencies) with its own
+  loopback CDP client and the same in-page instrumentation; the shared
+  journey passes 27 of 27. On the eight-cycle court the tree is 1,851,392
+  bytes empty, 31,719,424 with one target, 2,572,288 after eight closes and
+  239,878,144 with eight concurrent targets, of which the host is 1.9 to 2.8
+  MB. The combination's cost is therefore the engines' alone: about 1.75×
+  Servo's single process at eight targets, one ninth of Chrome, with 720,896
+  bytes retained and a process boundary per target. This is the first route
+  shape that is simultaneously multi-target, bounded in retention and far
+  below the Chrome baseline; G1 still needs private/PSS measures, more
+  fixtures and platforms, and the Agent gate still lacks D4 clients.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -612,8 +624,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    (baseline), synthetic (keep) and the native DOM slice (keep as floor);
    every route except Chrome runs the same control `0.0.1` journey and the
    same retention court.
-7. Next, in order: a Rust control host for the process-per-target combine so
-   the court host stops being Python; the native route's script-realm slice
+7. [~] Next, in order: a Rust control host for the process-per-target
+   combine (done: `labs/lightpanda/host`, 1.9 MB empty); the native route's script-realm slice
    measured by the unchanged journey and court; D4 qualification of a named
    external CDP client against the shared edge; and a Servo rerun only when
    a driver-free rendering context exists. G1 closes only when one route is

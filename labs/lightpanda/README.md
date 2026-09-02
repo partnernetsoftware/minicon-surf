@@ -107,6 +107,40 @@ and 39,272,448 after eight closes; a Rust host would remove most of that. This i
 concurrency and bounded termination at roughly twice Servo's memory at eight
 targets, and the engine itself still exposes no memory reporter.
 
+## Rust host for the combination
+
+[`host/`](host/) is the same process-per-target host written in Rust
+(`lightpanda-control`, 783 KB, `serde_json`, `base64` and
+`percent-encoding` only): it starts one Lightpanda server per target,
+discovers `/json/version` over raw loopback HTTP, speaks CDP over its own
+WebSocket client and injects the same in-page instrumentation. The shared
+journey passes 27 of 27 with a second concurrent target opening; target open
+takes 136.6 ms (process start plus discovery) and every other operation under
+6 ms.
+
+```sh
+cargo build --release --locked --offline --manifest-path labs/lightpanda/host/Cargo.toml \
+  --target-dir labs/lightpanda/host/target
+MINICON_SURF_LIGHTPANDA=target/labs/lightpanda/0.4.0/lightpanda-aarch64-macos \
+python3 labs/servo/control-journey.py --binary labs/lightpanda/host/target/release/lightpanda-control \
+  --technology lightpanda --technology-version 0.4.0 \
+  --artifact-sha256 840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7 \
+  --receipt labs/lightpanda/evidence/lightpanda-control-0.0.1-journey-rust-host.json
+labs/court/run-target-retention-macos-arm64.sh \
+  --lightpanda-control labs/lightpanda/host/target/release/lightpanda-control \
+  --candidates lightpanda_control --sequential-cycles 8 \
+  --receipt labs/court/evidence/macos-arm64-target-retention-lightpanda-per-target-0.4.0-rust-host.json
+```
+
+On the shared eight-cycle court the tree measured 1,851,392 bytes empty,
+31,719,424 with one target (2,048,000 host plus 29,671,424 engine),
+2,572,288 after eight closes (720,896 retained, all host) and 239,878,144
+with eight concurrent targets (2,785,280 host plus 237,092,864 engines).
+The combination's memory is therefore the engines' alone: one target costs
+about 3.9 MB more than the single Lightpanda server and eight targets cost
+about 1.75× Servo's single process, with zero engine retention and a
+process boundary per target.
+
 ## Per-cycle retention slope
 
 On the shared slope court (1, 8, 32 and 128 sequential cycles, seven runs

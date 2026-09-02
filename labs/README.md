@@ -17,7 +17,7 @@ Planned first landscape:
 
 | Lab | Initial role | Status |
 |---|---|---|
-| `lightpanda` | low-memory/Agent reference and baseline | active — W1/W2 + Chrome W1 court observed |
+| `lightpanda` | low-memory/Agent reference and process-per-target combine candidate | active — W1/W2/W3/W7; Rust control host with one engine process per target observed |
 | `chrome` | named contemporary comparison baseline | active — same-CDP-live-target W1 observed |
 | `servo` | Rust embeddable full-engine candidate | active — API + software W1 runtime observed |
 | `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + lifecycle RSS observed; CDP pending |

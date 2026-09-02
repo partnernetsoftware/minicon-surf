@@ -150,6 +150,14 @@ court host itself. The engines-only figure is the number a Rust host would
 approach: about 1.7× Servo's single process at eight targets and about one
 ninth of Chrome.
 
+With the Rust host (`macos-arm64-target-retention-lightpanda-per-target-0.4.0-rust-host`)
+the same combination measured 1,851,392 bytes empty, 31,719,424 with one
+target, 2,572,288 after eight closes and 239,878,144 with eight concurrent
+targets; the host itself is 1.9 to 2.8 MB, so the row is now the engines'
+cost. Eight per-target Lightpanda processes sit at about 1.75× Servo's single
+process and one ninth of Chrome, with 720,896 bytes retained after eight
+closes.
+
 The per-cycle slope receipt
 (`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
 fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles
