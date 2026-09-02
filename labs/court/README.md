@@ -20,7 +20,12 @@ W1 is [`fixtures/semantic-static.html`](fixtures/semantic-static.html). W2 is
 [`fixtures/semantic-scripted.html`](fixtures/semantic-scripted.html). W7's
 native half uses [`fixtures/semantic-interactive.html`](fixtures/semantic-interactive.html),
 whose button click mutates the document so a revision advance is observable
-without a sleep. A runner
+without a sleep. [`fixtures/representative/`](fixtures/representative/) is
+the hermetic representative page (R1): an external same-origin script fills
+a results list by `fetch`, a button fetches a status document, and three
+companion pages exercise a fetch-concurrency cap, a per-target fetch budget
+and a cross-origin script; it is served only by a court-owned loopback
+server. A runner
 may encode the exact bytes as a `data:` URL to remove server and network cost;
 its receipt must record that transport.
 

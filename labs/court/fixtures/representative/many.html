@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Concurrency Court</title></head>
+  <body>
+    <main>
+      <h1>Concurrency Court</h1>
+      <ul id="outcomes"></ul>
+    </main>
+    <script>
+      const outcomes = document.getElementById("outcomes");
+      const record = (text) => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        outcomes.append(li);
+      };
+      const attempts = [];
+      for (let i = 0; i < 6; i += 1) {
+        attempts.push(
+          fetch("count.json?i=" + i)
+            .then((response) => record("ok " + response.status))
+            .catch((error) => record("rejected " + (error.code || "unknown")))
+        );
+      }
+      Promise.all(attempts).then(() => {
+        const done = document.createElement("p");
+        done.id = "done";
+        done.textContent = "done";
+        document.querySelector("main").append(done);
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Cross-Origin Script Court</title></head>
+  <body>
+    <main>
+      <h1>Cross-Origin Script Court</h1>
+      <p id="marker">before</p>
+    </main>
+    <script src="http://example.com/never-fetched.js"></script>
+    <script>document.getElementById("marker").textContent = "inline ran";</script>
+  </body>
+</html>

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Fetch Budget Court</title></head>
+  <body>
+    <main>
+      <h1>Fetch Budget Court</h1>
+      <p id="summary">running</p>
+    </main>
+    <script>
+      const summary = document.getElementById("summary");
+      let ok = 0;
+      let firstFailure = null;
+      const step = (i) => {
+        if (i >= 40 || firstFailure) {
+          summary.textContent = "ok=" + ok + " first_failure=" + (firstFailure || "none");
+          return Promise.resolve();
+        }
+        return fetch("count.json?i=" + i)
+          .then(() => { ok += 1; })
+          .catch((error) => { firstFailure = error.code || "unknown"; })
+          .then(() => step(i + 1));
+      };
+      step(0);
+    </script>
+  </body>
+</html>

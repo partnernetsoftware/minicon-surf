@@ -1,0 +1,3156 @@
+{
+  "checks": [
+    {
+      "check": "loopback origin is permission_denied without an allowlist",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: loopback",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_3",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "representative page opens through the allowlisted origin",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_3",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_1",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "snapshot lists nav, heading, form and eight fetched results",
+      "detail": [
+        [
+          "link",
+          "Home"
+        ],
+        [
+          "link",
+          "Docs"
+        ],
+        [
+          "link",
+          "About"
+        ],
+        [
+          "heading",
+          "Representative Court"
+        ],
+        [
+          "label",
+          "Query"
+        ],
+        [
+          "textbox",
+          "Query"
+        ],
+        [
+          "button",
+          "Continue"
+        ],
+        [
+          "text",
+          "8 results"
+        ],
+        [
+          "text",
+          "Alpha result"
+        ],
+        [
+          "link",
+          "Alpha result"
+        ],
+        [
+          "text",
+          "Beta result"
+        ],
+        [
+          "link",
+          "Beta result"
+        ],
+        [
+          "text",
+          "Gamma result"
+        ],
+        [
+          "link",
+          "Gamma result"
+        ],
+        [
+          "text",
+          "Delta result"
+        ],
+        [
+          "link",
+          "Delta result"
+        ],
+        [
+          "text",
+          "Epsilon result"
+        ],
+        [
+          "link",
+          "Epsilon result"
+        ],
+        [
+          "text",
+          "Zeta result"
+        ],
+        [
+          "link",
+          "Zeta result"
+        ],
+        [
+          "text",
+          "Eta result"
+        ],
+        [
+          "link",
+          "Eta result"
+        ],
+        [
+          "text",
+          "Theta result"
+        ],
+        [
+          "link",
+          "Theta result"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "check": "button click triggers a fetch and the revision advances",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_5",
+        "result": {
+          "applied": true,
+          "kind": "action",
+          "revision": 1,
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "wait observes the fetched status without a sleep",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_6",
+        "result": {
+          "kind": "wait",
+          "matched": true,
+          "revision": 1,
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "post-click snapshot shows the fetched status text",
+      "detail": [
+        [
+          "link",
+          "Home"
+        ],
+        [
+          "link",
+          "Docs"
+        ],
+        [
+          "link",
+          "About"
+        ],
+        [
+          "heading",
+          "Representative Court"
+        ],
+        [
+          "label",
+          "Query"
+        ],
+        [
+          "textbox",
+          "Query"
+        ],
+        [
+          "button",
+          "Continue"
+        ],
+        [
+          "text",
+          "8 results"
+        ],
+        [
+          "text",
+          "Alpha result"
+        ],
+        [
+          "link",
+          "Alpha result"
+        ],
+        [
+          "text",
+          "Beta result"
+        ],
+        [
+          "link",
+          "Beta result"
+        ],
+        [
+          "text",
+          "Gamma result"
+        ],
+        [
+          "link",
+          "Gamma result"
+        ],
+        [
+          "text",
+          "Delta result"
+        ],
+        [
+          "link",
+          "Delta result"
+        ],
+        [
+          "text",
+          "Epsilon result"
+        ],
+        [
+          "link",
+          "Epsilon result"
+        ],
+        [
+          "text",
+          "Zeta result"
+        ],
+        [
+          "link",
+          "Zeta result"
+        ],
+        [
+          "text",
+          "Eta result"
+        ],
+        [
+          "link",
+          "Eta result"
+        ],
+        [
+          "text",
+          "Theta result"
+        ],
+        [
+          "link",
+          "Theta result"
+        ],
+        [
+          "text",
+          "Continued"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "check": "inspect reports url, framing, one script and four fetches with none denied",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_8",
+        "result": {
+          "crashed": false,
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "load_complete": true,
+          "network": {
+            "bytes": 2779,
+            "denied": 0,
+            "fetches": 4
+          },
+          "revision": 1,
+          "script_realm": true,
+          "scripts_run": 1,
+          "scripts_skipped": [],
+          "session": "session_1",
+          "target": "target_1",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "memory.report exposes network owners and limits",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_9",
+        "result": {
+          "kind": "memory_report",
+          "libmalloc": {
+            "size_allocated": 20971520,
+            "size_in_use": 327840
+          },
+          "limitations": [
+            "logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory",
+            "no layout, image or storage owners exist in this slice",
+            "not process RSS/private/PSS"
+          ],
+          "owners": {
+            "network": {
+              "bytes": 2779,
+              "denied": 0,
+              "fetches": 4,
+              "limits": {
+                "allowed_origins": 1,
+                "bytes_per_target": 4194304,
+                "fetches_per_target": 32,
+                "pending_per_turn": 4,
+                "per_fetch_ms": 3000,
+                "redirects": 3,
+                "response_bytes": 1048576
+              }
+            },
+            "profiles": {
+              "object_limit": 8,
+              "objects": 1
+            },
+            "script_realms": {
+              "malloc_bytes": 295536,
+              "memory_limit_bytes": 16777216,
+              "objects": 1
+            },
+            "sessions": {
+              "object_limit": 1,
+              "objects": 1
+            },
+            "targets": {
+              "elements": 19,
+              "fixture_bytes": 735,
+              "object_limit": 8,
+              "objects": 1
+            }
+          },
+          "semantic": "native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "https scheme is unsupported_capability",
+      "detail": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "detail": "scheme https is not offered; only http is",
+            "reason": "scheme"
+          },
+          "message": "network policy: scheme",
+          "retryable": false,
+          "scope": {
+            "id": "target_2",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_10",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "file scheme is unsupported_capability",
+      "detail": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "detail": "scheme file is not offered; only http is",
+            "reason": "scheme"
+          },
+          "message": "network policy: scheme",
+          "retryable": false,
+          "scope": {
+            "id": "target_3",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_11",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "ftp scheme is unsupported_capability",
+      "detail": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "detail": "scheme ftp is not offered; only http is",
+            "reason": "scheme"
+          },
+          "message": "network policy: scheme",
+          "retryable": false,
+          "scope": {
+            "id": "target_4",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_12",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "private 10/8 is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: private",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_5",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_13",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "link-local metadata address is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: link-local (includes metadata services)",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_6",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_14",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "carrier-grade NAT is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: special-purpose IPv4",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_7",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_15",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "IETF protocol assignments block is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: special-purpose IPv4",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_8",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_16",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "IPv6 unique-local is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: unique-local",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_9",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_17",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "IPv6 loopback on the court port is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: loopback",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_10",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_18",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "localhost name is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "loopback names are refused unless the origin is allowlisted",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_11",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_19",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "loopback on another port is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: loopback",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_12",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_20",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "RFC 2606 .invalid name is not_found",
+      "detail": {
+        "error": {
+          "code": "not_found",
+          "details": {
+            "detail": "name did not resolve: failed to lookup address information: nodename nor servname provided, or not known",
+            "reason": "dns"
+          },
+          "message": "network policy: dns",
+          "retryable": false,
+          "scope": {
+            "id": "target_13",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_21",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "more than three redirects is resource_limit",
+      "detail": {
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "detail": "more than 3 redirects",
+            "reason": "redirect-count"
+          },
+          "message": "network policy: redirect-count",
+          "retryable": false,
+          "scope": {
+            "id": "target_14",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_22",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "redirect loop is resource_limit",
+      "detail": {
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "detail": "more than 3 redirects",
+            "reason": "redirect-count"
+          },
+          "message": "network policy: redirect-count",
+          "retryable": false,
+          "scope": {
+            "id": "target_15",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_23",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "redirect into private space is permission_denied",
+      "detail": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: link-local (includes metadata services)",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_16",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_24",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "body over the cap is resource_limit",
+      "detail": {
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "detail": "response body exceeds the 1048576-byte cap",
+            "reason": "response-bytes"
+          },
+          "message": "network policy: response-bytes",
+          "retryable": false,
+          "scope": {
+            "id": "target_17",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_25",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "slow body is deadline_exceeded",
+      "detail": {
+        "error": {
+          "code": "deadline_exceeded",
+          "details": {
+            "detail": "socket operation timed out",
+            "reason": "read"
+          },
+          "message": "network policy: read",
+          "retryable": true,
+          "scope": {
+            "id": "target_18",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_26",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "404 document is not_found",
+      "detail": {
+        "error": {
+          "code": "not_found",
+          "details": {
+            "status": 404,
+            "url": "http://127.0.0.1:57574/notfound"
+          },
+          "message": "document request was not successful",
+          "retryable": false,
+          "scope": {
+            "id": "target_19",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_27",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "non-HTML document is unsupported_capability",
+      "detail": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "content_type": "application/json"
+          },
+          "message": "document is not text/html",
+          "retryable": false,
+          "scope": {
+            "id": "target_20",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_28",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "exactly three redirects are followed",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_29",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 39,
+            "denied": 0,
+            "fetches": 1
+          },
+          "revision": 0,
+          "scripts_run": 0,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_21",
+          "url": "http://127.0.0.1:57574/redirect/0"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "six concurrent fetches: four succeed and two are resource_limit",
+      "detail": [
+        [
+          "heading",
+          "Concurrency Court"
+        ],
+        [
+          "text",
+          "ok 200"
+        ],
+        [
+          "text",
+          "ok 200"
+        ],
+        [
+          "text",
+          "ok 200"
+        ],
+        [
+          "text",
+          "ok 200"
+        ],
+        [
+          "text",
+          "rejected resource_limit"
+        ],
+        [
+          "text",
+          "rejected resource_limit"
+        ],
+        [
+          "text",
+          "done"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "check": "sequential fetches stop at the per-target budget of 32",
+      "detail": [
+        [
+          "heading",
+          "Fetch Budget Court"
+        ],
+        [
+          "text",
+          "ok=31 first_failure=resource_limit"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "check": "cross-origin external script is skipped and reported, inline script still runs",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_39",
+        "result": {
+          "crashed": false,
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "load_complete": true,
+          "network": {
+            "bytes": 381,
+            "denied": 1,
+            "fetches": 1
+          },
+          "revision": 0,
+          "script_realm": true,
+          "scripts_run": 1,
+          "scripts_skipped": [
+            {
+              "reason": "cross-origin script refused",
+              "src": "http://example.com/never-fetched.js"
+            }
+          ],
+          "session": "session_1",
+          "target": "target_24",
+          "url": "http://127.0.0.1:57574/xorigin.html"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "fixture targets still open beside url targets",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_42",
+        "result": {
+          "document_framing": "fixture",
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_25",
+          "url": null
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "eight representative pages are live concurrently",
+      "detail": 8,
+      "passed": true
+    },
+    {
+      "check": "host exits cleanly",
+      "detail": 0,
+      "passed": true
+    }
+  ],
+  "control_contract": "0.0.1",
+  "footprint": {
+    "after_closes": {
+      "lifetime_max_physical_footprint_bytes": 5947824,
+      "physical_footprint_bytes": 5947824,
+      "resident_bytes": 15024128
+    },
+    "eight_representative_pages": {
+      "lifetime_max_physical_footprint_bytes": 5947824,
+      "physical_footprint_bytes": 5947824,
+      "resident_bytes": 15024128
+    },
+    "empty": {
+      "lifetime_max_physical_footprint_bytes": 1360184,
+      "physical_footprint_bytes": 1343800,
+      "resident_bytes": 2457600
+    },
+    "representative_page": {
+      "lifetime_max_physical_footprint_bytes": 2572600,
+      "physical_footprint_bytes": 2572600,
+      "resident_bytes": 4882432
+    }
+  },
+  "host_sha256": "2a275f1a2af0e910210544ba556d2d4cfef4d4361ec15c47a3307ef9087fb17a",
+  "lightpanda_comparison": {
+    "comparison": "same-workload footprint",
+    "empty": {
+      "lifetime_max_physical_footprint_bytes": 8372776,
+      "physical_footprint_bytes": 8372776,
+      "resident_bytes": 22937600
+    },
+    "engine": "lightpanda",
+    "note": "Lightpanda applies its own network policy; only page footprint at the shared terminal state is compared",
+    "proxy_variables_stripped": [
+      "http_proxy",
+      "https_proxy"
+    ],
+    "representative_page": {
+      "lifetime_max_physical_footprint_bytes": 9192024,
+      "physical_footprint_bytes": 9192024,
+      "resident_bytes": 29360128
+    },
+    "same_terminal_state_as_native": true,
+    "terminal_state": {
+      "results": 8,
+      "status": "8 results"
+    },
+    "transport": "CDP over loopback WebSocket, single server",
+    "version": "0.4.0"
+  },
+  "limitations": [
+    "one hermetic page set; not a Web-compatibility claim; the DOM shim covers what the fixtures and instrumentation use",
+    "http only; https, cookies, storage, images, fonts, layout and real timers are absent",
+    "public-address negatives are refused before any connection, so they exercise policy, not reachability",
+    "the .invalid negative depends on the system resolver returning no address",
+    "footprint samples are single readings after a 500 ms settle, not the seven-run court",
+    "the native host never consults proxy variables; the engine comparison strips them from its environment and records which"
+  ],
+  "native_terminal_state": {
+    "results": 8,
+    "status": "8 results"
+  },
+  "passed": true,
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.native-dom-network-court-receipt/0.0.1",
+  "server_broken_pipes_reclaimed": 2,
+  "server_hits": {
+    "/app.js": 9,
+    "/big": 1,
+    "/count.html": 1,
+    "/count.json": 35,
+    "/data.json": 10,
+    "/index.html": 9,
+    "/many.html": 1,
+    "/notfound": 1,
+    "/redirect-loop": 4,
+    "/redirect-private": 1,
+    "/redirect/0": 1,
+    "/redirect/1": 1,
+    "/redirect/2": 2,
+    "/redirect/3": 2,
+    "/redirect/4": 1,
+    "/redirect/5": 1,
+    "/slow": 1,
+    "/status.json": 1,
+    "/xorigin.html": 1
+  },
+  "status": "observed",
+  "technology": "native-dom",
+  "technology_version": "0.0.2",
+  "transcript": [
+    {
+      "arguments": {
+        "persistence": "ephemeral"
+      },
+      "elapsed_ms": 1.06,
+      "operation": "profile.create",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_1",
+        "result": {
+          "created": true,
+          "kind": "profile",
+          "name": null,
+          "persistence": "ephemeral",
+          "profile": "profile_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "profile": "profile_1"
+      },
+      "elapsed_ms": 0.022,
+      "operation": "session.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_2",
+        "result": {
+          "kind": "session",
+          "profile": "profile_1",
+          "session": "session_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 3.137,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_3",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_1",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.286,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_4",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Home",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Docs",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "About",
+              "reference": {
+                "node": "node_3",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Representative Court",
+              "reference": {
+                "node": "node_4",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_5",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "label"
+            },
+            {
+              "dom_id": "query",
+              "name": "Query",
+              "reference": {
+                "node": "node_6",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "textbox",
+              "value": "bounded browser"
+            },
+            {
+              "dom_id": "continue",
+              "name": "Continue",
+              "reference": {
+                "node": "node_7",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "button"
+            },
+            {
+              "dom_id": "status",
+              "name": "8 results",
+              "reference": {
+                "node": "node_8",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Alpha result",
+              "reference": {
+                "node": "node_9",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Alpha result",
+              "reference": {
+                "node": "node_10",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Beta result",
+              "reference": {
+                "node": "node_11",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Beta result",
+              "reference": {
+                "node": "node_12",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Gamma result",
+              "reference": {
+                "node": "node_13",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Gamma result",
+              "reference": {
+                "node": "node_14",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Delta result",
+              "reference": {
+                "node": "node_15",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Delta result",
+              "reference": {
+                "node": "node_16",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Epsilon result",
+              "reference": {
+                "node": "node_17",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Epsilon result",
+              "reference": {
+                "node": "node_18",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Zeta result",
+              "reference": {
+                "node": "node_19",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Zeta result",
+              "reference": {
+                "node": "node_20",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Eta result",
+              "reference": {
+                "node": "node_21",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Eta result",
+              "reference": {
+                "node": "node_22",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Theta result",
+              "reference": {
+                "node": "node_23",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Theta result",
+              "reference": {
+                "node": "node_24",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            }
+          ],
+          "revision": 0,
+          "target": "target_1",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "action": {
+          "kind": "click"
+        },
+        "reference": {
+          "node": "node_7",
+          "revision": 0,
+          "target": "target_1"
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 2.281,
+      "operation": "target.act",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_5",
+        "result": {
+          "applied": true,
+          "kind": "action",
+          "revision": 1,
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "condition": {
+          "kind": "revision_at_least",
+          "revision": 1
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.102,
+      "operation": "target.wait",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_6",
+        "result": {
+          "kind": "wait",
+          "matched": true,
+          "revision": 1,
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_1"
+      },
+      "elapsed_ms": 1.156,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_7",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Home",
+              "reference": {
+                "node": "node_1",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Docs",
+              "reference": {
+                "node": "node_2",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "About",
+              "reference": {
+                "node": "node_3",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Representative Court",
+              "reference": {
+                "node": "node_4",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_5",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "label"
+            },
+            {
+              "dom_id": "query",
+              "name": "Query",
+              "reference": {
+                "node": "node_6",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "textbox",
+              "value": "bounded browser"
+            },
+            {
+              "dom_id": "continue",
+              "name": "Continue",
+              "reference": {
+                "node": "node_7",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "button"
+            },
+            {
+              "dom_id": "status",
+              "name": "8 results",
+              "reference": {
+                "node": "node_8",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Alpha result",
+              "reference": {
+                "node": "node_9",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Alpha result",
+              "reference": {
+                "node": "node_10",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Beta result",
+              "reference": {
+                "node": "node_11",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Beta result",
+              "reference": {
+                "node": "node_12",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Gamma result",
+              "reference": {
+                "node": "node_13",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Gamma result",
+              "reference": {
+                "node": "node_14",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Delta result",
+              "reference": {
+                "node": "node_15",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Delta result",
+              "reference": {
+                "node": "node_16",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Epsilon result",
+              "reference": {
+                "node": "node_17",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Epsilon result",
+              "reference": {
+                "node": "node_18",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Zeta result",
+              "reference": {
+                "node": "node_19",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Zeta result",
+              "reference": {
+                "node": "node_20",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Eta result",
+              "reference": {
+                "node": "node_21",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Eta result",
+              "reference": {
+                "node": "node_22",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "name": "Theta result",
+              "reference": {
+                "node": "node_23",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            },
+            {
+              "name": "Theta result",
+              "reference": {
+                "node": "node_24",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "link"
+            },
+            {
+              "dom_id": "note",
+              "name": "Continued",
+              "reference": {
+                "node": "node_25",
+                "revision": 1,
+                "target": "target_1"
+              },
+              "role": "text"
+            }
+          ],
+          "revision": 1,
+          "target": "target_1",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.248,
+      "operation": "target.inspect",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_8",
+        "result": {
+          "crashed": false,
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "load_complete": true,
+          "network": {
+            "bytes": 2779,
+            "denied": 0,
+            "fetches": 4
+          },
+          "revision": 1,
+          "script_realm": true,
+          "scripts_run": 1,
+          "scripts_skipped": [],
+          "session": "session_1",
+          "target": "target_1",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {},
+      "elapsed_ms": 0.248,
+      "operation": "memory.report",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_9",
+        "result": {
+          "kind": "memory_report",
+          "libmalloc": {
+            "size_allocated": 20971520,
+            "size_in_use": 327840
+          },
+          "limitations": [
+            "logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory",
+            "no layout, image or storage owners exist in this slice",
+            "not process RSS/private/PSS"
+          ],
+          "owners": {
+            "network": {
+              "bytes": 2779,
+              "denied": 0,
+              "fetches": 4,
+              "limits": {
+                "allowed_origins": 1,
+                "bytes_per_target": 4194304,
+                "fetches_per_target": 32,
+                "pending_per_turn": 4,
+                "per_fetch_ms": 3000,
+                "redirects": 3,
+                "response_bytes": 1048576
+              }
+            },
+            "profiles": {
+              "object_limit": 8,
+              "objects": 1
+            },
+            "script_realms": {
+              "malloc_bytes": 295536,
+              "memory_limit_bytes": 16777216,
+              "objects": 1
+            },
+            "sessions": {
+              "object_limit": 1,
+              "objects": 1
+            },
+            "targets": {
+              "elements": 19,
+              "fixture_bytes": 735,
+              "object_limit": 8,
+              "objects": 1
+            }
+          },
+          "semantic": "native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "https://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 0.066,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "detail": "scheme https is not offered; only http is",
+            "reason": "scheme"
+          },
+          "message": "network policy: scheme",
+          "retryable": false,
+          "scope": {
+            "id": "target_2",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_10",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "file:///etc/hosts"
+      },
+      "elapsed_ms": 0.039,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "detail": "scheme file is not offered; only http is",
+            "reason": "scheme"
+          },
+          "message": "network policy: scheme",
+          "retryable": false,
+          "scope": {
+            "id": "target_3",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_11",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "ftp://example.com/"
+      },
+      "elapsed_ms": 0.034,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "detail": "scheme ftp is not offered; only http is",
+            "reason": "scheme"
+          },
+          "message": "network policy: scheme",
+          "retryable": false,
+          "scope": {
+            "id": "target_4",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_12",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://10.0.0.1/"
+      },
+      "elapsed_ms": 0.049,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: private",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_5",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_13",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://169.254.169.254/latest/meta-data/"
+      },
+      "elapsed_ms": 0.068,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: link-local (includes metadata services)",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_6",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_14",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://100.64.0.1/"
+      },
+      "elapsed_ms": 0.048,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: special-purpose IPv4",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_7",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_15",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://192.0.0.170/"
+      },
+      "elapsed_ms": 0.045,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: special-purpose IPv4",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_8",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_16",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://[fd00::1]/"
+      },
+      "elapsed_ms": 0.043,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: unique-local",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_9",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_17",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://[::1]:57574/index.html"
+      },
+      "elapsed_ms": 0.05,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: loopback",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_10",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_18",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://localhost:57574/index.html"
+      },
+      "elapsed_ms": 0.057,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "loopback names are refused unless the origin is allowlisted",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_11",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_19",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:1/"
+      },
+      "elapsed_ms": 0.044,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: loopback",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_12",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_20",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://court.invalid/"
+      },
+      "elapsed_ms": 9.979,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "not_found",
+          "details": {
+            "detail": "name did not resolve: failed to lookup address information: nodename nor servname provided, or not known",
+            "reason": "dns"
+          },
+          "message": "network policy: dns",
+          "retryable": false,
+          "scope": {
+            "id": "target_13",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_21",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/redirect/5"
+      },
+      "elapsed_ms": 1.594,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "detail": "more than 3 redirects",
+            "reason": "redirect-count"
+          },
+          "message": "network policy: redirect-count",
+          "retryable": false,
+          "scope": {
+            "id": "target_14",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_22",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/redirect-loop"
+      },
+      "elapsed_ms": 1.411,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "detail": "more than 3 redirects",
+            "reason": "redirect-count"
+          },
+          "message": "network policy: redirect-count",
+          "retryable": false,
+          "scope": {
+            "id": "target_15",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_23",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/redirect-private"
+      },
+      "elapsed_ms": 0.524,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "permission_denied",
+          "details": {
+            "detail": "address class refused: link-local (includes metadata services)",
+            "reason": "address"
+          },
+          "message": "network policy: address",
+          "retryable": false,
+          "scope": {
+            "id": "target_16",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_24",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/big"
+      },
+      "elapsed_ms": 0.9,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "detail": "response body exceeds the 1048576-byte cap",
+            "reason": "response-bytes"
+          },
+          "message": "network policy: response-bytes",
+          "retryable": false,
+          "scope": {
+            "id": "target_17",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_25",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/slow"
+      },
+      "elapsed_ms": 3000.928,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "deadline_exceeded",
+          "details": {
+            "detail": "socket operation timed out",
+            "reason": "read"
+          },
+          "message": "network policy: read",
+          "retryable": true,
+          "scope": {
+            "id": "target_18",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_26",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/notfound"
+      },
+      "elapsed_ms": 2.115,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "not_found",
+          "details": {
+            "status": 404,
+            "url": "http://127.0.0.1:57574/notfound"
+          },
+          "message": "document request was not successful",
+          "retryable": false,
+          "scope": {
+            "id": "target_19",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_27",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/data.json"
+      },
+      "elapsed_ms": 1.543,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "content_type": "application/json"
+          },
+          "message": "document is not text/html",
+          "retryable": false,
+          "scope": {
+            "id": "target_20",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_28",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/redirect/3"
+      },
+      "elapsed_ms": 6.431,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_29",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 39,
+            "denied": 0,
+            "fetches": 1
+          },
+          "revision": 0,
+          "scripts_run": 0,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_21",
+          "url": "http://127.0.0.1:57574/redirect/0"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_21"
+      },
+      "elapsed_ms": 0.643,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_30",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Redirect landed",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_21"
+              },
+              "role": "heading"
+            }
+          ],
+          "revision": 0,
+          "target": "target_21",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_21"
+      },
+      "elapsed_ms": 0.46,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_31",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_21"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/many.html"
+      },
+      "elapsed_ms": 11.519,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_32",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 1010,
+            "denied": 2,
+            "fetches": 5
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_22",
+          "url": "http://127.0.0.1:57574/many.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_22"
+      },
+      "elapsed_ms": 0.664,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_33",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Concurrency Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "ok 200",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            },
+            {
+              "name": "ok 200",
+              "reference": {
+                "node": "node_3",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            },
+            {
+              "name": "ok 200",
+              "reference": {
+                "node": "node_4",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            },
+            {
+              "name": "ok 200",
+              "reference": {
+                "node": "node_5",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            },
+            {
+              "name": "rejected resource_limit",
+              "reference": {
+                "node": "node_6",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            },
+            {
+              "name": "rejected resource_limit",
+              "reference": {
+                "node": "node_7",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            },
+            {
+              "dom_id": "done",
+              "name": "done",
+              "reference": {
+                "node": "node_8",
+                "revision": 0,
+                "target": "target_22"
+              },
+              "role": "text"
+            }
+          ],
+          "revision": 0,
+          "target": "target_22",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_22"
+      },
+      "elapsed_ms": 0.307,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_34",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_22"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/count.html"
+      },
+      "elapsed_ms": 21.571,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_35",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 1174,
+            "denied": 1,
+            "fetches": 32
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_23",
+          "url": "http://127.0.0.1:57574/count.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_23"
+      },
+      "elapsed_ms": 0.304,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_36",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Fetch Budget Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_23"
+              },
+              "role": "heading"
+            },
+            {
+              "dom_id": "summary",
+              "name": "ok=31 first_failure=resource_limit",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_23"
+              },
+              "role": "text"
+            }
+          ],
+          "revision": 0,
+          "target": "target_23",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_23"
+      },
+      "elapsed_ms": 0.281,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_37",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_23"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/xorigin.html"
+      },
+      "elapsed_ms": 2.637,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_38",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 381,
+            "denied": 1,
+            "fetches": 1
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 1,
+          "session": "session_1",
+          "target": "target_24",
+          "url": "http://127.0.0.1:57574/xorigin.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_24"
+      },
+      "elapsed_ms": 0.063,
+      "operation": "target.inspect",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_39",
+        "result": {
+          "crashed": false,
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "load_complete": true,
+          "network": {
+            "bytes": 381,
+            "denied": 1,
+            "fetches": 1
+          },
+          "revision": 0,
+          "script_realm": true,
+          "scripts_run": 1,
+          "scripts_skipped": [
+            {
+              "reason": "cross-origin script refused",
+              "src": "http://example.com/never-fetched.js"
+            }
+          ],
+          "session": "session_1",
+          "target": "target_24",
+          "url": "http://127.0.0.1:57574/xorigin.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_24"
+      },
+      "elapsed_ms": 0.225,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_40",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Cross-Origin Script Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_24"
+              },
+              "role": "heading"
+            },
+            {
+              "dom_id": "marker",
+              "name": "inline ran",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_24"
+              },
+              "role": "text"
+            }
+          ],
+          "revision": 0,
+          "target": "target_24",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_24"
+      },
+      "elapsed_ms": 0.223,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_41",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_24"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "fixture": "semantic-interactive.html",
+        "session": "session_1"
+      },
+      "elapsed_ms": 1.911,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_42",
+        "result": {
+          "document_framing": "fixture",
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_25",
+          "url": null
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_25"
+      },
+      "elapsed_ms": 0.203,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_43",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_25"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 3.547,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_44",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_26",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 3.883,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_45",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_27",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 3.311,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_46",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_28",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 2.766,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_47",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_29",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 3.068,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_48",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_30",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 2.886,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_49",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_31",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1",
+        "url": "http://127.0.0.1:57574/index.html"
+      },
+      "elapsed_ms": 2.832,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_50",
+        "result": {
+          "document_framing": "content-length",
+          "fixture": "url",
+          "kind": "target",
+          "network": {
+            "bytes": 2754,
+            "denied": 0,
+            "fetches": 3
+          },
+          "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
+          "session": "session_1",
+          "target": "target_32",
+          "url": "http://127.0.0.1:57574/index.html"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.716,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_51",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_26"
+      },
+      "elapsed_ms": 0.683,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_52",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_26"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_27"
+      },
+      "elapsed_ms": 0.63,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_53",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_27"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_28"
+      },
+      "elapsed_ms": 0.579,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_54",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_28"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_29"
+      },
+      "elapsed_ms": 0.573,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_55",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_29"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_30"
+      },
+      "elapsed_ms": 0.678,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_56",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_30"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_31"
+      },
+      "elapsed_ms": 0.585,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_57",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_31"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_32"
+      },
+      "elapsed_ms": 0.597,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_58",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_32"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.067,
+      "operation": "session.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_net_59",
+        "result": {
+          "closed_targets": 0,
+          "kind": "session_closed",
+          "profile": "profile_1",
+          "session": "session_1"
+        },
+        "version": "0.0.1"
+      }
+    }
+  ],
+  "workload": {
+    "fixtures_sha256": {
+      "app.js": "da498e0b1bcae3b62abcee1a7fd9760c655e1d685b35b5f73c377351b9fbed1c",
+      "count.html": "ac220d858a13986dd02784aefecbe4adccf7af756539840aec222f60e88fbf53",
+      "count.json": "55f66c2c5aeb275ff5b1ae26b321d5c0b8ceda8c034b19c2643e046d024919f3",
+      "data.json": "d44cc5234b8dbce2fdbefd9249b0f2c515cdd3138a768a775426c172d963a5c6",
+      "index.html": "61ec79892316f5765f84ad432a4aa2fddc533408efced1fc30d4e0efd1c4c2e7",
+      "many.html": "d5e958d5367ca0a2099a491114055f1962d38cfc26efff605834149067d28892",
+      "status.json": "5b3913779eb8112d325a1c3ddffc34edab684a49ff57ce1c85acec3b7cecde90",
+      "xorigin.html": "7cc2f05b2bdfc9f627c2cf54d80ecdab7b4cb0f2705bf2969e64206b908d2073"
+    },
+    "id": "R1-representative-hermetic-page",
+    "network_limits": {
+      "bytes_per_target": 4194304,
+      "external_scripts": 8,
+      "fetches_per_target": 32,
+      "header_bytes": 16384,
+      "pending_per_turn": 4,
+      "per_fetch_ms": 3000,
+      "redirects": 3,
+      "response_bytes": 1048576,
+      "scheme": "http"
+    },
+    "server": "loopback HTTP/1.0 server in the court process on an ephemeral port, allowlisted as the only origin"
+  }
+}
