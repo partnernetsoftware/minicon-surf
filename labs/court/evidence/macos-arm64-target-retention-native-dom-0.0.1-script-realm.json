@@ -1,0 +1,382 @@
+{
+  "court": "same-server-cdp-target-churn-capacity-and-retention",
+  "limitations": [
+    "summed RSS is neither private memory nor PSS and can double-count shared pages",
+    "process-table sampling can miss short-lived or reparented processes",
+    "one synthetic data URL, one operating system and one architecture only",
+    "installed Chrome is digest-identified but is not a pinned downloadable artifact",
+    "browser feature sets and engine capabilities are not equivalent",
+    "stage samples are maxima and transitions occur between measured windows",
+    "concurrent capacity is reported per candidate rather than forced into a like-for-like target count",
+    "Lightpanda has no product-equivalent profile isolation in this court",
+    "no allocator trim or memory-pressure signal is available through the shared CDP journey",
+    "the Servo candidate is driven through native control 0.0.1 rather than CDP and renders through a CGL-backed context; its ready condition is a structured snapshot rather than Runtime.evaluate"
+  ],
+  "measurement": {
+    "candidates": {
+      "native_dom": {
+        "binary_sha256": "d8c6f88cea5d3992e72dbc34b0d559763da329be838b673320f127144c4a790e",
+        "concurrent_capacity_probe": {
+          "median_peak_descendants_resident_bytes": 0,
+          "median_peak_tree_physical_footprint_bytes": 4440376,
+          "median_peak_tree_resident_bytes": 6471680,
+          "next_create_errors": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "peak_descendants_resident_bytes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "peak_tree_physical_footprint_bytes": [
+            4342072,
+            4440376,
+            4358456,
+            4440376,
+            4358456,
+            4522296,
+            4440376
+          ],
+          "peak_tree_resident_bytes": [
+            6373376,
+            6471680,
+            6389760,
+            6471680,
+            6389760,
+            6553600,
+            6471680
+          ],
+          "probe_reached_limit": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "first_target_delta_resident_bytes": [
+          2293760,
+          2146304,
+          2228224,
+          2162688,
+          2260992,
+          2277376,
+          2146304
+        ],
+        "html5ever_version": "0.38.0",
+        "last_target_minus_post_one_close_resident_bytes": [
+          524288,
+          737280,
+          540672,
+          737280,
+          573440,
+          720896,
+          737280
+        ],
+        "median_first_target_delta_resident_bytes": 2228224,
+        "median_last_target_minus_post_one_close_resident_bytes": 720896,
+        "median_post_all_closes_minus_empty_physical_footprint_bytes": 1769472,
+        "median_post_all_closes_minus_empty_resident_bytes": 2883584,
+        "post_all_closes_minus_empty_physical_footprint_bytes": [
+          1703936,
+          1769472,
+          1671168,
+          1785856,
+          1720320,
+          1884160,
+          1769472
+        ],
+        "post_all_closes_minus_empty_resident_bytes": [
+          2818048,
+          2883584,
+          2785280,
+          2899968,
+          2834432,
+          2998272,
+          2883584
+        ],
+        "states": {
+          "empty": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 1343800,
+            "maximum_peak_tree_resident_bytes": 2260992,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 1343800,
+            "median_peak_tree_resident_bytes": 2260992,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              1343800,
+              1343800,
+              1343800,
+              1343800,
+              1343800,
+              1343800,
+              1343800
+            ],
+            "peak_tree_resident_bytes": [
+              2260992,
+              2260992,
+              2260992,
+              2260992,
+              2260992,
+              2260992,
+              2260992
+            ]
+          },
+          "last_target": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 3227960,
+            "maximum_peak_tree_resident_bytes": 5259264,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 3113272,
+            "median_peak_tree_resident_bytes": 5144576,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              3047736,
+              3113272,
+              3014968,
+              3129656,
+              3064120,
+              3227960,
+              3113272
+            ],
+            "peak_tree_resident_bytes": [
+              5079040,
+              5144576,
+              5046272,
+              5160960,
+              5095424,
+              5259264,
+              5144576
+            ]
+          },
+          "one_target": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 2523448,
+            "maximum_peak_tree_resident_bytes": 4554752,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 2457912,
+            "median_peak_tree_resident_bytes": 4489216,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              2523448,
+              2375992,
+              2457912,
+              2392376,
+              2490680,
+              2507064,
+              2375992
+            ],
+            "peak_tree_resident_bytes": [
+              4554752,
+              4407296,
+              4489216,
+              4423680,
+              4521984,
+              4538368,
+              4407296
+            ]
+          },
+          "post_all_closes": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 3227960,
+            "maximum_peak_tree_resident_bytes": 5259264,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 3113272,
+            "median_peak_tree_resident_bytes": 5144576,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              3047736,
+              3113272,
+              3014968,
+              3129656,
+              3064120,
+              3227960,
+              3113272
+            ],
+            "peak_tree_resident_bytes": [
+              5079040,
+              5144576,
+              5046272,
+              5160960,
+              5095424,
+              5259264,
+              5144576
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 2523448,
+            "maximum_peak_tree_resident_bytes": 4554752,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 2474296,
+            "median_peak_tree_resident_bytes": 4505600,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              2523448,
+              2375992,
+              2474296,
+              2392376,
+              2490680,
+              2507064,
+              2375992
+            ],
+            "peak_tree_resident_bytes": [
+              4554752,
+              4407296,
+              4505600,
+              4423680,
+              4521984,
+              4538368,
+              4407296
+            ]
+          }
+        },
+        "transport": "native control 0.0.1 NDJSON on stdio; html5ever DOM only, no layout, script or network",
+        "version": "0.0.0"
+      }
+    },
+    "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage; peak_descendants_resident_bytes excludes the root so a court host's own footprint can be separated from engine processes; peak_tree_physical_footprint_bytes sums proc_pid_rusage ri_phys_footprint over the same tree, which excludes shared file-backed pages and is the kernel's memory-pressure accounting"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.cdp-target-retention-receipt/0.0.1",
+  "status": "incomplete",
+  "workload": {
+    "concurrent_target_probe_limit": 8,
+    "fixture_sha256": "1d562146735fcb83bb7086769135c3db8ac795c1c0e3776aaf687022c86ec9e5",
+    "measured_repetitions": 7,
+    "order": "rotating by repetition",
+    "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag; Servo uses an ephemeral control profile and a fresh temporary config directory per repetition",
+    "samples_per_stage": 3,
+    "sequential_target_cycles": 8,
+    "settle_ms": 500,
+    "stage_order": [
+      "empty",
+      "one_target",
+      "post_one_close",
+      "last_target",
+      "post_all_closes"
+    ],
+    "target_ready_condition": "named semantic heading observed through Runtime.evaluate (CDP) or target.snapshot (control 0.0.1) for every sequential target",
+    "warmups_per_candidate": 1
+  }
+}

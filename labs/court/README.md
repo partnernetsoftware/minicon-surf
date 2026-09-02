@@ -189,6 +189,13 @@ The ordering at one target by footprint is native DOM 1.4 MB, Lightpanda
 76.0, 179.3 and 867.8 MB. Footprint is the measure the memory claim must be
 stated in; summed RSS remains recorded for continuity.
 
+The native route's second slice (html5ever plus a bounded QuickJS realm and
+DOM shim, `macos-arm64-target-retention-native-dom-0.0.1-script-realm`)
+measured 2,260,992 bytes summed RSS (1,343,800 footprint) empty, 4,489,216
+(2,457,912) with one target, 5,144,576 (3,113,272) after eight closes and
+6,471,680 (4,440,376) with eight concurrent targets, now passing the full
+journey including click, wait and stale-revision semantics.
+
 The per-cycle slope receipt
 (`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
 fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles

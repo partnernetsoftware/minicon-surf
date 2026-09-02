@@ -1,10 +1,11 @@
-//! Native bounded route, first slice: HTML parsing and DOM only.
+//! Native bounded route, second slice: HTML parsing, DOM and a bounded script realm.
 //!
 //! `native-dom-control` serves the control 0.0.1 vocabulary from an
-//! html5ever-parsed document with no layout, no script realm and no network.
-//! It answers semantic snapshots for hermetic court fixtures and refuses every
-//! mutation with a typed `unsupported_capability`, so the court can measure what
-//! HTML/DOM alone costs and exactly which Agent semantics it cannot provide.
+//! html5ever-parsed document mirrored into a QuickJS realm (`rquickjs`) with a
+//! minimal DOM shim. Inline `<script>` elements run after parsing, DOM events
+//! and `MutationObserver` work, and the same in-page instrumentation the engine
+//! hosts inject runs unchanged. There is still no layout, network, storage or
+//! timers beyond microtasks; those remain typed failures or documented gaps.
 
 use std::collections::BTreeMap;
 use std::error::Error;
@@ -13,7 +14,8 @@ use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-use dom_query::Document;
+use dom_query::{Document, NodeRef};
+use rquickjs::{Context, Runtime};
 use serde_json::{Map, Value, json};
 
 const PROTOCOL: &str = "minicon-surf.control";
@@ -25,6 +27,9 @@ const MAX_TARGETS: usize = 8;
 const MAX_PROFILES: usize = 8;
 const MAX_SNAPSHOT_NODES: u64 = 128;
 const MAX_FIXTURE_BYTES: u64 = 1_048_576;
+const REALM_MEMORY_LIMIT: usize = 16 * 1024 * 1024;
+const REALM_STACK_LIMIT: usize = 512 * 1024;
+const DOM_SHIM_JS: &str = include_str!("dom_shim.js");
 const OPERATIONS: &[&str] = &[
     "profile.create", "profile.list", "profile.inspect", "profile.delete",
     "profile.storage.put", "profile.storage.get", "profile.policy.set",
@@ -33,6 +38,79 @@ const OPERATIONS: &[&str] = &[
     "target.snapshot", "target.act", "target.wait", "target.screenshot",
     "surface.show", "surface.hide", "memory.report", "memory.trim",
 ];
+
+const INSTALL_JS: &str = r#"(() => {
+  if (!window.__mcs) {
+    const s = { revision: 0, snapshot: -1, nodes: [] };
+    new MutationObserver(() => { s.revision += 1; }).observe(
+      document.documentElement,
+      { childList: true, subtree: true, characterData: true, attributes: true });
+    window.__mcs = s;
+  }
+  return String(window.__mcs.revision);
+})()"#;
+const REVISION_JS: &str = "(() => String(window.__mcs ? window.__mcs.revision : -1))()";
+
+fn snapshot_script(max_nodes: u64) -> String {
+    format!(
+        r#"(() => {{
+  const s = window.__mcs;
+  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  const role = (el) => {{
+    const t = el.tagName.toLowerCase();
+    if (/^h[1-6]$/.test(t)) return "heading";
+    if (t === "button" || (t === "input" && /^(button|submit|reset)$/.test(el.type))) return "button";
+    if (t === "a" && el.hasAttribute("href")) return "link";
+    if (t === "input" || t === "textarea") return "textbox";
+    if (t === "label") return "label";
+    if (t === "p" || t === "li") return "text";
+    return null;
+  }};
+  const out = [];
+  const nodes = [];
+  let truncated = false;
+  const all = document.body ? document.body.querySelectorAll("*") : [];
+  for (const el of all) {{
+    const r = role(el);
+    if (!r) continue;
+    if (out.length >= {max_nodes}) {{ truncated = true; break; }}
+    let name = (el.textContent || "").trim();
+    const entry = {{ node: "node_" + (nodes.length + 1), role: r }};
+    if (r === "textbox") {{
+      const label = el.id ? document.querySelector('label[for="' + el.id + '"]') : null;
+      name = (label ? label.textContent : (el.getAttribute("aria-label") || el.name || "")).trim();
+      entry.value = String(el.value || "").slice(0, 256);
+    }}
+    entry.name = name.slice(0, 256);
+    if (el.id) entry.dom_id = String(el.id).slice(0, 64);
+    nodes.push(el);
+    out.push(entry);
+  }}
+  s.nodes = nodes;
+  s.snapshot = s.revision;
+  return JSON.stringify({{ revision: s.revision, truncated, nodes: out }});
+}})()"#
+    )
+}
+
+fn act_script(revision: u64, index: usize) -> String {
+    format!(
+        r#"(() => {{
+  const s = window.__mcs;
+  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  const el = s.nodes[{index}];
+  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  const t = el.tagName.toLowerCase();
+  if (!(t === "button" || (t === "input" && /^(button|submit|reset)$/.test(el.type)))) {{
+    return JSON.stringify({{ unsupported: true }});
+  }}
+  el.click();
+  return JSON.stringify({{ applied: true }});
+}})()"#
+    )
+}
 
 // ---------------------------------------------------------------- envelope
 
@@ -218,68 +296,106 @@ fn libmalloc_statistics() -> Value {
     json!({"size_in_use":stats.size_in_use,"size_allocated":stats.size_allocated})
 }
 
+// ------------------------------------------------------------------ realm
+
+/// One bounded QuickJS realm holding the mirrored document.
+struct Realm {
+    runtime: Runtime,
+    context: Context,
+}
+
+impl Realm {
+    fn new() -> Result<Self, ControlError> {
+        let runtime = Runtime::new().map_err(|e| ControlError::new("internal", format!("script runtime failed: {e}"), false))?;
+        runtime.set_memory_limit(REALM_MEMORY_LIMIT);
+        runtime.set_max_stack_size(REALM_STACK_LIMIT);
+        let context = Context::full(&runtime)
+            .map_err(|e| ControlError::new("internal", format!("script context failed: {e}"), false))?;
+        Ok(Realm { runtime, context })
+    }
+
+    /// Evaluate a script, run the microtasks it queued, and return its string result.
+    fn eval(&self, script: &str, deadline: Instant, target_id: &str) -> Result<String, ControlError> {
+        self.runtime
+            .set_interrupt_handler(Some(Box::new(move || Instant::now() >= deadline)));
+        let outcome = self.context.with(|ctx| match ctx.eval::<rquickjs::Value, _>(script) {
+            Ok(value) => {
+                if value.is_undefined() || value.is_null() {
+                    Ok(String::new())
+                } else {
+                    let text: String = ctx
+                        .globals()
+                        .get::<_, rquickjs::Function>("String")
+                        .and_then(|f| f.call((value,)))
+                        .unwrap_or_default();
+                    Ok(text)
+                }
+            }
+            Err(error) => {
+                let exception = ctx.catch();
+                let message = exception
+                    .as_exception()
+                    .and_then(|e| e.message())
+                    .unwrap_or_else(|| format!("{error}"));
+                Err(message)
+            }
+        });
+        self.runtime.set_interrupt_handler(None);
+        let result = match outcome {
+            Ok(text) => text,
+            Err(message) => {
+                let code = if Instant::now() >= deadline { "deadline_exceeded" } else { "internal" };
+                return Err(ControlError::new(code, "script evaluation failed", code == "deadline_exceeded")
+                    .scoped("target", target_id)
+                    .details(json!({"engine_error":message.chars().take(256).collect::<String>()})));
+            }
+        };
+        self.drain_jobs(deadline);
+        Ok(result)
+    }
+
+    fn drain_jobs(&self, deadline: Instant) {
+        while Instant::now() < deadline {
+            match self.runtime.execute_pending_job() {
+                Ok(true) => continue,
+                _ => break,
+            }
+        }
+    }
+
+    fn malloc_bytes(&self) -> usize {
+        self.runtime.memory_usage().malloc_size.max(0) as usize
+    }
+}
+
 // --------------------------------------------------------------- document
 
-struct SemanticNode {
-    role: &'static str,
-    name: String,
-    value: Option<String>,
-    dom_id: Option<String>,
-}
-
-fn clip(text: &str, limit: usize) -> String {
-    text.chars().take(limit).collect()
-}
-
-/// Walk body elements in document order and keep the Agent-visible ones with
-/// the same role rules the engine hosts apply in-page.
-fn semantic_nodes(document: &Document, max_nodes: usize) -> (Vec<SemanticNode>, bool) {
-    let mut labels = BTreeMap::new();
-    for label in document.select("label[for]").nodes() {
-        if let Some(target) = label.attr("for") {
-            labels.insert(target.to_string(), label.text().trim().to_owned());
+fn serialize_children(node: &NodeRef, out: &mut Vec<Value>) {
+    for child in node.children() {
+        if child.is_text() {
+            out.push(json!({"x": child.text().to_string()}));
+        } else if child.is_element() {
+            let name = child.node_name().map(|n| n.to_string()).unwrap_or_default();
+            let attrs: Map<String, Value> = child
+                .attrs()
+                .iter()
+                .map(|a| (a.name.local.to_string(), json!(a.value.to_string())))
+                .collect();
+            let mut children = Vec::new();
+            serialize_children(&child, &mut children);
+            out.push(json!({"e": name, "a": attrs, "c": children}));
         }
     }
-    let mut nodes = Vec::new();
-    let mut truncated = false;
-    for element in document.select("body *").nodes() {
-        let Some(tag) = element.node_name() else { continue };
-        let tag = tag.to_ascii_lowercase();
-        let input_type = element.attr("type").map(|t| t.to_ascii_lowercase()).unwrap_or_default();
-        let role = match tag.as_str() {
-            "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => "heading",
-            "button" => "button",
-            "input" if matches!(input_type.as_str(), "button" | "submit" | "reset") => "button",
-            "a" if element.has_attr("href") => "link",
-            "input" | "textarea" => "textbox",
-            "label" => "label",
-            "p" | "li" => "text",
-            _ => continue,
-        };
-        if nodes.len() >= max_nodes {
-            truncated = true;
-            break;
-        }
-        let dom_id = element.attr("id").map(|id| clip(&id, 64)).filter(|id| !id.is_empty());
-        let (name, value) = if role == "textbox" {
-            let name = dom_id
-                .as_ref()
-                .and_then(|id| labels.get(id).cloned())
-                .or_else(|| element.attr("aria-label").map(|v| v.trim().to_owned()))
-                .or_else(|| element.attr("name").map(|v| v.trim().to_owned()))
-                .unwrap_or_default();
-            let value = if tag == "textarea" {
-                element.text().to_string()
-            } else {
-                element.attr("value").map(|v| v.to_string()).unwrap_or_default()
-            };
-            (name, Some(clip(&value, 256)))
-        } else {
-            (element.text().trim().to_owned(), None)
-        };
-        nodes.push(SemanticNode { role, name: clip(&name, 256), value, dom_id });
-    }
-    (nodes, truncated)
+}
+
+fn inline_scripts(document: &Document) -> Vec<String> {
+    document
+        .select("script")
+        .nodes()
+        .iter()
+        .filter(|node| !node.has_attr("src"))
+        .map(|node| node.text().to_string())
+        .collect()
 }
 
 // ------------------------------------------------------------------- host
@@ -299,8 +415,9 @@ struct Target {
     session_id: String,
     fixture: String,
     fixture_bytes: usize,
-    document: Document,
     element_count: usize,
+    script_count: usize,
+    realm: Realm,
     last_snapshot: Option<(u64, usize)>,
 }
 
@@ -317,6 +434,22 @@ struct Host {
 impl Host {
     fn target(&self, id: &str) -> Result<&Target, ControlError> {
         self.targets.get(id).ok_or_else(|| not_found("target", id))
+    }
+
+    fn revision(target: &Target, deadline: Instant) -> Result<u64, ControlError> {
+        let text = target.realm.eval(REVISION_JS, deadline, &target.id)?;
+        text.parse::<i64>()
+            .ok()
+            .filter(|r| *r >= 0)
+            .map(|r| r as u64)
+            .ok_or_else(|| ControlError::new("internal", "target lost its revision instrumentation", false).scoped("target", &target.id))
+    }
+
+    fn eval_json(target: &Target, script: &str, deadline: Instant) -> Result<Value, ControlError> {
+        let text = target.realm.eval(script, deadline, &target.id)?;
+        serde_json::from_str(&text).map_err(|_| {
+            ControlError::new("internal", "engine returned malformed snapshot JSON", false).scoped("target", &target.id)
+        })
     }
 
     fn execute(&mut self, request: &Request) -> Result<Value, ControlError> {
@@ -346,13 +479,14 @@ impl Host {
             "session.open" => self.session_open(a),
             "session.list" => Ok(json!({"kind":"session_list","sessions":self.session.iter().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()})),
             "session.close" => self.session_close(a),
-            "target.open" => self.target_open(a),
+            "target.open" => self.target_open(a, deadline),
             "target.list" => Ok(json!({"kind":"target_list","targets":self.targets.values().map(|t| json!({"target":t.id,"session":t.session_id,"fixture":t.fixture})).collect::<Vec<_>>()})),
             "target.inspect" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?;
                 let target = self.target(id)?;
-                Ok(json!({"kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,"revision":0,"load_complete":true,"crashed":false,"script_realm":false}))
+                let revision = Self::revision(target, deadline)?;
+                Ok(json!({"kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,"revision":revision,"load_complete":true,"crashed":false,"script_realm":true,"scripts_run":target.script_count}))
             }
             "target.close" => {
                 let object = exact_object(a, &["target"])?;
@@ -360,8 +494,8 @@ impl Host {
                 self.targets.remove(id).ok_or_else(|| not_found("target", id))?;
                 Ok(json!({"kind":"target_closed","target":id}))
             }
-            "target.snapshot" => self.target_snapshot(a),
-            "target.act" => self.target_act(a),
+            "target.snapshot" => self.target_snapshot(a, deadline),
+            "target.act" => self.target_act(a, deadline),
             "target.wait" => self.target_wait(a, deadline),
             "memory.report" => Ok(self.memory_report()),
             other => Err(unsupported_operation(other)),
@@ -433,7 +567,7 @@ impl Host {
         Ok(json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed}))
     }
 
-    fn target_open(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+    fn target_open(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["session", "fixture"])?;
         let session = typed_field(object, "session", "session")?;
         if self.session.as_ref().map(|s| s.id.as_str()) != Some(session) {
@@ -459,8 +593,28 @@ impl Host {
         let text = String::from_utf8_lossy(&bytes).into_owned();
         let document = Document::from(text.as_str());
         let element_count = document.select("*").nodes().len();
+        let mut tree = Vec::new();
+        serialize_children(&document.root(), &mut tree);
+        let scripts = inline_scripts(&document);
+        drop(document);
+
         self.next_target += 1;
         let id = format!("target_{}", self.next_target);
+        let realm = Realm::new()?;
+        realm.eval(DOM_SHIM_JS, deadline, &id)?;
+        let seed = format!("__mcsSeed({})", serde_json::to_string(&tree).expect("tree serializes"));
+        realm.eval(&seed, deadline, &id)?;
+        for (index, script) in scripts.iter().enumerate() {
+            if let Err(error) = realm.eval(script, deadline, &id) {
+                let mut details = error.details.clone().unwrap_or_else(|| json!({}));
+                details["script_index"] = json!(index);
+                return Err(ControlError::new("target_crashed", "an inline script threw", false)
+                    .scoped("target", &id)
+                    .details(details));
+            }
+        }
+        realm.eval("__mcsComplete()", deadline, &id)?;
+        let revision = realm.eval(INSTALL_JS, deadline, &id)?.parse::<u64>().unwrap_or(0);
         self.targets.insert(
             id.clone(),
             Target {
@@ -468,37 +622,46 @@ impl Host {
                 session_id: session.to_owned(),
                 fixture: fixture.to_owned(),
                 fixture_bytes: bytes.len(),
-                document,
                 element_count,
+                script_count: scripts.len(),
+                realm,
                 last_snapshot: None,
             },
         );
-        Ok(json!({"kind":"target","target":id,"session":session,"revision":0,"fixture":fixture}))
+        Ok(json!({"kind":"target","target":id,"session":session,"revision":revision,"fixture":fixture}))
     }
 
-    fn target_snapshot(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+    fn target_snapshot(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target", "format", "max_bytes", "max_nodes"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         if string_field(object, "format")? != "semantic" {
             return Err(ControlError::new("unsupported_capability", "only the semantic format is offered", false));
         }
         let max_bytes = bounded_u64(object, "max_bytes", 1, MAX_RESPONSE_BYTES as u64)? as usize;
-        let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)? as usize;
+        let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
         let target = self.target(&id)?;
-        let (semantic, mut truncated) = semantic_nodes(&target.document, max_nodes);
+        let raw = Self::eval_json(target, &snapshot_script(max_nodes), deadline)?;
+        if raw.get("error").is_some() {
+            return Err(ControlError::new("internal", "target lost its revision instrumentation", false).scoped("target", &id));
+        }
+        let revision = raw.get("revision").and_then(Value::as_u64).ok_or_else(|| {
+            ControlError::new("internal", "snapshot lacks a revision", false).scoped("target", &id)
+        })?;
+        let mut truncated = raw.get("truncated").and_then(Value::as_bool).unwrap_or(false);
         let mut nodes = Vec::new();
         let mut budget = 0usize;
-        for (index, node) in semantic.iter().enumerate() {
+        for entry in raw.get("nodes").and_then(Value::as_array).cloned().unwrap_or_default() {
+            let node = entry.get("node").and_then(Value::as_str).unwrap_or("node_0").to_owned();
             let mut item = json!({
-                "reference":{"target":id,"revision":0,"node":format!("node_{}", index + 1)},
-                "role":node.role,
-                "name":node.name,
+                "reference":{"target":id,"revision":revision,"node":node},
+                "role":entry.get("role").cloned().unwrap_or(Value::Null),
+                "name":entry.get("name").cloned().unwrap_or(Value::Null),
             });
-            if let Some(value) = &node.value {
-                item["value"] = json!(value);
+            if let Some(value) = entry.get("value") {
+                item["value"] = value.clone();
             }
-            if let Some(dom_id) = &node.dom_id {
-                item["dom_id"] = json!(dom_id);
+            if let Some(dom_id) = entry.get("dom_id") {
+                item["dom_id"] = dom_id.clone();
             }
             budget += serde_json::to_vec(&item).map(|v| v.len()).unwrap_or(0);
             if budget > max_bytes {
@@ -508,11 +671,11 @@ impl Host {
             nodes.push(item);
         }
         let count = nodes.len();
-        self.targets.get_mut(&id).expect("target exists").last_snapshot = Some((0, count));
-        Ok(json!({"kind":"semantic_snapshot","target":id,"revision":0,"truncated":truncated,"nodes":nodes}))
+        self.targets.get_mut(&id).expect("target exists").last_snapshot = Some((revision, count));
+        Ok(json!({"kind":"semantic_snapshot","target":id,"revision":revision,"truncated":truncated,"nodes":nodes}))
     }
 
-    fn target_act(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+    fn target_act(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target", "reference", "action"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let reference = exact_object(object.get("reference").ok_or_else(|| invalid("reference missing"))?, &["target", "revision", "node"])?;
@@ -526,25 +689,41 @@ impl Host {
             return Err(invalid("click action fields differ"));
         }
         if string_field(action, "kind")? != "click" {
-            return Err(ControlError::new("unsupported_capability", "the native DOM slice offers no actions", false));
+            return Err(ControlError::new("unsupported_capability", "the native DOM slice offers click only", false));
         }
+        let index = node
+            .strip_prefix("node_")
+            .and_then(|s| s.parse::<usize>().ok())
+            .filter(|n| *n >= 1)
+            .ok_or_else(|| ControlError::new("not_found", "node does not exist", false).scoped("target", &id))?
+            - 1;
         let target = self.target(&id)?;
-        if revision != 0 {
+        let current = Self::revision(target, deadline)?;
+        if current != revision {
             return Err(ControlError::new("stale_revision", "node reference revision no longer matches the target", true)
                 .scoped("target", &id)
-                .details(json!({"reference_revision":revision,"current_revision":0})));
+                .details(json!({"reference_revision":revision,"current_revision":current})));
         }
-        let index = node.strip_prefix("node_").and_then(|s| s.parse::<usize>().ok()).filter(|n| *n >= 1);
-        if !index.is_some_and(|n| target.last_snapshot.is_some_and(|(_, count)| n <= count)) {
+        if !target.last_snapshot.is_some_and(|(rev, count)| rev == revision && index < count) {
             return Err(ControlError::new("not_found", "node does not exist", false).scoped("target", &id));
         }
-        Err(ControlError::new(
-            "unsupported_capability",
-            "the native DOM slice has no script realm or event dispatch; click cannot mutate the document",
-            false,
-        )
-        .scoped("target", &id)
-        .details(json!({"slice":"html-dom","missing":["script realm","event dispatch","layout"]})))
+        let outcome = Self::eval_json(target, &act_script(revision, index), deadline)?;
+        if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
+            return Err(ControlError::new("stale_revision", "node reference revision no longer matches the target", true)
+                .scoped("target", &id)
+                .details(json!({"reference_revision":revision,"current_revision":current})));
+        }
+        if outcome.get("missing").is_some() {
+            return Err(ControlError::new("not_found", "node does not exist", false).scoped("target", &id));
+        }
+        if outcome.get("unsupported").is_some() {
+            return Err(ControlError::new("unsupported_capability", "click requires a button node", false));
+        }
+        if outcome.get("applied").and_then(Value::as_bool) != Some(true) {
+            return Err(ControlError::new("internal", "engine did not confirm the action", false).scoped("target", &id));
+        }
+        let after = Self::revision(target, deadline)?;
+        Ok(json!({"kind":"action","target":id,"revision":after,"applied":true}))
     }
 
     fn target_wait(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
@@ -555,29 +734,36 @@ impl Host {
             return Err(ControlError::new("unsupported_capability", "this host offers revision_at_least only", false));
         }
         let expected = bounded_u64(condition, "revision", 0, u64::MAX)?;
-        self.target(&id)?;
-        if expected == 0 {
-            return Ok(json!({"kind":"wait","target":id,"revision":0,"matched":true}));
+        loop {
+            let target = self.target(&id)?;
+            let revision = Self::revision(target, deadline)?;
+            if revision >= expected {
+                return Ok(json!({"kind":"wait","target":id,"revision":revision,"matched":true}));
+            }
+            if Instant::now() >= deadline {
+                return Err(ControlError::new("deadline_exceeded", "condition was not met before deadline", true).scoped("target", &id));
+            }
+            // Nothing runs between requests in this slice, so only queued
+            // microtasks can still change the revision.
+            std::thread::sleep(Duration::from_millis(5));
         }
-        // The document never mutates, so an unmet condition is only a deadline.
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        std::thread::sleep(remaining.min(Duration::from_millis(MAX_DEADLINE_MS)));
-        Err(ControlError::new("deadline_exceeded", "condition was not met before deadline", true).scoped("target", &id))
     }
 
     fn memory_report(&self) -> Value {
         let fixture_bytes: usize = self.targets.values().map(|t| t.fixture_bytes).sum();
         let elements: usize = self.targets.values().map(|t| t.element_count).sum();
+        let realm_bytes: usize = self.targets.values().map(|t| t.realm.malloc_bytes()).sum();
         json!({
             "kind":"memory_report",
-            "semantic":"native-dom-logical-owners-plus-libmalloc-statistics",
+            "semantic":"native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics",
             "owners":{
                 "profiles":{"objects":self.profiles.len(),"object_limit":MAX_PROFILES},
                 "sessions":{"objects":self.session.iter().count(),"object_limit":1},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
+                "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT},
             },
             "libmalloc":libmalloc_statistics(),
-            "limitations":["logical owners are document sizes, not heap bytes","no script, layout, image or network owners exist in this slice","not process RSS/private/PSS"],
+            "limitations":["logical owners are document sizes and QuickJS malloc bytes, not process memory","no layout, image, network or storage owners exist in this slice","not process RSS/private/PSS"],
         })
     }
 }
