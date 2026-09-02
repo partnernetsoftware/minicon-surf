@@ -365,9 +365,26 @@ revision-0 remote object fails on a second CDP click, `Page.navigate` is
 
 This closes W7 for Servo at the same seven-method slice the synthetic host
 qualified, now on an HTML document: one target has one identity and revision
-across both doors. It does not pass D4: the client is the court's own, not
-Playwright or Puppeteer; one CDP connection; navigation, frames, Input and
-Network are not offered; profiles are not engine cookie jars. The checked
+across both doors.
+
+A first external-client probe (`servo-control-0.0.1-d4-puppeteer` receipt)
+drives `puppeteer-core 24.15.0` on Node 26 against the edge, with the edge
+tracing method names only. Four handshake acknowledgements were added for it:
+`Target.getBrowserContexts` (no contexts), `Browser.getVersion`,
+`Target.setDiscoverTargets` (replays native targets as `Target.targetCreated`)
+and `Target.setAutoAttach` (replays them as flattened `Target.attachedToTarget`
+sessions). With those, `puppeteer.connect` succeeds over both
+`browserWSEndpoint` and `browserURL`, `waitForTarget` returns the native
+target id and `browser.targets()` lists it. `target.page()` then times out:
+Puppeteer's page initialization sends `Network.enable`,
+`Network.setCacheDisabled`, `Fetch.disable`, `Page.enable`,
+`Page.getFrameTree`, `Page.setLifecycleEventsEnabled`, `Runtime.enable`,
+`Performance.enable` and `Log.enable`, all answered `-32601`. That is the D4
+boundary for this host: frame identity, execution contexts and network
+lifecycle events are unmapped in control `0.0.1`, and acknowledging them
+without their events would emulate support. D4 therefore remains open with a
+named next step (frame and realm mapping), one CDP connection, and no
+Playwright run. The checked
 crate has Servo's own devtools server, but this lab found no official claim
 that it implements Chrome DevTools Protocol; Servo devtools must not be
 described as CDP.

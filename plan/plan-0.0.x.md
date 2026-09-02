@@ -101,7 +101,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── discovery endpoint · WebSocket transport · attach/detach lifecycle
 │   ├── first candidate domains: Target · Page · Runtime · DOM · Network · Input
 │   ├── domain/method/version matrix names exact supported behavior
-│   ├── tool journeys qualify selected Playwright/Puppeteer clients
+│   ├── [~] tool journeys qualify selected Playwright/Puppeteer clients: puppeteer-core 24.15 connects and lists the Servo target; page handles need frame/realm/network mapping
 │   └── [-] no claim that Chromium-specific behavior exists when it does not
 ├── [H5] dynamic presentation surface
 │   ├── browser session and page lifetime do not belong to the GUI
@@ -539,6 +539,21 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   own, which a Rust host would mostly remove. [M2]'s `terminate one target` pressure action therefore has a
   measured process boundary on this route. G1 stays open: summed RSS, one
   fixture, and the design is about twice Servo at eight targets.
+- [~] D4 has its first named external client. `puppeteer-core 24.15.0` on
+  Node 26 was driven against the Servo control host's CDP edge with method
+  tracing. Four handshake acknowledgements (`Target.getBrowserContexts`,
+  `Browser.getVersion`, `Target.setDiscoverTargets` replaying native targets
+  as `targetCreated`, `Target.setAutoAttach` replaying them as flattened
+  `attachedToTarget` sessions) let `puppeteer.connect` succeed over both
+  endpoint forms, `waitForTarget` return the native target id and
+  `browser.targets()` list it. `target.page()` times out because page
+  initialization sends nine unmapped methods (`Network.enable`,
+  `Network.setCacheDisabled`, `Fetch.disable`, `Page.enable`,
+  `Page.getFrameTree`, `Page.setLifecycleEventsEnabled`, `Runtime.enable`,
+  `Performance.enable`, `Log.enable`), each an explicit `-32601`. The
+  boundary is frame identity, execution contexts and network lifecycle
+  events, which control `0.0.1` deliberately leaves unmapped; the next D4
+  step is a frame/realm mapping, not silent acknowledgements.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

@@ -194,6 +194,9 @@ fn upgrade_websocket(stream: &mut TcpStream, headers: &BTreeMap<String, String>)
 struct ConnectionState {
     next_session: u64,
     sessions: BTreeMap<String, SessionState>,
+    /// Events queued by a method (for example `Target.targetCreated` after
+    /// `Target.setDiscoverTargets`) and written after its response.
+    events: Vec<Value>,
 }
 
 #[derive(Default)]
@@ -215,6 +218,9 @@ fn websocket_loop(mut stream: TcpStream, bridge: &Sender<BridgeRequest>) -> io::
                     Err(_) => cdp_error(Value::Null, -32700, "Parse error"),
                 };
                 write_websocket_frame(&mut stream, 0x1, &serde_json::to_vec(&response)?)?;
+                for event in connection.events.drain(..) {
+                    write_websocket_frame(&mut stream, 0x1, &serde_json::to_vec(&event)?)?;
+                }
             }
         }
     }
@@ -287,7 +293,89 @@ fn dispatch(request: Value, bridge: &Sender<BridgeRequest>, connection: &mut Con
     };
     let params = request.get("params").cloned().unwrap_or_else(|| json!({}));
     let session_id = request.get("sessionId").and_then(Value::as_str);
+    if std::env::var_os("MINICON_SURF_CDP_TRACE").is_some() {
+        // Diagnostics only: method names, never parameters, so a trace can
+        // qualify an external client without recording page content.
+        eprintln!("cdp-trace method={method} session={}", session_id.unwrap_or("-"));
+    }
     let result = match method {
+        // Handshake acknowledgements for external clients. They map no
+        // semantics: one browser context, no auto-attach, discovery replays
+        // the native target list as events.
+        "Target.getBrowserContexts" => Ok(json!({"browserContextIds":[]})),
+        "Browser.getVersion" => Ok(json!({
+            "protocolVersion":"1.3",
+            "product":"MiniCon Surf servo-control/0.0.1",
+            "revision":"control-0.0.1",
+            "userAgent":"MiniCon Surf servo-control (Servo 0.5.0)",
+            "jsVersion":"SpiderMonkey"
+        })),
+        "Target.setDiscoverTargets" => {
+            if params.get("discover").and_then(Value::as_bool) == Some(true) {
+                match native(bridge, "target.list", json!({})) {
+                    Ok(list) => {
+                        for (target_id, fixture) in target_entries(&list) {
+                            connection.events.push(json!({
+                                "method":"Target.targetCreated",
+                                "params":{"targetInfo":{
+                                    "targetId":target_id,
+                                    "type":"page",
+                                    "title":fixture,
+                                    "url":format!("minicon-surf://court/{fixture}"),
+                                    "attached":false,
+                                    "canAccessOpener":false
+                                }}
+                            }));
+                        }
+                        Ok(json!({}))
+                    }
+                    Err(error) => Err(error),
+                }
+            } else {
+                Ok(json!({}))
+            }
+        }
+        "Target.setAutoAttach" => {
+            // Browser-level auto-attach replays existing targets as flattened
+            // sessions so an external client can list them; session-level
+            // calls are acknowledgements only.
+            if session_id.is_none() && params.get("autoAttach").and_then(Value::as_bool) == Some(true) {
+                match native(bridge, "target.list", json!({})) {
+                    Ok(list) => {
+                        for (target_id, fixture) in target_entries(&list) {
+                            if connection.sessions.values().any(|session| session.target == target_id) {
+                                continue;
+                            }
+                            connection.next_session += 1;
+                            let cdp_session = format!("cdp_session_{}", connection.next_session);
+                            connection.sessions.insert(
+                                cdp_session.clone(),
+                                SessionState { target: target_id.clone(), ..SessionState::default() },
+                            );
+                            connection.events.push(json!({
+                                "method":"Target.attachedToTarget",
+                                "params":{
+                                    "sessionId":cdp_session,
+                                    "targetInfo":{
+                                        "targetId":target_id,
+                                        "type":"page",
+                                        "title":fixture,
+                                        "url":format!("minicon-surf://court/{fixture}"),
+                                        "attached":true,
+                                        "canAccessOpener":false
+                                    },
+                                    "waitingForDebugger":false
+                                }
+                            }));
+                        }
+                        Ok(json!({}))
+                    }
+                    Err(error) => Err(error),
+                }
+            } else {
+                Ok(json!({}))
+            }
+        }
         "Target.getTargets" => target_get_targets(bridge, connection),
         "Target.attachToTarget" => target_attach(&params, bridge, connection),
         "Target.detachFromTarget" => target_detach(&params, connection),

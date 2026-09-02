@@ -1,0 +1,116 @@
+{
+  "attempts": [
+    {
+      "attempt": "connect browserWSEndpoint",
+      "cdp_methods_sent": [
+        "method=Target.getBrowserContexts session=-",
+        "method=Target.setDiscoverTargets session=-",
+        "method=Target.setAutoAttach session=-"
+      ],
+      "ok": true,
+      "result": {
+        "pages": 0,
+        "targets": []
+      }
+    },
+    {
+      "attempt": "fetch /json/version with node fetch",
+      "cdp_methods_sent": [],
+      "ok": true,
+      "result": {
+        "body": {
+          "Browser": "MiniCon Surf servo-control/0.0.1",
+          "Protocol-Version": "1.3",
+          "webSocketDebuggerUrl": "ws://127.0.0.1:63184/devtools/browser/servo-control"
+        },
+        "status": 200
+      }
+    },
+    {
+      "attempt": "connect then waitForTarget(page) then target.page()",
+      "cdp_methods_sent": [
+        "method=Target.getBrowserContexts session=-",
+        "method=Target.setDiscoverTargets session=-",
+        "method=Target.setAutoAttach session=-",
+        "method=Target.setAutoAttach session=cdp_session_1",
+        "method=Runtime.runIfWaitingForDebugger session=cdp_session_1",
+        "method=Network.enable session=cdp_session_1",
+        "method=Network.setCacheDisabled session=cdp_session_1",
+        "method=Fetch.disable session=cdp_session_1",
+        "method=Page.enable session=cdp_session_1",
+        "method=Page.getFrameTree session=cdp_session_1",
+        "method=Page.setLifecycleEventsEnabled session=cdp_session_1",
+        "method=Runtime.enable session=cdp_session_1",
+        "method=Performance.enable session=cdp_session_1",
+        "method=Log.enable session=cdp_session_1"
+      ],
+      "ok": true,
+      "result": {
+        "page": "timeout 8000 ms",
+        "targets": [
+          {
+            "type": "page",
+            "url": "minicon-surf://court/semantic-interactive.html"
+          }
+        ],
+        "waited": {
+          "id": "target_1",
+          "type": "page",
+          "url": "minicon-surf://court/semantic-interactive.html"
+        }
+      }
+    },
+    {
+      "attempt": "connect browserURL",
+      "cdp_methods_sent": [
+        "method=Target.getBrowserContexts session=-",
+        "method=Target.setDiscoverTargets session=-",
+        "method=Target.setAutoAttach session=-"
+      ],
+      "ok": true,
+      "result": {
+        "targets": []
+      }
+    }
+  ],
+  "boundary": {
+    "blocked_at": "target.page() times out: page initialization sends Network.enable, Network.setCacheDisabled, Fetch.disable, Page.enable, Page.getFrameTree, Page.setLifecycleEventsEnabled, Runtime.enable, Performance.enable and Log.enable, all answered -32601",
+    "reached": "puppeteer.connect succeeds over browserWSEndpoint and browserURL; waitForTarget returns the native target id and browser.targets() lists it",
+    "reason": "frame identity, execution-context and network lifecycle events are unmapped in control 0.0.1; acknowledging them without emitting their events would emulate support"
+  },
+  "client": {
+    "integrity": "sha512-2iy0iBeWbNyhgiCGd/wvGrDSo73emNFjSxYOcyAqYiagkYt5q4cPfVXaVDKBsukgc2fIIfLAalBZlaxldxdDYg==",
+    "name": "puppeteer-core",
+    "node": "v26.7.0",
+    "protocol": "cdp",
+    "version": "24.15.0"
+  },
+  "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "handshake_acknowledgements_added": [
+    "Target.getBrowserContexts",
+    "Browser.getVersion",
+    "Target.setDiscoverTargets (replays native targets as Target.targetCreated)",
+    "Target.setAutoAttach (browser level replays native targets as flattened Target.attachedToTarget; session level acknowledges)"
+  ],
+  "host_sha256": "c78a7af20895d901bff17bcaac382b7886a0b9243038688bf410bb3ba9104d58",
+  "limitations": [
+    "one external client and version; Playwright untested",
+    "loopback only; single CDP connection",
+    "the client was driven by a court probe script, not a product journey",
+    "client package fetched from npm into the ignored target directory; version and integrity recorded above"
+  ],
+  "native_target": "target_1",
+  "qualified_methods": [
+    "Target.getTargets",
+    "Target.attachToTarget",
+    "Target.detachFromTarget",
+    "DOM.getDocument",
+    "DOM.querySelector",
+    "DOM.resolveNode",
+    "Runtime.callFunctionOn"
+  ],
+  "schema": "minicon-surf.servo-control-d4-client-receipt/0.0.1",
+  "status": "observed",
+  "technology": "servo",
+  "technology_version": "0.5.0"
+}
