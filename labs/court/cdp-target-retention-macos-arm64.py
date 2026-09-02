@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 import pathlib
 import platform
 import statistics
@@ -325,6 +326,7 @@ def main():
     parser.add_argument("--lightpanda-sha256", required=True)
     parser.add_argument("--servo-control", help="optional servo-control host binary driven through native control 0.0.1")
     parser.add_argument("--native-dom", help="optional native-dom-control host binary driven through native control 0.0.1")
+    parser.add_argument("--lightpanda-control", help="optional Lightpanda control host script (one engine process per target) driven through native control 0.0.1")
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--samples-per-stage", type=int, default=3)
     parser.add_argument("--settle-ms", type=int, default=500)
@@ -362,6 +364,11 @@ def main():
             if not args.native_dom:
                 parser.error("native_dom candidate requires --native-dom")
             native_sha = hashlib.sha256(pathlib.Path(args.native_dom).read_bytes()).hexdigest()
+        elif name == "lightpanda_control":
+            if not args.lightpanda_control:
+                parser.error("lightpanda_control candidate requires --lightpanda-control")
+            os.environ["MINICON_SURF_LIGHTPANDA"] = args.lightpanda
+            os.environ.setdefault("MINICON_SURF_LIGHTPANDA_PER_TARGET", "1")
         elif name not in paths:
             parser.error(f"unknown candidate {name}")
         candidates[name] = []
@@ -372,6 +379,9 @@ def main():
                                     args.samples_per_stage, args.settle_ms, args.sequential_cycles)
         if candidate == "native_dom":
             return run_once_control(args.native_dom, fixture_path.parent, fixture_path.name,
+                                    args.samples_per_stage, args.settle_ms, args.sequential_cycles)
+        if candidate == "lightpanda_control":
+            return run_once_control(args.lightpanda_control, fixture_path.parent, fixture_path.name,
                                     args.samples_per_stage, args.settle_ms, args.sequential_cycles)
         return run_once(engine_names[candidate], paths[candidate], fixture,
                         args.samples_per_stage, args.settle_ms, args.sequential_cycles)
@@ -409,6 +419,14 @@ def main():
             "executable_sha256": chrome_sha,
             "transport": "CDP over loopback WebSocket",
             **aggregate(candidates["google_chrome"]),
+        }
+    if "lightpanda_control" in candidates:
+        candidate_reports["lightpanda_control"] = {
+            "version": "0.4.0",
+            "artifact_sha256": lightpanda_sha,
+            "host_sha256": hashlib.sha256(pathlib.Path(args.lightpanda_control).read_bytes()).hexdigest(),
+            "transport": "native control 0.0.1 NDJSON on stdio; one Lightpanda server process per target, complete tree sampled",
+            **aggregate(candidates["lightpanda_control"]),
         }
     if native_sha:
         candidate_reports["native_dom"] = {

@@ -122,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; 5.8 MB warm-up + 39 KB/cycle, concurrency narrowed to one target, no memory reporter
+│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; 5.8 MB warm-up + 39 KB/cycle; one target per server, so combine: process-per-target under the control host gives 8 targets at 280 MB (Servo 137 MB, Chrome 2,206 MB)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM slice: 2.5 MB one target, 3.1 MB eight targets, actions typed unsupported (21/27)
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -244,7 +244,7 @@ reject`; none is default-eligible because no route has passed G1.
 | Route | Measured wins | Measured costs | Gaps | Verdict |
 |---|---|---|---|---|
 | Servo 0.5.0 (Rust engine, direct embedding) | W1/W3 rendered; W7 through control `0.0.1` with stdio and loopback CDP on one HTML target (27/27, 17/17); 8 concurrent targets in one process at 137.0 MB vs Chrome 2,206.9 MB; one target 87.5 MB vs 1,232 MB | ~36 MB warm-up plus ~0.9 MB per navigation cycle owned by Apple's GL-on-Metal driver under the CGL "software" context; ~290 MB graphics spike at every close; no allocator action recovers it; 800-crate graph, ~1.5 GiB build | no CPU-only rendering path in the pinned release; `hide` is visibility only, no context detach (G3); profiles are not engine cookie jars; D4 external clients | **narrow** to bounded sessions; reopen only with a driver-free rendering context measured by the same slope/peak courts |
-| Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, 5.8 MB warm-up plus 39 KB per cycle (Servo 791 KB, Chrome 799 KB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference and measurement target; **narrowed** to one concurrent target |
+| Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, 5.8 MB warm-up plus 39 KB per cycle (Servo 791 KB, Chrome 799 KB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference; **combine** candidate: one engine process per target under the native control host gives eight targets at 279.9 MB (host included), zero engine retention by construction, and per-target termination; about twice Servo at eight targets |
 | Chrome 152 (compatibility/system baseline) | full Web compatibility; 8 concurrent targets; qualified CDP | 803 MB empty, 1,232 MB one target, 115.3 MB warm-up plus 799 KB per cycle, 2,206.9 MB at eight targets across nine processes | not a candidate engine; digest-identified install rather than pinned artifact | **baseline only**; labelled compatibility reference, cannot set the memory claim |
 | Synthetic control host (engine-neutral Rust) | G0 vocabulary, G2 mechanism, G4 profile isolation, surface mechanics; capacity/allocator courts | not HTML; no rendering, no real cookie jar | G3 native surface; G1 has no browser baseline | **keep** as the court and contract reference, not a product crate |
 | Native bounded route, DOM slice (html5ever, no layout/script/network) | 2.2 MB empty, 2.5 MB one target, 3.1 MB eight concurrent targets, 0.6 MB retained after eight closes; static semantic snapshot identical to the engines (21/27 on the shared journey) | none beyond the parser | no script realm, events, layout, network or storage: click, wait-for-mutation, W2 and W7 actions fail by design | **keep** as the route floor; next slice adds a bounded script realm and event dispatch, measured by the same journey and court |
@@ -524,6 +524,19 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   This is the route's floor, not a browser; the next slice must add a bounded
   script realm and event dispatch and pass only if the six failing checks turn
   green while the court row stays materially below Servo's.
+- [~] Lightpanda's one-target limit is now answered by a measured `combine`
+  design instead of an accepted narrowing. The control host starts one
+  Lightpanda process per target; the shared journey passes 27 of 27 with a
+  second concurrent target opening, and on the eight-cycle retention court the
+  host-plus-engines tree measured 28,164,096 bytes empty, 60,866,560 with one
+  target, 39,174,144 after eight closes and 279,855,104 with eight concurrent
+  targets in nine processes, against Servo's 137,101,312 in one process and
+  Chrome's 2,205,646,848. Engine retention is zero by construction because a
+  close ends the process; the 10,993,664 bytes retained are the Python host's
+  own, and its 28 MB empty footprint is court-host cost a Rust host would
+  mostly remove. [M2]'s `terminate one target` pressure action therefore has a
+  measured process boundary on this route. G1 stays open: summed RSS, one
+  fixture, and the design is about twice Servo at eight targets.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

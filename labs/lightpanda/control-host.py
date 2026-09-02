@@ -2,7 +2,12 @@
 """Lightpanda-backed host for the MiniCon Surf control 0.0.1 vocabulary.
 
 The host speaks bounded NDJSON on stdio and maps the same operations the Servo
-lab offers onto Lightpanda's CDP: ephemeral profiles, one session, hermetic
+lab offers onto Lightpanda's CDP. Because Lightpanda 0.4.0 serves one live
+target per server, the host runs one Lightpanda process per target
+(`MINICON_SURF_LIGHTPANDA_PER_TARGET=1`, the default) so concurrent targets and
+bounded per-target termination come from the process model; set it to `0` to
+keep the original single-server mapping and observe the engine's own limit.
+It maps: ephemeral profiles, one session, hermetic
 fixture targets, semantic snapshots with revision-scoped node references,
 click actions and revision waits. The in-page instrumentation is the same
 JavaScript the Servo host injects, so the journey measures the vocabulary,
@@ -182,13 +187,36 @@ def bounded_int(obj, key, low, high):
     return value
 
 
+class Engine:
+    """One Lightpanda server process plus its CDP connection."""
+
+    def __init__(self, support, engine_path, directory):
+        launch_args = type("Args", (), {"engine": "lightpanda", "browser": engine_path})()
+        self.process, endpoint = support.launch(launch_args, directory)
+        self.cdp = support.CDP(support.WebSocket(endpoint))
+
+    def stop(self):
+        try:
+            self.cdp.websocket.close()
+        except Exception:
+            pass
+        if self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait()
+
+
 class Host:
-    def __init__(self, fixture_root, directory, engine):
+    def __init__(self, fixture_root, directory, engine, per_target):
         self.support = load_cdp_support()
         self.fixture_root = pathlib.Path(fixture_root)
-        launch_args = type("Args", (), {"engine": "lightpanda", "browser": engine})()
-        self.process, endpoint = self.support.launch(launch_args, directory)
-        self.cdp = self.support.CDP(self.support.WebSocket(endpoint))
+        self.directory = directory
+        self.engine_path = engine
+        self.per_target = per_target
+        self.shared = None if per_target else Engine(self.support, engine, directory)
         self.profiles = {}
         self.session = None
         self.targets = {}
@@ -200,8 +228,8 @@ class Host:
             raise ControlError("deadline_exceeded", "engine did not answer before deadline", True,
                                scope=("target", target["id"]))
         try:
-            result = self.cdp.call("Runtime.evaluate", {"expression": expression, "returnByValue": True},
-                                   target["cdp_session"])
+            result = target["engine"].cdp.call("Runtime.evaluate", {"expression": expression, "returnByValue": True},
+                                               target["cdp_session"])
         except RuntimeError as error:
             raise ControlError("internal", "JavaScript evaluation failed", scope=("target", target["id"]),
                                details={"engine_error": str(error)[:256]})
@@ -291,7 +319,8 @@ class Host:
             return self.target_wait(a, deadline)
         if op == "memory.report":
             raise ControlError("unsupported_capability",
-                               "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP")
+                               "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
+                               details={"engine_processes": len(self.targets) if self.per_target else 1})
         raise unsupported_operation(op)
 
     def profile_create(self, a):
@@ -340,8 +369,11 @@ class Host:
                 "closed_targets": len(closed)}
 
     def close_engine_target(self, target):
+        if self.per_target:
+            target["engine"].stop()
+            return
         try:
-            self.cdp.call("Target.closeTarget", {"targetId": target["cdp_target"]})
+            target["engine"].cdp.call("Target.closeTarget", {"targetId": target["cdp_target"]})
         except RuntimeError:
             pass
 
@@ -361,22 +393,36 @@ class Host:
         url = "data:text/html," + urllib.parse.quote_from_bytes(path.read_bytes(), safe="")
         self.counters["target"] += 1
         ident = f"target_{self.counters['target']}"
+        engine = self.shared
+        if self.per_target:
+            try:
+                engine = Engine(self.support, self.engine_path, self.directory)
+            except (OSError, RuntimeError, TimeoutError) as error:
+                raise ControlError("internal", "engine process did not start", True,
+                                   details={"engine_error": str(error)[:256]})
         try:
-            cdp_target = self.cdp.call("Target.createTarget", {"url": "about:blank"})["targetId"]
-            cdp_session = self.cdp.call("Target.attachToTarget", {"targetId": cdp_target, "flatten": True})["sessionId"]
-            self.cdp.call("Page.enable", session_id=cdp_session)
-            self.cdp.call("Runtime.enable", session_id=cdp_session)
-            self.cdp.call("Page.navigate", {"url": url}, cdp_session)
+            cdp_target = engine.cdp.call("Target.createTarget", {"url": "about:blank"})["targetId"]
+            cdp_session = engine.cdp.call("Target.attachToTarget", {"targetId": cdp_target, "flatten": True})["sessionId"]
+            engine.cdp.call("Page.enable", session_id=cdp_session)
+            engine.cdp.call("Runtime.enable", session_id=cdp_session)
+            engine.cdp.call("Page.navigate", {"url": url}, cdp_session)
         except RuntimeError as error:
+            if self.per_target:
+                engine.stop()
             raise ControlError("resource_limit" if "TargetAlreadyLoaded" in str(error) else "internal",
                                "engine refused a new target", True, details={"engine_error": str(error)[:256]})
         target = {"id": ident, "session": session, "fixture": fixture, "cdp_target": cdp_target,
-                  "cdp_session": cdp_session, "last_snapshot": None}
-        while True:
-            if self.evaluate(target, READY_JS, deadline) == "true":
-                break
-            time.sleep(0.01)
-        revision = self.evaluate(target, INSTALL_JS, deadline)
+                  "cdp_session": cdp_session, "last_snapshot": None, "engine": engine}
+        try:
+            while True:
+                if self.evaluate(target, READY_JS, deadline) == "true":
+                    break
+                time.sleep(0.01)
+            revision = self.evaluate(target, INSTALL_JS, deadline)
+        except ControlError:
+            if self.per_target:
+                engine.stop()
+            raise
         self.targets[ident] = target
         return {"kind": "target", "target": ident, "session": session,
                 "revision": int(revision) if str(revision).isdigit() else 0, "fixture": fixture}
@@ -473,17 +519,8 @@ class Host:
     def shutdown(self):
         for target in list(self.targets.values()):
             self.close_engine_target(target)
-        try:
-            self.cdp.websocket.close()
-        except Exception:
-            pass
-        if self.process.poll() is None:
-            self.process.terminate()
-            try:
-                self.process.wait(timeout=3)
-            except subprocess.TimeoutExpired:
-                self.process.kill()
-                self.process.wait()
+        if self.shared is not None:
+            self.shared.stop()
 
 
 def parse_request(line):
@@ -531,7 +568,8 @@ def main():
         sys.exit(64)
     config_dir = pathlib.Path(argv[5])
     config_dir.mkdir(parents=True, exist_ok=True)
-    host = Host(argv[3], str(config_dir), engine)
+    per_target = os.environ.get("MINICON_SURF_LIGHTPANDA_PER_TARGET", "1") != "0"
+    host = Host(argv[3], str(config_dir), engine, per_target)
     try:
         for raw in sys.stdin.buffer:
             line = raw.rstrip(b"\n")

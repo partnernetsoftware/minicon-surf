@@ -87,6 +87,23 @@ vocabulary is therefore engine-neutral for these two engines and this fixture
 set. It is not a native CLI inside Lightpanda, and it inherits the same D4
 limits as the Servo host.
 
+## Process-per-target combination
+
+Lightpanda 0.4.0 serves one live target per server, so the control host now
+starts one Lightpanda process per target by default
+(`MINICON_SURF_LIGHTPANDA_PER_TARGET=1`). The shared journey then passes
+27 of 27 with a second concurrent target opening instead of `resource_limit`.
+On the shared eight-cycle retention court the sampled tree (Python host plus
+engines) measured 28,164,096 bytes empty, 60,866,560 with one target,
+39,174,144 after eight closes and 279,855,104 with eight concurrent targets
+in nine processes, against Servo's 137,101,312 in one process and Chrome's
+2,205,646,848. Closing a target ends its process, so the 10,993,664 bytes
+retained after eight closes live entirely in the Python host; a Rust host
+would remove most of the host's own 28 MB. This is the first measured
+`combine` candidate rather than an engine claim: per-target processes buy
+concurrency and bounded termination at roughly twice Servo's memory at eight
+targets, and the engine itself still exposes no memory reporter.
+
 ## Per-cycle retention slope
 
 On the shared slope court (1, 8 and 32 sequential cycles, seven runs each),

@@ -252,6 +252,9 @@
       "detail": {
         "error": {
           "code": "unsupported_capability",
+          "details": {
+            "engine_processes": 1
+          },
           "message": "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
           "retryable": false
         },
@@ -265,17 +268,16 @@
     {
       "check": "second concurrent target either opens or is a typed resource_limit",
       "detail": {
-        "error": {
-          "code": "resource_limit",
-          "details": {
-            "engine_error": "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}"
-          },
-          "message": "engine refused a new target",
-          "retryable": true
-        },
-        "ok": false,
+        "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_17",
+        "result": {
+          "fixture": "semantic-static.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_2"
+        },
         "version": "0.0.1"
       },
       "passed": true
@@ -330,9 +332,9 @@
       "passed": true
     }
   ],
-  "concurrent_targets_supported": false,
+  "concurrent_targets_supported": true,
   "control_contract": "0.0.1",
-  "host_sha256": "165303e7ec6a6f598e0b162dff4698b2ae8eed654aefc90600ad943f63126bad",
+  "host_sha256": "ce74af4e3a0211906164685466a16f348590989fbae6e123f5714b9cc4176806",
   "limitations": [
     "native stdio only; no CDP edge shares this target yet",
     "click and revision_at_least are the only action and condition kinds",
@@ -356,7 +358,7 @@
         "name": "court",
         "persistence": "ephemeral"
       },
-      "elapsed_ms": 85.472,
+      "elapsed_ms": 695.854,
       "operation": "profile.create",
       "response": {
         "ok": true,
@@ -376,7 +378,7 @@
       "arguments": {
         "persistence": "persistent"
       },
-      "elapsed_ms": 0.056,
+      "elapsed_ms": 0.066,
       "operation": "profile.create",
       "response": {
         "error": {
@@ -394,7 +396,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.063,
+      "elapsed_ms": 0.073,
       "operation": "session.open",
       "response": {
         "ok": true,
@@ -412,7 +414,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.025,
+      "elapsed_ms": 0.029,
       "operation": "session.open",
       "response": {
         "error": {
@@ -431,7 +433,7 @@
         "fixture": "does-not-exist.html",
         "session": "session_1"
       },
-      "elapsed_ms": 0.112,
+      "elapsed_ms": 0.107,
       "operation": "target.open",
       "response": {
         "error": {
@@ -450,7 +452,7 @@
         "fixture": "semantic-interactive.html",
         "session": "session_1"
       },
-      "elapsed_ms": 2.035,
+      "elapsed_ms": 103.745,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -473,7 +475,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.538,
+      "elapsed_ms": 6.07,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -550,7 +552,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.372,
+      "elapsed_ms": 0.505,
       "operation": "target.act",
       "response": {
         "error": {
@@ -576,7 +578,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.429,
+      "elapsed_ms": 1.149,
       "operation": "target.act",
       "response": {
         "ok": true,
@@ -599,7 +601,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.112,
+      "elapsed_ms": 0.116,
       "operation": "target.wait",
       "response": {
         "ok": true,
@@ -622,7 +624,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 304.761,
+      "elapsed_ms": 306.019,
       "operation": "target.wait",
       "response": {
         "error": {
@@ -652,7 +654,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.252,
+      "elapsed_ms": 0.189,
       "operation": "target.act",
       "response": {
         "error": {
@@ -681,7 +683,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.497,
+      "elapsed_ms": 0.376,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -763,7 +765,7 @@
         "max_nodes": 2,
         "target": "target_1"
       },
-      "elapsed_ms": 0.549,
+      "elapsed_ms": 0.365,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -802,7 +804,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.182,
+      "elapsed_ms": 0.119,
       "operation": "target.inspect",
       "response": {
         "ok": true,
@@ -822,11 +824,14 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.037,
+      "elapsed_ms": 0.027,
       "operation": "memory.report",
       "response": {
         "error": {
           "code": "unsupported_capability",
+          "details": {
+            "engine_processes": 1
+          },
           "message": "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
           "retryable": false
         },
@@ -841,20 +846,36 @@
         "fixture": "semantic-static.html",
         "session": "session_1"
       },
-      "elapsed_ms": 0.296,
+      "elapsed_ms": 46.106,
       "operation": "target.open",
       "response": {
-        "error": {
-          "code": "resource_limit",
-          "details": {
-            "engine_error": "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}"
-          },
-          "message": "engine refused a new target",
-          "retryable": true
-        },
-        "ok": false,
+        "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_17",
+        "result": {
+          "fixture": "semantic-static.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_2"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_2"
+      },
+      "elapsed_ms": 20.791,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_18",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_2"
+        },
         "version": "0.0.1"
       }
     },
@@ -862,7 +883,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.037,
+      "elapsed_ms": 0.052,
       "operation": "target.screenshot",
       "response": {
         "error": {
@@ -872,13 +893,13 @@
         },
         "ok": false,
         "protocol": "minicon-surf.control",
-        "request_id": "req_18",
+        "request_id": "req_19",
         "version": "0.0.1"
       }
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.029,
+      "elapsed_ms": 0.019,
       "operation": "memory.trim",
       "response": {
         "error": {
@@ -888,7 +909,7 @@
         },
         "ok": false,
         "protocol": "minicon-surf.control",
-        "request_id": "req_19",
+        "request_id": "req_20",
         "version": "0.0.1"
       }
     },
@@ -901,7 +922,7 @@
         "request_id": "req_bad",
         "version": "0.0.1"
       },
-      "elapsed_ms": 0.034,
+      "elapsed_ms": 0.019,
       "operation": "invalid",
       "response": {
         "error": {
@@ -919,12 +940,12 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.133,
+      "elapsed_ms": 22.616,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_21",
+        "request_id": "req_22",
         "result": {
           "kind": "target_closed",
           "target": "target_1"
@@ -939,7 +960,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.044,
+      "elapsed_ms": 0.048,
       "operation": "target.snapshot",
       "response": {
         "error": {
@@ -953,7 +974,7 @@
         },
         "ok": false,
         "protocol": "minicon-surf.control",
-        "request_id": "req_22",
+        "request_id": "req_23",
         "version": "0.0.1"
       }
     },
@@ -962,12 +983,12 @@
         "fixture": "semantic-scripted.html",
         "session": "session_1"
       },
-      "elapsed_ms": 3.34,
+      "elapsed_ms": 42.54,
       "operation": "target.open",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_23",
+        "request_id": "req_24",
         "result": {
           "fixture": "semantic-scripted.html",
           "kind": "target",
@@ -985,12 +1006,12 @@
         "max_nodes": 64,
         "target": "target_3"
       },
-      "elapsed_ms": 0.375,
+      "elapsed_ms": 0.503,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_24",
+        "request_id": "req_25",
         "result": {
           "kind": "semantic_snapshot",
           "nodes": [
@@ -1024,12 +1045,12 @@
       "arguments": {
         "target": "target_3"
       },
-      "elapsed_ms": 0.162,
+      "elapsed_ms": 19.437,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_25",
+        "request_id": "req_26",
         "result": {
           "kind": "target_closed",
           "target": "target_3"
@@ -1041,12 +1062,12 @@
       "arguments": {
         "session": "session_1"
       },
-      "elapsed_ms": 0.053,
+      "elapsed_ms": 0.052,
       "operation": "session.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_26",
+        "request_id": "req_27",
         "result": {
           "closed_targets": 0,
           "kind": "session_closed",
