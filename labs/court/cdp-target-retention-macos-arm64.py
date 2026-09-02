@@ -63,16 +63,19 @@ def process_tree(root):
 def sample_stage(process, samples, settle_ms):
     time.sleep(settle_ms / 1000.0)
     rss_values = []
+    child_values = []
     process_counts = []
     for _ in range(samples):
         tree = process_tree(process.pid)
         if not tree:
             raise RuntimeError("browser process tree disappeared during measurement")
         rss_values.append(sum(rss_kib * 1024 for _, rss_kib in tree))
+        child_values.append(sum(rss_kib * 1024 for pid, rss_kib in tree if pid != process.pid))
         process_counts.append(len(tree))
         time.sleep(0.02)
     return {
         "peak_tree_resident_bytes": max(rss_values),
+        "peak_descendants_resident_bytes": max(child_values),
         "peak_process_count": max(process_counts),
     }
 
@@ -276,7 +279,7 @@ def aggregate(run_results):
     for stage in STAGES:
         stage_runs = [run[stage] for run in runs]
         stages[stage] = {}
-        for key in ("peak_tree_resident_bytes", "peak_process_count"):
+        for key in ("peak_tree_resident_bytes", "peak_descendants_resident_bytes", "peak_process_count"):
             values = [row[key] for row in stage_runs]
             stages[stage][key] = values
             stages[stage][f"median_{key}"] = int(statistics.median(values))
@@ -297,6 +300,7 @@ def aggregate(run_results):
         for run in runs
     ]
     capacity_rss = [item["state"]["peak_tree_resident_bytes"] for item in capacities]
+    capacity_descendants = [item["state"]["peak_descendants_resident_bytes"] for item in capacities]
     observed = [item["observed_concurrent_targets_at_probe_stop"] for item in capacities]
     reached_limit = [item["probe_reached_limit"] for item in capacities]
     errors = [item["next_create_error"] for item in capacities]
@@ -314,6 +318,8 @@ def aggregate(run_results):
             "next_create_errors": errors,
             "peak_tree_resident_bytes": capacity_rss,
             "median_peak_tree_resident_bytes": int(statistics.median(capacity_rss)),
+            "peak_descendants_resident_bytes": capacity_descendants,
+            "median_peak_descendants_resident_bytes": int(statistics.median(capacity_descendants)),
         },
     }
 
@@ -463,7 +469,7 @@ def main():
             "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag; Servo uses an ephemeral control profile and a fresh temporary config directory per repetition",
         },
         "measurement": {
-            "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage",
+            "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage; peak_descendants_resident_bytes excludes the root so a court host's own footprint can be separated from engine processes",
             "candidates": candidate_reports,
         },
         "limitations": [

@@ -140,6 +140,16 @@ one target it is still below Servo. This is the first measured `combine`
 candidate: a low-memory engine per target under one native control
 authority, with `terminate one target` available as a process boundary.
 
+A host-split receipt
+(`macos-arm64-target-retention-lightpanda-per-target-0.4.0-host-split`) reruns
+that candidate alone with the sampler also recording descendants-only RSS.
+Engine processes measured 29,638,656 bytes with one target and 0 after every
+close, and 237,027,328 bytes for eight concurrent targets; the remainder of
+the tree (28,164,096 empty, 39,272,448 after eight closes) is the Python
+court host itself. The engines-only figure is the number a Rust host would
+approach: about 1.7× Servo's single process at eight targets and about one
+ninth of Chrome.
+
 The per-cycle slope receipt
 (`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
 fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles

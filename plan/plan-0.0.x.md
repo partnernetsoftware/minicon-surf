@@ -532,9 +532,11 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   target, 39,174,144 after eight closes and 279,855,104 with eight concurrent
   targets in nine processes, against Servo's 137,101,312 in one process and
   Chrome's 2,205,646,848. Engine retention is zero by construction because a
-  close ends the process; the 10,993,664 bytes retained are the Python host's
-  own, and its 28 MB empty footprint is court-host cost a Rust host would
-  mostly remove. [M2]'s `terminate one target` pressure action therefore has a
+  close ends the process: a host-split rerun sampling descendants separately
+  puts engine processes at 29,638,656 bytes with one target, 0 after every
+  close and 237,027,328 with eight concurrent targets, so the 10,993,664
+  retained bytes and the 28 MB empty footprint are the Python court host's
+  own, which a Rust host would mostly remove. [M2]'s `terminate one target` pressure action therefore has a
   measured process boundary on this route. G1 stays open: summed RSS, one
   fixture, and the design is about twice Servo at eight targets.
 - [~] The first unfair short-fetch/persistent-server comparison remains

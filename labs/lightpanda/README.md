@@ -98,8 +98,11 @@ engines) measured 28,164,096 bytes empty, 60,866,560 with one target,
 39,174,144 after eight closes and 279,855,104 with eight concurrent targets
 in nine processes, against Servo's 137,101,312 in one process and Chrome's
 2,205,646,848. Closing a target ends its process, so the 10,993,664 bytes
-retained after eight closes live entirely in the Python host; a Rust host
-would remove most of the host's own 28 MB. This is the first measured
+retained after eight closes live entirely in the Python host. A host-split
+rerun that samples descendants separately confirms it: engine processes hold
+29,638,656 bytes with one target, 0 after every close, and 237,027,328 bytes
+for eight concurrent targets, while the Python host alone is 28,164,096 empty
+and 39,272,448 after eight closes; a Rust host would remove most of that. This is the first measured
 `combine` candidate rather than an engine claim: per-target processes buy
 concurrency and bounded termination at roughly twice Servo's memory at eight
 targets, and the engine itself still exposes no memory reporter.
