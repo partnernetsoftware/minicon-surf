@@ -71,6 +71,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   └── any default/product-core route must satisfy ↳ [M2] and ↳ [A3]
 ├── [C1] charter and product-family boundary
 │   ├── Rust implementation; language choice alone proves no outcome
+│   ├── [x] shared control boundary proven by two real routes before any product crate exists
 │   ├── independent MiniCon-family product; MiniCon installation not required
 │   ├── AgenTerm consumes a versioned contract, never CLI prose or UI internals
 │   ├── separate repository, binary, profiles, versioning and release cadence
@@ -93,7 +94,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── open · list · inspect · act · wait · screenshot · show · hide · memory
 │   ├── waits observe conditions; callers do not guess with sleeps
 │   ├── [x] synthetic stdio/CDP host shares one target identity and revision
-│   ├── [~] Servo control host: HTML target · semantic snapshot · revision-scoped click · wait; stdio and loopback CDP share one target
+│   ├── [x] control 0.0.1 hosted on two real engines (Servo, Lightpanda): HTML target · semantic snapshot · revision-scoped click · wait; Servo stdio and loopback CDP share one target
 │   └── local authority and authentication are explicit before remote exposure
 ├── [D4] CDP compatibility adapter
 │   ├── ↳ [A3] maps onto the same profile/session/target authority
@@ -121,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
+│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; low memory, concurrency narrowed to one target, no memory reporter
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -472,6 +473,17 @@ flowchart LR
   identity and revision across both doors. D4 remains open: court client
   rather than Playwright/Puppeteer, one connection, `button`/`#id` selectors
   only, no navigation, frames, Input or Network domains.
+- [x] The control `0.0.1` boundary is now implemented by two real engines.
+  A Lightpanda-backed host maps the same operations onto CDP with the same
+  in-page instrumentation the Servo host injects, and the Servo lab's journey
+  runs unchanged against both: 27 of 27 checks on each. Differences are
+  recorded as facts, not hidden: Lightpanda's `memory.report` is
+  `unsupported_capability` and its second concurrent target is a typed
+  `resource_limit`, while Servo offers both. Lightpanda's target open took
+  2.035 ms against Servo's 50.803 ms. This satisfies the change-hygiene
+  precondition that two real routes prove the shared boundary before any
+  product crate absorbs it; extraction remains deliberately deferred until a
+  route also passes G1.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

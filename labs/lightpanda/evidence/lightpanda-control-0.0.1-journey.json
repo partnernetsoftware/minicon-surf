@@ -1,5 +1,5 @@
 {
-  "artifact_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "artifact_sha256": "840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7",
   "checks": [
     {
       "check": "ephemeral profile created",
@@ -250,45 +250,14 @@
     {
       "check": "memory.report answers with a report or a typed unsupported_capability",
       "detail": {
-        "ok": true,
+        "error": {
+          "code": "unsupported_capability",
+          "message": "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
+          "retryable": false
+        },
+        "ok": false,
         "protocol": "minicon-surf.control",
         "request_id": "req_16",
-        "result": {
-          "engine": {
-            "explicit_reported_bytes": 9539896,
-            "reported_resident_bytes": 91062272
-          },
-          "jemalloc": {
-            "allocated": 24511536,
-            "mapped": 118931456,
-            "resident": 44285952
-          },
-          "kind": "memory_report",
-          "libmalloc": {
-            "size_allocated": 50331648,
-            "size_in_use": 8120464
-          },
-          "limitations": [
-            "explicit bytes cover Servo's reporters only",
-            "platform GL driver state is outside both allocators",
-            "not process RSS/private/PSS"
-          ],
-          "owners": {
-            "profiles": {
-              "object_limit": 8,
-              "objects": 1
-            },
-            "sessions": {
-              "object_limit": 1,
-              "objects": 1
-            },
-            "targets": {
-              "object_limit": 8,
-              "objects": 1
-            }
-          },
-          "semantic": "servo-explicit-owner-bytes-plus-allocator-statistics"
-        },
         "version": "0.0.1"
       },
       "passed": true
@@ -296,16 +265,17 @@
     {
       "check": "second concurrent target either opens or is a typed resource_limit",
       "detail": {
-        "ok": true,
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "engine_error": "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}"
+          },
+          "message": "engine refused a new target",
+          "retryable": true
+        },
+        "ok": false,
         "protocol": "minicon-surf.control",
         "request_id": "req_17",
-        "result": {
-          "fixture": "semantic-static.html",
-          "kind": "target",
-          "revision": 0,
-          "session": "session_1",
-          "target": "target_2"
-        },
         "version": "0.0.1"
       },
       "passed": true
@@ -360,9 +330,9 @@
       "passed": true
     }
   ],
-  "concurrent_targets_supported": true,
+  "concurrent_targets_supported": false,
   "control_contract": "0.0.1",
-  "host_sha256": "9199a40e50ace5d3a6a063ab5d048ea5da621544989d3085314663afb3457c5b",
+  "host_sha256": "165303e7ec6a6f598e0b162dff4698b2ae8eed654aefc90600ad943f63126bad",
   "limitations": [
     "native stdio only; no CDP edge shares this target yet",
     "click and revision_at_least are the only action and condition kinds",
@@ -370,7 +340,7 @@
     "one session per host process; profiles are ephemeral and not engine cookie jars",
     "rendering and process model belong to the named technology, not to this journey"
   ],
-  "memory_report_offered": true,
+  "memory_report_offered": false,
   "passed": true,
   "platform": {
     "architecture": "arm64",
@@ -378,15 +348,15 @@
   },
   "schema": "minicon-surf.servo-control-journey-receipt/0.0.1",
   "status": "observed",
-  "technology": "servo",
-  "technology_version": "0.5.0",
+  "technology": "lightpanda",
+  "technology_version": "0.4.0",
   "transcript": [
     {
       "arguments": {
         "name": "court",
         "persistence": "ephemeral"
       },
-      "elapsed_ms": 45.038,
+      "elapsed_ms": 85.472,
       "operation": "profile.create",
       "response": {
         "ok": true,
@@ -406,12 +376,12 @@
       "arguments": {
         "persistence": "persistent"
       },
-      "elapsed_ms": 1.393,
+      "elapsed_ms": 0.056,
       "operation": "profile.create",
       "response": {
         "error": {
           "code": "unsupported_capability",
-          "message": "this Servo host offers ephemeral profiles only",
+          "message": "this Lightpanda host offers ephemeral profiles only",
           "retryable": false
         },
         "ok": false,
@@ -424,7 +394,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 1.294,
+      "elapsed_ms": 0.063,
       "operation": "session.open",
       "response": {
         "ok": true,
@@ -442,12 +412,12 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 1.486,
+      "elapsed_ms": 0.025,
       "operation": "session.open",
       "response": {
         "error": {
           "code": "resource_limit",
-          "message": "this Servo host owns one live session; close it first",
+          "message": "this Lightpanda host owns one live session; close it first",
           "retryable": true
         },
         "ok": false,
@@ -461,7 +431,7 @@
         "fixture": "does-not-exist.html",
         "session": "session_1"
       },
-      "elapsed_ms": 1.157,
+      "elapsed_ms": 0.112,
       "operation": "target.open",
       "response": {
         "error": {
@@ -480,7 +450,7 @@
         "fixture": "semantic-interactive.html",
         "session": "session_1"
       },
-      "elapsed_ms": 50.803,
+      "elapsed_ms": 2.035,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -503,7 +473,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 2.945,
+      "elapsed_ms": 0.538,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -580,7 +550,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 4.476,
+      "elapsed_ms": 0.372,
       "operation": "target.act",
       "response": {
         "error": {
@@ -606,7 +576,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 6.89,
+      "elapsed_ms": 0.429,
       "operation": "target.act",
       "response": {
         "ok": true,
@@ -629,7 +599,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 2.978,
+      "elapsed_ms": 0.112,
       "operation": "target.wait",
       "response": {
         "ok": true,
@@ -652,7 +622,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 306.226,
+      "elapsed_ms": 304.761,
       "operation": "target.wait",
       "response": {
         "error": {
@@ -682,7 +652,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 2.669,
+      "elapsed_ms": 0.252,
       "operation": "target.act",
       "response": {
         "error": {
@@ -711,7 +681,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 4.391,
+      "elapsed_ms": 0.497,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -793,7 +763,7 @@
         "max_nodes": 2,
         "target": "target_1"
       },
-      "elapsed_ms": 2.839,
+      "elapsed_ms": 0.549,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -832,7 +802,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 2.948,
+      "elapsed_ms": 0.182,
       "operation": "target.inspect",
       "response": {
         "ok": true,
@@ -852,48 +822,17 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 12.616,
+      "elapsed_ms": 0.037,
       "operation": "memory.report",
       "response": {
-        "ok": true,
+        "error": {
+          "code": "unsupported_capability",
+          "message": "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
+          "retryable": false
+        },
+        "ok": false,
         "protocol": "minicon-surf.control",
         "request_id": "req_16",
-        "result": {
-          "engine": {
-            "explicit_reported_bytes": 9539896,
-            "reported_resident_bytes": 91062272
-          },
-          "jemalloc": {
-            "allocated": 24511536,
-            "mapped": 118931456,
-            "resident": 44285952
-          },
-          "kind": "memory_report",
-          "libmalloc": {
-            "size_allocated": 50331648,
-            "size_in_use": 8120464
-          },
-          "limitations": [
-            "explicit bytes cover Servo's reporters only",
-            "platform GL driver state is outside both allocators",
-            "not process RSS/private/PSS"
-          ],
-          "owners": {
-            "profiles": {
-              "object_limit": 8,
-              "objects": 1
-            },
-            "sessions": {
-              "object_limit": 1,
-              "objects": 1
-            },
-            "targets": {
-              "object_limit": 8,
-              "objects": 1
-            }
-          },
-          "semantic": "servo-explicit-owner-bytes-plus-allocator-statistics"
-        },
         "version": "0.0.1"
       }
     },
@@ -902,36 +841,20 @@
         "fixture": "semantic-static.html",
         "session": "session_1"
       },
-      "elapsed_ms": 41.855,
+      "elapsed_ms": 0.296,
       "operation": "target.open",
       "response": {
-        "ok": true,
+        "error": {
+          "code": "resource_limit",
+          "details": {
+            "engine_error": "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}"
+          },
+          "message": "engine refused a new target",
+          "retryable": true
+        },
+        "ok": false,
         "protocol": "minicon-surf.control",
         "request_id": "req_17",
-        "result": {
-          "fixture": "semantic-static.html",
-          "kind": "target",
-          "revision": 0,
-          "session": "session_1",
-          "target": "target_2"
-        },
-        "version": "0.0.1"
-      }
-    },
-    {
-      "arguments": {
-        "target": "target_2"
-      },
-      "elapsed_ms": 1.423,
-      "operation": "target.close",
-      "response": {
-        "ok": true,
-        "protocol": "minicon-surf.control",
-        "request_id": "req_18",
-        "result": {
-          "kind": "target_closed",
-          "target": "target_2"
-        },
         "version": "0.0.1"
       }
     },
@@ -939,33 +862,33 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 1.75,
+      "elapsed_ms": 0.037,
       "operation": "target.screenshot",
       "response": {
         "error": {
           "code": "unsupported_operation",
-          "message": "target.screenshot is reserved by control 0.0.1 but not offered by this Servo host",
+          "message": "target.screenshot is reserved by control 0.0.1 but not offered by this Lightpanda host",
           "retryable": false
         },
         "ok": false,
         "protocol": "minicon-surf.control",
-        "request_id": "req_19",
+        "request_id": "req_18",
         "version": "0.0.1"
       }
     },
     {
       "arguments": {},
-      "elapsed_ms": 1.467,
+      "elapsed_ms": 0.029,
       "operation": "memory.trim",
       "response": {
         "error": {
           "code": "unsupported_operation",
-          "message": "memory.trim is reserved by control 0.0.1 but not offered by this Servo host",
+          "message": "memory.trim is reserved by control 0.0.1 but not offered by this Lightpanda host",
           "retryable": false
         },
         "ok": false,
         "protocol": "minicon-surf.control",
-        "request_id": "req_20",
+        "request_id": "req_19",
         "version": "0.0.1"
       }
     },
@@ -978,7 +901,7 @@
         "request_id": "req_bad",
         "version": "0.0.1"
       },
-      "elapsed_ms": 1.483,
+      "elapsed_ms": 0.034,
       "operation": "invalid",
       "response": {
         "error": {
@@ -996,12 +919,12 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 2.565,
+      "elapsed_ms": 0.133,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_22",
+        "request_id": "req_21",
         "result": {
           "kind": "target_closed",
           "target": "target_1"
@@ -1016,7 +939,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 1.473,
+      "elapsed_ms": 0.044,
       "operation": "target.snapshot",
       "response": {
         "error": {
@@ -1030,7 +953,7 @@
         },
         "ok": false,
         "protocol": "minicon-surf.control",
-        "request_id": "req_23",
+        "request_id": "req_22",
         "version": "0.0.1"
       }
     },
@@ -1039,12 +962,12 @@
         "fixture": "semantic-scripted.html",
         "session": "session_1"
       },
-      "elapsed_ms": 19.173,
+      "elapsed_ms": 3.34,
       "operation": "target.open",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_24",
+        "request_id": "req_23",
         "result": {
           "fixture": "semantic-scripted.html",
           "kind": "target",
@@ -1062,12 +985,12 @@
         "max_nodes": 64,
         "target": "target_3"
       },
-      "elapsed_ms": 25.548,
+      "elapsed_ms": 0.375,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_25",
+        "request_id": "req_24",
         "result": {
           "kind": "semantic_snapshot",
           "nodes": [
@@ -1101,12 +1024,12 @@
       "arguments": {
         "target": "target_3"
       },
-      "elapsed_ms": 3.461,
+      "elapsed_ms": 0.162,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_26",
+        "request_id": "req_25",
         "result": {
           "kind": "target_closed",
           "target": "target_3"
@@ -1118,12 +1041,12 @@
       "arguments": {
         "session": "session_1"
       },
-      "elapsed_ms": 1.459,
+      "elapsed_ms": 0.053,
       "operation": "session.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_27",
+        "request_id": "req_26",
         "result": {
           "closed_targets": 0,
           "kind": "session_closed",

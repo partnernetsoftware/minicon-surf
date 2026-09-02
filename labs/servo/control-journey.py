@@ -77,6 +77,10 @@ def main():
     parser.add_argument("--binary", required=True)
     parser.add_argument("--fixture-root", default=str(ROOT / "labs" / "court" / "fixtures"))
     parser.add_argument("--receipt")
+    parser.add_argument("--technology", default="servo")
+    parser.add_argument("--technology-version", default="0.5.0")
+    parser.add_argument("--artifact-sha256", default="331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+                        help="pinned engine artifact digest recorded in the receipt")
     args = parser.parse_args()
     binary = Path(args.binary)
     fixture_root = Path(args.fixture_root)
@@ -177,10 +181,17 @@ def main():
                and inspect["result"]["revision"] >= 1 and inspect["result"]["load_complete"], inspect)
 
         memory = host.call("memory.report", {})
-        expect(checks, "memory.report exposes engine explicit bytes and both allocators",
-               memory["ok"] and memory["result"]["engine"]["explicit_reported_bytes"] > 0
-               and isinstance(memory["result"]["jemalloc"]["resident"], int)
-               and isinstance(memory["result"]["libmalloc"]["size_in_use"], int), memory)
+        expect(checks, "memory.report answers with a report or a typed unsupported_capability",
+               (memory["ok"] and memory["result"]["kind"] == "memory_report")
+               or (not memory["ok"] and memory["error"]["code"] == "unsupported_capability"), memory)
+        memory_reported = bool(memory["ok"])
+
+        concurrent = host.call("target.open", {"session": session_id, "fixture": "semantic-static.html"}, 30000)
+        expect(checks, "second concurrent target either opens or is a typed resource_limit",
+               concurrent["ok"] or concurrent["error"]["code"] == "resource_limit", concurrent)
+        concurrent_targets_supported = bool(concurrent["ok"])
+        if concurrent["ok"]:
+            host.call("target.close", {"target": concurrent["result"]["target"]})
 
         screenshot = host.call("target.screenshot", {"target": target_id})
         expect(checks, "target.screenshot is unsupported_operation",
@@ -202,6 +213,17 @@ def main():
         expect(checks, "closed target is not_found",
                not gone["ok"] and gone["error"]["code"] == "not_found")
 
+        scripted = host.call("target.open", {"session": session_id, "fixture": "semantic-scripted.html"}, 30000)
+        scripted_roles = None
+        if scripted["ok"]:
+            scripted_snapshot = host.call("target.snapshot", {"target": scripted["result"]["target"], "format": "semantic",
+                                                              "max_bytes": 65536, "max_nodes": 64})
+            if scripted_snapshot["ok"]:
+                scripted_roles = [(n["role"], n["name"]) for n in scripted_snapshot["result"]["nodes"]]
+            host.call("target.close", {"target": scripted["result"]["target"]})
+        expect(checks, "W2 scripted fixture snapshot shows the script-built heading and button",
+               scripted_roles == [("heading", "After script"), ("button", "Agent visible action")], scripted_roles)
+
         session_closed = host.call("session.close", {"session": session_id})
         expect(checks, "session closed", session_closed["ok"])
         exit_code = host.finish()
@@ -211,11 +233,13 @@ def main():
     receipt = {
         "schema": "minicon-surf.servo-control-journey-receipt/0.0.1",
         "status": "observed" if passed else "failed",
-        "technology": "servo",
-        "technology_version": "0.5.0",
-        "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
-        "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+        "technology": args.technology,
+        "technology_version": args.technology_version,
+        "artifact_sha256": args.artifact_sha256,
+        "host_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
         "control_contract": "0.0.1",
+        "memory_report_offered": memory_reported,
+        "concurrent_targets_supported": concurrent_targets_supported,
         "platform": {"os": "macos", "architecture": "arm64"},
         "workload": {
             "id": "W7-native",
@@ -231,7 +255,7 @@ def main():
             "click and revision_at_least are the only action and condition kinds",
             "revision is driven by a MutationObserver installed after load; navigation is not covered",
             "one session per host process; profiles are ephemeral and not engine cookie jars",
-            "the rendering context is Servo's CGL-backed software context on macOS",
+            "rendering and process model belong to the named technology, not to this journey",
         ],
     }
     encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"

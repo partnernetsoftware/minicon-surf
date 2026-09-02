@@ -51,6 +51,42 @@ mutates that node through its remote object, observes the mutation on the same
 target, and closes the target. The server uses an ephemeral port, disables its
 metrics endpoint, and is always reaped by the runner trap.
 
+## Control 0.0.1 host
+
+[`control-host.py`](control-host.py) maps the control `0.0.1` vocabulary onto
+Lightpanda's CDP with the same in-page instrumentation the Servo host injects:
+a `MutationObserver` revision counter, semantic snapshots, revision-scoped
+click actions and `revision_at_least` waits. It takes the same arguments as
+`servo-control` and reads the engine path from `MINICON_SURF_LIGHTPANDA`, so
+the Servo lab's journey runs unchanged against it:
+
+```sh
+MINICON_SURF_LIGHTPANDA=target/labs/lightpanda/0.4.0/lightpanda-aarch64-macos \
+python3 labs/servo/control-journey.py \
+  --binary labs/lightpanda/control-host.py \
+  --technology lightpanda --technology-version 0.4.0 \
+  --artifact-sha256 840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7 \
+  --receipt labs/lightpanda/evidence/lightpanda-control-0.0.1-journey.json
+```
+
+The receipt passes 27 of 27 checks: revision 0 snapshot of heading, label,
+textbox with value, button and link; click through a compound reference;
+`target.wait` observing revision ≥ 1 without a sleep; an unmet wait as
+`deadline_exceeded`; the reused reference as `stale_revision` with both
+revisions in details; the post-click snapshot with the mutated button and new
+status text; `max_nodes` truncation; the W2 scripted fixture observed after
+the first target closes; and typed refusals. Two facts differ from Servo and
+are recorded rather than hidden: `memory.report` is `unsupported_capability`
+because Lightpanda 0.4.0 exposes no in-process reporter through CDP, and a
+second concurrent target is a typed `resource_limit` (`TargetAlreadyLoaded`).
+Target open took 2.035 ms and every other operation under 1 ms in the
+recorded transcript, against 50.803 ms for Servo's target open.
+
+This is the second real route to implement the shared control boundary; the
+vocabulary is therefore engine-neutral for these two engines and this fixture
+set. It is not a native CLI inside Lightpanda, and it inherits the same D4
+limits as the Servo host.
+
 ## Open gates
 
 - Extend the named same-machine Chrome comparison beyond one small semantic

@@ -312,8 +312,9 @@ python3 labs/servo/control-journey.py \
 ```
 
 The journey (`servo-control-0.0.1-journey` receipt) validates every request
-and response with `protocol/check_contract.py` and passes 25 of 25 checks
-against `semantic-interactive.html`: revision 0 snapshot of heading, label,
+and response with `protocol/check_contract.py` and passes 27 of 27 checks
+against `semantic-interactive.html` (plus the W2 scripted fixture and a
+second-concurrent-target probe, both recorded as facts): revision 0 snapshot of heading, label,
 textbox (with value), button and link; click through the button's reference;
 `target.wait` observing revision ≥ 1 without a caller sleep; an unmet wait
 returning `deadline_exceeded`; the reused revision-0 reference rejected as
@@ -321,8 +322,9 @@ returning `deadline_exceeded`; the reused revision-0 reference rejected as
 showing the `Clicked` button and the `Continued` status text; `max_nodes`
 truncation; typed refusals for persistent profiles, a second session, a
 heading click, `target.screenshot`, `memory.trim` and an unknown operation.
-Target open took 205.754 ms and every other operation under 13 ms in the
-recorded transcript.
+In the recorded transcript target open took 50.803 ms and every other
+operation under 8 ms. The same journey runs unchanged against the Lightpanda
+lab's control host, which is how the vocabulary is shown to be engine-neutral.
 
 The same host also puts Servo on the shared W3 retention court beside
 Lightpanda and Chrome (see `labs/court/README.md`): median one-target tree
