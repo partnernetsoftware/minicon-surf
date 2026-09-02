@@ -1,9 +1,10 @@
 # Servo lab
 
 Status: `exploring`
-Decision: `keep` as a running Rust-engine candidate; W1 software-rendered
-runtime is observed, while comparative memory, native Agent control, CDP,
-surface-detachment, and profile claims remain open.
+Decision: `keep` as a running Rust-engine candidate with a material retained-
+RSS risk; W1 and same-instance W3 software-rendered runtime are observed,
+while comparative memory, native Agent control, CDP, surface-detachment, and
+profile claims remain open.
 
 ## Hypothesis
 
@@ -55,6 +56,8 @@ On macOS arm64:
 ```sh
 labs/servo/run-api-probe.sh
 labs/servo/run-w1-runtime-macos-arm64.sh
+labs/servo/run-w3-memory-macos-arm64.sh \
+  --receipt labs/servo/evidence/macos-arm64-0.5.0-w3-memory.json
 ```
 
 All generated build state stays in the ignored `labs/servo/target/` directory.
@@ -85,11 +88,30 @@ contained one process in every repetition; median peak summed RSS was
 92,700,672 bytes and maximum was 92,880,896 bytes. The 1.5 GiB build directory
 still says nothing about RSS.
 
-This is not yet the memory-optimized claim. Summed RSS is not private/PSS; the
-court uses software rendering, one fixture and one platform; no comparable
-candidate ran through the same control contract in this execution; retention,
-soak and per-target delta remain unmeasured. Comparing it directly with the CDP
-court would mix interfaces and rendering paths.
+That W1 result is not the memory-optimized claim. Summed RSS is not private/PSS;
+the court uses software rendering, one fixture and one platform; no comparable
+candidate ran through the same control contract in that execution; soak and
+per-target growth remain unmeasured. Comparing it directly with the CDP court
+would mix interfaces and rendering paths. W3 below adds retention evidence.
+
+The W3 court keeps one `Servo` instance and one 800×600 software rendering
+context alive while it builds, semantically verifies, and drops eight
+sequential `WebView`s. This is a real close path: in the pinned source,
+`WebViewInner::drop` sends `CloseWebView` and removes the paint webview; the
+host continues spinning Servo's event loop during every measured stage.
+
+Across seven measured runs after one warmup, median complete-tree RSS was
+44,056,576 bytes empty, 86,638,592 with the first target, 85,983,232 after its
+close, 97,730,560 with the eighth target, and 95,174,656 after all eight
+closes. The final closed state retained a 51,101,696-byte median above empty;
+all stage samples observed one process. Dropping a WebView therefore does not
+make its first-target resident cost promptly return to the empty baseline in
+this court. This is **retention**, not a proven leak: engine caches, allocator
+retention and asynchronously reclaimable state are not yet separated.
+
+Verdict remains `keep`, but the route is now conditioned on internal memory-
+report attribution and an effective pressure/recovery experiment. A Rust API
+and a successful software-rendered page do not waive that requirement.
 
 ### Profiles
 
@@ -115,13 +137,15 @@ and one-target CLI/CDP interoperability remain unproven.
 
 - `cargo check` validates public Rust types and the dependency graph only.
 - The API probe alone does not launch; the separate W1 runner does.
-- W1 loads and renders, but only through a software context and direct Rust API.
+- W1/W3 load and render, but only through a software context and direct Rust API.
 - Evidence applies only to the named release and macOS arm64 cells.
 - The exact dependency graph contains 800 packages on this toolchain; feature
   reduction needs its own compile/runtime comparison rather than assumptions.
 
-The next Servo experiment should put its W1 lifecycle behind the shared native
-target vocabulary and bounded JSON CLI, then compare like-for-like lifecycle
-and rendering semantics. A separate experiment must attempt context detachment
-while preserving JavaScript state; visibility-only `hide` is an explicit
-failure for that question.
+The next Servo memory experiment should consume its public
+`create_memory_report` callback before and after WebView close, then test
+whether an allocator/engine pressure action materially reduces the observed
+51.1 MB retained RSS. In parallel, its lifecycle still needs the shared native
+target vocabulary and bounded JSON CLI. A separate experiment must attempt
+context detachment while preserving JavaScript state; visibility-only `hide`
+is an explicit failure for that question.

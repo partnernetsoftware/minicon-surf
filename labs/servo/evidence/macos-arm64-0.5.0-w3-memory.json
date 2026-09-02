@@ -1,0 +1,212 @@
+{
+  "agent_observation": {
+    "interface": "direct Rust WebView evaluate_javascript callback",
+    "semantic_expected_present_on_all_eight_targets": true
+  },
+  "binary_sha256": "613a5c85a37716e89854b607b2809a50df59b959b83de33a919d7a93d4768be6",
+  "crate_sha256": "331e15df72165ca15b3945970c6870c4b7367be116ded058fda4f41190b265b8",
+  "limitations": [
+    "summed RSS is neither private memory nor PSS and can double-count shared pages",
+    "process-table sampling can miss short-lived or reparented processes",
+    "one synthetic data URL, one operating system and one architecture only",
+    "software rendering is not a headed or GPU-offscreen comparison",
+    "the rendering context is reused, so this isolates WebView churn rather than surface allocation churn",
+    "direct Rust callbacks do not prove native CLI, stable semantic nodes or CDP compatibility",
+    "no like-for-like external browser uses this direct embedding and software-rendering path",
+    "no explicit allocator trim or memory-pressure signal is exercised"
+  ],
+  "measurement": {
+    "eighth_target_minus_post_one_close_resident_bytes": [
+      11436032,
+      11747328,
+      10076160,
+      13991936,
+      11796480,
+      10633216,
+      11501568
+    ],
+    "first_target_minus_empty_resident_bytes": [
+      42696704,
+      42729472,
+      42336256,
+      42565632,
+      42500096,
+      42631168,
+      42795008
+    ],
+    "median_eighth_target_minus_post_one_close_resident_bytes": 11501568,
+    "median_first_target_minus_empty_resident_bytes": 42631168,
+    "median_post_eight_closes_minus_empty_resident_bytes": 51101696,
+    "median_post_one_close_minus_empty_resident_bytes": 42008576,
+    "post_eight_closes_minus_empty_resident_bytes": [
+      50954240,
+      51314688,
+      49332224,
+      53510144,
+      51216384,
+      49856512,
+      51101696
+    ],
+    "post_one_close_minus_empty_resident_bytes": [
+      42139648,
+      42106880,
+      41730048,
+      42008576,
+      41828352,
+      41893888,
+      42139648
+    ],
+    "semantic": "peak of sampled sum of BSD ps RSS over Servo root and recursively observed descendants per stage",
+    "states": {
+      "eighth_target": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 100089856,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 97730560,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          97796096,
+          97730560,
+          95862784,
+          100089856,
+          97763328,
+          96370688,
+          97648640
+        ]
+      },
+      "empty": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 44220416,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 44056576,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          44220416,
+          43876352,
+          44056576,
+          44089344,
+          44138496,
+          43843584,
+          44007424
+        ]
+      },
+      "one_target": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 86917120,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 86638592,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          86917120,
+          86605824,
+          86392832,
+          86654976,
+          86638592,
+          86474752,
+          86802432
+        ]
+      },
+      "post_eight_closes": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 97599488,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 95174656,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          95174656,
+          95191040,
+          93388800,
+          97599488,
+          95354880,
+          93700096,
+          95109120
+        ]
+      },
+      "post_one_close": {
+        "maximum_peak_process_count": 1,
+        "maximum_peak_tree_resident_bytes": 86360064,
+        "median_peak_process_count": 1,
+        "median_peak_tree_resident_bytes": 85983232,
+        "peak_process_count": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "peak_tree_resident_bytes": [
+          86360064,
+          85983232,
+          85786624,
+          86097920,
+          85966848,
+          85737472,
+          86147072
+        ]
+      }
+    }
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.servo-staged-w3-memory-receipt/0.0.1",
+  "status": "incomplete",
+  "technology": "servo",
+  "technology_version": "0.5.0",
+  "workload": {
+    "close_semantic": "WebViewInner drop sends CloseWebView and removes its paint webview",
+    "engine_lifecycle": "one Servo instance; eight sequential WebView build/drop cycles",
+    "fixture_sha256": "1d562146735fcb83bb7086769135c3db8ac795c1c0e3776aaf687022c86ec9e5",
+    "id": "W3",
+    "measured_repetitions": 7,
+    "profile": "fresh temporary config and temporary_storage per repetition",
+    "rendering_context": "one shared SoftwareRenderingContext-800x600",
+    "samples_per_stage": 3,
+    "settle_ms": 200,
+    "stage_ms": 1000,
+    "stage_order": [
+      "empty",
+      "one_target",
+      "post_one_close",
+      "eighth_target",
+      "post_eight_closes"
+    ],
+    "transport": "percent-encoded-data-url",
+    "warmups": 1
+  }
+}

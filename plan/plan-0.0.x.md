@@ -121,7 +121,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: public API + software-rendered W1 runtime observed
+│   ├── [~] Servo 0.5.0: W1/W3 observed; same-instance retained-RSS risk measured
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -189,7 +189,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>software W1 rendered<br/>comparison · Agent edge open"]
+        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>51.1 MB retained-risk · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -346,11 +346,22 @@ flowchart LR
   92,700,672 bytes, maximum 92,880,896 bytes, with one process observed in all
   runs. Status remains `incomplete`: software rendering and direct Rust control
   are not like-for-like with the CDP baseline; summed RSS is not private/PSS;
-  retention, soak and marginal target cost are open. The 800 locked packages
+  comparative soak and concurrent-target cost are open. The 800 locked packages
   and about 1.5 GiB cold build state remain integration-cost facts, not RSS.
   Public `show`/`hide` still does not prove live rendering-context detach,
   profiles are not MiniCon Surf profile objects, and Servo devtools must not be
   called CDP.
+- [~] Servo W3 now exercises the actual public close lifecycle in one engine
+  instance: `WebViewInner::drop` sends `CloseWebView`, removes the paint
+  webview, and the host keeps spinning the event loop across eight sequential
+  build/semantic-observe/drop cycles. Seven runs measured median complete-tree
+  RSS of 44,056,576 bytes empty, 86,638,592 with the first target, 85,983,232
+  after its close, 97,730,560 with the eighth target, and 95,174,656 after all
+  eight closes. The final state retained 51,101,696 bytes above empty. This is
+  a material route risk, not a leak claim: caches, allocator retention and
+  reclaimable engine state are not separated. Servo remains `keep`, conditional
+  on internal memory-report attribution and effective pressure recovery; W3
+  does not pass G1 and direct Rust callbacks still do not pass G2/D4.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

@@ -22,7 +22,7 @@ for command in cargo python3 shasum; do
 done
 
 cargo build --release --locked --manifest-path "$lab_dir/Cargo.toml" \
-    --target-dir "$servo_target" >/dev/null
+    --bin servo-w1-runtime --target-dir "$servo_target" >/dev/null
 cargo build --release --locked \
     --manifest-path "$repo_dir/labs/court/process-tree-sampler/Cargo.toml" \
     --target-dir "$sampler_target" >/dev/null
