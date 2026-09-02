@@ -124,7 +124,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; 5.8 MB warm-up + 39 KB/cycle, concurrency narrowed to one target, no memory reporter
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 87.5 MB vs Chrome 1,232 MB · 8 concurrent 137 MB vs 2,207 MB; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
-│   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
+│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM slice: 2.5 MB one target, 3.1 MB eight targets, actions typed unsupported (21/27)
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
@@ -247,7 +247,7 @@ reject`; none is default-eligible because no route has passed G1.
 | Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, 5.8 MB warm-up plus 39 KB per cycle (Servo 791 KB, Chrome 799 KB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference and measurement target; **narrowed** to one concurrent target |
 | Chrome 152 (compatibility/system baseline) | full Web compatibility; 8 concurrent targets; qualified CDP | 803 MB empty, 1,232 MB one target, 115.3 MB warm-up plus 799 KB per cycle, 2,206.9 MB at eight targets across nine processes | not a candidate engine; digest-identified install rather than pinned artifact | **baseline only**; labelled compatibility reference, cannot set the memory claim |
 | Synthetic control host (engine-neutral Rust) | G0 vocabulary, G2 mechanism, G4 profile isolation, surface mechanics; capacity/allocator courts | not HTML; no rendering, no real cookie jar | G3 native surface; G1 has no browser baseline | **keep** as the court and contract reference, not a product crate |
-| Native bounded route (own HTML/DOM/layout/JS slices) | none yet | none measured | not started; must reuse the proven control boundary and the same courts | **open** |
+| Native bounded route, DOM slice (html5ever, no layout/script/network) | 2.2 MB empty, 2.5 MB one target, 3.1 MB eight concurrent targets, 0.6 MB retained after eight closes; static semantic snapshot identical to the engines (21/27 on the shared journey) | none beyond the parser | no script realm, events, layout, network or storage: click, wait-for-mutation, W2 and W7 actions fail by design | **keep** as the route floor; next slice adds a bounded script realm and event dispatch, measured by the same journey and court |
 
 G6 stays closed: no route is independently green on both G1 and G2/A3.
 
@@ -510,6 +510,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   [M2]'s "navigation soak" lifecycle measure therefore has a comparable
   number per route; G1 stays open because the measure is summed RSS on one
   fixture and no route is both low-slope and multi-target.
+- [~] The native bounded route now has its first measured slice. `labs/native-dom`
+  serves control `0.0.1` from an html5ever-parsed document with no layout,
+  script realm or network, using the same argument shape as `servo-control`.
+  The shared journey passes 21 of 27: every static check (revision-0 snapshot
+  of heading, label, textbox with value, button and link; references; bounds;
+  typed refusals; lifecycle) matches the engine hosts, and the six failures
+  are the slice's declared boundary (click `unsupported_capability`, waits for
+  revision 1 `deadline_exceeded`, no mutation so no `stale_revision`, W2 shows
+  `Before script`). On the eight-cycle retention court beside the three
+  engines it measured 2,195,456 bytes empty, 2,539,520 with one target,
+  2,785,280 after eight closes and 3,063,808 with eight concurrent targets.
+  This is the route's floor, not a browser; the next slice must add a bounded
+  script realm and event dispatch and pass only if the six failing checks turn
+  green while the court row stays materially below Servo's.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
