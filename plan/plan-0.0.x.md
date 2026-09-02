@@ -93,6 +93,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── open · list · inspect · act · wait · screenshot · show · hide · memory
 │   ├── waits observe conditions; callers do not guess with sleeps
 │   ├── [x] synthetic stdio/CDP host shares one target identity and revision
+│   ├── [~] Servo control host: HTML target · semantic snapshot · revision-scoped click · wait; native stdio only
 │   └── local authority and authentication are explicit before remote exposure
 ├── [D4] CDP compatibility adapter
 │   ├── ↳ [A3] maps onto the same profile/session/target authority
@@ -121,7 +122,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver under its CGL "software" context; no CPU-only path in the pinned release
+│   ├── [~] Servo 0.5.0: W1/W3/W7-native; narrowed to bounded sessions — ~0.9 MB/cycle growth and ~290 MB close spike owned by Apple GL-on-Metal driver under its CGL "software" context; no CPU-only path in the pinned release
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -189,7 +190,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 rendered<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · Agent edge open"]
+        SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 native control 0.0.1<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · CDP edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -425,6 +426,24 @@ flowchart LR
   256 KB per cycle, lifetime peak within 2× live, `apple-gl-metal` absent from
   per-cycle growth in all seven runs). [H5] inherits the same constraint: any
   headed surface on macOS must budget the driver's per-context pipeline cache.
+- [~] The first HTML-backed host of control `0.0.1` now exists in the Servo
+  lab. `servo-control` serves bounded NDJSON on stdio from one long-lived
+  engine and offers ephemeral profiles, one session, hermetic fixture targets,
+  semantic snapshots, revision-scoped click actions, `revision_at_least` waits
+  and a memory report; other reserved operations are typed
+  `unsupported_operation`. Against the new W7 fixture
+  `semantic-interactive.html`, the checked journey passes 25 of 25 checks:
+  revision 0 snapshot (heading, label, textbox with value, button, link),
+  click through a compound reference, wait observing revision ≥ 1 without a
+  sleep, unmet wait as `deadline_exceeded`, reused reference as
+  `stale_revision` with both revisions in details, post-click snapshot showing
+  the mutated button and new status text, `max_nodes` truncation and typed
+  refusals. Target open took 205.754 ms; every other operation under 13 ms.
+  This restores [N0] symmetry for the Servo route: it now carries Agent-side
+  evidence under the same vocabulary as the synthetic host, so a G5 verdict
+  can weigh both gates. It does not pass G2/D4: no CDP edge shares this
+  target, navigation/frames are uncovered, click and `revision_at_least` are
+  the only kinds, and profiles are not engine cookie jars.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

@@ -2,12 +2,12 @@
 
 Status: `exploring`
 Decision: `narrow` to a bounded-session Rust-engine candidate. W1 and
-same-instance W3 software-rendered runtime are observed, but the W3
-attribution-closure court measures linear per-cycle accumulation of live
-system-heap bytes that no allocator pressure action recovers, plus a roughly
-290 MB graphics-owned footprint spike at every WebView close. Comparative
-memory, native Agent control, CDP, surface-detachment, and profile claims
-remain open.
+same-instance W3 runtime are observed and the native half of W7 passes
+through a control `0.0.1` host, but the W3 attribution-closure court measures
+linear per-cycle accumulation owned by Apple's GL-on-Metal driver that no
+allocator pressure action recovers, plus a roughly 290 MB graphics-owned
+footprint spike at every WebView close. Comparative memory, CDP,
+surface-detachment, and profile claims remain open.
 
 ## Hypothesis
 
@@ -293,14 +293,45 @@ history, downloads, permissions, copy-on-write, or a profile-to-target mapping.
 
 ### Agent control and CDP
 
-The runtime directly exercises JavaScript evaluation, screenshot and view
-lifecycle callbacks, strengthening the case that an Agent-native adapter is
-technically possible. These callbacks are not a native CLI, semantic snapshot,
-or stable node contract. The checked crate has Servo's own devtools server, but
-this lab found no official claim that it implements Chrome DevTools Protocol.
-Servo devtools must not be described as CDP. Stable semantic node references, condition
-waits, structured snapshots, network lifecycle interception, CDP discovery,
-and one-target CLI/CDP interoperability remain unproven.
+The `servo-control` executable is the first HTML-backed host of the control
+`0.0.1` vocabulary. It serves bounded NDJSON on stdio from one long-lived Servo
+instance and offers ephemeral profiles, one session, hermetic court-fixture
+targets, semantic snapshots, revision-scoped click actions, `revision_at_least`
+waits and a memory report; every other reserved operation returns a typed
+`unsupported_operation`. Revision is an in-page `MutationObserver` installed
+after `LoadStatus::Complete`; snapshots bind element handles to `node_<n>`
+references at the snapshot revision, and an action re-checks the live
+revision before dispatching a DOM `click()`.
+
+```sh
+cargo build --release --locked --manifest-path labs/servo/Cargo.toml \
+  --bin servo-control --target-dir labs/servo/target
+python3 labs/servo/control-journey.py \
+  --binary labs/servo/target/release/servo-control \
+  --receipt labs/servo/evidence/servo-control-0.0.1-journey.json
+```
+
+The journey (`servo-control-0.0.1-journey` receipt) validates every request
+and response with `protocol/check_contract.py` and passes 25 of 25 checks
+against `semantic-interactive.html`: revision 0 snapshot of heading, label,
+textbox (with value), button and link; click through the button's reference;
+`target.wait` observing revision ≥ 1 without a caller sleep; an unmet wait
+returning `deadline_exceeded`; the reused revision-0 reference rejected as
+`stale_revision` with both revisions in `details`; the post-click snapshot
+showing the `Clicked` button and the `Continued` status text; `max_nodes`
+truncation; typed refusals for persistent profiles, a second session, a
+heading click, `target.screenshot`, `memory.trim` and an unknown operation.
+Target open took 205.754 ms and every other operation under 13 ms in the
+recorded transcript.
+
+This closes the native half of W7 for Servo and gives the route its first
+[A3] evidence: an HTML target has one identity and revision under the same
+vocabulary the synthetic host implements. It does not pass G2 or D4: no CDP
+edge shares this target, navigation and frames are not covered, click and
+`revision_at_least` are the only action and condition kinds, and profiles are
+not engine cookie jars. The checked crate has Servo's own devtools server, but
+this lab found no official claim that it implements Chrome DevTools Protocol;
+Servo devtools must not be described as CDP.
 
 ## Exact limitations and next experiment
 

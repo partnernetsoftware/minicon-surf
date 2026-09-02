@@ -17,7 +17,10 @@ does not force unsupported capabilities to look alike.
 | W7 | CLI and CDP control one target | common target identity and protocol mapping |
 
 W1 is [`fixtures/semantic-static.html`](fixtures/semantic-static.html). W2 is
-[`fixtures/semantic-scripted.html`](fixtures/semantic-scripted.html). A runner
+[`fixtures/semantic-scripted.html`](fixtures/semantic-scripted.html). W7's
+native half uses [`fixtures/semantic-interactive.html`](fixtures/semantic-interactive.html),
+whose button click mutates the document so a revision advance is observable
+without a sleep. A runner
 may encode the exact bytes as a `data:` URL to remove server and network cost;
 its receipt must record that transport.
 
