@@ -136,10 +136,14 @@ On the shared eight-cycle court the tree measured 1,851,392 bytes empty,
 31,719,424 with one target (2,048,000 host plus 29,671,424 engine),
 2,572,288 after eight closes (720,896 retained, all host) and 239,878,144
 with eight concurrent targets (2,785,280 host plus 237,092,864 engines).
-The combination's memory is therefore the engines' alone: one target costs
-about 3.9 MB more than the single Lightpanda server and eight targets cost
-about 1.75× Servo's single process, with zero engine retention and a
-process boundary per target.
+By summed RSS the combination looked like 1.75× Servo at eight targets, but
+that measure counts the 82 MB Lightpanda executable once per process. By the
+kernel's physical footprint (the court now records both) the eight per-target
+engines cost 76,043,448 bytes against Servo's 179,309,736 and Chrome's
+867,831,560, one target costs 10,437,568 against Servo's 37,749,864, and
+638,976 bytes remain after eight closes. The combination is therefore the
+lowest-footprint multi-target route measured, with zero engine retention and
+a process boundary per target.
 
 ## Per-cycle retention slope
 

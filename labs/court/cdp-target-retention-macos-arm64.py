@@ -7,6 +7,8 @@ stage order, ready condition, sampler and receipt vocabulary.
 """
 
 import argparse
+import ctypes
+import ctypes.util
 import hashlib
 import importlib.util
 import json
@@ -34,6 +36,36 @@ def load_cdp_support():
 
 
 CDP_SUPPORT = load_cdp_support()
+
+
+class RusageInfoV4(ctypes.Structure):
+    _fields_ = [("ri_uuid", ctypes.c_uint8 * 16)] + [
+        (name, ctypes.c_uint64) for name in (
+            "ri_user_time", "ri_system_time", "ri_pkg_idle_wkups", "ri_interrupt_wkups", "ri_pageins",
+            "ri_wired_size", "ri_resident_size", "ri_phys_footprint", "ri_proc_start_abstime",
+            "ri_proc_exit_abstime", "ri_child_user_time", "ri_child_system_time", "ri_child_pkg_idle_wkups",
+            "ri_child_interrupt_wkups", "ri_child_pageins", "ri_child_elapsed_abstime", "ri_diskio_bytesread",
+            "ri_diskio_byteswritten", "ri_cpu_time_qos_default", "ri_cpu_time_qos_maintenance",
+            "ri_cpu_time_qos_background", "ri_cpu_time_qos_utility", "ri_cpu_time_qos_legacy",
+            "ri_cpu_time_qos_user_initiated", "ri_cpu_time_qos_user_interactive", "ri_billed_system_time",
+            "ri_serviced_system_time", "ri_logical_writes", "ri_lifetime_max_phys_footprint", "ri_instructions",
+            "ri_cycles", "ri_billed_energy", "ri_serviced_energy", "ri_interval_max_phys_footprint",
+            "ri_runnable_time",
+        )
+    ]
+
+
+_LIBPROC = ctypes.CDLL(ctypes.util.find_library("proc"))
+_LIBPROC.proc_pid_rusage.argtypes = [ctypes.c_int, ctypes.c_int, ctypes.c_void_p]
+_LIBPROC.proc_pid_rusage.restype = ctypes.c_int
+
+
+def physical_footprint(pid):
+    """Return the kernel's phys_footprint for one process, or 0 if it vanished."""
+    info = RusageInfoV4()
+    if _LIBPROC.proc_pid_rusage(pid, 4, ctypes.byref(info)) != 0:
+        return 0
+    return int(info.ri_phys_footprint)
 
 
 def process_tree(root):
@@ -64,6 +96,7 @@ def sample_stage(process, samples, settle_ms):
     time.sleep(settle_ms / 1000.0)
     rss_values = []
     child_values = []
+    footprint_values = []
     process_counts = []
     for _ in range(samples):
         tree = process_tree(process.pid)
@@ -71,11 +104,13 @@ def sample_stage(process, samples, settle_ms):
             raise RuntimeError("browser process tree disappeared during measurement")
         rss_values.append(sum(rss_kib * 1024 for _, rss_kib in tree))
         child_values.append(sum(rss_kib * 1024 for pid, rss_kib in tree if pid != process.pid))
+        footprint_values.append(sum(physical_footprint(pid) for pid, _ in tree))
         process_counts.append(len(tree))
         time.sleep(0.02)
     return {
         "peak_tree_resident_bytes": max(rss_values),
         "peak_descendants_resident_bytes": max(child_values),
+        "peak_tree_physical_footprint_bytes": max(footprint_values),
         "peak_process_count": max(process_counts),
     }
 
@@ -279,7 +314,8 @@ def aggregate(run_results):
     for stage in STAGES:
         stage_runs = [run[stage] for run in runs]
         stages[stage] = {}
-        for key in ("peak_tree_resident_bytes", "peak_descendants_resident_bytes", "peak_process_count"):
+        for key in ("peak_tree_resident_bytes", "peak_descendants_resident_bytes",
+                    "peak_tree_physical_footprint_bytes", "peak_process_count"):
             values = [row[key] for row in stage_runs]
             stages[stage][key] = values
             stages[stage][f"median_{key}"] = int(statistics.median(values))
@@ -301,6 +337,12 @@ def aggregate(run_results):
     ]
     capacity_rss = [item["state"]["peak_tree_resident_bytes"] for item in capacities]
     capacity_descendants = [item["state"]["peak_descendants_resident_bytes"] for item in capacities]
+    capacity_footprint = [item["state"]["peak_tree_physical_footprint_bytes"] for item in capacities]
+    retained_footprint = [
+        run["post_all_closes"]["peak_tree_physical_footprint_bytes"]
+        - run["empty"]["peak_tree_physical_footprint_bytes"]
+        for run in runs
+    ]
     observed = [item["observed_concurrent_targets_at_probe_stop"] for item in capacities]
     reached_limit = [item["probe_reached_limit"] for item in capacities]
     errors = [item["next_create_error"] for item in capacities]
@@ -312,6 +354,8 @@ def aggregate(run_results):
         "median_last_target_minus_post_one_close_resident_bytes": int(statistics.median(reused_delta)),
         "post_all_closes_minus_empty_resident_bytes": retained,
         "median_post_all_closes_minus_empty_resident_bytes": int(statistics.median(retained)),
+        "post_all_closes_minus_empty_physical_footprint_bytes": retained_footprint,
+        "median_post_all_closes_minus_empty_physical_footprint_bytes": int(statistics.median(retained_footprint)),
         "concurrent_capacity_probe": {
             "observed_concurrent_targets_at_probe_stop": observed,
             "probe_reached_limit": reached_limit,
@@ -320,6 +364,8 @@ def aggregate(run_results):
             "median_peak_tree_resident_bytes": int(statistics.median(capacity_rss)),
             "peak_descendants_resident_bytes": capacity_descendants,
             "median_peak_descendants_resident_bytes": int(statistics.median(capacity_descendants)),
+            "peak_tree_physical_footprint_bytes": capacity_footprint,
+            "median_peak_tree_physical_footprint_bytes": int(statistics.median(capacity_footprint)),
         },
     }
 
@@ -469,7 +515,7 @@ def main():
             "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag; Servo uses an ephemeral control profile and a fresh temporary config directory per repetition",
         },
         "measurement": {
-            "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage; peak_descendants_resident_bytes excludes the root so a court host's own footprint can be separated from engine processes",
+            "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage; peak_descendants_resident_bytes excludes the root so a court host's own footprint can be separated from engine processes; peak_tree_physical_footprint_bytes sums proc_pid_rusage ri_phys_footprint over the same tree, which excludes shared file-backed pages and is the kernel's memory-pressure accounting",
             "candidates": candidate_reports,
         },
         "limitations": [

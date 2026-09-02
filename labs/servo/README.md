@@ -336,9 +336,15 @@ growth measured above. A 128-cycle soak on the same court retained
 130,613,248 bytes with 178,192,384 live at the 128th target: the growth is
 linear to 128 cycles (678,621 bytes per cycle refit over 1/8/32/128) and shows
 no plateau, so a long Agent session on the pinned release pays the driver's
-per-context cost indefinitely. This is Servo's first same-machine named baseline; it
-is not a G1 pass because the court is one fixture, summed RSS, a native rather
-than CDP transport, and a CGL-backed context.
+per-context cost indefinitely. By physical footprint (3 s settle) Servo is 20,497,176 bytes empty,
+37,749,864 with one target, 61,687,464 after eight closes and 179,309,736
+with eight concurrent targets, against Chrome's 288,333,456, 597,568,144,
+499,671,080 and 867,831,560 and per-target Lightpanda's 1,065,272,
+10,437,568, 1,720,632 and 76,043,448. Servo's footprint exceeds its RSS at
+eight targets because the GL driver's graphics memory is footprint but not
+RSS. This is Servo's first same-machine named baseline; it is not a G1 pass
+because the court is one fixture, a native rather than CDP transport, and a
+CGL-backed context.
 
 With `--cdp-port PORT --ready-file PATH` the same host also opens a
 loopback-only CDP 1.3 edge (`src/cdp_edge.rs`). The edge owns no engine

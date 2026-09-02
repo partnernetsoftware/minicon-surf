@@ -158,6 +158,37 @@ cost. Eight per-target Lightpanda processes sit at about 1.75× Servo's single
 process and one ninth of Chrome, with 720,896 bytes retained after eight
 closes.
 
+### Physical footprint corrects the summed-RSS picture
+
+The court now also sums the kernel's `phys_footprint` over the tree
+(`proc_pid_rusage`), which excludes shared file-backed pages and is the
+accounting macOS uses for memory pressure. The five-candidate footprint
+receipt (`macos-arm64-target-retention-footprint-native-dom-0.0.0-lightpanda-0.4.0-servo-0.5.0-chrome-152.0.7977.75`,
+500 ms settle) and a Servo-only rerun with a 3 s settle
+(`macos-arm64-target-retention-footprint-servo-0.5.0-settle-3000`, needed
+because Servo's close-time graphics spike lasts about a second) give, in
+bytes:
+
+| candidate | empty RSS / footprint | one target RSS / footprint | eight concurrent RSS / footprint | retained after eight closes RSS / footprint |
+|---|---|---|---|---|
+| native DOM slice | 2,195,456 / 1,327,416 | 2,539,520 / 1,376,568 | 3,014,656 / 1,851,704 | 573,440 / 278,528 |
+| Lightpanda per-target (Rust host) | 1,867,776 / 1,065,272 | 31,653,888 / 10,437,568 | 239,943,680 / 76,043,448 | 688,128 / 638,976 |
+| Lightpanda single server | 22,691,840 / 8,405,544 | 27,918,336 / 9,110,104 | one target only | 6,782,976 / 1,523,760 |
+| Servo 0.5.0 (3 s settle) | 44,761,088 / 20,497,176 | 87,719,936 / 37,749,864 | 136,560,640 / 179,309,736 | 49,807,360 / 41,206,696 |
+| Chrome 152.0.7977.75 | 803,487,744 / 288,333,456 | 1,232,044,032 / 597,568,144 | 2,207,203,328 / 867,831,560 | 129,974,272 / 211,255,776 |
+
+Two earlier RSS-based readings reverse under footprint. Summed RSS counted
+Lightpanda's 82 MB executable once per process, so eight per-target engines
+looked like 237 MB; their footprint is 76 MB, about 2.4× below Servo's single
+process rather than 1.75× above it. Servo's footprint at eight targets (179 MB
+settled, 397 MB within 500 ms of the opens) exceeds its RSS because the GL
+driver's graphics memory is footprint but not RSS. Chrome's nine processes
+share pages heavily, so its footprint is roughly a third of its summed RSS.
+The ordering at one target by footprint is native DOM 1.4 MB, Lightpanda
+9.1 to 10.4 MB, Servo 37.7 MB, Chrome 597.6 MB; at eight targets it is 1.9,
+76.0, 179.3 and 867.8 MB. Footprint is the measure the memory claim must be
+stated in; summed RSS remains recorded for continuity.
+
 The per-cycle slope receipt
 (`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
 fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles
