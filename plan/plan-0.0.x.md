@@ -124,7 +124,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 37.7 MB footprint vs Chrome 597.6 MB · 8 concurrent 179 MB vs 868 MB (RSS 87.5/1,232 · 137/2,207); narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
-│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM slice 21/27 at 1.4 MB one target; DOM + bounded QuickJS realm slice 27/27 at 2.5 MB one target, 4.4 MB eight targets (footprint)
+│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM slice 21/27; + bounded QuickJS realm 27/27; + bounded http fetch and representative page 35/35 — live footprint below Lightpanda at every stage, post-close equals live (retention risk, G1 open)
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
@@ -192,7 +192,7 @@ flowchart LR
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3/W7 · lowest RSS · 39 KB/cycle<br/>one target per server → process-per-target combine: 8 targets 237 MB engines"]
         SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 stdio + CDP on one target<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · D4 clients open"]
-        NATIVE["bounded native route<br/>DOM + bounded QuickJS: 2.5 MB one target · 4.4 MB eight<br/>27/27 journey · network/layout/storage open"]
+        NATIVE["bounded native route<br/>DOM + QuickJS realm + bounded http fetch<br/>2.4 MB one target · 4.7 MB eight (footprint)<br/>post-close = live: retention risk · layout/storage/https open"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
@@ -247,7 +247,7 @@ reject`; none is default-eligible because no route has passed G1.
 | Lightpanda 0.4.0 (Zig engine, CDP server) | lowest memory of any route: 22.7 MB empty, 27.9 MB one target, retention bounded at ~7 MB through 128 cycles (Servo linear at ~0.7 MB per cycle to 130.6 MB); W2 CDP journey; W7-native through a control host (27/27); target open 2.0 ms | one concurrent target only (`TargetAlreadyLoaded`); no in-process memory reporter; not Rust, not embeddable as the product engine | native CLI, dynamic surface (G3), profiles (P6), Linux/Windows cells | **keep** as low-memory reference; **combine** candidate: one engine process per target under a Rust control host gives eight targets at 76.0 MB physical footprint (240 MB summed RSS, which counts the executable eight times), 0.6 MB retained after eight closes, and per-target termination; 2.4× below Servo and 11× below Chrome at eight targets |
 | Chrome 152 (compatibility/system baseline) | full Web compatibility; 8 concurrent targets; qualified CDP | 288 MB empty and 597.6 MB one target by footprint (803 MB and 1,232 MB summed RSS), 115.3 MB warm-up plus 799 KB per cycle of RSS, 2,206.9 MB at eight targets across nine processes | not a candidate engine; digest-identified install rather than pinned artifact | **baseline only**; labelled compatibility reference, cannot set the memory claim |
 | Synthetic control host (engine-neutral Rust) | G0 vocabulary, G2 mechanism, G4 profile isolation, surface mechanics; capacity/allocator courts | not HTML; no rendering, no real cookie jar | G3 native surface; G1 has no browser baseline | **keep** as the court and contract reference, not a product crate |
-| Native bounded route: html5ever DOM plus bounded QuickJS realm (16 MiB cap, DOM shim) | passes the full shared journey 27/27 (click, MutationObserver revision, stale_revision, wait, W2 script); 1.3 MB empty, 2.5 MB one target and 4.4 MB eight concurrent targets by footprint (DOM-only slice: 1.4 MB one target, 21/27) | 1.8 MB retained after eight closes; realm ~1.1 MB per target | no layout, network, storage, images, fonts or real timers; scripts run after parse; DOM shim covers only what the fixtures and instrumentation use, not Web compatibility | **keep** as the route's measured base; next slice adds bounded network fetch and a representative page, measured by the same journey and court |
+| Native bounded route: html5ever DOM, bounded QuickJS realm, bounded `http` fetch with fail-closed address policy | shared journey 27/27; network court 35/35 on a hermetic representative page (fetch-driven results, click-triggered fetch, nineteen typed policy negatives, concurrency and budget caps, cross-origin script refused); footprint beside Lightpanda single server: empty 1.3 vs 8.4 MB, one target 2.4 vs 9.1 MB, eight targets 4.7 MB vs one-target limit | post-close footprint equals live at every stage; retained above empty 1.9 MB on the fixture court (Lightpanda 1.5 MB) and 4.6 MB after eight representative pages (Lightpanda 1.0 MB after one); logical owners reach zero but nothing is returned to the OS | no layout, https, cookies, storage, images, fonts or real timers; scripts run after parse; DOM shim covers the fixtures and instrumentation only, not Web compatibility | **keep** as the route's measured base with a named retention risk; next: allocator/realm retention repair measured by the same courts, then a bounded profile store, then https |
 
 G6 stays closed: no route is independently green on both G1 and G2/A3.
 
@@ -606,6 +606,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   claim (no layout, network, storage or timers; the shim covers the fixtures
   and instrumentation only); the next slice adds bounded network fetch and a
   representative page under the same journey and court.
+- [~] The native route's third slice adds a bounded `http` fetch and a
+  hermetic representative page. The client is `http` only, fails closed on
+  every IANA special-purpose IPv4 range and on every IPv6 address outside
+  2000::/3 or inside its special blocks, refuses `localhost` names and
+  embedded credentials, follows at most three redirects with the policy
+  re-applied per hop, caps headers at 16 KiB, bodies at 1 MiB, fetches at
+  3 s, queued `fetch()` calls at four per turn and 32 per target, external
+  scripts at eight same-origin sources, refuses informational statuses,
+  `Transfer-Encoding` and conflicting `Content-Length`, and connects only
+  to the addresses it authorized. Only an exact `--allow-origin` reaches
+  a non-public address; the court allowlists its own loopback server and
+  proves a host without it refuses loopback. The network court passes 35 of
+  35: the representative page (results filled by `fetch` from an external
+  same-origin script, a click-triggered fetch observed through a revision
+  wait), nineteen typed negatives, the concurrency and budget caps, a
+  refused cross-origin script, and logical owners at zero after closes.
+  Footprint is reported stage by stage beside Lightpanda's single server:
+  on the fixture court 1,343,800 empty, 2,408,760 one target, 3,211,576
+  after eight closes and 4,718,904 with eight concurrent targets against
+  8,356,392, 9,077,336, 9,912,920 and a one-target limit; on the
+  representative page 2,720,056 live and 5,964,232 with eight pages against
+  9,486,936 for one. Lower at every live stage, but post-close equals live
+  everywhere and retained-above-empty exceeds Lightpanda's (1,867,776
+  against 1,540,144 on the court; 4,620,432 after eight pages against
+  1,015,856 after one), so the lifecycle is a QuickJS, parsed-tree,
+  network-buffer and allocator retention risk. G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -654,7 +680,7 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    every route except Chrome runs the same control `0.0.1` journey and the
    same retention court.
 7. [~] Next, in order: a Rust control host for the process-per-target
-   combine (done: `labs/lightpanda/host`, 1.9 MB empty); the native route's script-realm slice (done: 27/27 at 2.5 MB one target)
+   combine (done: `labs/lightpanda/host`, 1.9 MB empty); the native route's script-realm slice (done: 27/27 at 2.5 MB one target) and its bounded-network slice with a representative page (done: 35/35; post-close retention unrecovered)
    measured by the unchanged journey and court; D4 qualification of a named
    external CDP client against the shared edge; and a Servo rerun only when
    a driver-free rendering context exists. G1 closes only when one route is
