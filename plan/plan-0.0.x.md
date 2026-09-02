@@ -603,9 +603,9 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   after eight closes and 4,440,376 with eight concurrent targets: about four
   times below Lightpanda's single server and fifteen times below Servo at
   one target, with the full action vocabulary. It is not a Web-compatibility
-  claim (no layout, network, storage or timers; the shim covers the fixtures
-  and instrumentation only); the next slice adds bounded network fetch and a
-  representative page under the same journey and court.
+  claim (no layout, network, storage or timers in this slice; the shim covers
+  the fixtures and instrumentation only). The following measured slice adds
+  bounded network fetch; it does not retroactively broaden this result.
 - [~] The native route's third slice adds a bounded `http` fetch and a
   hermetic representative page. The client is `http` only, fails closed on
   every IANA special-purpose IPv4 range and on every IPv6 address outside
@@ -679,12 +679,14 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    (baseline), synthetic (keep) and the native DOM slice (keep as floor);
    every route except Chrome runs the same control `0.0.1` journey and the
    same retention court.
-7. [~] Next, in order: a Rust control host for the process-per-target
-   combine (done: `labs/lightpanda/host`, 1.9 MB empty); the native route's script-realm slice (done: 27/27 at 2.5 MB one target) and its bounded-network slice with a representative page (done: 35/35; post-close retention unrecovered)
-   measured by the unchanged journey and court; D4 qualification of a named
-   external CDP client against the shared edge; and a Servo rerun only when
-   a driver-free rendering context exists. G1 closes only when one route is
-   both materially below the baselines and low-slope on the shared court.
+7. [~] Continue the earned routes in order. The Rust process-per-target
+   Lightpanda host is done at 1.9 MB empty. The native script-realm slice is
+   done at 27/27 and 2.5 MB for one target; its bounded-network slice is done
+   at 35/35 but exposes unrecovered post-close retention. Repair and remeasure
+   that retention next, then continue D4 frame/realm mapping and bounded
+   engine-backed profile work. Rerun Servo only when a driver-free rendering
+   context exists. G1 closes only when one route is both materially below the
+   baselines and low-slope on the shared court.
 
 The first code milestone is therefore not “render a website.” It is “one
 bounded target has one identity and state while CLI, CDP, and an optional
