@@ -1,3 +1,5 @@
+#![allow(clippy::result_large_err)]
+
 //! Servo-backed host for the MiniCon Surf control 0.0.1 vocabulary.
 //!
 //! One long-lived Servo instance answers bounded NDJSON requests on stdio:
@@ -39,12 +41,29 @@ const MAX_SNAPSHOT_NODES: u64 = 128;
 const VIEWPORT_WIDTH: u32 = 800;
 const VIEWPORT_HEIGHT: u32 = 600;
 const OPERATIONS: &[&str] = &[
-    "profile.create", "profile.list", "profile.inspect", "profile.delete",
-    "profile.storage.put", "profile.storage.get", "profile.policy.set",
-    "session.open", "session.list", "session.inspect", "session.close",
-    "target.open", "target.list", "target.inspect", "target.close",
-    "target.snapshot", "target.act", "target.wait", "target.screenshot",
-    "surface.show", "surface.hide", "memory.report", "memory.trim",
+    "profile.create",
+    "profile.list",
+    "profile.inspect",
+    "profile.delete",
+    "profile.storage.put",
+    "profile.storage.get",
+    "profile.policy.set",
+    "session.open",
+    "session.list",
+    "session.inspect",
+    "session.close",
+    "target.open",
+    "target.list",
+    "target.inspect",
+    "target.close",
+    "target.snapshot",
+    "target.act",
+    "target.wait",
+    "target.screenshot",
+    "surface.show",
+    "surface.hide",
+    "memory.report",
+    "memory.trim",
 ];
 
 const INSTALL_JS: &str = r#"(() => {
@@ -135,7 +154,13 @@ impl ControlError {
     fn new(code: &'static str, message: impl Into<String>, retryable: bool) -> Self {
         let mut message = message.into();
         message.truncate(512);
-        ControlError { code, message, retryable, scope: None, details: None }
+        ControlError {
+            code,
+            message,
+            retryable,
+            scope: None,
+            details: None,
+        }
     }
 
     fn scoped(mut self, kind: &'static str, id: &str) -> Self {
@@ -197,19 +222,38 @@ fn valid_id(prefix: &str, value: &str) -> bool {
 }
 
 fn parse_request(bytes: &[u8]) -> Result<Request, (String, ControlError)> {
-    let value: Value = serde_json::from_slice(bytes)
-        .map_err(|_| ("req_invalid".to_owned(), invalid("request is not valid JSON")))?;
-    let object = value
-        .as_object()
-        .ok_or_else(|| ("req_invalid".to_owned(), invalid("request is not an object")))?;
+    let value: Value = serde_json::from_slice(bytes).map_err(|_| {
+        (
+            "req_invalid".to_owned(),
+            invalid("request is not valid JSON"),
+        )
+    })?;
+    let object = value.as_object().ok_or_else(|| {
+        (
+            "req_invalid".to_owned(),
+            invalid("request is not an object"),
+        )
+    })?;
     let request_id = object
         .get("request_id")
         .and_then(Value::as_str)
         .filter(|id| valid_id("req_", id))
         .map(str::to_owned)
-        .ok_or_else(|| ("req_invalid".to_owned(), invalid("request_id is missing or malformed")))?;
+        .ok_or_else(|| {
+            (
+                "req_invalid".to_owned(),
+                invalid("request_id is missing or malformed"),
+            )
+        })?;
     let fail = |message: &str| (request_id.clone(), invalid(message));
-    let expected = ["protocol", "version", "request_id", "deadline_ms", "operation", "arguments"];
+    let expected = [
+        "protocol",
+        "version",
+        "request_id",
+        "deadline_ms",
+        "operation",
+        "arguments",
+    ];
     if object.len() != expected.len() || !expected.iter().all(|key| object.contains_key(*key)) {
         return Err(fail("request fields differ from the envelope"));
     }
@@ -235,11 +279,21 @@ fn parse_request(bytes: &[u8]) -> Result<Request, (String, ControlError)> {
         .filter(|a| a.as_object().is_some_and(|o| o.len() <= 64))
         .cloned()
         .ok_or_else(|| fail("arguments must be a bounded object"))?;
-    Ok(Request { request_id, deadline: Duration::from_millis(deadline_ms), operation, arguments })
+    Ok(Request {
+        request_id,
+        deadline: Duration::from_millis(deadline_ms),
+        operation,
+        arguments,
+    })
 }
 
-fn exact_object<'a>(value: &'a Value, keys: &[&str]) -> Result<&'a Map<String, Value>, ControlError> {
-    let object = value.as_object().ok_or_else(|| invalid("arguments must be an object"))?;
+fn exact_object<'a>(
+    value: &'a Value,
+    keys: &[&str],
+) -> Result<&'a Map<String, Value>, ControlError> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| invalid("arguments must be an object"))?;
     if object.len() != keys.len() || !keys.iter().all(|key| object.contains_key(*key)) {
         return Err(invalid(&format!("expected exactly the fields {keys:?}")));
     }
@@ -266,7 +320,12 @@ fn typed_field<'a>(
     Ok(value)
 }
 
-fn bounded_u64(object: &Map<String, Value>, key: &str, min: u64, max: u64) -> Result<u64, ControlError> {
+fn bounded_u64(
+    object: &Map<String, Value>,
+    key: &str,
+    min: u64,
+    max: u64,
+) -> Result<u64, ControlError> {
     object
         .get(key)
         .and_then(Value::as_u64)
@@ -276,14 +335,22 @@ fn bounded_u64(object: &Map<String, Value>, key: &str, min: u64, max: u64) -> Re
 
 fn envelope(request_id: &str, body: Result<Value, ControlError>) -> Vec<u8> {
     let response = match body {
-        Ok(result) => json!({"protocol":PROTOCOL,"version":VERSION,"request_id":request_id,"ok":true,"result":result}),
-        Err(error) => json!({"protocol":PROTOCOL,"version":VERSION,"request_id":request_id,"ok":false,"error":error.to_json()}),
+        Ok(result) => {
+            json!({"protocol":PROTOCOL,"version":VERSION,"request_id":request_id,"ok":true,"result":result})
+        }
+        Err(error) => {
+            json!({"protocol":PROTOCOL,"version":VERSION,"request_id":request_id,"ok":false,"error":error.to_json()})
+        }
     };
     let bytes = serde_json::to_vec(&response).expect("response serializes");
     if bytes.len() > MAX_RESPONSE_BYTES {
         return envelope(
             request_id,
-            Err(ControlError::new("internal", "response exceeds byte limit", false)),
+            Err(ControlError::new(
+                "internal",
+                "response exceeds byte limit",
+                false,
+            )),
         );
     }
     bytes
@@ -403,8 +470,13 @@ impl Host {
         self.servo.spin_event_loop();
     }
 
-    fn evaluate(&self, webview: &WebView, script: &str, deadline: Instant, target_id: &str)
-        -> Result<JSValue, ControlError> {
+    fn evaluate(
+        &self,
+        webview: &WebView,
+        script: &str,
+        deadline: Instant,
+        target_id: &str,
+    ) -> Result<JSValue, ControlError> {
         let slot = Rc::new(RefCell::new(None));
         let sink = slot.clone();
         webview.evaluate_javascript(script, move |result| {
@@ -420,34 +492,63 @@ impl Host {
                 });
             }
             if Instant::now() >= deadline {
-                return Err(ControlError::new("deadline_exceeded", "engine did not answer before deadline", true)
-                    .scoped("target", target_id));
+                return Err(ControlError::new(
+                    "deadline_exceeded",
+                    "engine did not answer before deadline",
+                    true,
+                )
+                .scoped("target", target_id));
             }
             std::thread::sleep(Duration::from_millis(1));
         }
     }
 
-    fn evaluate_json(&self, webview: &WebView, script: &str, deadline: Instant, target_id: &str)
-        -> Result<Value, ControlError> {
+    fn evaluate_json(
+        &self,
+        webview: &WebView,
+        script: &str,
+        deadline: Instant,
+        target_id: &str,
+    ) -> Result<Value, ControlError> {
         match self.evaluate(webview, script, deadline, target_id)? {
             JSValue::String(text) => serde_json::from_str(&text).map_err(|_| {
                 ControlError::new("internal", "engine returned malformed snapshot JSON", false)
                     .scoped("target", target_id)
             }),
-            other => Err(ControlError::new("internal", "engine returned a non-string value", false)
-                .scoped("target", target_id)
-                .details(json!({"value":format!("{other:?}").chars().take(128).collect::<String>()}))),
+            other => Err(ControlError::new(
+                "internal",
+                "engine returned a non-string value",
+                false,
+            )
+            .scoped("target", target_id)
+            .details(json!({"value":format!("{other:?}").chars().take(128).collect::<String>()}))),
         }
     }
 
-    fn revision(&self, webview: &WebView, deadline: Instant, target_id: &str) -> Result<u64, ControlError> {
+    fn revision(
+        &self,
+        webview: &WebView,
+        deadline: Instant,
+        target_id: &str,
+    ) -> Result<u64, ControlError> {
         match self.evaluate(webview, REVISION_JS, deadline, target_id)? {
-            JSValue::String(text) => text.parse::<i64>().ok().filter(|r| *r >= 0).map(|r| r as u64).ok_or_else(|| {
-                ControlError::new("internal", "target lost its revision instrumentation", false)
+            JSValue::String(text) => text
+                .parse::<i64>()
+                .ok()
+                .filter(|r| *r >= 0)
+                .map(|r| r as u64)
+                .ok_or_else(|| {
+                    ControlError::new(
+                        "internal",
+                        "target lost its revision instrumentation",
+                        false,
+                    )
                     .scoped("target", target_id)
-            }),
-            _ => Err(ControlError::new("internal", "revision query returned a non-string", false)
-                .scoped("target", target_id)),
+                }),
+            _ => Err(
+                ControlError::new("internal", "revision query returned a non-string", false)
+                    .scoped("target", target_id),
+            ),
         }
     }
 
@@ -460,12 +561,19 @@ impl Host {
         let a = &request.arguments;
         match request.operation.as_str() {
             "profile.create" => self.profile_create(a),
-            "profile.list" => Ok(json!({"kind":"profile_list","profiles":self.profiles.values().map(|p| json!({"profile":p.id,"name":p.name,"persistence":"ephemeral"})).collect::<Vec<_>>()})),
+            "profile.list" => Ok(
+                json!({"kind":"profile_list","profiles":self.profiles.values().map(|p| json!({"profile":p.id,"name":p.name,"persistence":"ephemeral"})).collect::<Vec<_>>()}),
+            ),
             "profile.inspect" => {
                 let object = exact_object(a, &["profile"])?;
                 let id = typed_field(object, "profile", "profile")?;
-                let profile = self.profiles.get(id).ok_or_else(|| not_found("profile", id))?;
-                Ok(json!({"kind":"profile","profile":profile.id,"name":profile.name,"persistence":"ephemeral","sessions":self.session.iter().filter(|s| s.profile_id == profile.id).count()}))
+                let profile = self
+                    .profiles
+                    .get(id)
+                    .ok_or_else(|| not_found("profile", id))?;
+                Ok(
+                    json!({"kind":"profile","profile":profile.id,"name":profile.name,"persistence":"ephemeral","sessions":self.session.iter().filter(|s| s.profile_id == profile.id).count()}),
+                )
             }
             "profile.delete" => {
                 let object = exact_object(a, &["profile"])?;
@@ -474,27 +582,39 @@ impl Host {
                     return Err(not_found("profile", id));
                 }
                 if self.session.as_ref().is_some_and(|s| s.profile_id == id) {
-                    return Err(ControlError::new("conflict", "profile has a live session", true).scoped("profile", id));
+                    return Err(
+                        ControlError::new("conflict", "profile has a live session", true)
+                            .scoped("profile", id),
+                    );
                 }
                 self.profiles.remove(id);
                 Ok(json!({"kind":"profile_deleted","profile":id,"persistence":"ephemeral"}))
             }
             "session.open" => self.session_open(a),
-            "session.list" => Ok(json!({"kind":"session_list","sessions":self.session.iter().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()})),
+            "session.list" => Ok(
+                json!({"kind":"session_list","sessions":self.session.iter().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()}),
+            ),
             "session.close" => self.session_close(a),
             "target.open" => self.target_open(a, deadline),
-            "target.list" => Ok(json!({"kind":"target_list","targets":self.targets.values().map(|t| json!({"target":t.id,"session":t.session_id,"fixture":t.fixture})).collect::<Vec<_>>()})),
+            "target.list" => Ok(
+                json!({"kind":"target_list","targets":self.targets.values().map(|t| json!({"target":t.id,"session":t.session_id,"fixture":t.fixture})).collect::<Vec<_>>()}),
+            ),
             "target.inspect" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?;
                 let target = self.target(id)?;
                 let revision = self.revision(&target.webview, deadline, id)?;
-                Ok(json!({"kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,"revision":revision,"load_complete":target.delegate.loaded.get(),"crashed":target.delegate.crashed.borrow().is_some()}))
+                Ok(
+                    json!({"kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,"revision":revision,"load_complete":target.delegate.loaded.get(),"crashed":target.delegate.crashed.borrow().is_some()}),
+                )
             }
             "target.close" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?;
-                let target = self.targets.remove(id).ok_or_else(|| not_found("target", id))?;
+                let target = self
+                    .targets
+                    .remove(id)
+                    .ok_or_else(|| not_found("target", id))?;
                 drop(target);
                 self.spin();
                 Ok(json!({"kind":"target_closed","target":id}))
@@ -508,15 +628,25 @@ impl Host {
     }
 
     fn profile_create(&mut self, arguments: &Value) -> Result<Value, ControlError> {
-        let object = arguments.as_object().ok_or_else(|| invalid("arguments must be an object"))?;
+        let object = arguments
+            .as_object()
+            .ok_or_else(|| invalid("arguments must be an object"))?;
         let allowed = ["persistence", "name"];
-        if !object.contains_key("persistence") || object.keys().any(|k| !allowed.contains(&k.as_str())) {
-            return Err(invalid("profile.create accepts persistence and an optional name"));
+        if !object.contains_key("persistence")
+            || object.keys().any(|k| !allowed.contains(&k.as_str()))
+        {
+            return Err(invalid(
+                "profile.create accepts persistence and an optional name",
+            ));
         }
         match string_field(object, "persistence")? {
             "ephemeral" => {}
             "persistent" => {
-                return Err(ControlError::new("unsupported_capability", "this Servo host offers ephemeral profiles only", false));
+                return Err(ControlError::new(
+                    "unsupported_capability",
+                    "this Servo host offers ephemeral profiles only",
+                    false,
+                ));
             }
             _ => return Err(invalid("persistence must be ephemeral or persistent")),
         }
@@ -524,22 +654,46 @@ impl Host {
             None => None,
             Some(_) => {
                 let name = string_field(object, "name")?;
-                if !name.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_') || name.len() > 64 {
+                if !name
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+                    || name.len() > 64
+                {
                     return Err(invalid("name must be a short safe identifier"));
                 }
-                if self.profiles.values().any(|p| p.name.as_deref() == Some(name)) {
-                    return Err(ControlError::new("conflict", "profile name already exists", false));
+                if self
+                    .profiles
+                    .values()
+                    .any(|p| p.name.as_deref() == Some(name))
+                {
+                    return Err(ControlError::new(
+                        "conflict",
+                        "profile name already exists",
+                        false,
+                    ));
                 }
                 Some(name.to_owned())
             }
         };
         if self.profiles.len() >= MAX_PROFILES {
-            return Err(ControlError::new("resource_limit", "profile capacity reached", true));
+            return Err(ControlError::new(
+                "resource_limit",
+                "profile capacity reached",
+                true,
+            ));
         }
         self.next_profile += 1;
         let id = format!("profile_{}", self.next_profile);
-        self.profiles.insert(id.clone(), Profile { id: id.clone(), name: name.clone() });
-        Ok(json!({"kind":"profile","profile":id,"name":name,"persistence":"ephemeral","created":true}))
+        self.profiles.insert(
+            id.clone(),
+            Profile {
+                id: id.clone(),
+                name: name.clone(),
+            },
+        );
+        Ok(
+            json!({"kind":"profile","profile":id,"name":name,"persistence":"ephemeral","created":true}),
+        )
     }
 
     fn session_open(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -549,11 +703,18 @@ impl Host {
             return Err(not_found("profile", profile));
         }
         if self.session.is_some() {
-            return Err(ControlError::new("resource_limit", "this Servo host owns one live session; close it first", true));
+            return Err(ControlError::new(
+                "resource_limit",
+                "this Servo host owns one live session; close it first",
+                true,
+            ));
         }
         self.next_session += 1;
         let id = format!("session_{}", self.next_session);
-        self.session = Some(Session { id: id.clone(), profile_id: profile.to_owned() });
+        self.session = Some(Session {
+            id: id.clone(),
+            profile_id: profile.to_owned(),
+        });
         Ok(json!({"kind":"session","session":id,"profile":profile}))
     }
 
@@ -570,7 +731,9 @@ impl Host {
         let closed: Vec<String> = self.targets.keys().cloned().collect();
         self.targets.clear();
         self.spin();
-        Ok(json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed.len()}))
+        Ok(
+            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed.len()}),
+        )
     }
 
     fn target_open(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
@@ -581,18 +744,28 @@ impl Host {
         }
         let fixture = string_field(object, "fixture")?;
         if !fixture.ends_with(".html")
-            || !fixture.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
+            || !fixture
+                .bytes()
+                .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
             || fixture.contains("..")
         {
             return Err(invalid("fixture must be a court fixture file name"));
         }
-        let bytes = std::fs::read(self.fixture_root.join(fixture))
-            .map_err(|_| ControlError::new("not_found", "fixture does not exist in the court", false))?;
+        let bytes = std::fs::read(self.fixture_root.join(fixture)).map_err(|_| {
+            ControlError::new("not_found", "fixture does not exist in the court", false)
+        })?;
         if self.targets.len() >= MAX_TARGETS {
-            return Err(ControlError::new("resource_limit", "target capacity reached", true));
+            return Err(ControlError::new(
+                "resource_limit",
+                "target capacity reached",
+                true,
+            ));
         }
-        let url = Url::parse(&format!("data:text/html,{}", percent_encode(&bytes, NON_ALPHANUMERIC)))
-            .map_err(|_| ControlError::new("internal", "fixture could not be encoded", false))?;
+        let url = Url::parse(&format!(
+            "data:text/html,{}",
+            percent_encode(&bytes, NON_ALPHANUMERIC)
+        ))
+        .map_err(|_| ControlError::new("internal", "fixture could not be encoded", false))?;
         self.next_target += 1;
         let id = format!("target_{}", self.next_target);
         let delegate = Rc::new(Delegate::default());
@@ -606,11 +779,17 @@ impl Host {
                 break;
             }
             if let Some(reason) = delegate.crashed.borrow_mut().take() {
-                return Err(ControlError::new("target_crashed", reason, false).scoped("target", &id));
+                return Err(
+                    ControlError::new("target_crashed", reason, false).scoped("target", &id)
+                );
             }
             if Instant::now() >= deadline {
-                return Err(ControlError::new("deadline_exceeded", "fixture did not finish loading before deadline", true)
-                    .scoped("target", &id));
+                return Err(ControlError::new(
+                    "deadline_exceeded",
+                    "fixture did not finish loading before deadline",
+                    true,
+                )
+                .scoped("target", &id));
             }
             std::thread::sleep(Duration::from_millis(1));
         }
@@ -629,30 +808,58 @@ impl Host {
                 last_snapshot: None,
             },
         );
-        Ok(json!({"kind":"target","target":id,"session":session,"revision":revision,"fixture":fixture}))
+        Ok(
+            json!({"kind":"target","target":id,"session":session,"revision":revision,"fixture":fixture}),
+        )
     }
 
-    fn target_snapshot(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
+    fn target_snapshot(
+        &mut self,
+        arguments: &Value,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target", "format", "max_bytes", "max_nodes"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         if string_field(object, "format")? != "semantic" {
-            return Err(ControlError::new("unsupported_capability", "only the semantic format is offered", false));
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "only the semantic format is offered",
+                false,
+            ));
         }
         let max_bytes = bounded_u64(object, "max_bytes", 1, MAX_RESPONSE_BYTES as u64)? as usize;
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
         let target = self.target(&id)?;
-        let raw = self.evaluate_json(&target.webview, &snapshot_script(max_nodes), deadline, &id)?;
+        let raw =
+            self.evaluate_json(&target.webview, &snapshot_script(max_nodes), deadline, &id)?;
         if raw.get("error").is_some() {
-            return Err(ControlError::new("internal", "target lost its revision instrumentation", false).scoped("target", &id));
+            return Err(ControlError::new(
+                "internal",
+                "target lost its revision instrumentation",
+                false,
+            )
+            .scoped("target", &id));
         }
         let revision = raw.get("revision").and_then(Value::as_u64).ok_or_else(|| {
             ControlError::new("internal", "snapshot lacks a revision", false).scoped("target", &id)
         })?;
-        let mut truncated = raw.get("truncated").and_then(Value::as_bool).unwrap_or(false);
+        let mut truncated = raw
+            .get("truncated")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
         let mut nodes = Vec::new();
         let mut budget = 0usize;
-        for entry in raw.get("nodes").and_then(Value::as_array).cloned().unwrap_or_default() {
-            let node = entry.get("node").and_then(Value::as_str).unwrap_or("node_0").to_owned();
+        for entry in raw
+            .get("nodes")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default()
+        {
+            let node = entry
+                .get("node")
+                .and_then(Value::as_str)
+                .unwrap_or("node_0")
+                .to_owned();
             let mut item = json!({
                 "reference":{"target":id,"revision":revision,"node":node},
                 "role":entry.get("role").cloned().unwrap_or(Value::Null),
@@ -672,15 +879,22 @@ impl Host {
             nodes.push(item);
         }
         let count = nodes.len();
-        self.targets.get_mut(&id).expect("target exists").last_snapshot = Some((revision, count));
-        Ok(json!({"kind":"semantic_snapshot","target":id,"revision":revision,"truncated":truncated,"nodes":nodes}))
+        self.targets
+            .get_mut(&id)
+            .expect("target exists")
+            .last_snapshot = Some((revision, count));
+        Ok(
+            json!({"kind":"semantic_snapshot","target":id,"revision":revision,"truncated":truncated,"nodes":nodes}),
+        )
     }
 
     fn target_act(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target", "reference", "action"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let reference = exact_object(
-            object.get("reference").ok_or_else(|| invalid("reference missing"))?,
+            object
+                .get("reference")
+                .ok_or_else(|| invalid("reference missing"))?,
             &["target", "revision", "node"],
         )?;
         if typed_field(reference, "target", "target")? != id {
@@ -688,43 +902,75 @@ impl Host {
         }
         let node = typed_field(reference, "node", "node")?;
         let revision = bounded_u64(reference, "revision", 0, u64::MAX)?;
-        let action = object.get("action").and_then(Value::as_object).ok_or_else(|| invalid("action missing"))?;
+        let action = object
+            .get("action")
+            .and_then(Value::as_object)
+            .ok_or_else(|| invalid("action missing"))?;
         if action.len() != 1 {
             return Err(invalid("click action fields differ"));
         }
         if string_field(action, "kind")? != "click" {
-            return Err(ControlError::new("unsupported_capability", "this Servo host offers click only", false));
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "this Servo host offers click only",
+                false,
+            ));
         }
         let index = node
             .strip_prefix("node_")
             .and_then(|s| s.parse::<usize>().ok())
             .filter(|n| *n >= 1)
-            .ok_or_else(|| ControlError::new("not_found", "node does not exist", false).scoped("target", &id))?
+            .ok_or_else(|| {
+                ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
+            })?
             - 1;
         let target = self.target(&id)?;
         let current = self.revision(&target.webview, deadline, &id)?;
         if current != revision {
-            return Err(ControlError::new("stale_revision", "node reference revision no longer matches the target", true)
-                .scoped("target", &id)
-                .details(json!({"reference_revision":revision,"current_revision":current})));
+            return Err(ControlError::new(
+                "stale_revision",
+                "node reference revision no longer matches the target",
+                true,
+            )
+            .scoped("target", &id)
+            .details(json!({"reference_revision":revision,"current_revision":current})));
         }
-        if !target.last_snapshot.is_some_and(|(rev, count)| rev == revision && index < count) {
-            return Err(ControlError::new("not_found", "node does not exist", false).scoped("target", &id));
+        if !target
+            .last_snapshot
+            .is_some_and(|(rev, count)| rev == revision && index < count)
+        {
+            return Err(
+                ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
+            );
         }
-        let outcome = self.evaluate_json(&target.webview, &act_script(revision, index), deadline, &id)?;
+        let outcome =
+            self.evaluate_json(&target.webview, &act_script(revision, index), deadline, &id)?;
         if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
-            return Err(ControlError::new("stale_revision", "node reference revision no longer matches the target", true)
-                .scoped("target", &id)
-                .details(json!({"reference_revision":revision,"current_revision":current})));
+            return Err(ControlError::new(
+                "stale_revision",
+                "node reference revision no longer matches the target",
+                true,
+            )
+            .scoped("target", &id)
+            .details(json!({"reference_revision":revision,"current_revision":current})));
         }
         if outcome.get("missing").is_some() {
-            return Err(ControlError::new("not_found", "node does not exist", false).scoped("target", &id));
+            return Err(
+                ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
+            );
         }
         if outcome.get("unsupported").is_some() {
-            return Err(ControlError::new("unsupported_capability", "click requires a button node", false));
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "click requires a button node",
+                false,
+            ));
         }
         if outcome.get("applied").and_then(Value::as_bool) != Some(true) {
-            return Err(ControlError::new("internal", "engine did not confirm the action", false).scoped("target", &id));
+            return Err(
+                ControlError::new("internal", "engine did not confirm the action", false)
+                    .scoped("target", &id),
+            );
         }
         // Mutation observers run after the click task; a fresh task reads the settled revision.
         self.spin();
@@ -735,9 +981,18 @@ impl Host {
     fn target_wait(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target", "condition"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
-        let condition = exact_object(object.get("condition").ok_or_else(|| invalid("condition missing"))?, &["kind", "revision"])?;
+        let condition = exact_object(
+            object
+                .get("condition")
+                .ok_or_else(|| invalid("condition missing"))?,
+            &["kind", "revision"],
+        )?;
         if string_field(condition, "kind")? != "revision_at_least" {
-            return Err(ControlError::new("unsupported_capability", "this Servo host offers revision_at_least only", false));
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "this Servo host offers revision_at_least only",
+                false,
+            ));
         }
         let expected = bounded_u64(condition, "revision", 0, u64::MAX)?;
         loop {
@@ -747,7 +1002,12 @@ impl Host {
                 return Ok(json!({"kind":"wait","target":id,"revision":revision,"matched":true}));
             }
             if Instant::now() >= deadline {
-                return Err(ControlError::new("deadline_exceeded", "condition was not met before deadline", true).scoped("target", &id));
+                return Err(ControlError::new(
+                    "deadline_exceeded",
+                    "condition was not met before deadline",
+                    true,
+                )
+                .scoped("target", &id));
             }
             for _ in 0..5 {
                 self.spin();
@@ -766,11 +1026,19 @@ impl Host {
                 Ok(result) => break result,
                 Err(TryReceiveError::Empty) => {}
                 Err(TryReceiveError::ReceiveError(_)) => {
-                    return Err(ControlError::new("internal", "memory report callback disconnected", false));
+                    return Err(ControlError::new(
+                        "internal",
+                        "memory report callback disconnected",
+                        false,
+                    ));
                 }
             }
             if Instant::now() >= deadline {
-                return Err(ControlError::new("deadline_exceeded", "memory report did not arrive before deadline", true));
+                return Err(ControlError::new(
+                    "deadline_exceeded",
+                    "memory report did not arrive before deadline",
+                    true,
+                ));
             }
             std::thread::sleep(Duration::from_millis(1));
         };
@@ -821,7 +1089,11 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Line> {
             if output.is_empty() && !oversized {
                 return Ok(Line::Eof);
             }
-            return Ok(if oversized { Line::Oversized } else { Line::Bytes(output) });
+            return Ok(if oversized {
+                Line::Oversized
+            } else {
+                Line::Bytes(output)
+            });
         }
         let line_end = available.iter().position(|byte| *byte == b'\n');
         let consumed = line_end.map_or(available.len(), |index| index + 1);
@@ -836,7 +1108,11 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Line> {
         }
         reader.consume(consumed);
         if line_end.is_some() {
-            return Ok(if oversized { Line::Oversized } else { Line::Bytes(output) });
+            return Ok(if oversized {
+                Line::Oversized
+            } else {
+                Line::Bytes(output)
+            });
         }
     }
 }
@@ -879,14 +1155,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         .install_default()
         .map_err(|_| "failed to install rustls crypto provider")?;
     let context = Rc::new(
-        SoftwareRenderingContext::new(dpi::PhysicalSize { width: VIEWPORT_WIDTH, height: VIEWPORT_HEIGHT })
-            .map_err(|error| format!("failed to create rendering context: {error:?}"))?,
+        SoftwareRenderingContext::new(dpi::PhysicalSize {
+            width: VIEWPORT_WIDTH,
+            height: VIEWPORT_HEIGHT,
+        })
+        .map_err(|error| format!("failed to create rendering context: {error:?}"))?,
     );
     context
         .make_current()
         .map_err(|error| format!("failed to make rendering context current: {error:?}"))?;
     let servo = ServoBuilder::default()
-        .opts(Opts { config_dir: Some(config_dir), temporary_storage: true, ..Opts::default() })
+        .opts(Opts {
+            config_dir: Some(config_dir),
+            temporary_storage: true,
+            ..Opts::default()
+        })
         .build();
     let mut host = Host {
         servo,
@@ -948,7 +1231,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 operation: bridge.operation,
                 arguments: bridge.arguments,
             };
-            let outcome = host.execute(&request).map_err(|error| error.code.to_owned());
+            let outcome = host
+                .execute(&request)
+                .map_err(|error| error.code.to_owned());
             let _ = bridge.reply.send(outcome);
         }
         let line = match receiver.try_recv() {
@@ -962,7 +1247,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         let response = match line {
             Line::Eof => break,
             Line::Oversized => envelope("req_invalid", Err(invalid("request exceeds byte limit"))),
-            Line::Bytes(bytes) if bytes.is_empty() => envelope("req_invalid", Err(invalid("request is empty"))),
+            Line::Bytes(bytes) if bytes.is_empty() => {
+                envelope("req_invalid", Err(invalid("request is empty")))
+            }
             Line::Bytes(bytes) => match parse_request(&bytes) {
                 Ok(request) => {
                     let body = host.execute(&request);

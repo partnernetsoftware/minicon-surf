@@ -329,7 +329,11 @@ fn parse_arguments() -> Result<Arguments, Box<dyn Error>> {
     let config_directory = arguments.next().ok_or(USAGE)?.into();
     let stage_ms: u64 = arguments.next().ok_or(USAGE)?.to_string_lossy().parse()?;
     let cycles: usize = arguments.next().ok_or(USAGE)?.to_string_lossy().parse()?;
-    let mode = arguments.next().ok_or(USAGE)?.to_string_lossy().into_owned();
+    let mode = arguments
+        .next()
+        .ok_or(USAGE)?
+        .to_string_lossy()
+        .into_owned();
     let (report, action) = mode.split_once('-').ok_or(USAGE)?;
     let report = match report {
         "rss" => Report::Rss,
@@ -430,7 +434,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let none = json!({"name":"none"});
     let observe = |stage: &str, action: Value| -> Result<(), Box<dyn Error>> {
-        observe_stage(&servo, arguments.report, stage, action, arguments.stage_duration)
+        observe_stage(
+            &servo,
+            arguments.report,
+            stage,
+            action,
+            arguments.stage_duration,
+        )
     };
     observe("empty", none.clone())?;
     for index in 1..=arguments.cycles {

@@ -9,9 +9,9 @@
 use std::collections::BTreeMap;
 use std::io::{self, Read, Write};
 use std::net::{Ipv4Addr, SocketAddrV4, TcpListener, TcpStream};
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::mpsc::{self, Sender};
 use std::thread::{self, JoinHandle};
 use std::time::Duration;
 
@@ -46,7 +46,11 @@ impl Server {
         let shutdown = Arc::new(AtomicBool::new(false));
         let thread_shutdown = shutdown.clone();
         let join = thread::spawn(move || serve(listener, bridge, thread_shutdown));
-        Ok(Self { port, shutdown, join: Some(join) })
+        Ok(Self {
+            port,
+            shutdown,
+            join: Some(join),
+        })
     }
 
     pub fn port(&self) -> u16 {
@@ -54,7 +58,10 @@ impl Server {
     }
 
     pub fn browser_websocket_url(&self) -> String {
-        format!("ws://127.0.0.1:{}/devtools/browser/servo-control", self.port)
+        format!(
+            "ws://127.0.0.1:{}/devtools/browser/servo-control",
+            self.port
+        )
     }
 }
 
@@ -67,14 +74,20 @@ impl Drop for Server {
     }
 }
 
-fn serve(listener: TcpListener, bridge: Sender<BridgeRequest>, shutdown: Arc<AtomicBool>) -> io::Result<()> {
+fn serve(
+    listener: TcpListener,
+    bridge: Sender<BridgeRequest>,
+    shutdown: Arc<AtomicBool>,
+) -> io::Result<()> {
     while !shutdown.load(Ordering::Acquire) {
         match listener.accept() {
             Ok((stream, address)) => {
                 if !address.ip().is_loopback() {
                     continue;
                 }
-                if let Err(error) = handle_connection(stream, listener.local_addr()?.port(), &bridge) {
+                if let Err(error) =
+                    handle_connection(stream, listener.local_addr()?.port(), &bridge)
+                {
                     eprintln!("servo-control CDP connection closed: {error}");
                 }
             }
@@ -87,7 +100,11 @@ fn serve(listener: TcpListener, bridge: Sender<BridgeRequest>, shutdown: Arc<Ato
     Ok(())
 }
 
-fn handle_connection(mut stream: TcpStream, port: u16, bridge: &Sender<BridgeRequest>) -> io::Result<()> {
+fn handle_connection(
+    mut stream: TcpStream,
+    port: u16,
+    bridge: &Sender<BridgeRequest>,
+) -> io::Result<()> {
     stream.set_nonblocking(false)?;
     stream.set_read_timeout(Some(Duration::from_secs(30)))?;
     stream.set_write_timeout(Some(Duration::from_secs(10)))?;
@@ -100,7 +117,12 @@ fn handle_connection(mut stream: TcpStream, port: u16, bridge: &Sender<BridgeReq
     let method = request_fields.next().unwrap_or_default();
     let path = request_fields.next().unwrap_or_default();
     if method != "GET" {
-        return write_http(&mut stream, "405 Method Not Allowed", "text/plain", b"GET only");
+        return write_http(
+            &mut stream,
+            "405 Method Not Allowed",
+            "text/plain",
+            b"GET only",
+        );
     }
     let headers = lines
         .filter_map(|line| line.split_once(':'))
@@ -130,7 +152,12 @@ fn handle_connection(mut stream: TcpStream, port: u16, bridge: &Sender<BridgeReq
                     })
                 })
                 .collect::<Vec<_>>();
-            write_http(&mut stream, "200 OK", "application/json", &serde_json::to_vec(&entries)?)
+            write_http(
+                &mut stream,
+                "200 OK",
+                "application/json",
+                &serde_json::to_vec(&entries)?,
+            )
         }
         "/devtools/browser/servo-control" => {
             upgrade_websocket(&mut stream, &headers)?;
@@ -164,10 +191,18 @@ fn read_http_header(stream: &mut TcpStream) -> io::Result<Vec<u8>> {
             return Ok(header);
         }
     }
-    Err(io::Error::new(io::ErrorKind::InvalidData, "HTTP header exceeds limit"))
+    Err(io::Error::new(
+        io::ErrorKind::InvalidData,
+        "HTTP header exceeds limit",
+    ))
 }
 
-fn write_http(stream: &mut TcpStream, status: &str, content_type: &str, body: &[u8]) -> io::Result<()> {
+fn write_http(
+    stream: &mut TcpStream,
+    status: &str,
+    content_type: &str,
+    body: &[u8],
+) -> io::Result<()> {
     write!(
         stream,
         "HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
@@ -180,8 +215,14 @@ fn upgrade_websocket(stream: &mut TcpStream, headers: &BTreeMap<String, String>)
     let key = headers
         .get("sec-websocket-key")
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "WebSocket key missing"))?;
-    if !headers.get("upgrade").is_some_and(|value| value.eq_ignore_ascii_case("websocket")) {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "WebSocket upgrade missing"));
+    if !headers
+        .get("upgrade")
+        .is_some_and(|value| value.eq_ignore_ascii_case("websocket"))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "WebSocket upgrade missing",
+        ));
     }
     let accept = STANDARD.encode(Sha1::digest(format!("{key}{WEBSOCKET_GUID}").as_bytes()));
     write!(
@@ -236,11 +277,17 @@ fn read_websocket_frame(stream: &mut TcpStream) -> io::Result<Frame> {
     let mut header = [0_u8; 2];
     stream.read_exact(&mut header)?;
     if header[0] & 0x80 == 0 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "fragmented WebSocket frames are unsupported"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "fragmented WebSocket frames are unsupported",
+        ));
     }
     let opcode = header[0] & 0x0f;
     if header[1] & 0x80 == 0 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "client WebSocket frame is not masked"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "client WebSocket frame is not masked",
+        ));
     }
     let mut length = u64::from(header[1] & 0x7f);
     if length == 126 {
@@ -253,7 +300,10 @@ fn read_websocket_frame(stream: &mut TcpStream) -> io::Result<Frame> {
         length = u64::from_be_bytes(bytes);
     }
     if length > MAX_CDP_MESSAGE_BYTES as u64 {
-        return Err(io::Error::new(io::ErrorKind::InvalidData, "CDP message exceeds limit"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "CDP message exceeds limit",
+        ));
     }
     let mut mask = [0_u8; 4];
     stream.read_exact(&mut mask)?;
@@ -266,7 +316,10 @@ fn read_websocket_frame(stream: &mut TcpStream) -> io::Result<Frame> {
         0x1 => Ok(Frame::Text(payload)),
         0x8 => Ok(Frame::Close),
         0x9 => Ok(Frame::Ping(payload)),
-        _ => Err(io::Error::new(io::ErrorKind::InvalidData, "unsupported WebSocket opcode")),
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "unsupported WebSocket opcode",
+        )),
     }
 }
 
@@ -286,7 +339,11 @@ fn write_websocket_frame(stream: &mut TcpStream, opcode: u8, payload: &[u8]) -> 
 
 type CdpResult = Result<Value, (i64, &'static str)>;
 
-fn dispatch(request: Value, bridge: &Sender<BridgeRequest>, connection: &mut ConnectionState) -> Value {
+fn dispatch(
+    request: Value,
+    bridge: &Sender<BridgeRequest>,
+    connection: &mut ConnectionState,
+) -> Value {
     let id = request.get("id").cloned().unwrap_or(Value::Null);
     let Some(method) = request.get("method").and_then(Value::as_str) else {
         return cdp_error(id, -32600, "Invalid Request");
@@ -296,7 +353,10 @@ fn dispatch(request: Value, bridge: &Sender<BridgeRequest>, connection: &mut Con
     if std::env::var_os("MINICON_SURF_CDP_TRACE").is_some() {
         // Diagnostics only: method names, never parameters, so a trace can
         // qualify an external client without recording page content.
-        eprintln!("cdp-trace method={method} session={}", session_id.unwrap_or("-"));
+        eprintln!(
+            "cdp-trace method={method} session={}",
+            session_id.unwrap_or("-")
+        );
     }
     let result = match method {
         // Handshake acknowledgements for external clients. They map no
@@ -339,18 +399,27 @@ fn dispatch(request: Value, bridge: &Sender<BridgeRequest>, connection: &mut Con
             // Browser-level auto-attach replays existing targets as flattened
             // sessions so an external client can list them; session-level
             // calls are acknowledgements only.
-            if session_id.is_none() && params.get("autoAttach").and_then(Value::as_bool) == Some(true) {
+            if session_id.is_none()
+                && params.get("autoAttach").and_then(Value::as_bool) == Some(true)
+            {
                 match native(bridge, "target.list", json!({})) {
                     Ok(list) => {
                         for (target_id, fixture) in target_entries(&list) {
-                            if connection.sessions.values().any(|session| session.target == target_id) {
+                            if connection
+                                .sessions
+                                .values()
+                                .any(|session| session.target == target_id)
+                            {
                                 continue;
                             }
                             connection.next_session += 1;
                             let cdp_session = format!("cdp_session_{}", connection.next_session);
                             connection.sessions.insert(
                                 cdp_session.clone(),
-                                SessionState { target: target_id.clone(), ..SessionState::default() },
+                                SessionState {
+                                    target: target_id.clone(),
+                                    ..SessionState::default()
+                                },
                             );
                             connection.events.push(json!({
                                 "method":"Target.attachedToTarget",
@@ -382,7 +451,9 @@ fn dispatch(request: Value, bridge: &Sender<BridgeRequest>, connection: &mut Con
         "DOM.getDocument" => dom_get_document(session_id, bridge, connection),
         "DOM.querySelector" => dom_query_selector(session_id, &params, bridge, connection),
         "DOM.resolveNode" => dom_resolve_node(session_id, &params, connection),
-        "Runtime.callFunctionOn" => runtime_call_function_on(session_id, &params, bridge, connection),
+        "Runtime.callFunctionOn" => {
+            runtime_call_function_on(session_id, &params, bridge, connection)
+        }
         _ => Err((-32601, "Method not found")),
     };
     match result {
@@ -391,7 +462,10 @@ fn dispatch(request: Value, bridge: &Sender<BridgeRequest>, connection: &mut Con
     }
 }
 
-fn target_get_targets(bridge: &Sender<BridgeRequest>, connection: &mut ConnectionState) -> CdpResult {
+fn target_get_targets(
+    bridge: &Sender<BridgeRequest>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
     let list = native(bridge, "target.list", json!({}))?;
     let target_infos = target_entries(&list)
         .into_iter()
@@ -409,11 +483,18 @@ fn target_get_targets(bridge: &Sender<BridgeRequest>, connection: &mut Connectio
     Ok(json!({"targetInfos":target_infos}))
 }
 
-fn target_attach(params: &Value, bridge: &Sender<BridgeRequest>, connection: &mut ConnectionState) -> CdpResult {
+fn target_attach(
+    params: &Value,
+    bridge: &Sender<BridgeRequest>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
     if params.get("flatten").and_then(Value::as_bool) != Some(true) {
         return Err((-32602, "flatten=true is required"));
     }
-    let target = params.get("targetId").and_then(Value::as_str).ok_or((-32602, "targetId is required"))?;
+    let target = params
+        .get("targetId")
+        .and_then(Value::as_str)
+        .ok_or((-32602, "targetId is required"))?;
     let list = native(bridge, "target.list", json!({}))?;
     if !target_entries(&list).iter().any(|(id, _)| id == target) {
         return Err((-32000, "target does not exist"));
@@ -422,13 +503,19 @@ fn target_attach(params: &Value, bridge: &Sender<BridgeRequest>, connection: &mu
     let session_id = format!("cdp_session_{}", connection.next_session);
     connection.sessions.insert(
         session_id.clone(),
-        SessionState { target: target.to_owned(), ..SessionState::default() },
+        SessionState {
+            target: target.to_owned(),
+            ..SessionState::default()
+        },
     );
     Ok(json!({"sessionId":session_id}))
 }
 
 fn target_detach(params: &Value, connection: &mut ConnectionState) -> CdpResult {
-    let session_id = params.get("sessionId").and_then(Value::as_str).ok_or((-32602, "sessionId is required"))?;
+    let session_id = params
+        .get("sessionId")
+        .and_then(Value::as_str)
+        .ok_or((-32602, "sessionId is required"))?;
     if connection.sessions.remove(session_id).is_none() {
         return Err((-32000, "session does not exist"));
     }
@@ -443,14 +530,20 @@ fn snapshot(bridge: &Sender<BridgeRequest>, target: &str) -> CdpResult {
     )
 }
 
-fn dom_get_document(session_id: Option<&str>, bridge: &Sender<BridgeRequest>, connection: &mut ConnectionState) -> CdpResult {
+fn dom_get_document(
+    session_id: Option<&str>,
+    bridge: &Sender<BridgeRequest>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
     let target = session(session_id, connection)?.target.clone();
     let snapshot = snapshot(bridge, &target)?;
     let session = session_mut(session_id, connection)?;
     session.nodes.clear();
     session.objects.clear();
     let count = snapshot["nodes"].as_array().map_or(0, Vec::len);
-    Ok(json!({"root":{"nodeId":1,"backendNodeId":1,"nodeType":9,"nodeName":"#document","localName":"","nodeValue":"","childNodeCount":count}}))
+    Ok(
+        json!({"root":{"nodeId":1,"backendNodeId":1,"nodeType":9,"nodeName":"#document","localName":"","nodeValue":"","childNodeCount":count}}),
+    )
 }
 
 fn dom_query_selector(
@@ -463,11 +556,20 @@ fn dom_query_selector(
     if params.get("nodeId").and_then(Value::as_u64) != Some(1) {
         return Err((-32602, "only document-rooted queries are qualified"));
     }
-    let selector = params.get("selector").and_then(Value::as_str).ok_or((-32602, "selector is required"))?;
+    let selector = params
+        .get("selector")
+        .and_then(Value::as_str)
+        .ok_or((-32602, "selector is required"))?;
     let snapshot = snapshot(bridge, &target)?;
-    let nodes = snapshot["nodes"].as_array().into_iter().flatten().collect::<Vec<_>>();
+    let nodes = snapshot["nodes"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>();
     let reference = if let Some(dom_id) = selector.strip_prefix('#') {
-        nodes.iter().find(|node| node["dom_id"].as_str() == Some(dom_id))
+        nodes
+            .iter()
+            .find(|node| node["dom_id"].as_str() == Some(dom_id))
     } else if selector == "button" {
         nodes.iter().find(|node| node["role"] == "button")
     } else {
@@ -481,13 +583,26 @@ fn dom_query_selector(
     Ok(json!({"nodeId":node_id}))
 }
 
-fn dom_resolve_node(session_id: Option<&str>, params: &Value, connection: &mut ConnectionState) -> CdpResult {
-    let node_id = params.get("nodeId").and_then(Value::as_u64).ok_or((-32602, "nodeId is required"))?;
+fn dom_resolve_node(
+    session_id: Option<&str>,
+    params: &Value,
+    connection: &mut ConnectionState,
+) -> CdpResult {
+    let node_id = params
+        .get("nodeId")
+        .and_then(Value::as_u64)
+        .ok_or((-32602, "nodeId is required"))?;
     let session = session_mut(session_id, connection)?;
-    let reference = session.nodes.get(&node_id).cloned().ok_or((-32000, "node does not exist"))?;
+    let reference = session
+        .nodes
+        .get(&node_id)
+        .cloned()
+        .ok_or((-32000, "node does not exist"))?;
     let object_id = format!("object_{node_id}");
     session.objects.insert(object_id.clone(), reference);
-    Ok(json!({"object":{"type":"object","subtype":"node","className":"HTMLElement","description":"element","objectId":object_id}}))
+    Ok(
+        json!({"object":{"type":"object","subtype":"node","className":"HTMLElement","description":"element","objectId":object_id}}),
+    )
 }
 
 fn runtime_call_function_on(
@@ -496,13 +611,22 @@ fn runtime_call_function_on(
     bridge: &Sender<BridgeRequest>,
     connection: &mut ConnectionState,
 ) -> CdpResult {
-    let object_id = params.get("objectId").and_then(Value::as_str).ok_or((-32602, "objectId is required"))?;
-    if params.get("functionDeclaration").and_then(Value::as_str) != Some("function(){this.click();}") {
+    let object_id = params
+        .get("objectId")
+        .and_then(Value::as_str)
+        .ok_or((-32602, "objectId is required"))?;
+    if params.get("functionDeclaration").and_then(Value::as_str)
+        != Some("function(){this.click();}")
+    {
         return Err((-32602, "only the qualified click function is supported"));
     }
     let session = session(session_id, connection)?;
     let target = session.target.clone();
-    let reference = session.objects.get(object_id).cloned().ok_or((-32000, "remote object does not exist"))?;
+    let reference = session
+        .objects
+        .get(object_id)
+        .cloned()
+        .ok_or((-32000, "remote object does not exist"))?;
     native(
         bridge,
         "target.act",
@@ -511,9 +635,15 @@ fn runtime_call_function_on(
     Ok(json!({"result":{"type":"undefined"}}))
 }
 
-fn session<'a>(session_id: Option<&str>, connection: &'a ConnectionState) -> Result<&'a SessionState, (i64, &'static str)> {
+fn session<'a>(
+    session_id: Option<&str>,
+    connection: &'a ConnectionState,
+) -> Result<&'a SessionState, (i64, &'static str)> {
     let id = session_id.ok_or((-32602, "sessionId is required"))?;
-    connection.sessions.get(id).ok_or((-32000, "session does not exist"))
+    connection
+        .sessions
+        .get(id)
+        .ok_or((-32000, "session does not exist"))
 }
 
 fn session_mut<'a>(
@@ -521,13 +651,20 @@ fn session_mut<'a>(
     connection: &'a mut ConnectionState,
 ) -> Result<&'a mut SessionState, (i64, &'static str)> {
     let id = session_id.ok_or((-32602, "sessionId is required"))?;
-    connection.sessions.get_mut(id).ok_or((-32000, "session does not exist"))
+    connection
+        .sessions
+        .get_mut(id)
+        .ok_or((-32000, "session does not exist"))
 }
 
 fn native(bridge: &Sender<BridgeRequest>, operation: &str, arguments: Value) -> CdpResult {
-    let (reply, receiver): (Sender<Result<Value, String>>, Receiver<Result<Value, String>>) = mpsc::channel();
+    let (reply, receiver) = mpsc::channel::<Result<Value, String>>();
     bridge
-        .send(BridgeRequest { operation: operation.to_owned(), arguments, reply })
+        .send(BridgeRequest {
+            operation: operation.to_owned(),
+            arguments,
+            reply,
+        })
         .map_err(|_| (-32603, "control host is gone"))?;
     match receiver.recv_timeout(NATIVE_REPLY_TIMEOUT) {
         Ok(Ok(result)) => Ok(result),

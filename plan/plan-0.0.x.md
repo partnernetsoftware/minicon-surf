@@ -192,7 +192,7 @@ flowchart LR
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3/W7 · lowest RSS · 39 KB/cycle<br/>one target per server → process-per-target combine: 8 targets 237 MB engines"]
         SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 stdio + CDP on one target<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · D4 clients open"]
-        NATIVE["bounded native route<br/>DOM slice: 2.5 MB one target · 3.1 MB eight<br/>static snapshot only · script realm next"]
+        NATIVE["bounded native route<br/>DOM + bounded QuickJS: 2.5 MB one target · 4.4 MB eight<br/>27/27 journey · network/layout/storage open"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
