@@ -21,5 +21,5 @@ serde_json = "=1.0.151"
 servo = { version = "=0.5.0", default-features = false, features = ["baked-in-resources", "bundled_freetype", "js_jit"] }
 servo-base = "=0.5.0"
 servo-profile-traits = "=0.5.0"
-tikv-jemalloc-sys = "=0.6.1"
+tikv-jemalloc-sys = { version = "=0.6.1", features = ["stats"] }
 url = "=2.5.8"

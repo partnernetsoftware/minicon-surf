@@ -1,6 +1,7 @@
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::ffi::{CStr, c_void};
 use std::io::{self, Write};
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -18,7 +19,7 @@ use url::Url;
 
 const VIEWPORT_WIDTH: u32 = 800;
 const VIEWPORT_HEIGHT: u32 = 600;
-const TARGET_COUNT: usize = 8;
+const MAX_CYCLES: usize = 256;
 const LOAD_DEADLINE: Duration = Duration::from_secs(15);
 
 #[derive(Default)]
@@ -43,6 +44,117 @@ impl WebViewDelegate for CourtDelegate {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Report {
+    Rss,
+    Internal,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Action {
+    Control,
+    JemallocPurge,
+    LibmallocRelief,
+    Both,
+}
+
+impl Action {
+    fn name(self) -> &'static str {
+        match self {
+            Action::Control => "control_wait",
+            Action::JemallocPurge => "jemalloc_all_arenas_purge",
+            Action::LibmallocRelief => "libmalloc_zone_pressure_relief",
+            Action::Both => "jemalloc_purge_then_libmalloc_relief",
+        }
+    }
+}
+
+// Apple libmalloc statistics for every registered malloc zone. jemalloc is
+// linked with the `_rjem_` symbol prefix, so these zones are the system heap
+// that C/C++ dependencies (SpiderMonkey, swgl, FreeType, HarfBuzz) allocate
+// from; the Rust global allocator is not counted here.
+#[repr(C)]
+#[derive(Default)]
+struct MallocStatistics {
+    blocks_in_use: u32,
+    size_in_use: usize,
+    max_size_in_use: usize,
+    size_allocated: usize,
+}
+
+unsafe extern "C" {
+    fn malloc_zone_statistics(zone: *mut c_void, stats: *mut MallocStatistics);
+    fn malloc_zone_pressure_relief(zone: *mut c_void, goal: usize) -> usize;
+}
+
+fn libmalloc_statistics() -> Value {
+    let mut stats = MallocStatistics::default();
+    // SAFETY: a null zone aggregates every malloc zone; the out-pointer is a
+    // valid, exclusively borrowed C-layout struct for the duration of the call.
+    unsafe { malloc_zone_statistics(std::ptr::null_mut(), &mut stats) };
+    json!({
+        "blocks_in_use": stats.blocks_in_use,
+        "size_in_use": stats.size_in_use,
+        "max_size_in_use": stats.max_size_in_use,
+        "size_allocated": stats.size_allocated,
+    })
+}
+
+fn jemalloc_stat(name: &CStr) -> Option<usize> {
+    let mut epoch: u64 = 1;
+    let mut epoch_len = size_of::<u64>();
+    // SAFETY: `epoch` refreshes cached statistics; both pointers reference
+    // live locals of the declared lengths.
+    let code = unsafe {
+        tikv_jemalloc_sys::mallctl(
+            c"epoch".as_ptr(),
+            (&raw mut epoch).cast(),
+            &mut epoch_len,
+            (&raw mut epoch).cast(),
+            epoch_len,
+        )
+    };
+    if code != 0 {
+        return None;
+    }
+    let mut value: usize = 0;
+    let mut value_len = size_of::<usize>();
+    // SAFETY: read-only mallctl of a size_t statistic into a live local.
+    let code = unsafe {
+        tikv_jemalloc_sys::mallctl(
+            name.as_ptr(),
+            (&raw mut value).cast(),
+            &mut value_len,
+            std::ptr::null_mut(),
+            0,
+        )
+    };
+    (code == 0).then_some(value)
+}
+
+fn jemalloc_statistics() -> Value {
+    json!({
+        "allocated": jemalloc_stat(c"stats.allocated"),
+        "active": jemalloc_stat(c"stats.active"),
+        "metadata": jemalloc_stat(c"stats.metadata"),
+        "resident": jemalloc_stat(c"stats.resident"),
+        "mapped": jemalloc_stat(c"stats.mapped"),
+        "retained": jemalloc_stat(c"stats.retained"),
+    })
+}
+
+fn allocator_statistics() -> Value {
+    json!({"jemalloc": jemalloc_statistics(), "libmalloc": libmalloc_statistics()})
+}
+
+fn spin_for(servo: &servo::Servo, duration: Duration) {
+    let deadline = Instant::now() + duration;
+    while Instant::now() < deadline {
+        servo.spin_event_loop();
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+
 fn spin_until(
     servo: &servo::Servo,
     deadline: Instant,
@@ -52,26 +164,6 @@ fn spin_until(
         if Instant::now() >= deadline {
             return Err("Servo W3 court deadline expired".into());
         }
-        servo.spin_event_loop();
-        std::thread::sleep(Duration::from_millis(1));
-    }
-    Ok(())
-}
-
-fn observe_rss_stage(
-    servo: &servo::Servo,
-    stage: &str,
-    action: &str,
-    action_result_code: Option<i32>,
-    duration: Duration,
-) -> io::Result<()> {
-    println!(
-        "{}",
-        json!({"stage":stage,"action":action,"action_result_code":action_result_code})
-    );
-    io::stdout().flush()?;
-    let deadline = Instant::now() + duration;
-    while Instant::now() < deadline {
         servo.spin_event_loop();
         std::thread::sleep(Duration::from_millis(1));
     }
@@ -161,27 +253,26 @@ fn collect_internal_memory(servo: &servo::Servo) -> Result<Value, Box<dyn Error>
     }))
 }
 
-fn observe_internal_stage(
+/// One measured stage: a start marker, a spinning window in which the driver
+/// samples the process, then an end line carrying in-process allocator
+/// statistics (and, in internal mode, Servo's own memory report). Allocator
+/// statistics are read after the window so their tiny cost never lands inside
+/// the driver's sampling window.
+fn observe_stage(
     servo: &servo::Servo,
+    report: Report,
     stage: &str,
-    action: &str,
-    action_result_code: Option<i32>,
-    settle: Duration,
+    action: Value,
+    duration: Duration,
 ) -> Result<(), Box<dyn Error>> {
-    let deadline = Instant::now() + settle;
-    while Instant::now() < deadline {
-        servo.spin_event_loop();
-        std::thread::sleep(Duration::from_millis(1));
+    println!("{}", json!({"stage":stage,"action":action}));
+    io::stdout().flush()?;
+    spin_for(servo, duration);
+    let mut end = json!({"stage_end":stage,"allocators":allocator_statistics()});
+    if report == Report::Internal {
+        end["internal_memory"] = collect_internal_memory(servo)?;
     }
-    println!(
-        "{}",
-        json!({
-            "stage":stage,
-            "action":action,
-            "action_result_code":action_result_code,
-            "internal_memory":collect_internal_memory(servo)?
-        })
-    );
+    println!("{end}");
     io::stdout().flush()?;
     Ok(())
 }
@@ -221,45 +312,101 @@ fn open_verified_target(
     Ok((webview, delegate))
 }
 
-fn parse_arguments() -> Result<(PathBuf, PathBuf, Duration, String), Box<dyn Error>> {
+struct Arguments {
+    fixture: PathBuf,
+    config_directory: PathBuf,
+    stage_duration: Duration,
+    cycles: usize,
+    report: Report,
+    action: Action,
+}
+
+fn parse_arguments() -> Result<Arguments, Box<dyn Error>> {
+    const USAGE: &str = "usage: servo-w3-runtime FIXTURE CONFIG_DIRECTORY STAGE_MS CYCLES \
+        {rss|internal}-{control|jemalloc-purge|libmalloc-relief|both}";
     let mut arguments = std::env::args_os().skip(1);
-    let fixture = arguments.next().ok_or("missing fixture path")?.into();
-    let config_directory = arguments.next().ok_or("missing config directory")?.into();
-    let stage_ms: u64 = arguments
-        .next()
-        .ok_or("missing stage duration")?
-        .to_string_lossy()
-        .parse()?;
-    let mode = arguments
-        .next()
-        .ok_or("missing measurement mode")?
-        .to_string_lossy()
-        .into_owned();
-    if arguments.next().is_some()
-        || stage_ms == 0
-        || !matches!(
-            mode.as_str(),
-            "rss-control" | "rss-purge" | "internal-control" | "internal-purge"
-        )
-    {
-        return Err(
-            "usage: servo-w3-runtime FIXTURE CONFIG_DIRECTORY STAGE_MS rss-control|rss-purge|internal-control|internal-purge".into(),
-        );
+    let fixture = arguments.next().ok_or(USAGE)?.into();
+    let config_directory = arguments.next().ok_or(USAGE)?.into();
+    let stage_ms: u64 = arguments.next().ok_or(USAGE)?.to_string_lossy().parse()?;
+    let cycles: usize = arguments.next().ok_or(USAGE)?.to_string_lossy().parse()?;
+    let mode = arguments.next().ok_or(USAGE)?.to_string_lossy().into_owned();
+    let (report, action) = mode.split_once('-').ok_or(USAGE)?;
+    let report = match report {
+        "rss" => Report::Rss,
+        "internal" => Report::Internal,
+        _ => return Err(USAGE.into()),
+    };
+    let action = match action {
+        "control" => Action::Control,
+        "jemalloc-purge" => Action::JemallocPurge,
+        "libmalloc-relief" => Action::LibmallocRelief,
+        "both" => Action::Both,
+        _ => return Err(USAGE.into()),
+    };
+    if arguments.next().is_some() || stage_ms == 0 || cycles == 0 || cycles > MAX_CYCLES {
+        return Err(USAGE.into());
     }
-    Ok((
+    Ok(Arguments {
         fixture,
         config_directory,
-        Duration::from_millis(stage_ms),
-        mode,
-    ))
+        stage_duration: Duration::from_millis(stage_ms),
+        cycles,
+        report,
+        action,
+    })
+}
+
+fn jemalloc_purge_all_arenas() -> i32 {
+    // SAFETY: the no-argument `arena.<i>.purge` command with jemalloc's
+    // MALLCTL_ARENAS_ALL sentinel (4096); every pointer is null.
+    unsafe {
+        tikv_jemalloc_sys::mallctl(
+            c"arena.4096.purge".as_ptr(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            0,
+        )
+    }
+}
+
+fn libmalloc_relief_all_zones() -> usize {
+    // SAFETY: a null zone requests pressure relief from every malloc zone and a
+    // zero goal asks for everything reclaimable; no Rust pointer is retained.
+    unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) }
+}
+
+fn perform_action(action: Action) -> Result<Value, Box<dyn Error>> {
+    let mut purge_code = None;
+    let mut released = None;
+    match action {
+        Action::Control => {}
+        Action::JemallocPurge => purge_code = Some(jemalloc_purge_all_arenas()),
+        Action::LibmallocRelief => released = Some(libmalloc_relief_all_zones()),
+        Action::Both => {
+            purge_code = Some(jemalloc_purge_all_arenas());
+            released = Some(libmalloc_relief_all_zones());
+        }
+    }
+    if matches!(purge_code, Some(code) if code != 0) {
+        return Err(format!("jemalloc purge mallctl failed with code {purge_code:?}").into());
+    }
+    Ok(json!({
+        "name": action.name(),
+        "jemalloc_purge_result_code": purge_code,
+        "libmalloc_released_bytes": released,
+    }))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     rustls::crypto::aws_lc_rs::default_provider()
         .install_default()
         .map_err(|_| "failed to install rustls crypto provider")?;
-    let (fixture, config_directory, stage_duration, mode) = parse_arguments()?;
-    let fixture = std::fs::read(fixture)?;
+    let arguments = parse_arguments()?;
+    if jemalloc_stat(c"stats.resident").is_none() {
+        return Err("jemalloc statistics are unavailable; build with the stats feature".into());
+    }
+    let fixture = std::fs::read(&arguments.fixture)?;
     let encoded = percent_encode(&fixture, NON_ALPHANUMERIC).to_string();
     let url = Url::parse(&format!("data:text/html,{encoded}"))?;
 
@@ -275,64 +422,41 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map_err(|error| format!("failed to make software context current: {error:?}"))?;
     let servo = ServoBuilder::default()
         .opts(Opts {
-            config_dir: Some(config_directory),
+            config_dir: Some(arguments.config_directory.clone()),
             temporary_storage: true,
             ..Opts::default()
         })
         .build();
 
-    let observe = |servo: &servo::Servo,
-                   stage: &str,
-                   action: &str,
-                   action_result_code: Option<i32>|
-     -> Result<(), Box<dyn Error>> {
-        if mode.starts_with("rss-") {
-            observe_rss_stage(servo, stage, action, action_result_code, stage_duration)?;
-            Ok(())
-        } else {
-            observe_internal_stage(servo, stage, action, action_result_code, stage_duration)
-        }
+    let none = json!({"name":"none"});
+    let observe = |stage: &str, action: Value| -> Result<(), Box<dyn Error>> {
+        observe_stage(&servo, arguments.report, stage, action, arguments.stage_duration)
     };
-    observe(&servo, "empty", "none", None)?;
-    for index in 1..=TARGET_COUNT {
+    observe("empty", none.clone())?;
+    for index in 1..=arguments.cycles {
         let (webview, delegate) =
             open_verified_target(&servo, rendering_context.clone(), url.clone())?;
         if index == 1 {
-            observe(&servo, "one_target", "none", None)?;
-        } else if index == TARGET_COUNT {
-            observe(&servo, "eighth_target", "none", None)?;
+            observe("one_target", none.clone())?;
+        }
+        if index == arguments.cycles {
+            observe("last_target", none.clone())?;
         }
         drop(webview);
         drop(delegate);
         if index == 1 {
-            observe(&servo, "post_one_close", "none", None)?;
-        } else if index == TARGET_COUNT {
-            observe(&servo, "post_eight_closes", "none", None)?;
-        } else {
-            // Process CloseWebView before constructing the next target.
-            servo.spin_event_loop();
+            observe("post_one_close", none.clone())?;
+        }
+        if index == arguments.cycles {
+            observe("post_all_closes", none.clone())?;
+        } else if index != 1 {
+            // Let the constellation process CloseWebView and the script thread
+            // exit before the next build, so cycles do not overlap.
+            spin_for(&servo, Duration::from_millis(50));
         }
     }
-    let (action, result_code) = if mode.ends_with("-purge") {
-        // SAFETY: this invokes the no-argument arena.<i>.purge command for
-        // jemalloc's MALLCTL_ARENAS_ALL sentinel. All pointers are null.
-        let code = unsafe {
-            tikv_jemalloc_sys::mallctl(
-                c"arena.4096.purge".as_ptr(),
-                std::ptr::null_mut(),
-                std::ptr::null_mut(),
-                std::ptr::null_mut(),
-                0,
-            )
-        };
-        ("jemalloc_all_arenas_purge", Some(code))
-    } else {
-        ("control_wait", Some(0))
-    };
-    observe(&servo, "post_action", action, result_code)?;
-    if result_code != Some(0) {
-        return Err(format!("jemalloc purge mallctl failed with code {result_code:?}").into());
-    }
+    let action = perform_action(arguments.action)?;
+    observe("post_action", action)?;
     drop(servo);
     Ok(())
 }

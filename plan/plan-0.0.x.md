@@ -121,7 +121,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
-│   ├── [~] Servo 0.5.0: W1/W3; 51.9 MB retained, purge recovers only 3.193%
+│   ├── [~] Servo 0.5.0: W1/W3; narrowed to bounded sessions — ~36 MB warm-up plus ~0.9 MB/cycle live system-heap growth, no purge/relief recovers it, ~290 MB close-time graphics spike
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
@@ -130,7 +130,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   └── default route survives only if it satisfies ↳ [N0] ↳ [H5] ↳ [P6]
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
-│   ├── G1 memory court can attribute/cap synthetic state; allocator purge candidate narrowed, gate open
+│   ├── G1 memory court can attribute/cap synthetic state; allocator purge/relief rejected as recovery path for Servo, gate open
 │   ├── [x] G2 synthetic target is controlled interchangeably by CLI and a named CDP client
 │   ├── G3 a live stateful page crosses headless → headed → headless without reload
 │   ├── [x] G4 synthetic profiles prove restart, storage/policy isolation and lock behavior
@@ -181,7 +181,7 @@ flowchart LR
 
     subgraph MEM["Memory Court [M2]"]
         BOOK["ownership ledger<br/>live · retained · resident · peak"]
-        RETAIN["same-process retention court<br/>maximum capacity · post-release · trim<br/>system vs mimalloc lab"]
+        RETAIN["same-process retention court<br/>maximum capacity · post-release · trim<br/>slope vs warm-up · attribution closure"]
         LIMIT["budget judge<br/>process · profile · target · resource"]
         BASE["comparative baseline<br/>same workload · machine · mode"]
         PRESS{"bounded AND materially<br/>below named baseline?"}
@@ -189,7 +189,7 @@ flowchart LR
 
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
-        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>51.9 MB retained · purge recovers 3.193%<br/>recovery · Agent edge open"]
+        SERVO["Servo 0.5.0<br/>software W1/W3 rendered<br/>narrow: ~0.9 MB/cycle live libmalloc growth<br/>~290 MB close spike · no recovery · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
@@ -384,6 +384,32 @@ flowchart LR
   but insufficient**. Keep purge as one pressure-ladder action, but Servo's G1
   recovery dependency remains red; decay/tcache, engine cache, hibernate and
   terminate-one-target routes require distinct evidence.
+- [~] Servo's attribution-closure court supersedes the decay/tcache follow-up.
+  A source audit found jemalloc built with `--disable-stats` (so no receipt had
+  held a jemalloc figure), jemalloc linked under the `_rjem_` prefix, and
+  SpiderMonkey built with `--disable-jemalloc`, so the "system-heap" the earlier
+  attribution blamed is Apple libmalloc, which `arena.4096.purge` cannot touch.
+  With jemalloc `stats` enabled, in-process libmalloc statistics, physical
+  footprint after a 3 s settle, and control cells of 1/8/32 build/observe/drop
+  cycles (seven runs each), settled footprint retention above empty was
+  34,881,800, 45,122,472 and 64,080,848 bytes. Least squares over 21 runs gives
+  a 35,757,687-byte warm-up intercept and an 889,348-byte-per-cycle slope, of
+  which 538,212 bytes per cycle are libmalloc bytes still in use: linear
+  accumulation of never-freed C/C++ allocations, not allocator retention.
+  jemalloc resident plus libmalloc reserved explain only a 0.739 share of the
+  32-cycle footprint retention, so attribution does not close and a quarter is
+  owned by neither allocator. After eight closes, `malloc_zone_pressure_relief`
+  released zero bytes in all seven runs and moved nothing; jemalloc purge
+  recovered 1,523,712 footprint bytes; no action reached empty plus warm-up
+  plus 4 MiB. The kernel's lifetime maximum footprint hit 315,278,344 bytes
+  after one close (21.2 MB empty, 39.3 MB live) because 210 MB of dirty
+  graphics-owned memory appears for about one second during teardown of the
+  GL-backed software context. Verdict: **narrow** Servo to bounded sessions;
+  its G1 recovery dependency is red until an upstream system-heap fix or a
+  measured process-per-target termination design exists. The next court must
+  name the libmalloc growth owner under `MallocStackLogging` and pass only if
+  at least 70% of the per-cycle growth attributes to one library or call-site
+  family in all seven runs.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
