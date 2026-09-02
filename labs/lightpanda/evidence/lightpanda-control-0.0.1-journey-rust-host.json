@@ -289,8 +289,18 @@
       "passed": true
     },
     {
-      "check": "memory.trim is unsupported_operation",
-      "detail": null,
+      "check": "memory.trim is a typed refusal or a strategy-named trim with released bytes",
+      "detail": {
+        "error": {
+          "code": "unsupported_operation",
+          "message": "memory.trim is reserved by control 0.0.1 but not offered by this Lightpanda host",
+          "retryable": false
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_20",
+        "version": "0.0.1"
+      },
       "passed": true
     },
     {
@@ -344,6 +354,7 @@
     "rendering and process model belong to the named technology, not to this journey"
   ],
   "memory_report_offered": false,
+  "memory_trim_offered": false,
   "passed": true,
   "platform": {
     "architecture": "arm64",
@@ -359,7 +370,7 @@
         "name": "court",
         "persistence": "ephemeral"
       },
-      "elapsed_ms": 481.034,
+      "elapsed_ms": 1.444,
       "operation": "profile.create",
       "response": {
         "ok": true,
@@ -379,7 +390,7 @@
       "arguments": {
         "persistence": "persistent"
       },
-      "elapsed_ms": 0.089,
+      "elapsed_ms": 0.027,
       "operation": "profile.create",
       "response": {
         "error": {
@@ -397,7 +408,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.051,
+      "elapsed_ms": 0.018,
       "operation": "session.open",
       "response": {
         "ok": true,
@@ -415,7 +426,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.034,
+      "elapsed_ms": 0.014,
       "operation": "session.open",
       "response": {
         "error": {
@@ -434,7 +445,7 @@
         "fixture": "does-not-exist.html",
         "session": "session_1"
       },
-      "elapsed_ms": 0.061,
+      "elapsed_ms": 0.017,
       "operation": "target.open",
       "response": {
         "error": {
@@ -453,7 +464,7 @@
         "fixture": "semantic-interactive.html",
         "session": "session_1"
       },
-      "elapsed_ms": 136.642,
+      "elapsed_ms": 58.894,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -476,7 +487,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 5.794,
+      "elapsed_ms": 0.518,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -553,7 +564,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.339,
+      "elapsed_ms": 0.296,
       "operation": "target.act",
       "response": {
         "error": {
@@ -579,7 +590,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 1.487,
+      "elapsed_ms": 0.383,
       "operation": "target.act",
       "response": {
         "ok": true,
@@ -602,7 +613,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.093,
+      "elapsed_ms": 0.095,
       "operation": "target.wait",
       "response": {
         "ok": true,
@@ -625,7 +636,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 301.204,
+      "elapsed_ms": 303.124,
       "operation": "target.wait",
       "response": {
         "error": {
@@ -655,7 +666,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.514,
+      "elapsed_ms": 0.423,
       "operation": "target.act",
       "response": {
         "error": {
@@ -684,7 +695,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.74,
+      "elapsed_ms": 0.795,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -766,7 +777,7 @@
         "max_nodes": 2,
         "target": "target_1"
       },
-      "elapsed_ms": 0.979,
+      "elapsed_ms": 1.562,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -805,7 +816,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.216,
+      "elapsed_ms": 0.329,
       "operation": "target.inspect",
       "response": {
         "ok": true,
@@ -826,7 +837,7 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.085,
+      "elapsed_ms": 0.056,
       "operation": "memory.report",
       "response": {
         "error": {
@@ -848,7 +859,7 @@
         "fixture": "semantic-static.html",
         "session": "session_1"
       },
-      "elapsed_ms": 86.853,
+      "elapsed_ms": 82.278,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -868,7 +879,7 @@
       "arguments": {
         "target": "target_2"
       },
-      "elapsed_ms": 0.985,
+      "elapsed_ms": 1.174,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -885,7 +896,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.03,
+      "elapsed_ms": 0.018,
       "operation": "target.screenshot",
       "response": {
         "error": {
@@ -901,7 +912,7 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.024,
+      "elapsed_ms": 0.013,
       "operation": "memory.trim",
       "response": {
         "error": {
@@ -924,7 +935,7 @@
         "request_id": "req_bad",
         "version": "0.0.1"
       },
-      "elapsed_ms": 0.021,
+      "elapsed_ms": 0.013,
       "operation": "invalid",
       "response": {
         "error": {
@@ -942,7 +953,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.942,
+      "elapsed_ms": 0.869,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -962,7 +973,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.02,
+      "elapsed_ms": 0.017,
       "operation": "target.snapshot",
       "response": {
         "error": {
@@ -985,7 +996,7 @@
         "fixture": "semantic-scripted.html",
         "session": "session_1"
       },
-      "elapsed_ms": 56.504,
+      "elapsed_ms": 55.353,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -1008,7 +1019,7 @@
         "max_nodes": 64,
         "target": "target_3"
       },
-      "elapsed_ms": 0.342,
+      "elapsed_ms": 0.449,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -1047,7 +1058,7 @@
       "arguments": {
         "target": "target_3"
       },
-      "elapsed_ms": 1.026,
+      "elapsed_ms": 1.145,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -1064,7 +1075,7 @@
       "arguments": {
         "session": "session_1"
       },
-      "elapsed_ms": 0.022,
+      "elapsed_ms": 0.024,
       "operation": "session.close",
       "response": {
         "ok": true,

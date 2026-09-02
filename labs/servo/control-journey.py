@@ -197,8 +197,12 @@ def main():
         expect(checks, "target.screenshot is unsupported_operation",
                not screenshot["ok"] and screenshot["error"]["code"] == "unsupported_operation")
         trim = host.call("memory.trim", {})
-        expect(checks, "memory.trim is unsupported_operation",
-               not trim["ok"] and trim["error"]["code"] == "unsupported_operation")
+        expect(checks, "memory.trim is a typed refusal or a strategy-named trim with released bytes",
+               (not trim["ok"] and trim["error"]["code"] in ("unsupported_operation", "unsupported_capability"))
+               or (trim["ok"] and trim["result"]["kind"] == "memory_trim"
+                   and isinstance(trim["result"]["strategy"], str)
+                   and isinstance(trim["result"]["released_bytes"], int)), trim)
+        memory_trim_offered = bool(trim["ok"])
 
         malformed = host.call("invalid", {}, raw={"protocol": "minicon-surf.control", "version": "0.0.1",
                                                   "request_id": "req_bad", "deadline_ms": 1000,
@@ -239,6 +243,7 @@ def main():
         "host_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
         "control_contract": "0.0.1",
         "memory_report_offered": memory_reported,
+        "memory_trim_offered": memory_trim_offered,
         "concurrent_targets_supported": concurrent_targets_supported,
         "platform": {"os": "macos", "architecture": "arm64"},
         "workload": {

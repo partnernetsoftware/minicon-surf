@@ -33,11 +33,20 @@
         "protocol": "minicon-surf.control",
         "request_id": "req_6",
         "result": {
+          "document_framing": "fixture",
           "fixture": "semantic-interactive.html",
           "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
           "session": "session_1",
-          "target": "target_1"
+          "target": "target_2",
+          "url": null
         },
         "version": "0.0.1"
       },
@@ -77,7 +86,7 @@
         "reference": {
           "node": "node_3",
           "revision": 0,
-          "target": "target_1"
+          "target": "target_2"
         },
         "role": "textbox",
         "value": "bounded browser"
@@ -104,7 +113,7 @@
           "applied": true,
           "kind": "action",
           "revision": 1,
-          "target": "target_1"
+          "target": "target_2"
         },
         "version": "0.0.1"
       },
@@ -120,7 +129,7 @@
           "kind": "wait",
           "matched": true,
           "revision": 1,
-          "target": "target_1"
+          "target": "target_2"
         },
         "version": "0.0.1"
       },
@@ -134,7 +143,7 @@
           "message": "condition was not met before deadline",
           "retryable": true,
           "scope": {
-            "id": "target_1",
+            "id": "target_2",
             "kind": "target"
           }
         },
@@ -157,7 +166,7 @@
           "message": "node reference revision no longer matches the target",
           "retryable": true,
           "scope": {
-            "id": "target_1",
+            "id": "target_2",
             "kind": "target"
           }
         },
@@ -208,7 +217,7 @@
             "reference": {
               "node": "node_1",
               "revision": 1,
-              "target": "target_1"
+              "target": "target_2"
             },
             "role": "heading"
           },
@@ -217,13 +226,13 @@
             "reference": {
               "node": "node_2",
               "revision": 1,
-              "target": "target_1"
+              "target": "target_2"
             },
             "role": "label"
           }
         ],
         "revision": 1,
-        "target": "target_1",
+        "target": "target_2",
         "truncated": true
       },
       "passed": true
@@ -236,14 +245,22 @@
         "request_id": "req_15",
         "result": {
           "crashed": false,
+          "document_framing": "fixture",
           "fixture": "semantic-interactive.html",
           "kind": "target",
           "load_complete": true,
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 1,
           "script_realm": true,
           "scripts_run": 1,
+          "scripts_skipped": [],
           "session": "session_1",
-          "target": "target_1"
+          "target": "target_2",
+          "url": null
         },
         "version": "0.0.1"
       },
@@ -256,23 +273,45 @@
         "protocol": "minicon-surf.control",
         "request_id": "req_16",
         "result": {
+          "allocator": {
+            "realm_zone": false,
+            "rust_global": "system",
+            "zone_blocks_leaked_total": 0,
+            "zones_destroyed": 0
+          },
           "kind": "memory_report",
           "libmalloc": {
+            "blocks_in_use": 2942,
             "size_allocated": 12582912,
-            "size_in_use": 256848
+            "size_in_use": 274288
           },
           "limitations": [
-            "logical owners are document sizes and QuickJS malloc bytes, not process memory",
-            "no layout, image, network or storage owners exist in this slice",
+            "logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory",
+            "no layout, image or storage owners exist in this slice",
             "not process RSS/private/PSS"
           ],
           "owners": {
+            "network": {
+              "bytes": 0,
+              "denied": 0,
+              "fetches": 0,
+              "limits": {
+                "allowed_origins": 0,
+                "bytes_per_target": 4194304,
+                "fetches_per_target": 32,
+                "pending_per_turn": 4,
+                "per_fetch_ms": 3000,
+                "redirects": 3,
+                "response_bytes": 1048576
+              }
+            },
             "profiles": {
               "object_limit": 8,
               "objects": 1
             },
             "script_realms": {
-              "malloc_bytes": 227920,
+              "dedicated_zones": [],
+              "malloc_bytes": 241056,
               "memory_limit_bytes": 16777216,
               "objects": 1
             },
@@ -300,11 +339,20 @@
         "protocol": "minicon-surf.control",
         "request_id": "req_17",
         "result": {
+          "document_framing": "fixture",
           "fixture": "semantic-static.html",
           "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 0,
+          "scripts_run": 0,
+          "scripts_skipped": 0,
           "session": "session_1",
-          "target": "target_2"
+          "target": "target_3",
+          "url": null
         },
         "version": "0.0.1"
       },
@@ -316,8 +364,24 @@
       "passed": true
     },
     {
-      "check": "memory.trim is unsupported_operation",
-      "detail": null,
+      "check": "memory.trim is a typed refusal or a strategy-named trim with released bytes",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_20",
+        "result": {
+          "kind": "memory_trim",
+          "libmalloc": {
+            "blocks_in_use": 2902,
+            "size_allocated": 12582912,
+            "size_in_use": 268576
+          },
+          "release_reporting": "bytes",
+          "released_bytes": 0,
+          "strategy": "malloc_zone_pressure_relief"
+        },
+        "version": "0.0.1"
+      },
       "passed": true
     },
     {
@@ -362,7 +426,7 @@
   ],
   "concurrent_targets_supported": true,
   "control_contract": "0.0.1",
-  "host_sha256": "d8c6f88cea5d3992e72dbc34b0d559763da329be838b673320f127144c4a790e",
+  "host_sha256": "8c6b7930f654818d8cb6bb236d053fe234e8df8e79b90ae9d81125de4e128554",
   "limitations": [
     "native stdio only; no CDP edge shares this target yet",
     "click and revision_at_least are the only action and condition kinds",
@@ -371,6 +435,7 @@
     "rendering and process model belong to the named technology, not to this journey"
   ],
   "memory_report_offered": true,
+  "memory_trim_offered": true,
   "passed": true,
   "platform": {
     "architecture": "arm64",
@@ -379,14 +444,14 @@
   "schema": "minicon-surf.servo-control-journey-receipt/0.0.1",
   "status": "observed",
   "technology": "native-dom",
-  "technology_version": "0.0.1",
+  "technology_version": "0.0.2",
   "transcript": [
     {
       "arguments": {
         "name": "court",
         "persistence": "ephemeral"
       },
-      "elapsed_ms": 1.4,
+      "elapsed_ms": 701.006,
       "operation": "profile.create",
       "response": {
         "ok": true,
@@ -406,7 +471,7 @@
       "arguments": {
         "persistence": "persistent"
       },
-      "elapsed_ms": 0.021,
+      "elapsed_ms": 0.091,
       "operation": "profile.create",
       "response": {
         "error": {
@@ -424,7 +489,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.019,
+      "elapsed_ms": 0.043,
       "operation": "session.open",
       "response": {
         "ok": true,
@@ -442,7 +507,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.011,
+      "elapsed_ms": 0.026,
       "operation": "session.open",
       "response": {
         "error": {
@@ -461,7 +526,7 @@
         "fixture": "does-not-exist.html",
         "session": "session_1"
       },
-      "elapsed_ms": 0.015,
+      "elapsed_ms": 0.059,
       "operation": "target.open",
       "response": {
         "error": {
@@ -480,18 +545,27 @@
         "fixture": "semantic-interactive.html",
         "session": "session_1"
       },
-      "elapsed_ms": 1.115,
+      "elapsed_ms": 5.623,
       "operation": "target.open",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_6",
         "result": {
+          "document_framing": "fixture",
           "fixture": "semantic-interactive.html",
           "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
           "session": "session_1",
-          "target": "target_1"
+          "target": "target_2",
+          "url": null
         },
         "version": "0.0.1"
       }
@@ -501,9 +575,9 @@
         "format": "semantic",
         "max_bytes": 65536,
         "max_nodes": 64,
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.199,
+      "elapsed_ms": 0.445,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -517,7 +591,7 @@
               "reference": {
                 "node": "node_1",
                 "revision": 0,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "heading"
             },
@@ -526,7 +600,7 @@
               "reference": {
                 "node": "node_2",
                 "revision": 0,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "label"
             },
@@ -536,7 +610,7 @@
               "reference": {
                 "node": "node_3",
                 "revision": 0,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "textbox",
               "value": "bounded browser"
@@ -547,7 +621,7 @@
               "reference": {
                 "node": "node_4",
                 "revision": 0,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "button"
             },
@@ -556,13 +630,13 @@
               "reference": {
                 "node": "node_5",
                 "revision": 0,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "link"
             }
           ],
           "revision": 0,
-          "target": "target_1",
+          "target": "target_2",
           "truncated": false
         },
         "version": "0.0.1"
@@ -576,11 +650,11 @@
         "reference": {
           "node": "node_1",
           "revision": 0,
-          "target": "target_1"
+          "target": "target_2"
         },
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.083,
+      "elapsed_ms": 0.167,
       "operation": "target.act",
       "response": {
         "error": {
@@ -602,11 +676,11 @@
         "reference": {
           "node": "node_4",
           "revision": 0,
-          "target": "target_1"
+          "target": "target_2"
         },
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.12,
+      "elapsed_ms": 0.288,
       "operation": "target.act",
       "response": {
         "ok": true,
@@ -616,7 +690,7 @@
           "applied": true,
           "kind": "action",
           "revision": 1,
-          "target": "target_1"
+          "target": "target_2"
         },
         "version": "0.0.1"
       }
@@ -627,9 +701,9 @@
           "kind": "revision_at_least",
           "revision": 1
         },
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.022,
+      "elapsed_ms": 0.046,
       "operation": "target.wait",
       "response": {
         "ok": true,
@@ -639,7 +713,7 @@
           "kind": "wait",
           "matched": true,
           "revision": 1,
-          "target": "target_1"
+          "target": "target_2"
         },
         "version": "0.0.1"
       }
@@ -650,9 +724,9 @@
           "kind": "revision_at_least",
           "revision": 101
         },
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 305.559,
+      "elapsed_ms": 302.853,
       "operation": "target.wait",
       "response": {
         "error": {
@@ -660,7 +734,7 @@
           "message": "condition was not met before deadline",
           "retryable": true,
           "scope": {
-            "id": "target_1",
+            "id": "target_2",
             "kind": "target"
           }
         },
@@ -678,11 +752,11 @@
         "reference": {
           "node": "node_4",
           "revision": 0,
-          "target": "target_1"
+          "target": "target_2"
         },
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.102,
+      "elapsed_ms": 0.084,
       "operation": "target.act",
       "response": {
         "error": {
@@ -694,7 +768,7 @@
           "message": "node reference revision no longer matches the target",
           "retryable": true,
           "scope": {
-            "id": "target_1",
+            "id": "target_2",
             "kind": "target"
           }
         },
@@ -709,9 +783,9 @@
         "format": "semantic",
         "max_bytes": 65536,
         "max_nodes": 64,
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.456,
+      "elapsed_ms": 0.384,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -725,7 +799,7 @@
               "reference": {
                 "node": "node_1",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "heading"
             },
@@ -734,7 +808,7 @@
               "reference": {
                 "node": "node_2",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "label"
             },
@@ -744,7 +818,7 @@
               "reference": {
                 "node": "node_3",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "textbox",
               "value": "bounded browser"
@@ -755,7 +829,7 @@
               "reference": {
                 "node": "node_4",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "button"
             },
@@ -764,7 +838,7 @@
               "reference": {
                 "node": "node_5",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "link"
             },
@@ -774,13 +848,13 @@
               "reference": {
                 "node": "node_6",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "text"
             }
           ],
           "revision": 1,
-          "target": "target_1",
+          "target": "target_2",
           "truncated": false
         },
         "version": "0.0.1"
@@ -791,9 +865,9 @@
         "format": "semantic",
         "max_bytes": 65536,
         "max_nodes": 2,
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.233,
+      "elapsed_ms": 0.293,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -807,7 +881,7 @@
               "reference": {
                 "node": "node_1",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "heading"
             },
@@ -816,13 +890,13 @@
               "reference": {
                 "node": "node_2",
                 "revision": 1,
-                "target": "target_1"
+                "target": "target_2"
               },
               "role": "label"
             }
           ],
           "revision": 1,
-          "target": "target_1",
+          "target": "target_2",
           "truncated": true
         },
         "version": "0.0.1"
@@ -830,7 +904,7 @@
     },
     {
       "arguments": {
-        "target": "target_1"
+        "target": "target_2"
       },
       "elapsed_ms": 0.057,
       "operation": "target.inspect",
@@ -840,44 +914,74 @@
         "request_id": "req_15",
         "result": {
           "crashed": false,
+          "document_framing": "fixture",
           "fixture": "semantic-interactive.html",
           "kind": "target",
           "load_complete": true,
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 1,
           "script_realm": true,
           "scripts_run": 1,
+          "scripts_skipped": [],
           "session": "session_1",
-          "target": "target_1"
+          "target": "target_2",
+          "url": null
         },
         "version": "0.0.1"
       }
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.164,
+      "elapsed_ms": 0.122,
       "operation": "memory.report",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_16",
         "result": {
+          "allocator": {
+            "realm_zone": false,
+            "rust_global": "system",
+            "zone_blocks_leaked_total": 0,
+            "zones_destroyed": 0
+          },
           "kind": "memory_report",
           "libmalloc": {
+            "blocks_in_use": 2942,
             "size_allocated": 12582912,
-            "size_in_use": 256848
+            "size_in_use": 274288
           },
           "limitations": [
-            "logical owners are document sizes and QuickJS malloc bytes, not process memory",
-            "no layout, image, network or storage owners exist in this slice",
+            "logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory",
+            "no layout, image or storage owners exist in this slice",
             "not process RSS/private/PSS"
           ],
           "owners": {
+            "network": {
+              "bytes": 0,
+              "denied": 0,
+              "fetches": 0,
+              "limits": {
+                "allowed_origins": 0,
+                "bytes_per_target": 4194304,
+                "fetches_per_target": 32,
+                "pending_per_turn": 4,
+                "per_fetch_ms": 3000,
+                "redirects": 3,
+                "response_bytes": 1048576
+              }
+            },
             "profiles": {
               "object_limit": 8,
               "objects": 1
             },
             "script_realms": {
-              "malloc_bytes": 227920,
+              "dedicated_zones": [],
+              "malloc_bytes": 241056,
               "memory_limit_bytes": 16777216,
               "objects": 1
             },
@@ -902,18 +1006,44 @@
         "fixture": "semantic-static.html",
         "session": "session_1"
       },
-      "elapsed_ms": 3.492,
+      "elapsed_ms": 2.768,
       "operation": "target.open",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_17",
         "result": {
+          "document_framing": "fixture",
           "fixture": "semantic-static.html",
           "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 0,
+          "scripts_run": 0,
+          "scripts_skipped": 0,
           "session": "session_1",
-          "target": "target_2"
+          "target": "target_3",
+          "url": null
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_3"
+      },
+      "elapsed_ms": 0.219,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_18",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_3"
         },
         "version": "0.0.1"
       }
@@ -922,24 +1052,7 @@
       "arguments": {
         "target": "target_2"
       },
-      "elapsed_ms": 0.264,
-      "operation": "target.close",
-      "response": {
-        "ok": true,
-        "protocol": "minicon-surf.control",
-        "request_id": "req_18",
-        "result": {
-          "kind": "target_closed",
-          "target": "target_2"
-        },
-        "version": "0.0.1"
-      }
-    },
-    {
-      "arguments": {
-        "target": "target_1"
-      },
-      "elapsed_ms": 0.078,
+      "elapsed_ms": 0.024,
       "operation": "target.screenshot",
       "response": {
         "error": {
@@ -955,17 +1068,23 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.053,
+      "elapsed_ms": 0.075,
       "operation": "memory.trim",
       "response": {
-        "error": {
-          "code": "unsupported_operation",
-          "message": "memory.trim is reserved by control 0.0.1 but not offered by the native DOM slice",
-          "retryable": false
-        },
-        "ok": false,
+        "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_20",
+        "result": {
+          "kind": "memory_trim",
+          "libmalloc": {
+            "blocks_in_use": 2902,
+            "size_allocated": 12582912,
+            "size_in_use": 268576
+          },
+          "release_reporting": "bytes",
+          "released_bytes": 0,
+          "strategy": "malloc_zone_pressure_relief"
+        },
         "version": "0.0.1"
       }
     },
@@ -978,7 +1097,7 @@
         "request_id": "req_bad",
         "version": "0.0.1"
       },
-      "elapsed_ms": 0.038,
+      "elapsed_ms": 0.043,
       "operation": "invalid",
       "response": {
         "error": {
@@ -994,9 +1113,9 @@
     },
     {
       "arguments": {
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.314,
+      "elapsed_ms": 0.245,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -1004,7 +1123,7 @@
         "request_id": "req_22",
         "result": {
           "kind": "target_closed",
-          "target": "target_1"
+          "target": "target_2"
         },
         "version": "0.0.1"
       }
@@ -1014,9 +1133,9 @@
         "format": "semantic",
         "max_bytes": 65536,
         "max_nodes": 64,
-        "target": "target_1"
+        "target": "target_2"
       },
-      "elapsed_ms": 0.038,
+      "elapsed_ms": 0.027,
       "operation": "target.snapshot",
       "response": {
         "error": {
@@ -1024,7 +1143,7 @@
           "message": "target does not exist",
           "retryable": false,
           "scope": {
-            "id": "target_1",
+            "id": "target_2",
             "kind": "target"
           }
         },
@@ -1039,18 +1158,27 @@
         "fixture": "semantic-scripted.html",
         "session": "session_1"
       },
-      "elapsed_ms": 2.565,
+      "elapsed_ms": 2.099,
       "operation": "target.open",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_24",
         "result": {
+          "document_framing": "fixture",
           "fixture": "semantic-scripted.html",
           "kind": "target",
+          "network": {
+            "bytes": 0,
+            "denied": 0,
+            "fetches": 0
+          },
           "revision": 0,
+          "scripts_run": 1,
+          "scripts_skipped": 0,
           "session": "session_1",
-          "target": "target_3"
+          "target": "target_4",
+          "url": null
         },
         "version": "0.0.1"
       }
@@ -1060,9 +1188,9 @@
         "format": "semantic",
         "max_bytes": 65536,
         "max_nodes": 64,
-        "target": "target_3"
+        "target": "target_4"
       },
-      "elapsed_ms": 0.286,
+      "elapsed_ms": 0.222,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -1076,7 +1204,7 @@
               "reference": {
                 "node": "node_1",
                 "revision": 0,
-                "target": "target_3"
+                "target": "target_4"
               },
               "role": "heading"
             },
@@ -1085,13 +1213,13 @@
               "reference": {
                 "node": "node_2",
                 "revision": 0,
-                "target": "target_3"
+                "target": "target_4"
               },
               "role": "button"
             }
           ],
           "revision": 0,
-          "target": "target_3",
+          "target": "target_4",
           "truncated": false
         },
         "version": "0.0.1"
@@ -1099,9 +1227,9 @@
     },
     {
       "arguments": {
-        "target": "target_3"
+        "target": "target_4"
       },
-      "elapsed_ms": 0.227,
+      "elapsed_ms": 0.211,
       "operation": "target.close",
       "response": {
         "ok": true,
@@ -1109,7 +1237,7 @@
         "request_id": "req_26",
         "result": {
           "kind": "target_closed",
-          "target": "target_3"
+          "target": "target_4"
         },
         "version": "0.0.1"
       }
@@ -1118,7 +1246,7 @@
       "arguments": {
         "session": "session_1"
       },
-      "elapsed_ms": 0.023,
+      "elapsed_ms": 0.025,
       "operation": "session.close",
       "response": {
         "ok": true,

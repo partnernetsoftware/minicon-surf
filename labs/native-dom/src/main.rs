@@ -17,6 +17,7 @@ use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 use dom_query::{Document, NodeRef};
+use rquickjs::allocator::Allocator;
 use rquickjs::{Context, Runtime};
 use serde_json::{Map, Value, json};
 use url::Url;
@@ -137,6 +138,7 @@ fn act_script(revision: u64, index: usize) -> String {
 
 // ---------------------------------------------------------------- envelope
 
+#[derive(Debug)]
 struct ControlError {
     code: &'static str,
     message: String,
@@ -362,28 +364,311 @@ struct MallocStatistics {
     size_allocated: usize,
 }
 
+#[cfg(target_os = "macos")]
 unsafe extern "C" {
     fn malloc_zone_statistics(zone: *mut c_void, stats: *mut MallocStatistics);
+    fn malloc_zone_pressure_relief(zone: *mut c_void, goal: usize) -> usize;
+    fn malloc_create_zone(start_size: usize, flags: u32) -> *mut c_void;
+    fn malloc_destroy_zone(zone: *mut c_void);
+    fn malloc_zone_malloc(zone: *mut c_void, size: usize) -> *mut c_void;
+    fn malloc_zone_calloc(zone: *mut c_void, count: usize, size: usize) -> *mut c_void;
+    fn malloc_zone_free(zone: *mut c_void, ptr: *mut c_void);
+    fn malloc_size(ptr: *const c_void) -> usize;
 }
 
-fn libmalloc_statistics() -> Value {
+#[cfg(target_os = "macos")]
+fn zone_statistics(zone: *mut c_void) -> Value {
     let mut stats = MallocStatistics::default();
-    // SAFETY: a null zone aggregates every malloc zone; the out-pointer is a
-    // valid, exclusively borrowed C-layout struct for the duration of the call.
-    unsafe { malloc_zone_statistics(std::ptr::null_mut(), &mut stats) };
-    json!({"size_in_use":stats.size_in_use,"size_allocated":stats.size_allocated})
+    // SAFETY: a null zone aggregates every malloc zone and a non-null zone
+    // came from malloc_create_zone; the out-pointer is a valid, exclusively
+    // borrowed C-layout struct for the duration of the call.
+    unsafe { malloc_zone_statistics(zone, &mut stats) };
+    json!({"size_in_use":stats.size_in_use,"size_allocated":stats.size_allocated,"blocks_in_use":stats.blocks_in_use})
 }
 
-// ------------------------------------------------------------------ realm
+#[cfg(target_os = "macos")]
+fn libmalloc_statistics() -> Value {
+    zone_statistics(std::ptr::null_mut())
+}
 
-/// One bounded QuickJS realm holding the mirrored document.
+#[cfg(not(target_os = "macos"))]
+fn libmalloc_statistics() -> Value {
+    Value::Null
+}
+
+/// Blocks still in use inside a dedicated zone at the moment it was destroyed,
+/// summed over every closed realm. A non-zero value means QuickJS or the
+/// shim leaked blocks that only the zone teardown reclaimed.
+static ZONE_BLOCKS_LEAKED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static ZONES_DESTROYED: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// A dedicated libmalloc zone that one QuickJS realm allocates from, so that
+/// closing the target destroys the zone and returns its pages to the OS
+/// instead of leaving freed blocks inside the default zone's regions.
+///
+/// Invariants: the zone is owned by exactly one `Realm`, is never cloned, and
+/// is dropped after the realm's `Context` and `Runtime` (field order), so
+/// `JS_FreeRuntime` has released every block before `malloc_destroy_zone`.
+/// The allocator handed to QuickJS only borrows the zone pointer and has no
+/// destructor, so nothing is destroyed twice.
+#[cfg(target_os = "macos")]
+struct Zone(*mut c_void);
+
+#[cfg(target_os = "macos")]
+impl Zone {
+    fn create() -> Result<Self, ControlError> {
+        // SAFETY: malloc_create_zone has no preconditions; null is checked.
+        let zone = unsafe { malloc_create_zone(0, 0) };
+        if zone.is_null() {
+            return Err(ControlError::new(
+                "internal",
+                "malloc zone creation failed",
+                false,
+            ));
+        }
+        Ok(Zone(zone))
+    }
+
+    fn blocks_in_use(&self) -> usize {
+        let mut stats = MallocStatistics::default();
+        // SAFETY: the zone came from malloc_create_zone and is still alive.
+        unsafe { malloc_zone_statistics(self.0, &mut stats) };
+        stats.blocks_in_use as usize
+    }
+}
+
+#[cfg(target_os = "macos")]
+impl Drop for Zone {
+    fn drop(&mut self) {
+        let leaked = self.blocks_in_use();
+        ZONE_BLOCKS_LEAKED.fetch_add(leaked, std::sync::atomic::Ordering::Relaxed);
+        ZONES_DESTROYED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        // SAFETY: the zone was created by malloc_create_zone; the runtime that
+        // allocated from it has already been freed (see the struct invariant),
+        // and any block still counted above is reclaimed here.
+        unsafe { malloc_destroy_zone(self.0) };
+    }
+}
+
+/// rquickjs allocator that routes every QuickJS allocation into one zone and
+/// keeps the accounting QuickJS itself would have done with its default
+/// allocator: rquickjs documents `set_memory_limit` as a no-op under a custom
+/// allocator, so the byte limit is enforced here on the block sizes libmalloc
+/// actually serves, and the live byte count is exposed through `used`.
+///
+/// Contract: every allocation is charged by its real `malloc_size` after it
+/// is served and released before it is freed; a block that would push the
+/// count over the limit (or overflow it) is freed again and null is
+/// returned, so nothing is ever left both unaccounted and live. `realloc`
+/// never touches the old block until a charged replacement exists: on any
+/// failure it returns null and the old block stays valid and counted.
+#[cfg(target_os = "macos")]
+struct ZoneAllocator {
+    zone: *mut c_void,
+    limit: usize,
+    /// Live bytes served by this zone, updated with compare-and-swap loops so
+    /// the count stays exact even if a future rquickjs build calls the
+    /// allocator from more than one thread.
+    used: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+}
+
+#[cfg(target_os = "macos")]
+impl ZoneAllocator {
+    /// Try to add a served block's real size to the count. Fails without
+    /// changing the count when the total would exceed the limit or overflow.
+    fn try_charge(&self, ptr: *mut c_void) -> bool {
+        // SAFETY: the block was just returned by this zone.
+        let size = unsafe { malloc_size(ptr) };
+        let limit = self.limit;
+        self.used
+            .fetch_update(
+                std::sync::atomic::Ordering::SeqCst,
+                std::sync::atomic::Ordering::SeqCst,
+                |current| {
+                    current
+                        .checked_add(size)
+                        .filter(|total| limit == 0 || *total <= limit)
+                },
+            )
+            .is_ok()
+    }
+
+    /// Charge a freshly served block or give it back and report null.
+    fn charge_or_release(&self, ptr: *mut c_void) -> *mut u8 {
+        if ptr.is_null() {
+            return std::ptr::null_mut();
+        }
+        if self.try_charge(ptr) {
+            return ptr.cast();
+        }
+        // SAFETY: the block came from this zone a moment ago and was never
+        // handed to QuickJS.
+        unsafe { malloc_zone_free(self.zone, ptr) };
+        std::ptr::null_mut()
+    }
+
+    fn release(&self, size: usize) {
+        let _ = self.used.fetch_update(
+            std::sync::atomic::Ordering::SeqCst,
+            std::sync::atomic::Ordering::SeqCst,
+            |current| Some(current.saturating_sub(size)),
+        );
+    }
+
+    /// Cheap pre-check on the requested size; the real check happens on the
+    /// served size in `try_charge`.
+    fn within_limit(&self, additional: usize) -> bool {
+        let current = self.used.load(std::sync::atomic::Ordering::SeqCst);
+        self.limit == 0
+            || current
+                .checked_add(additional)
+                .is_some_and(|total| total <= self.limit)
+    }
+}
+
+// SAFETY: every call forwards to libmalloc zone functions with pointers that
+// the rquickjs bridge guarantees came from this same allocator (`dealloc`
+// and `realloc`), or with a size QuickJS requested; `usable_size` uses
+// malloc_size, which is valid for any block served by any libmalloc zone.
+#[cfg(target_os = "macos")]
+unsafe impl Allocator for ZoneAllocator {
+    fn alloc(&mut self, size: usize) -> *mut u8 {
+        if !self.within_limit(size) {
+            return std::ptr::null_mut();
+        }
+        // SAFETY: plain zone malloc; a zero size yields a minimal block and
+        // null on exhaustion is reported to QuickJS as out of memory.
+        self.charge_or_release(unsafe { malloc_zone_malloc(self.zone, size) })
+    }
+
+    fn calloc(&mut self, count: usize, size: usize) -> *mut u8 {
+        let Some(total) = count.checked_mul(size) else {
+            return std::ptr::null_mut();
+        };
+        if !self.within_limit(total) {
+            return std::ptr::null_mut();
+        }
+        // SAFETY: plain zone calloc with an overflow-checked product.
+        self.charge_or_release(unsafe { malloc_zone_calloc(self.zone, count, size) })
+    }
+
+    unsafe fn dealloc(&mut self, ptr: *mut u8) {
+        // The bridge filters null, but stay safe if called directly.
+        if ptr.is_null() {
+            return;
+        }
+        // SAFETY: the caller guarantees the block came from this allocator.
+        let size = unsafe { malloc_size(ptr.cast()) };
+        self.release(size);
+        // SAFETY: as above; a foreign pointer would abort inside libmalloc
+        // rather than corrupt another zone.
+        unsafe { malloc_zone_free(self.zone, ptr.cast()) }
+    }
+
+    unsafe fn realloc(&mut self, ptr: *mut u8, new_size: usize) -> *mut u8 {
+        if ptr.is_null() {
+            return self.alloc(new_size);
+        }
+        // SAFETY: the caller guarantees the block came from this allocator.
+        let old = unsafe { malloc_size(ptr.cast()) };
+        if !self.within_limit(new_size.saturating_sub(old)) {
+            return std::ptr::null_mut();
+        }
+        // Serve and charge the replacement first; the old block is untouched
+        // until the replacement is fully accounted. A zero new size yields a
+        // minimal block, matching this platform's realloc.
+        // SAFETY: plain zone malloc.
+        let replacement = unsafe { malloc_zone_malloc(self.zone, new_size) };
+        if replacement.is_null() || !self.try_charge(replacement) {
+            if !replacement.is_null() {
+                // SAFETY: never handed out; came from this zone.
+                unsafe { malloc_zone_free(self.zone, replacement) };
+            }
+            return std::ptr::null_mut();
+        }
+        // SAFETY: both blocks are live, distinct, and at least
+        // min(old, new_size) bytes long; the old block is readable in full
+        // because `old` is its usable size.
+        unsafe {
+            std::ptr::copy_nonoverlapping(
+                ptr,
+                replacement.cast::<u8>(),
+                std::cmp::min(old, new_size),
+            );
+        }
+        self.release(old);
+        // SAFETY: the old block came from this allocator and is no longer
+        // referenced.
+        unsafe { malloc_zone_free(self.zone, ptr.cast()) };
+        replacement.cast()
+    }
+
+    unsafe fn usable_size(ptr: *mut u8) -> usize {
+        // The bridge answers null with 0 before reaching here; mirror it.
+        if ptr.is_null() {
+            return 0;
+        }
+        // SAFETY: the caller guarantees the block came from a libmalloc zone.
+        unsafe { malloc_size(ptr.cast()) }
+    }
+}
+
+/// One bounded QuickJS realm holding the mirrored document. Fields drop in
+/// declaration order: the context and runtime free every QuickJS block
+/// before the optional zone that served them is destroyed.
 struct Realm {
-    runtime: Runtime,
     context: Context,
+    runtime: Runtime,
+    #[cfg(target_os = "macos")]
+    zone_used: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
+    #[cfg(target_os = "macos")]
+    zone: Option<Zone>,
 }
 
 impl Realm {
-    fn new() -> Result<Self, ControlError> {
+    #[cfg(target_os = "macos")]
+    fn new(dedicated_zone: bool) -> Result<Self, ControlError> {
+        let zone = if dedicated_zone {
+            Some(Zone::create()?)
+        } else {
+            None
+        };
+        let zone_used = zone
+            .as_ref()
+            .map(|_| std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)));
+        let runtime = match (&zone, &zone_used) {
+            (Some(zone), Some(used)) => Runtime::new_with_alloc(ZoneAllocator {
+                zone: zone.0,
+                limit: REALM_MEMORY_LIMIT,
+                used: used.clone(),
+            }),
+            _ => Runtime::new(),
+        }
+        .map_err(|e| ControlError::new("internal", format!("script runtime failed: {e}"), false))?;
+        // With the default allocator QuickJS enforces this itself; with the
+        // zone allocator the limit lives in ZoneAllocator and this is a no-op.
+        runtime.set_memory_limit(REALM_MEMORY_LIMIT);
+        runtime.set_max_stack_size(REALM_STACK_LIMIT);
+        let context = Context::full(&runtime).map_err(|e| {
+            ControlError::new("internal", format!("script context failed: {e}"), false)
+        })?;
+        Ok(Realm {
+            context,
+            runtime,
+            zone_used,
+            zone,
+        })
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn new(dedicated_zone: bool) -> Result<Self, ControlError> {
+        if dedicated_zone {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "dedicated realm zones exist only on macOS",
+                false,
+            ));
+        }
         let runtime = Runtime::new().map_err(|e| {
             ControlError::new("internal", format!("script runtime failed: {e}"), false)
         })?;
@@ -392,7 +677,27 @@ impl Realm {
         let context = Context::full(&runtime).map_err(|e| {
             ControlError::new("internal", format!("script context failed: {e}"), false)
         })?;
-        Ok(Realm { runtime, context })
+        Ok(Realm { context, runtime })
+    }
+
+    #[cfg(target_os = "macos")]
+    fn zone_statistics(&self) -> Option<Value> {
+        self.zone.as_ref().map(|zone| zone_statistics(zone.0))
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn zone_statistics(&self) -> Option<Value> {
+        None
+    }
+
+    /// Live QuickJS bytes: the zone allocator's own count when a zone serves
+    /// the realm, otherwise QuickJS's accounting through the default allocator.
+    fn malloc_bytes(&self) -> usize {
+        #[cfg(target_os = "macos")]
+        if let Some(used) = &self.zone_used {
+            return used.load(std::sync::atomic::Ordering::Relaxed);
+        }
+        self.runtime.memory_usage().malloc_size.max(0) as usize
     }
 
     /// Evaluate a script, run the microtasks it queued, and return its string result.
@@ -457,10 +762,6 @@ impl Realm {
                 _ => break,
             }
         }
-    }
-
-    fn malloc_bytes(&self) -> usize {
-        self.runtime.memory_usage().malloc_size.max(0) as usize
     }
 }
 
@@ -614,6 +915,7 @@ fn net_error(error: net::NetError, target_id: &str) -> ControlError {
 struct Host {
     fixture_root: PathBuf,
     policy: net::Policy,
+    realm_zone: bool,
     profiles: BTreeMap<String, Profile>,
     session: Option<Session>,
     targets: BTreeMap<String, Target>,
@@ -730,6 +1032,30 @@ impl Host {
             "target.act" => self.target_act(a, deadline),
             "target.wait" => self.target_wait(a, deadline),
             "memory.report" => Ok(self.memory_report()),
+            "memory.trim" => {
+                exact_object(a, &[])?;
+                #[cfg(target_os = "macos")]
+                {
+                    // SAFETY: a null zone requests pressure relief from every
+                    // malloc zone; a zero goal asks for everything reclaimable.
+                    let released = unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) };
+                    Ok(json!({
+                        "kind":"memory_trim",
+                        "strategy":"malloc_zone_pressure_relief",
+                        "release_reporting":"bytes",
+                        "released_bytes":released,
+                        "libmalloc":libmalloc_statistics(),
+                    }))
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    Err(ControlError::new(
+                        "unsupported_capability",
+                        "memory.trim is qualified on macOS only",
+                        false,
+                    ))
+                }
+            }
             other => Err(unsupported_operation(other)),
         }
     }
@@ -979,7 +1305,7 @@ impl Host {
         }
         drop(document);
 
-        let realm = Realm::new()?;
+        let realm = Realm::new(self.realm_zone)?;
         realm.eval(DOM_SHIM_JS, deadline, &id)?;
         let seed = format!(
             "__mcsSeed({})",
@@ -1237,6 +1563,11 @@ impl Host {
         let fixture_bytes: usize = self.targets.values().map(|t| t.fixture_bytes).sum();
         let elements: usize = self.targets.values().map(|t| t.element_count).sum();
         let realm_bytes: usize = self.targets.values().map(|t| t.realm.malloc_bytes()).sum();
+        let zones: Vec<Value> = self
+            .targets
+            .values()
+            .filter_map(|t| t.realm.zone_statistics())
+            .collect();
         let fetches: usize = self.targets.values().map(|t| t.budget.fetches).sum();
         let network_bytes: usize = self.targets.values().map(|t| t.budget.bytes).sum();
         let denied: usize = self.targets.values().map(|t| t.budget.denied).sum();
@@ -1247,9 +1578,10 @@ impl Host {
                 "profiles":{"objects":self.profiles.len(),"object_limit":MAX_PROFILES},
                 "sessions":{"objects":self.session.iter().count(),"object_limit":1},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
-                "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT},
+                "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()}},
             },
+            "allocator":{"realm_zone":self.realm_zone,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed)},
             "libmalloc":libmalloc_statistics(),
             "limitations":["logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory","no layout, image or storage owners exist in this slice","not process RSS/private/PSS"],
         })
@@ -1336,9 +1668,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
         }
     }
+    let realm_zone = std::env::var("MINICON_SURF_NATIVE_REALM_ZONE").is_ok_and(|v| v == "1");
     let mut host = Host {
         fixture_root,
         policy,
+        realm_zone,
         profiles: BTreeMap::new(),
         session: None,
         targets: BTreeMap::new(),
@@ -1370,4 +1704,250 @@ fn main() -> Result<(), Box<dyn Error>> {
         out.flush()?;
     }
     Ok(())
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod zone_tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::{Arc, Mutex};
+
+    /// The leak counters are process-global, so zone tests run one at a time.
+    static SERIAL: Mutex<()> = Mutex::new(());
+
+    fn allocator(limit: usize) -> (ZoneAllocator, Zone, Arc<AtomicUsize>) {
+        let zone = Zone::create().unwrap();
+        let used = Arc::new(AtomicUsize::new(0));
+        (
+            ZoneAllocator {
+                zone: zone.0,
+                limit,
+                used: used.clone(),
+            },
+            zone,
+            used,
+        )
+    }
+
+    #[test]
+    fn zone_allocator_accounts_and_enforces_the_limit() {
+        let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        let (mut alloc, zone, used) = allocator(64 * 1024);
+        let small = alloc.alloc(1000);
+        assert!(!small.is_null());
+        assert!(used.load(Ordering::Relaxed) >= 1000);
+        let zero = alloc.alloc(0);
+        assert!(!zero.is_null(), "zero-size allocations must be non-null");
+        let too_big = alloc.alloc(128 * 1024);
+        assert!(too_big.is_null(), "allocations over the limit must fail");
+        let overflow = alloc.calloc(usize::MAX, 2);
+        assert!(overflow.is_null(), "overflowing calloc must fail");
+        let counted_before_failure = used.load(Ordering::Relaxed);
+        let too_much_growth = unsafe { alloc.realloc(small, 128 * 1024) };
+        assert!(
+            too_much_growth.is_null(),
+            "growing past the limit must fail"
+        );
+        assert_eq!(
+            used.load(Ordering::Relaxed),
+            counted_before_failure,
+            "a failed realloc leaves the count untouched"
+        );
+        assert!(
+            unsafe { malloc_size(small.cast()) } >= 1000,
+            "and the old block stays valid"
+        );
+        let grown = unsafe { alloc.realloc(small, 4000) };
+        assert!(!grown.is_null());
+        assert!(used.load(Ordering::Relaxed) >= 4000);
+        let shrunk = unsafe { alloc.realloc(grown, 100) };
+        assert!(!shrunk.is_null());
+        assert!(
+            used.load(Ordering::Relaxed) < 4000,
+            "shrinking is accounted by actual sizes"
+        );
+        let from_null = unsafe { alloc.realloc(std::ptr::null_mut(), 16) };
+        assert!(!from_null.is_null());
+        unsafe {
+            alloc.dealloc(std::ptr::null_mut());
+            alloc.dealloc(shrunk);
+            alloc.dealloc(zero);
+            alloc.dealloc(from_null);
+        }
+        assert_eq!(
+            unsafe { ZoneAllocator::usable_size(std::ptr::null_mut()) },
+            0
+        );
+        assert_eq!(
+            used.load(Ordering::Relaxed),
+            0,
+            "every charged byte is released on dealloc"
+        );
+        assert_eq!(
+            zone.blocks_in_use(),
+            0,
+            "the zone holds no blocks after frees"
+        );
+    }
+
+    #[test]
+    fn zone_allocator_reports_out_of_memory_as_null_without_charging() {
+        let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        let (mut alloc, zone, used) = allocator(4096);
+        let first = alloc.alloc(3000);
+        assert!(!first.is_null());
+        let denied = alloc.alloc(3000);
+        assert!(denied.is_null(), "the second block would exceed the limit");
+        let denied_zeroed = alloc.calloc(1, 3000);
+        assert!(denied_zeroed.is_null());
+        let counted = used.load(Ordering::Relaxed);
+        assert!(
+            (3000..=4096).contains(&counted),
+            "only the served block is counted"
+        );
+        unsafe { alloc.dealloc(first) };
+        assert_eq!(used.load(Ordering::Relaxed), 0);
+        assert_eq!(zone.blocks_in_use(), 0);
+    }
+
+    /// The usable size libmalloc serves for `request` bytes in a scratch zone.
+    fn served_size(request: usize) -> usize {
+        let scratch = Zone::create().unwrap();
+        let block = unsafe { malloc_zone_malloc(scratch.0, request) };
+        let size = unsafe { malloc_size(block) };
+        unsafe { malloc_zone_free(scratch.0, block) };
+        size
+    }
+
+    #[test]
+    fn zone_allocator_charges_the_served_size_not_the_requested_size() {
+        let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        let served = served_size(17);
+        assert!(served > 17, "libmalloc rounds a 17-byte request up");
+        // The request passes the pre-check but the served block does not fit.
+        let (mut alloc, zone, used) = allocator(served - 1);
+        let denied = alloc.alloc(17);
+        assert!(denied.is_null(), "a served block over the limit is refused");
+        assert_eq!(used.load(Ordering::Relaxed), 0);
+        assert_eq!(zone.blocks_in_use(), 0, "the refused block was given back");
+        let denied_zeroed = alloc.calloc(17, 1);
+        assert!(denied_zeroed.is_null());
+        assert_eq!(zone.blocks_in_use(), 0);
+    }
+
+    #[test]
+    fn zone_allocator_realloc_keeps_the_old_block_on_every_failure() {
+        let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        let served_new = served_size(40);
+        assert!(served_new > 40, "libmalloc rounds a 40-byte request up");
+        let (mut probe, _probe_zone, _) = allocator(0);
+        let old_served = unsafe { malloc_size(probe.alloc(16).cast()) };
+        // Pre-check passes (growth of 24 fits) but the served replacement
+        // does not: the old block must survive untouched and counted.
+        let (mut alloc, zone, used) = allocator(old_served + served_new - 1);
+        let old = alloc.alloc(16);
+        assert!(!old.is_null());
+        unsafe { std::ptr::write_bytes(old, 0xa5, 16) };
+        let counted = used.load(Ordering::Relaxed);
+        assert_eq!(counted, old_served);
+        let failed = unsafe { alloc.realloc(old, 40) };
+        assert!(
+            failed.is_null(),
+            "growth whose served size exceeds the limit fails"
+        );
+        assert_eq!(
+            used.load(Ordering::Relaxed),
+            counted,
+            "the count is unchanged"
+        );
+        assert_eq!(zone.blocks_in_use(), 1, "only the old block is live");
+        let bytes = unsafe { std::slice::from_raw_parts(old, 16) };
+        assert!(
+            bytes.iter().all(|b| *b == 0xa5),
+            "the old block is still readable"
+        );
+        unsafe { std::ptr::write_bytes(old, 0x5a, 16) };
+        assert!(
+            unsafe { std::slice::from_raw_parts(old, 16) }
+                .iter()
+                .all(|b| *b == 0x5a),
+            "the old block is still writable"
+        );
+        // A growth that fits copies the bytes and releases the old block.
+        let (mut roomy, roomy_zone, roomy_used) = allocator(0);
+        let first = roomy.alloc(16);
+        unsafe { std::ptr::write_bytes(first, 0x3c, 16) };
+        let grown = unsafe { roomy.realloc(first, 4000) };
+        assert!(!grown.is_null());
+        assert!(
+            unsafe { std::slice::from_raw_parts(grown, 16) }
+                .iter()
+                .all(|b| *b == 0x3c),
+            "the bytes moved to the replacement"
+        );
+        assert_eq!(roomy_zone.blocks_in_use(), 1, "the old block was freed");
+        assert_eq!(roomy_used.load(Ordering::Relaxed), unsafe {
+            malloc_size(grown.cast())
+        });
+        // Zero-size reallocation yields a minimal block and frees the old one.
+        let minimal = unsafe { roomy.realloc(grown, 0) };
+        assert!(!minimal.is_null());
+        assert_eq!(roomy_zone.blocks_in_use(), 1);
+        assert_eq!(roomy_used.load(Ordering::Relaxed), unsafe {
+            malloc_size(minimal.cast())
+        });
+        let from_null_zero = unsafe { roomy.realloc(std::ptr::null_mut(), 0) };
+        assert!(!from_null_zero.is_null());
+        unsafe {
+            roomy.dealloc(minimal);
+            roomy.dealloc(from_null_zero);
+            alloc.dealloc(old);
+        }
+        assert_eq!(roomy_used.load(Ordering::Relaxed), 0);
+        assert_eq!(used.load(Ordering::Relaxed), 0);
+        assert_eq!(roomy_zone.blocks_in_use(), 0);
+        assert_eq!(zone.blocks_in_use(), 0);
+    }
+
+    #[test]
+    fn realm_frees_every_block_before_its_zone_is_destroyed() {
+        let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+        let before = ZONE_BLOCKS_LEAKED.load(Ordering::Relaxed);
+        let destroyed = ZONES_DESTROYED.load(Ordering::Relaxed);
+        let realm = Realm::new(true).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
+        realm
+            .eval(
+                "__mcsSeed([{e:'html',a:{},c:[{e:'body',a:{},c:[{e:'h1',a:{},c:[{x:'x'}]}]}]}]); \
+                 const p = []; for (let i = 0; i < 2000; i++) p.push({i, s: 'value' + i}); String(p.length)",
+                deadline,
+                "target_test",
+            )
+            .unwrap();
+        assert!(
+            realm.malloc_bytes() > 100_000,
+            "the zone accounting sees the realm's heap"
+        );
+        let over = realm.eval(
+            "const big = []; while (true) big.push(new Array(4096).fill(1));",
+            deadline,
+            "target_test",
+        );
+        assert!(
+            over.is_err(),
+            "exceeding the realm limit must fail inside the zone"
+        );
+        assert!(
+            realm.malloc_bytes() <= REALM_MEMORY_LIMIT,
+            "the count never exceeds the limit"
+        );
+        drop(realm);
+        assert_eq!(ZONES_DESTROYED.load(Ordering::Relaxed), destroyed + 1);
+        assert_eq!(
+            ZONE_BLOCKS_LEAKED.load(Ordering::Relaxed),
+            before,
+            "no block may remain in use when the zone is destroyed"
+        );
+    }
 }
