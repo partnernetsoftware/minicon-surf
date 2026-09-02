@@ -324,6 +324,7 @@ def main():
     parser.add_argument("--fixture", required=True)
     parser.add_argument("--lightpanda-sha256", required=True)
     parser.add_argument("--servo-control", help="optional servo-control host binary driven through native control 0.0.1")
+    parser.add_argument("--native-dom", help="optional native-dom-control host binary driven through native control 0.0.1")
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--samples-per-stage", type=int, default=3)
     parser.add_argument("--settle-ms", type=int, default=500)
@@ -351,11 +352,16 @@ def main():
     engine_names = {"lightpanda": "lightpanda", "google_chrome": "chrome"}
     fixture_path = pathlib.Path(args.fixture)
     servo_sha = None
+    native_sha = None
     for name in selected:
         if name == "servo_control":
             if not args.servo_control:
                 parser.error("servo_control candidate requires --servo-control")
             servo_sha = hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest()
+        elif name == "native_dom":
+            if not args.native_dom:
+                parser.error("native_dom candidate requires --native-dom")
+            native_sha = hashlib.sha256(pathlib.Path(args.native_dom).read_bytes()).hexdigest()
         elif name not in paths:
             parser.error(f"unknown candidate {name}")
         candidates[name] = []
@@ -363,6 +369,9 @@ def main():
     def run_candidate(candidate):
         if candidate == "servo_control":
             return run_once_control(args.servo_control, fixture_path.parent, fixture_path.name,
+                                    args.samples_per_stage, args.settle_ms, args.sequential_cycles)
+        if candidate == "native_dom":
+            return run_once_control(args.native_dom, fixture_path.parent, fixture_path.name,
                                     args.samples_per_stage, args.settle_ms, args.sequential_cycles)
         return run_once(engine_names[candidate], paths[candidate], fixture,
                         args.samples_per_stage, args.settle_ms, args.sequential_cycles)
@@ -384,6 +393,8 @@ def main():
         raise RuntimeError("Chrome version changed during the measured court")
     if servo_sha and hashlib.sha256(pathlib.Path(args.servo_control).read_bytes()).hexdigest() != servo_sha:
         raise RuntimeError("servo-control binary changed during the measured court")
+    if native_sha and hashlib.sha256(pathlib.Path(args.native_dom).read_bytes()).hexdigest() != native_sha:
+        raise RuntimeError("native-dom-control binary changed during the measured court")
     candidate_reports = {}
     if "lightpanda" in candidates:
         candidate_reports["lightpanda"] = {
@@ -398,6 +409,14 @@ def main():
             "executable_sha256": chrome_sha,
             "transport": "CDP over loopback WebSocket",
             **aggregate(candidates["google_chrome"]),
+        }
+    if native_sha:
+        candidate_reports["native_dom"] = {
+            "version": "0.0.0",
+            "html5ever_version": "0.38.0",
+            "binary_sha256": native_sha,
+            "transport": "native control 0.0.1 NDJSON on stdio; html5ever DOM only, no layout, script or network",
+            **aggregate(candidates["native_dom"]),
         }
     if servo_sha:
         candidate_reports["servo_control"] = {

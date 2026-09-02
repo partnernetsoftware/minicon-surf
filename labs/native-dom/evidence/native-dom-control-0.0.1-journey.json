@@ -1,0 +1,1152 @@
+{
+  "artifact_sha256": "1054432bae2f14e0061e33d23402fbaa67a921d319d56adc6bcf887ddad1cbc2",
+  "checks": [
+    {
+      "check": "ephemeral profile created",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "persistent profile refused with unsupported_capability",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "session opened",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "second session refused with resource_limit",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "unknown fixture is not_found",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "interactive fixture target opened at revision 0",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_6",
+        "result": {
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "snapshot revision 0 lists heading, label, textbox, button, link",
+      "detail": [
+        [
+          "heading",
+          "Memory and Agent Court"
+        ],
+        [
+          "label",
+          "Query"
+        ],
+        [
+          "textbox",
+          "Query"
+        ],
+        [
+          "button",
+          "Continue"
+        ],
+        [
+          "link",
+          "Example result"
+        ]
+      ],
+      "passed": true
+    },
+    {
+      "check": "textbox carries its value",
+      "detail": {
+        "dom_id": "query",
+        "name": "Query",
+        "reference": {
+          "node": "node_3",
+          "revision": 0,
+          "target": "target_1"
+        },
+        "role": "textbox",
+        "value": "bounded browser"
+      },
+      "passed": true
+    },
+    {
+      "check": "node references are revision-scoped compound IDs",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "clicking a heading is unsupported_capability",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "button click applied and revision advanced past 0",
+      "detail": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "missing": [
+              "script realm",
+              "event dispatch",
+              "layout"
+            ],
+            "slice": "html-dom"
+          },
+          "message": "the native DOM slice has no script realm or event dispatch; click cannot mutate the document",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_9",
+        "version": "0.0.1"
+      },
+      "passed": false
+    },
+    {
+      "check": "wait observes revision_at_least 1 without a caller sleep",
+      "detail": {
+        "error": {
+          "code": "deadline_exceeded",
+          "message": "condition was not met before deadline",
+          "retryable": true,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_10",
+        "version": "0.0.1"
+      },
+      "passed": false
+    },
+    {
+      "check": "unmet wait is a typed deadline_exceeded",
+      "detail": {
+        "error": {
+          "code": "deadline_exceeded",
+          "message": "condition was not met before deadline",
+          "retryable": true,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_11",
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "reused revision-0 reference is stale_revision with revisions in details",
+      "detail": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "missing": [
+              "script realm",
+              "event dispatch",
+              "layout"
+            ],
+            "slice": "html-dom"
+          },
+          "message": "the native DOM slice has no script realm or event dispatch; click cannot mutate the document",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_12",
+        "version": "0.0.1"
+      },
+      "passed": false
+    },
+    {
+      "check": "post-click snapshot shows Clicked button and Continued status text",
+      "detail": [
+        [
+          "heading",
+          "Memory and Agent Court"
+        ],
+        [
+          "label",
+          "Query"
+        ],
+        [
+          "textbox",
+          "Query"
+        ],
+        [
+          "button",
+          "Continue"
+        ],
+        [
+          "link",
+          "Example result"
+        ]
+      ],
+      "passed": false
+    },
+    {
+      "check": "max_nodes truncates the snapshot explicitly",
+      "detail": {
+        "kind": "semantic_snapshot",
+        "nodes": [
+          {
+            "name": "Memory and Agent Court",
+            "reference": {
+              "node": "node_1",
+              "revision": 0,
+              "target": "target_1"
+            },
+            "role": "heading"
+          },
+          {
+            "name": "Query",
+            "reference": {
+              "node": "node_2",
+              "revision": 0,
+              "target": "target_1"
+            },
+            "role": "label"
+          }
+        ],
+        "revision": 0,
+        "target": "target_1",
+        "truncated": true
+      },
+      "passed": true
+    },
+    {
+      "check": "target.inspect reports fixture, revision and load state",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_15",
+        "result": {
+          "crashed": false,
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "load_complete": true,
+          "revision": 0,
+          "script_realm": false,
+          "session": "session_1",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      },
+      "passed": false
+    },
+    {
+      "check": "memory.report answers with a report or a typed unsupported_capability",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_16",
+        "result": {
+          "kind": "memory_report",
+          "libmalloc": {
+            "size_allocated": 25165824,
+            "size_in_use": 40752
+          },
+          "limitations": [
+            "logical owners are document sizes, not heap bytes",
+            "no script, layout, image or network owners exist in this slice",
+            "not process RSS/private/PSS"
+          ],
+          "owners": {
+            "profiles": {
+              "object_limit": 8,
+              "objects": 1
+            },
+            "sessions": {
+              "object_limit": 1,
+              "objects": 1
+            },
+            "targets": {
+              "elements": 12,
+              "fixture_bytes": 801,
+              "object_limit": 8,
+              "objects": 1
+            }
+          },
+          "semantic": "native-dom-logical-owners-plus-libmalloc-statistics"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "second concurrent target either opens or is a typed resource_limit",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_17",
+        "result": {
+          "fixture": "semantic-static.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_2"
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "target.screenshot is unsupported_operation",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "memory.trim is unsupported_operation",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "unknown operation is invalid_request",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "target closed",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "closed target is not_found",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "W2 scripted fixture snapshot shows the script-built heading and button",
+      "detail": [
+        [
+          "heading",
+          "Before script"
+        ]
+      ],
+      "passed": false
+    },
+    {
+      "check": "session closed",
+      "detail": null,
+      "passed": true
+    },
+    {
+      "check": "host exits cleanly on stdin close",
+      "detail": 0,
+      "passed": true
+    }
+  ],
+  "concurrent_targets_supported": true,
+  "control_contract": "0.0.1",
+  "host_sha256": "991163e1b1f1e2d09f7f72716e527f78e42bc6cf977053e0a78881f04e004665",
+  "limitations": [
+    "native stdio only; no CDP edge shares this target yet",
+    "click and revision_at_least are the only action and condition kinds",
+    "revision is driven by a MutationObserver installed after load; navigation is not covered",
+    "one session per host process; profiles are ephemeral and not engine cookie jars",
+    "rendering and process model belong to the named technology, not to this journey"
+  ],
+  "memory_report_offered": true,
+  "passed": false,
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.servo-control-journey-receipt/0.0.1",
+  "status": "failed",
+  "technology": "native-dom",
+  "technology_version": "0.0.0",
+  "transcript": [
+    {
+      "arguments": {
+        "name": "court",
+        "persistence": "ephemeral"
+      },
+      "elapsed_ms": 477.036,
+      "operation": "profile.create",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_1",
+        "result": {
+          "created": true,
+          "kind": "profile",
+          "name": "court",
+          "persistence": "ephemeral",
+          "profile": "profile_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "persistence": "persistent"
+      },
+      "elapsed_ms": 0.156,
+      "operation": "profile.create",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "message": "the native DOM slice offers ephemeral profiles only",
+          "retryable": false
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_2",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "profile": "profile_1"
+      },
+      "elapsed_ms": 0.043,
+      "operation": "session.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_3",
+        "result": {
+          "kind": "session",
+          "profile": "profile_1",
+          "session": "session_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "profile": "profile_1"
+      },
+      "elapsed_ms": 0.019,
+      "operation": "session.open",
+      "response": {
+        "error": {
+          "code": "resource_limit",
+          "message": "this host owns one live session; close it first",
+          "retryable": true
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_4",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "fixture": "does-not-exist.html",
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.035,
+      "operation": "target.open",
+      "response": {
+        "error": {
+          "code": "not_found",
+          "message": "fixture does not exist in the court",
+          "retryable": false
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_5",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "fixture": "semantic-interactive.html",
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.675,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_6",
+        "result": {
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.05,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_7",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Memory and Agent Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "label"
+            },
+            {
+              "dom_id": "query",
+              "name": "Query",
+              "reference": {
+                "node": "node_3",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "textbox",
+              "value": "bounded browser"
+            },
+            {
+              "dom_id": "continue",
+              "name": "Continue",
+              "reference": {
+                "node": "node_4",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "button"
+            },
+            {
+              "name": "Example result",
+              "reference": {
+                "node": "node_5",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            }
+          ],
+          "revision": 0,
+          "target": "target_1",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "action": {
+          "kind": "click"
+        },
+        "reference": {
+          "node": "node_1",
+          "revision": 0,
+          "target": "target_1"
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.031,
+      "operation": "target.act",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "missing": [
+              "script realm",
+              "event dispatch",
+              "layout"
+            ],
+            "slice": "html-dom"
+          },
+          "message": "the native DOM slice has no script realm or event dispatch; click cannot mutate the document",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_8",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "action": {
+          "kind": "click"
+        },
+        "reference": {
+          "node": "node_4",
+          "revision": 0,
+          "target": "target_1"
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.02,
+      "operation": "target.act",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "missing": [
+              "script realm",
+              "event dispatch",
+              "layout"
+            ],
+            "slice": "html-dom"
+          },
+          "message": "the native DOM slice has no script realm or event dispatch; click cannot mutate the document",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_9",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "condition": {
+          "kind": "revision_at_least",
+          "revision": 1
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 10006.963,
+      "operation": "target.wait",
+      "response": {
+        "error": {
+          "code": "deadline_exceeded",
+          "message": "condition was not met before deadline",
+          "retryable": true,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_10",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "condition": {
+          "kind": "revision_at_least",
+          "revision": 100
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 310.258,
+      "operation": "target.wait",
+      "response": {
+        "error": {
+          "code": "deadline_exceeded",
+          "message": "condition was not met before deadline",
+          "retryable": true,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_11",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "action": {
+          "kind": "click"
+        },
+        "reference": {
+          "node": "node_4",
+          "revision": 0,
+          "target": "target_1"
+        },
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.117,
+      "operation": "target.act",
+      "response": {
+        "error": {
+          "code": "unsupported_capability",
+          "details": {
+            "missing": [
+              "script realm",
+              "event dispatch",
+              "layout"
+            ],
+            "slice": "html-dom"
+          },
+          "message": "the native DOM slice has no script realm or event dispatch; click cannot mutate the document",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_12",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.23,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_13",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Memory and Agent Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "label"
+            },
+            {
+              "dom_id": "query",
+              "name": "Query",
+              "reference": {
+                "node": "node_3",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "textbox",
+              "value": "bounded browser"
+            },
+            {
+              "dom_id": "continue",
+              "name": "Continue",
+              "reference": {
+                "node": "node_4",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "button"
+            },
+            {
+              "name": "Example result",
+              "reference": {
+                "node": "node_5",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "link"
+            }
+          ],
+          "revision": 0,
+          "target": "target_1",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 2,
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.174,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_14",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Memory and Agent Court",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "heading"
+            },
+            {
+              "name": "Query",
+              "reference": {
+                "node": "node_2",
+                "revision": 0,
+                "target": "target_1"
+              },
+              "role": "label"
+            }
+          ],
+          "revision": 0,
+          "target": "target_1",
+          "truncated": true
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.04,
+      "operation": "target.inspect",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_15",
+        "result": {
+          "crashed": false,
+          "fixture": "semantic-interactive.html",
+          "kind": "target",
+          "load_complete": true,
+          "revision": 0,
+          "script_realm": false,
+          "session": "session_1",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {},
+      "elapsed_ms": 0.15,
+      "operation": "memory.report",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_16",
+        "result": {
+          "kind": "memory_report",
+          "libmalloc": {
+            "size_allocated": 25165824,
+            "size_in_use": 40752
+          },
+          "limitations": [
+            "logical owners are document sizes, not heap bytes",
+            "no script, layout, image or network owners exist in this slice",
+            "not process RSS/private/PSS"
+          ],
+          "owners": {
+            "profiles": {
+              "object_limit": 8,
+              "objects": 1
+            },
+            "sessions": {
+              "object_limit": 1,
+              "objects": 1
+            },
+            "targets": {
+              "elements": 12,
+              "fixture_bytes": 801,
+              "object_limit": 8,
+              "objects": 1
+            }
+          },
+          "semantic": "native-dom-logical-owners-plus-libmalloc-statistics"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "fixture": "semantic-static.html",
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.519,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_17",
+        "result": {
+          "fixture": "semantic-static.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_2"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_2"
+      },
+      "elapsed_ms": 0.04,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_18",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_2"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.03,
+      "operation": "target.screenshot",
+      "response": {
+        "error": {
+          "code": "unsupported_operation",
+          "message": "target.screenshot is reserved by control 0.0.1 but not offered by the native DOM slice",
+          "retryable": false
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_19",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {},
+      "elapsed_ms": 0.034,
+      "operation": "memory.trim",
+      "response": {
+        "error": {
+          "code": "unsupported_operation",
+          "message": "memory.trim is reserved by control 0.0.1 but not offered by the native DOM slice",
+          "retryable": false
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_20",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "arguments": {},
+        "deadline_ms": 1000,
+        "operation": "target.explode",
+        "protocol": "minicon-surf.control",
+        "request_id": "req_bad",
+        "version": "0.0.1"
+      },
+      "elapsed_ms": 0.029,
+      "operation": "invalid",
+      "response": {
+        "error": {
+          "code": "invalid_request",
+          "message": "operation is not part of control 0.0.1",
+          "retryable": false
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_bad",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.03,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_22",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_1"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_1"
+      },
+      "elapsed_ms": 0.031,
+      "operation": "target.snapshot",
+      "response": {
+        "error": {
+          "code": "not_found",
+          "message": "target does not exist",
+          "retryable": false,
+          "scope": {
+            "id": "target_1",
+            "kind": "target"
+          }
+        },
+        "ok": false,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_23",
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "fixture": "semantic-scripted.html",
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.39,
+      "operation": "target.open",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_24",
+        "result": {
+          "fixture": "semantic-scripted.html",
+          "kind": "target",
+          "revision": 0,
+          "session": "session_1",
+          "target": "target_3"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "format": "semantic",
+        "max_bytes": 65536,
+        "max_nodes": 64,
+        "target": "target_3"
+      },
+      "elapsed_ms": 0.049,
+      "operation": "target.snapshot",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_25",
+        "result": {
+          "kind": "semantic_snapshot",
+          "nodes": [
+            {
+              "name": "Before script",
+              "reference": {
+                "node": "node_1",
+                "revision": 0,
+                "target": "target_3"
+              },
+              "role": "heading"
+            }
+          ],
+          "revision": 0,
+          "target": "target_3",
+          "truncated": false
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "target": "target_3"
+      },
+      "elapsed_ms": 0.039,
+      "operation": "target.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_26",
+        "result": {
+          "kind": "target_closed",
+          "target": "target_3"
+        },
+        "version": "0.0.1"
+      }
+    },
+    {
+      "arguments": {
+        "session": "session_1"
+      },
+      "elapsed_ms": 0.043,
+      "operation": "session.close",
+      "response": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_27",
+        "result": {
+          "closed_targets": 0,
+          "kind": "session_closed",
+          "profile": "profile_1",
+          "session": "session_1"
+        },
+        "version": "0.0.1"
+      }
+    }
+  ],
+  "workload": {
+    "fixture": "semantic-interactive.html",
+    "fixture_sha256": "cbedae940d4940fb261689f9f24f2e18850d7079f6c22db0f8c070ac56ac5c30",
+    "id": "W7-native",
+    "transport": "NDJSON on stdio; fixture bytes as percent-encoded data URL"
+  }
+}

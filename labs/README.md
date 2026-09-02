@@ -21,6 +21,7 @@ Planned first landscape:
 | `chrome` | named contemporary comparison baseline | active — same-CDP-live-target W1 observed |
 | `servo` | Rust embeddable full-engine candidate | active — API + software W1 runtime observed |
 | `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + lifecycle RSS observed; CDP pending |
+| `native-dom` | native bounded route, first slice: html5ever DOM without layout or script | active — control 0.0.1 journey 21/27 (static semantics pass, actions typed unsupported); retention court row observed |
 | `blitz` | modular Rust HTML/CSS/native-component candidate | planned |
 | `wpe` | embedded low-consumption WebKit candidate | planned |
 | `wry` | system-WebView compatibility candidate | planned |

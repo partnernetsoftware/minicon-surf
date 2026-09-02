@@ -98,6 +98,24 @@ measured in its own lab, not Rust heap. The receipt stays `incomplete`: the
 Servo candidate is driven natively rather than through CDP, renders through a
 CGL context, and every candidate remains one fixture, platform and summed RSS.
 
+The four-candidate receipt
+(`macos-arm64-target-retention-native-dom-0.0.0-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
+adds the native bounded route's first slice, an html5ever DOM host with no
+layout, script or network, on the same eight-cycle court. Median summed
+process-tree RSS in bytes:
+
+| stage | native DOM slice | Servo 0.5.0 | Lightpanda 0.4.0 | Chrome 152.0.7977.75 |
+|---|---|---|---|---|
+| empty | 2,195,456 | 44,695,552 | 22,806,528 | 804,061,184 |
+| one target | 2,539,520 | 87,752,704 | 28,049,408 | 1,229,062,144 |
+| post all closes | 2,785,280 | 95,158,272 | 29,523,968 | 932,544,512 |
+| retained above empty | 589,824 | 50,462,720 | 6,799,360 | 128,483,328 |
+| eight concurrent targets | 3,063,808 | 137,805,824 | one target only | 2,202,714,112 |
+
+The slice is the floor of the native route, not a browser: it answers static
+semantic snapshots and refuses every action with a typed failure. Each later
+slice (script realm, layout, network) must be measured against this row.
+
 The per-cycle slope receipt
 (`macos-arm64-target-retention-slope-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75`)
 fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles
