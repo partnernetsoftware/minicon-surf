@@ -1,6 +1,6 @@
 # Lightpanda lab
 
-Status: **active — macOS arm64 W1/W2 receipts observed, comparison incomplete**
+Status: **active — macOS arm64 W1/W2/W3 receipts observed, comparison incomplete**
 Candidate role: **low-memory/Agent architecture reference and comparative
 baseline; not a Rust SDK or headed engine candidate**
 
@@ -34,6 +34,7 @@ On macOS arm64, from repository root:
 ```bash
 ./labs/lightpanda/run-macos-arm64.sh
 ./labs/lightpanda/run-w2-macos-arm64.sh
+./labs/court/run-target-retention-macos-arm64.sh
 ```
 
 The script emits a redaction-safe JSON object to stdout. It performs one warm-up
@@ -52,11 +53,14 @@ metrics endpoint, and is always reaped by the runner trap.
 
 ## Open gates
 
-- Compare with a named same-machine headless Chrome build using a complete
-  attributable process-tree sampler.
-- Add multiple-page/session workloads and qualify `Input` plus a named external
-  CDP client; the W2 journey currently covers Target/Page/Runtime/DOM directly.
-- Establish whether Lightpanda remains single-process for every measured mode.
+- Extend the named same-machine Chrome comparison beyond one small semantic
+  fixture and summed RSS; private/PSS and representative pages remain open.
+- Add a multiple-concurrent-page route or explicitly accept one target per
+  server; the W3 capacity probe observed `TargetAlreadyLoaded` on every second
+  concurrent create. Qualify `Input` plus a named external CDP client; the W2
+  journey currently covers Target/Page/Runtime/DOM directly.
+- Establish whether Lightpanda remains single-process outside the measured
+  W3 sequential-target and one-target-capacity modes.
 - Reproduce on Linux x86_64 and arm64; no Windows-native artifact exists in the
   pinned release.
 - Review implementation and license boundaries before reusing any source-level
@@ -78,3 +82,13 @@ remains `incomplete` for the same process-tree, baseline, and platform reasons.
 Its seven root-process maximum-RSS samples have a 27,131,904-byte median and a
 27,721,728-byte maximum; child processes were not sampled or excluded, so these
 numbers are not complete-process-tree evidence.
+
+The shared W3 receipt is
+[`../court/evidence/macos-arm64-target-retention-lightpanda-0.4.0-vs-chrome-152.0.7977.75.json`](../court/evidence/macos-arm64-target-retention-lightpanda-0.4.0-vs-chrome-152.0.7977.75.json).
+Across seven same-server runs, Lightpanda's median complete-tree RSS was
+22,626,304 bytes empty, 27,901,952 with the first live target, and 29,442,048
+after eight sequential targets were closed. The median post-eight-close minus
+empty delta was 6,766,592 bytes. It remained one process, but every concurrent
+capacity probe supported one target and rejected the second with
+`TargetAlreadyLoaded`. Verdict remains `keep` as a low-memory/Agent reference,
+now explicitly **narrowed to a single concurrent target for 0.4.0**.

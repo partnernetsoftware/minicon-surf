@@ -120,7 +120,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 ├── [E7] bounded engine experiments
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: W1/W2 + same-CDP-live-target Chrome court observed
+│   ├── [~] Lightpanda 0.4.0: W1/W2/W3 observed; low memory, concurrency narrowed to one target
 │   ├── [~] Servo 0.5.0: public API + software-rendered W1 runtime observed
 │   ├── native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -188,7 +188,7 @@ flowchart LR
     end
 
     subgraph LAB["Engine Lab [E7]"]
-        LP["Lightpanda 0.4.0<br/>W1/W2 · CDP action observed<br/>Chrome W1 court incomplete"]
+        LP["Lightpanda 0.4.0<br/>W1/W2/W3 · low RSS<br/>one concurrent target observed"]
         SERVO["Servo 0.5.0<br/>software W1 rendered<br/>comparison · Agent edge open"]
         NATIVE["bounded native route<br/>measured feature slices"]
         COMPAT["compatibility route<br/>total process cost visible"]
@@ -362,6 +362,21 @@ flowchart LR
   OS and ISA; installed Chrome is digest-identified but not a pinned download;
   retention, soak and marginal-target cost remain unmeasured. This is strong
   route-selection evidence, not yet the MiniCon Surf memory claim or G1 pass.
+- [~] The shared W3 court now keeps each real browser server alive across eight
+  sequential semantic-target create/observe/close cycles, then probes
+  concurrent capacity separately. Across seven alternating runs, Lightpanda
+  `0.4.0` median complete-tree RSS was 22,626,304 bytes empty, 27,901,952 with
+  the first target, and 29,442,048 after all eight closes: 6,766,592 bytes
+  retained above empty. Chrome `152.0.7977.75` measured 803,373,056,
+  1,231,011,840 and 930,168,832 bytes respectively, retaining 124,715,008
+  bytes. Lightpanda stayed single-process but rejected every second concurrent
+  target with `TargetAlreadyLoaded`; Chrome supported the eight-target probe
+  at 2,200,485,888-byte median summed-tree RSS. This strengthens G1 lifecycle
+  evidence and creates a material Agent/functionality constraint: Lightpanda
+  remains `keep` as a low-memory reference but is **narrowed to one concurrent
+  target** for this release. G1 stays open because summed RSS is not private/
+  PSS, the workload is one small fixture/platform, feature breadth differs,
+  and Lightpanda is not the Rust/dynamic-surface product engine.
 
 ## 6. First sequencing
 

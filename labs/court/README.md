@@ -51,6 +51,21 @@ recursive process-tree sampling, but remains `incomplete` because summed RSS
 can double-count shared pages and the court covers only one small fixture and
 platform. It is evidence for the next experiment, not a product memory claim.
 
+W3 now keeps each browser server alive across eight sequential W1 target
+create/observe/close cycles. It samples empty, first-live, first-closed,
+eighth-live and eighth-closed process-tree RSS, then separately probes up to
+eight concurrent targets. Run:
+
+```sh
+labs/court/run-target-retention-macos-arm64.sh \
+  --receipt labs/court/evidence/macos-arm64-target-retention-lightpanda-0.4.0-vs-chrome-152.0.7977.75.json
+```
+
+The concurrency probe does not force candidates into an unsupported common
+count. Lightpanda 0.4.0 is measured at its observed one-target limit and its
+second-create error is retained; Chrome is measured with eight concurrent
+targets. Sequential churn remains the shared comparison surface.
+
 ## Process-tree sampler
 
 [`process-tree-sampler/`](process-tree-sampler/) is the first shared court
