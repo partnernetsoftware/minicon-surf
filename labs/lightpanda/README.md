@@ -109,12 +109,16 @@ targets, and the engine itself still exposes no memory reporter.
 
 ## Per-cycle retention slope
 
-On the shared slope court (1, 8 and 32 sequential cycles, seven runs each),
-Lightpanda retained 5,292,032, 6,782,976 and 6,864,896 bytes above empty, a
-5,783,352-byte warm-up intercept and a 39,062-byte-per-cycle slope, against
-791,477 for Servo and 799,476 for Chrome. Lightpanda is the only measured
-route whose per-cycle accumulation is small enough for a long single-target
-Agent session; its one-target limit remains the constraint.
+On the shared slope court (1, 8, 32 and 128 sequential cycles, seven runs
+each), Lightpanda retained 5,292,032, 6,782,976, 6,864,896 and 6,963,200
+bytes above empty. The growth stops after the first few cycles: the 128-cycle
+soak sits 3.8 MB below the linear prediction from the first three points, so
+retention is a bounded plateau of about 7 MB rather than a per-cycle term.
+Servo's retention on the same court is linear to 128 cycles (130,613,248
+bytes) and Chrome's rose at a similar per-cycle rate over 1/8/32. Lightpanda
+is therefore the only measured route whose retention is bounded for a long
+single-target Agent session; its one-target-per-server limit is answered by
+the process-per-target combination above.
 
 ## Open gates
 

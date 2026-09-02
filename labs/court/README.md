@@ -161,11 +161,19 @@ fits retained-above-empty summed RSS against 1, 8 and 32 sequential cycles
 | Lightpanda 0.4.0 | 5,292,032 / 6,782,976 / 6,864,896 | 5,783,352 | 39,062 |
 | Chrome 152.0.7977.75 | 112,738,304 / 126,189,568 / 139,280,384 | 115,322,685 | 799,476 |
 
-Servo's slope matches the 765,990 bytes per cycle its own lab measured, and
-Chrome accumulates at almost the same rate per navigation cycle; Lightpanda's
-per-cycle growth is about one twentieth of either. Retention therefore
-separates cleanly into a one-time warm-up and a per-cycle term, and the
-per-cycle term is the number a long Agent session pays.
+A 128-cycle soak receipt
+(`macos-arm64-target-retention-cycles-128-servo-0.5.0-lightpanda-0.4.0`,
+seven runs each, Chrome not rerun) tests the linear assumption:
+
+| candidate | retained after 128 cycles | linear prediction from 1/8/32 | reading |
+|---|---|---|---|
+| Servo 0.5.0 (control) | 130,613,248 (live 178,192,384 with the 128th target) | 43,050,609 + 128 × 791,477 = 144,359,665 | linear growth continues; refit over 1/8/32/128 gives 678,621 bytes per cycle with a −669,294-byte residual at 128 |
+| Lightpanda 0.4.0 | 6,963,200 | 5,783,352 + 128 × 39,062 = 10,783,288 | growth stops: 6,782,976 at 8, 6,864,896 at 32, 6,963,200 at 128; retention is a bounded ~7 MB plateau, and the earlier 39 KB per cycle was warm-up spread over few cycles |
+
+Servo's per-cycle term is therefore real and unbounded within 128 cycles, and
+matches the 765,990 bytes per cycle its own lab measured; Chrome accumulated
+at almost the same rate over 1/8/32. Lightpanda's retention is bounded rather
+than linear, which is the property a long single-target Agent session needs.
 
 The concurrency probe does not force candidates into an unsupported common
 count. Lightpanda 0.4.0 is measured at its observed one-target limit and its

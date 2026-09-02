@@ -14,11 +14,12 @@
     },
     "lightpanda": {
       "least_squares_over_runs": {
-        "intercept_bytes": 5783352.771032246,
-        "slope_bytes_per_cycle": 39062.15961088092
+        "intercept_bytes": 6166815.460577844,
+        "slope_bytes_per_cycle": 7437.321305004545
       },
       "retained_median_by_cycles": {
         "1": 5292032,
+        "128": 6963200,
         "32": 6864896,
         "8": 6782976
       },
@@ -26,11 +27,12 @@
     },
     "servo_control": {
       "least_squares_over_runs": {
-        "intercept_bytes": 43050609.911007024,
-        "slope_bytes_per_cycle": 791477.6580796253
+        "intercept_bytes": 44419036.3443835,
+        "slope_bytes_per_cycle": 678621.1380872884
       },
       "retained_median_by_cycles": {
         "1": 42713088,
+        "128": 130613248,
         "32": 68452352,
         "8": 50577408
       },
@@ -56,6 +58,10 @@
     {
       "cycles": 8,
       "receipt": "macos-arm64-target-retention-cycles-8-servo-0.5.0-lightpanda-0.4.0-chrome-152.0.7977.75.json"
+    },
+    {
+      "cycles": 128,
+      "receipt": "macos-arm64-target-retention-cycles-128-servo-0.5.0-lightpanda-0.4.0.json"
     }
   ],
   "status": "incomplete"

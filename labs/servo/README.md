@@ -332,7 +332,11 @@ Lightpanda and Chrome (see `labs/court/README.md`): median one-target tree
 targets 136,953,856 bytes in one process against Chrome's 2,206,859,264 in
 nine, while Lightpanda rejects a second target. Servo retained 49,905,664
 bytes after eight closes on that court, consistent with the driver-owned
-growth measured above. This is Servo's first same-machine named baseline; it
+growth measured above. A 128-cycle soak on the same court retained
+130,613,248 bytes with 178,192,384 live at the 128th target: the growth is
+linear to 128 cycles (678,621 bytes per cycle refit over 1/8/32/128) and shows
+no plateau, so a long Agent session on the pinned release pays the driver's
+per-context cost indefinitely. This is Servo's first same-machine named baseline; it
 is not a G1 pass because the court is one fixture, summed RSS, a native rather
 than CDP transport, and a CGL-backed context.
 
