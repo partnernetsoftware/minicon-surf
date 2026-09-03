@@ -77,12 +77,19 @@ receipts.
   or weaken a workload to manufacture a pass.
 - Automated courts, regressions, `cargo test` and every default command are
   strictly headless: they never create or activate a desktop window. A real
-  window needs the double opt-in `--visual` plus
-  `MINICON_SURF_ALLOW_VISIBLE_COURT=1` in the same run, is documented as
-  showing windows, is run once by hand (never repeated in the background),
-  and must not steal focus. Missing either half fails closed and reports
-  `unverified`. `labs/native-dom/surface-headless-court.py` is the
-  falsifiable check.
+  window needs all three of `--visual`, `MINICON_SURF_ALLOW_VISIBLE_COURT=1`
+  in the same run, and the OWNER's explicit permission for that run; it is
+  documented as showing windows, is run once by hand in the foreground
+  (never repeated, never in the background), and must not steal focus
+  (`orderFrontRegardless` is for that manual visual run only). Automated
+  chains, CI and regressions never set that environment variable. Missing
+  any part fails closed and reports `unverified`.
+  `labs/native-dom/surface-headless-court.py` is the falsifiable check.
+- Surface and platform receipts never record a pid, a window number or
+  handle, screen coordinates, a capture, a hit map or any desktop content;
+  court-only facts go to the court-only file that is removed at exit.
+  (Older receipts of rejected experiments keep their provenance as
+  recorded.)
 
 ## Change hygiene
 
