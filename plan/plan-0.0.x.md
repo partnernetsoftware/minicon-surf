@@ -144,7 +144,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB); the host now attributes every engine process per target (ME3)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 37.7 MB footprint vs Chrome 597.6 MB · 8 concurrent 179 MB vs 868 MB (RSS 87.5/1,232 · 137/2,207); narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
-│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live; realm heap arena (macOS mmap, unmapped at close) repairs post-close without the live cost, holds a plateau through 128 cycles and meets its frozen soak criteria, kept opt-in; G1 open
+│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live; realm heap arena (macOS mmap, unmapped at close) repairs post-close without the live cost, holds a plateau through 128 single-target cycles and 32 concurrent eight-target rounds under frozen criteria, kept opt-in; G1 open
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── native bounded route is the browser-core convergence path, not merely another adapter
 │   ├── Lightpanda may combine as a low-memory worker/reference while native capability grows
@@ -897,6 +897,38 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   pages) and is not a close recovery. The default allocator is unchanged,
   the arena stays opt-in, nothing here is a cross-platform result, and leak
   absence is not claimed for any arm. G1, G3, P6 and G6 stay open.
+- [~] The arena has also been soaked concurrently, under a court committed
+  before its first run: 32 rounds per host process of a 1/2/4/8 ladder of
+  mixed interactive and representative targets, use, an interleaved partial
+  close whose order changes every round, a survivor-state check, a refill
+  and an all-close, with footprint, RSS, virtual size, owners, libmalloc and
+  arena statistics at every stage (`native-dom-control-0.0.2-arena-concurrent-soak`
+  receipt). Peak footprint with eight
+  targets was 3,735,744 bytes for the arena against 3,784,704 for the
+  default in the first round and 4,210,880 against 4,227,096 in the last;
+  the arena pays about 358 KB of fresh pages per open in every round where
+  the default reuses libmalloc's pages, and that cost is flat; closing four
+  of eight in an interleaved order returned 1,409,120 bytes in the arena arm
+  and nothing in the default arm, with every partial close removing exactly
+  its owners, realms and mappings and every survivor keeping its state;
+  retained after the all-close was 1,392,640 (flat from round 8, slope 0)
+  against 4,227,096 (slope 2.6 KB per round), U = 0, p = 0.00058; RSS after
+  the last all-close 4.98 MB against 7.83 MB; capacity unchanged; 384
+  mappings unmapped per run; zero rule violations in 14 runs; the 27-item
+  journey and 35-item network court pass under both arms. K1 to K9 all hold,
+  so the arena is concurrent-court-eligible on this court. The 32 MiB address-space reservation per live
+  realm is recorded beside touched and physical bytes rather than waved
+  away: eight live realms reserve
+  268,435,456 bytes of address space, visible as a 268 MB step in the host's
+  virtual size, while touching 2,627,712 bytes at a physical footprint equal
+  to the default's; that per-target address budget is recorded as a cost a
+  later platform must re-derive. Interior trimming follows its pre-registered signal:
+  at peak the arenas' high-water exceeded
+  used by 138,944 bytes, 5.6% of used, below the 25% and 1 MiB signal, so
+  interior trimming stays deferred and the 2.5× ratio under the adversarial
+  script stays an allocator risk on record, not a browser cost. The default allocator is unchanged and the arena stays
+  opt-in; nothing here is cross-platform and leak absence is not claimed.
+  G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

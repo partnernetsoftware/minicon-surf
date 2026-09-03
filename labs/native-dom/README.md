@@ -507,6 +507,104 @@ reports only newly marked pages; the receipt above is from the fixed
 binary. No safety invariant was affected: every teardown check passed in
 both runs.
 
+### Concurrent multi-target soak court
+
+[`arena-concurrent-soak-court.py`](arena-concurrent-soak-court.py) was
+committed with its rules and criteria before its first full run. One host
+process per run repeats 32 rounds of an Agent-shaped concurrent pattern:
+open targets up the ladder 1 → 2 → 4 → 8 with even slots on the interactive
+fixture and odd slots on the representative page over the bounded network,
+use every target (snapshot; revision-scoped click and revision wait on the
+interactive ones), close four of the eight in an interleaved order that
+changes every round (`0 2 4 6`, `1 3 5 7`, `7 5 3 1`, `2 3 4 5`), check that
+every survivor keeps its revision and snapshot node count, refill the closed
+slots and use them, then close all eight. Every stage of every round samples
+physical footprint, RSS and virtual size from outside and owners, libmalloc,
+realm bytes and the arena's used, blocks, high-water, reserved, decommit,
+unmapped and leaked counts from inside. A partial close that does not remove
+exactly its owners, realms and arenas, a survivor whose state changes, or
+an all-close that leaves any owner, arena, block or mapping behind fails
+the run; nothing is recovered by restarting the host. The criteria, fixed in
+advance: K1 peak live with eight targets at most 1.10× the default in the
+first and last round; K2 per-target marginal cost at most 1 MiB, at most
+1.25× its own first-round value and at most 1.10× the default's cold
+first-round marginal (the default's later marginal is libmalloc page reuse,
+recorded but not a bound); K3 partial-close exactness; K4 survivor state;
+K5 all-close zero owners, arenas, leaked blocks and every mapping unmapped;
+K6 post-all-close slope at most 8 KiB per round, late growth at most
+512 KiB and slope at most the default's plus 2 KiB; K7 retained after the
+last all-close lower with p < 0.05; K8 dense capacity at least 0.90× the
+default; K9 the 27-item journey and 35-item network court on the same
+binary under both arms. The 32 MiB virtual reservation per realm is
+recorded explicitly: reserved, touched (high-water) and host virtual size
+sit beside the physical footprint. Interior trimming is decided by a
+pre-registered signal, not by the verdict: it stays deferred unless the
+arena's summed high-water minus used at peak exceeds both 25% of used and
+1 MiB.
+
+Results (`native-dom-control-0.0.2-arena-concurrent-soak` receipt; medians
+of seven runs after one warm-up, bytes above the run's empty footprint of
+1,343,800 unless stated; 384 targets opened per run):
+
+| measure | default | arena |
+|---|---|---|
+| ladder 1 / 2 / 4 / 8, round 1 | 1,212,416 / 1,818,624 / 2,473,984 / 3,784,704 | 507,928 / 1,081,392 / 1,966,176 / 3,735,744 |
+| ladder 1 / 2 / 4 / 8, round 32 | 4,210,712 / 4,210,712 / 4,210,712 / 4,227,096 | 1,703,960 / 2,080,816 / 2,768,992 / 4,210,880 |
+| peak with eight targets, round 1 → 32 | 3,784,704 → 4,227,096 | 3,735,744 → 4,210,880 |
+| marginal cost per target, round 1 → 32 | 372,151 → 0 | 461,117 → 358,131 |
+| after the interleaved close of four, round 32 | 4,227,096 | 2,801,760 |
+| reopen cost of the four slots, round 1 → 32 | 131,072 → 0 | 1,359,968 → 1,409,120 |
+| retained after the all-close, round 1 / 8 / 16 / 32 | 3,915,776 / 4,177,944 / 4,194,328 / 4,227,096 | 1,015,808 / 1,392,640 / 1,392,640 / 1,392,640 |
+| post-all-close slope (bytes/round) and late growth | 2,636.5 and 0 | 0.0 and 0 |
+| RSS at peak, round 32 (absolute) | 7,831,552 | 7,667,712 |
+| RSS after the all-close, round 32 (absolute) | 7,831,552 | 4,980,736 |
+| libmalloc in-use at peak / after the all-close (above empty) | 2,220,912 / 98,400 | 54,032 / 33,296 |
+| QuickJS realm bytes at peak (eight realms) | 2,133,312 | 2,087,808 |
+| arena reserved / touched / used / blocks at peak | – | 268,435,456 / 2,627,712 / 2,488,768 / 25,060 |
+| host virtual size, empty → peak (absolute) | 445,749,706,752 → 445,749,706,752 | 445,749,362,688 → 446,017,798,144 |
+| mappings unmapped per run / targets opened | – | 384 / 384 |
+| rule violations (14 runs) | 0 | 0 |
+
+Reading. Live is a wash: with eight concurrent targets the two arms are
+within 1.3% of each other in the first round and within 0.4% in the last,
+so the arena's per-realm bookkeeping costs nothing visible at eight pages.
+The default's marginal cost falls to zero after the first round only
+because libmalloc keeps the pages of closed realms and hands them back to
+the next open; the arena pays about 358 KB of fresh pages per open in every
+round (the reopen of four slots costs 1.41 MB against the default's 0), and
+that cost is flat, not growing. The partial close is where the arms part:
+closing four of eight targets in an interleaved order returns 1.41 MB in the
+arena arm and nothing in the default arm, and every one of the 224 partial
+closes removed exactly its four owners, four realms and four mappings while
+all survivors kept their revision and node count. After the all-close the
+arena arm sits at 1.39 MB above empty from round 8 onward with a slope of
+zero, the default at 4.2 MB with a slope of 2.6 KB per round and no late
+growth; the arena's remainder is again libmalloc reservation for the host's
+own trees and buffers (in-use 33 KB above empty, no arena, block or mapping
+alive; 384 mappings unmapped per run). Mann-Whitney on the final retained
+value gives U = 0, p = 0.00058; dense capacity is unchanged at 0.6805
+against 0.7067; the 27-item journey and the 35-item network court pass
+under both arms on this binary. K1–K9 all hold, so the arena is
+**concurrent-court-eligible on this court**; the default allocator stays
+unchanged and the arena opt-in.
+
+The virtual reservation is real and is recorded as such: eight live realms
+reserve exactly 268,435,456 bytes of address space (32 MiB each), which the
+host's virtual size shows as a 268 MB step over its 445.7 GB macOS
+baseline, while the arenas touch 2,627,712 bytes and the physical footprint
+is 4.21 MB, the same as the default's. The reservation is a per-target
+address-space budget (eight targets: 256 MiB; the host's `MAX_TARGETS` is
+eight), not memory, but it is not free: it bounds how many realms a
+32-bit-like or address-limited environment could hold and it is the number
+a later platform must re-derive.
+
+Interior holes did not show a physical cost on the concurrent browser
+workload: at peak the eight arenas' summed high-water exceeds their summed
+used by 138,944 bytes, 5.6% of used and well under the pre-registered
+signal (25% and 1 MiB), so interior trimming stays deferred; the 2.5×
+ratio seen under the adversarial allocator script remains an allocator
+risk on record, not a browser cost.
+
 ## Findings against product contracts
 
 ### Agent control
