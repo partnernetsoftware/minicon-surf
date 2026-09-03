@@ -1142,11 +1142,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   real click and scroll applied before any request, CDP session unchanged,
   protocol exit with the child reaped in about 10 ms, owners to zero,
   target, frame, realm and scroll continuity, kill and stop failure modes,
-  no stale input. The post-hide host footprint (1.26 to 1.52 MB over
-  headless) and the slope (147 to 262 KB) exceed the pre-registered caps,
-  attributed to the spawn machinery's own 1.13 MB and the default zone's
-  cache of the freed frame; every regression holds. Verdict `narrow`; G1,
-  G3, P6 and G6 stay open.
+  no stale input. The post-hide host footprint (1.2 to 2.6 MB over
+  headless, one or two copies of the freed frame depending on the run)
+  and the slope exceed the pre-registered caps, attributed by the paired
+  court below to the default zone's cache of the freed frame; every
+  regression holds. Verdict `narrow`; G1, G3, P6 and G6 stay open.
+- [~] Paired attribution of that retention (read-only, twelve cells, eleven
+  in-process stages): the retained bytes are one or two copies of the
+  freed frame kept by the default zone plus small-block churn, scaling
+  with the frame size (about 1.25 MB, 0.46 MB and 0.26 MB after one round
+  for 1 MB, 256 KiB and 64 KiB frames) and independent of the child: a
+  child that
+  speaks the protocol without AppKit, one that keeps frames and one that
+  exits at once leave the same host retention as the real window; the
+  spawn itself costs 0 to 33 KB (the earlier 1.13 MB reading had already
+  paid for the frame), the reader thread's stack returns at join, in-use
+  returns to within 7 KB, `memory.trim` releases nothing. Candidate for
+  ruling, not implemented: a dedicated `mmap` region for the frame released
+  at hide, expected to bring the post-hide excess near the cap and remove
+  the two-copy variance but not the small-block slope. The surface court
+  stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

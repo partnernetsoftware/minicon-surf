@@ -199,9 +199,28 @@ capture 19 of 19, real click and scroll applied by the idle host before any
 request in 0.3 to 13 ms, CDP session continuity, conflict on a duplicate
 show, protocol exit in 8 to 12 ms with the child reaped, owners to zero,
 target and realm continuity, kill and stop failure modes counted, no stale
-input). The post-hide host footprint stays 1.26 to 1.52 MB over headless
-(cap 262,144) with a slope of 147 to 262 KB over three rounds (cap
-65,536): the spawn machinery alone leaves 1.13 MB in the host after even a
-failed spawn, and the default zone keeps the freed frame. Verdict:
-`narrow`; G3 stays open. The court-only channel is `--surface-court-file`
+input). The post-hide host footprint stays 1.2 to 2.6 MB over headless
+(cap 262,144) with a slope over three rounds far above the 65,536 cap:
+the default zone keeps one or two copies of the freed frame (section 8
+replaces the first reading that blamed the spawn machinery for 1.13 MB).
+Verdict: `narrow`; G3 stays open. The court-only channel is `--surface-court-file`
 as corrected by cdx-k68.
+
+## 8. Paired attribution of the post-hide retention (recorded)
+
+`surface-attribution-court.py` (twelve cells: three frame sizes on the real
+child, protocol and drain modes without AppKit, an exiting child; eleven
+in-process stages per show and hide, sampled only with
+`--surface-court-stages 1`): the retained bytes equal one or two copies of
+the freed frame kept by the default zone plus small-block churn; they
+scale with the frame size (1,245,184 / 458,752 / 262,144 bytes after round
+1 for 1,024,000 / 262,144 / 65,536-byte frames) and do not depend on the
+child at all; whether the zone keeps one or two copies varies between
+runs of the same binary (in round 3 the painter receives a non-resident
+block the zone already owns and both stay resident after hide); spawn
+costs 0 to 33 KB, the reader thread's 16 KB stack is recovered at join,
+in-use returns to within 7 KB of headless, `memory.trim` releases 0, and
+the first non-releasing stage of every hide is `hide_entry`.
+Candidate for ruling: a dedicated `mmap` region for the frame, `munmap`
+at hide (section 8 of the lab README states the expected effect and the
+criteria). No cap moves; the surface court stays 106 of 110, narrow.

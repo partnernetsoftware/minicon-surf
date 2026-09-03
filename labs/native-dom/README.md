@@ -1352,28 +1352,37 @@ ms, kill and reap, counted (`kills_total` 1, `timeouts_total` 1); no stale
 input was applied; the host stayed one process except for its surface
 children and exited cleanly, removing the court-only file.
 
-Latencies (medians of the rounds): show 104 to 119 ms of which the child's
-`READY` takes 84 to 101 ms and the first frame 13 to 17 ms; hide 9.9 to
-12.3 ms.
+Latencies (medians of the rounds): show 95 to 120 ms of which the child's
+`READY` takes 78 to 101 ms and the first frame 13 to 15 ms; hide 8.8 to
+19.8 ms.
 
 Memory, complete process tree (bytes, default / arena):
 
 | stage | default | arena |
 |---|---|---|
-| headless host | 3,457,384 | 2,949,504 |
-| spawn peak, host plus child (rounds 1–3) | 27,624,480 / 27,952,208 / 27,935,800 | 27,444,280 / 27,395,152 / 27,771,984 |
-| shown steady, host only | 4,604,264 / 4,866,432 / 4,931,968 | 4,194,688 / 4,358,552 / 4,456,856 |
-| post-hide host, over headless | +1,310,720 / +1,409,048 / +1,458,200 | +1,261,568 / +1,474,584 / +1,523,736 |
+| headless host | 3,342,672 | 2,916,712 |
+| spawn peak, host plus child (rounds 1–3) | 27,870,216 / 29,049,888 / 29,246,544 | 27,460,640 / 27,493,432 / 28,722,232 |
+| shown steady, host only | 4,440,400 / 5,685,608 / 5,833,088 | 4,145,512 / 4,325,760 / 5,472,640 |
+| post-hide host, over headless | +1,196,032 / +2,424,856 / +2,506,800 | +1,245,184 / +1,425,432 / +2,572,312 |
 | post-hide libmalloc in-use over headless | within the 65,536 cap | within the cap |
-| slope, round 3 − round 1 | 147,480 | 262,168 |
+| slope, round 3 − round 1 | 1,310,768 | 1,327,128 |
 
 The two pre-registered tolerances that fail are the post-hide host
 footprint (cap 262,144 over headless) and the slope (cap 65,536). Their
-attribution, measured with a probe that spawns `/usr/bin/true` as the
-surface binary: the spawn machinery alone leaves 1,130,496 bytes in the
-host after a failed spawn (the child never received a byte), and the rest
-is the freed 1 MB frame the default zone keeps; the in-use heap returns to
-baseline. Two host-side reductions are already in: frames are written to
+attribution is the paired court below: the retained bytes are one or two
+copies of the freed 1 MB frame kept by the default zone plus small-block
+churn, and the in-use heap returns to baseline. How many copies a run
+keeps varies between runs of the same binary: the recorded run keeps two
+from round 2 under the default allocator and from round 3 under the arena
+(hence the 1.3 MB slopes above), a second run of the same build kept one
+under the default allocator (+1,261,568 / +1,392,664 / +1,441,816, slope
+180,248) and two under the arena (slope 1,409,048), and the committed
+pre-instrumentation build run the same day kept one under both
+(+1,277,952 / +1,409,048 / +1,441,816 and +1,343,488 / +1,556,504 /
++1,605,656). An earlier probe that spawned `/usr/bin/true` read the spawn
+machinery as 1,130,496 bytes; the paired court corrects that reading to 0
+to 33 KB (that probe had already allocated the frame before spawning).
+Two host-side reductions are already in: frames are written to
 the pipe from the painting itself (no encode or queue copy; before this the
 post-hide excess was 6.5 MB) and repaints paint into the frame the surface
 already owns. The child while shown costs about 23 MB in the tree
@@ -1393,8 +1402,93 @@ window floats (level 3) so it stays above ordinary windows without
 activation; role-bar colours keep every channel far from the classifier's
 midpoint.
 
-Gaps: post-hide host footprint and slope over the pre-registered caps (the
-spawn machinery's own cost); macOS only; one window size; keys are recorded
+Paired attribution of the post-hide retention (verdict: keep 106 of 110,
+attribute before any fix; `native-dom-control-0.0.2-surface-attribution`
+receipt, read-only, no cap moves).
+[`surface-attribution-court.py`](surface-attribution-court.py) runs a fresh
+host per run, one warm-up plus seven, three show/hide rounds, default
+allocator and arena, twelve cells: the real child with frames of 640 × 400
+(1,024,000 bytes), 256 × 256 (262,144) and 128 × 128 (65,536), the same
+binary in lab-local modes that speak the protocol without AppKit
+(`protocol`, frames discarded; `drain`, latest frame kept), and a child
+that exits at once (`exit`: the failed protocol path, reported apart).
+The host samples itself inside `surface.show` and `surface.hide` at eleven
+stages (`show_entry`, `after_snapshot`, `after_painter`,
+`after_command_spawn`, `after_reader_thread`, `after_hello_ready`,
+`after_first_frame_ack`, `shown`, `hide_entry`, `after_close_reap_join`,
+`after_frame_drop`: kernel footprint and RSS, libmalloc in-use and
+allocated, thread count) only when the court-only file and
+`--surface-court-stages 1` are given, so the frozen surface court's path
+is unchanged; the court samples footprint from outside as a cross-check.
+Medians, default / arena:
+
+| cell | post-hide over headless, rounds 1 / 2 / 3 | in-use over headless after round 3 |
+|---|---|---|
+| real child, 640 × 400 | 1,245,184 / 1,441,816 / 2,424,856 — 1,277,952 / 1,425,432 / 1,458,200 | 7,040 / 3,936 |
+| real child, 256 × 256 | 458,752 / 589,848 / 917,528 — 491,520 / 884,736 / 933,912 | 7,040 / 3,936 |
+| real child, 128 × 128 | 262,144 / 442,368 / 507,928 — 278,528 / 393,240 / 458,776 | 7,040 / 3,936 |
+| protocol child, no AppKit, 640 × 400 | 1,228,800 / 1,376,280 / 2,441,240 — 1,261,568 / 1,474,584 / 2,506,776 | 7,040 / 3,936 |
+| drain child, no AppKit, 640 × 400 | 1,228,800 / 1,392,664 / 2,457,648 — 1,261,568 / 1,409,048 / 2,490,392 | 7,040 / 3,936 |
+| exit child (failed path), 640 × 400 | 1,277,952 / 2,408,472 / 2,539,568 — 1,228,800 / 1,425,432 / 2,408,472 | 3,456 / 352 |
+
+Stage deltas of the first round on the product cell (footprint / in-use,
+default allocator): snapshot +65,536 / +3,744; painter +1,048,576 /
++1,032,864 (the frame; the zone's allocated bytes grow by 4,194,304);
+`Command` spawn (pipes and child) +16,384 / +256; channel and reader
+thread +16,384 / +816; `HELLO`/`READY` 0 / +2,832; first `FRAME_ACK` 0 /
+0; `hide_entry` +16,384 / −784; `CLOSE`, `CLOSED`, reap and join −16,384
+/ −3,328 (the reader thread's stack, threads 3 → 2); frame drop 0 /
+−1,032,864. In the second round the painter costs +81,944 of footprint
+(the freed block is reused) while in-use again rises and falls by
+1,032,864. In the third round the painter costs +966,656 of footprint
+with the zone's allocated bytes unchanged: the zone hands the painter a
+block it already owns whose pages were not resident, and after hide both
+blocks stay resident, so the host holds two copies of the freed frame
+(the exiting child's cell shows the same from round 2, the 256 × 256 cell
+from round 3). In all seven runs of every cell the first stage of the
+hide sequence that stops releasing is `hide_entry`: after the child is
+gone only the reader thread's 16 KB comes back, and the frame's pages stay
+resident although in-use returns to within 7,040 bytes of headless.
+`memory.trim` releases 0 in every run.
+
+What this settles: the retained bytes are one or two copies of the frame
+the host freed, kept by the default zone (the retention already
+attributed on this route), and scale with the frame size; the child costs
+the host nothing (the three
+child modes and the failed spawn are indistinguishable from the real
+window); the spawn machinery is 0 to 33 KB, not the 1.1 MB the earlier
+`/usr/bin/true` probe suggested, because that probe had already allocated
+the frame before spawning; the reader thread's stack is recovered; no
+`mpsc`, `Command`, environment or exit-status allocation stays (in-use
+returns); and the slope is the second copy of the frame when the zone
+keeps one (about 1 MB) plus small-block churn of the snapshot and the
+control-plane JSON (the 128 × 128 cell's slope of 245,784 / 180,248
+bounds the churn from above). The court fixture is a fixture page, so the
+painter's rows are fewer than on the representative page; the numbers are
+otherwise the surface court's.
+
+Candidate (pre-registered, not implemented, for ruling): give the frame a
+dedicated anonymous `mmap` region owned by the surface record and
+`munmap` it at hide, so the frame's pages return to the kernel with the
+child instead of staying in the default zone. Expected from the ladder:
+post-hide over headless falls by one or two frame sizes to about 200 to
+300 KB in round 1 (the 128 × 128 cell's residual is 262,144 / 278,528 in
+round 1), which sits at the 262,144 cap, the two-copy variance
+disappears, and the slope stays about 180 to 250 KB unless the snapshot
+churn is also bounded; so the candidate is expected to satisfy or nearly
+satisfy S2 and not S3 on its own. Criteria if approved:
+S2 and S3 of the surface court hold, the 106 mechanics checks, 40 + 2 unit
+tests and every journey stay green, the complete-tree headed peak does not
+worsen, show and hide latency stay within 10 percent, no global allocator
+hack, no resident broker, no pre-warmed baseline. A second, separate
+candidate for the slope would bound the snapshot's allocations (parse the
+rows into reused buffers instead of `serde_json` values); it is not
+proposed until the first is measured. Direct `posix_spawn` FFI is not
+proposed: the data show the spawn costs nothing that stays.
+
+Gaps: post-hide host footprint and slope over the pre-registered caps (the freed frame kept
+by the default zone and small-block churn; the spawn costs nothing that
+stays); macOS only; one window size; keys are recorded
 and ignored; the painter is semantic rows, not layout; the WindowServer
 and compositor stay unattributed; Accessibility trust is required for the
 court's input.
@@ -1419,7 +1513,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 | `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
-| `native-dom-control-0.0.2-surface`, and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` | the host with the G3 surface process integration (`surface_sha256` names the child binary) | every regression was rerun on this build and all six receipts carry its hash | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
+| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` | the host with the G3 surface process integration and its court-only stage log (`surface_sha256` names the child binary) | every regression was rerun on this build and all seven receipts carry its hash | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
 
 ## Findings against product contracts
 
