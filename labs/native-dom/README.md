@@ -1274,6 +1274,136 @@ loss; one platform and fixture set.
 
 Verdict: `keep`. G1, G3, P6 and G6 stay open.
 
+### G3 surface process (macOS prototype, direct Cocoa child)
+
+Hypothesis (design and court frozen first, `surface-design-0.0.1.md` and
+`surface-ipc-0.0.1.md`): a separate minimal window process attached to one
+live target can make headed and headless runtime states of that target,
+with the host keeping profile, session, target, frame, realm, revision,
+DOM and network, the child receiving only bounded frames and returning
+only bounded input, `hide` ending the child so the host returns to its
+headless footprint, and real human input reaching the page while the CLI
+and a CDP session keep observing it.
+
+Scope: `surface.show {target}` spawns `native-dom-surface` (`labs/native-dom-surface`,
+absolute path given once through `--surface-binary`; `std::process::Command`
+with no pre-exec closure, cwd, uid or gid, so the standard library uses
+`posix_spawn` and never forks the multi-threaded host); the host paints
+the target's semantic snapshot as rows (role bar, a 5 × 7 bitmap-font
+name, `scroll_y` offset, a row → node hit map) into a 640 × 400 BGRA frame
+labelled `bounded-semantic-painter`, which is not a layout or CSS renderer;
+`HELLO`, `FRAME`, `CLOSE` and `READY`, `FRAME_ACK`, `INPUT`, `ERROR`,
+`CLOSED` travel over the child's stdin and stdout pipes in 20-byte-header,
+bounded, generation- and sequence-stamped messages with a 2,000 ms ready,
+1,000 ms ack and 1,000 ms close deadline, one frame in flight, and a kill
+plus reap counted as failure cleanup after a missed deadline. Input from the
+child is a third source of the host's multiplex loop next to the stdio door
+and the CDP bridge: applied FIFO per surface while the host is idle,
+dropped and counted when its spawn generation is no longer current, a click
+resolved through the hit map to the existing click path (valid only against
+the frame's revision), a scroll moving the host-owned `scroll_y` and
+advancing the revision as the synthetic host does. `surface.hide` answers
+`teardown {exit: protocol|killed|gone, reaped, ms}`. Public results carry
+no window number, coordinate, capture, hit map, pid or handle; a court-only
+`--surface-court-file` (0600, under the court's mktemp, removed at exit)
+receives those plus `input_applied`, `repainted`, `hidden` and `child_exit`
+events. `memory.report.owners.surfaces` reports objects, frame bytes and
+the process counters; `target.inspect` gains `surface` and `scroll_y`.
+Teardown order at `target.close` and `session.close` is adapters →
+surfaces → target. The host itself links no AppKit: `native-dom-surface`
+is a path dependency without its `window` feature, so the host gets the
+codec only.
+
+Reproduction (the court posts real CoreGraphics input only after it has
+confirmed that the topmost window at the point belongs to the surface
+child, captures the child's own window only, and needs Accessibility trust
+for the terminal; the window shows the painter's rows, never desktop
+content):
+
+```sh
+cargo build --release --locked --offline --manifest-path labs/native-dom-surface/Cargo.toml --features window
+python3 labs/native-dom/surface-court.py \
+  --binary labs/native-dom/target/release/native-dom-control \
+  --surface-binary "$PWD/labs/native-dom-surface/target/release/native-dom-surface" \
+  --receipt labs/native-dom/evidence/native-dom-control-0.0.2-surface.json
+```
+
+Evidence (`native-dom-control-0.0.2-surface` receipt, 106 of 110, the same
+55 checks under the default allocator and the arena, one CDP session held
+throughout): the headless page clicks its button (revision 1) and the CDP
+session reads frame `cdp_frame_1`; in each of three rounds `surface.show`
+answers engine-neutral fields only, the court-only log names a real window
+number with one child process, the court's own-window capture matches the
+painter's frame in 19 of 19 samples, a real click posted at the painter's
+button row is applied by the idle host with no control request in flight
+(the `input_applied` event arrives 0.3 to 1.6 ms after the post) and
+advances the revision, a real scroll of 240 moves `scroll_y` and advances
+the revision (6 to 13 ms), the CDP session still answers with the same
+frame id, a second `show` is `conflict`, `surface.hide` ends the child by
+protocol in 8 to 12 ms with the child reaped and no descendant left,
+`owners.surfaces` returns to zero objects and zero bytes, the target,
+frame, generation, realm and `scroll_y` survive with the revision advanced
+only by the explicit actions, headless script, wait and network still run,
+and the CDP session is unchanged after the hide; later rounds scroll back
+up by real input before clicking. A child killed with `SIGKILL` while shown
+is noticed, the surface is gone, owners are zero and the target is
+untouched; a child stopped with `SIGSTOP` makes `hide` time out at 1,000
+ms, kill and reap, counted (`kills_total` 1, `timeouts_total` 1); no stale
+input was applied; the host stayed one process except for its surface
+children and exited cleanly, removing the court-only file.
+
+Latencies (medians of the rounds): show 104 to 119 ms of which the child's
+`READY` takes 84 to 101 ms and the first frame 13 to 17 ms; hide 9.9 to
+12.3 ms.
+
+Memory, complete process tree (bytes, default / arena):
+
+| stage | default | arena |
+|---|---|---|
+| headless host | 3,457,384 | 2,949,504 |
+| spawn peak, host plus child (rounds 1–3) | 27,624,480 / 27,952,208 / 27,935,800 | 27,444,280 / 27,395,152 / 27,771,984 |
+| shown steady, host only | 4,604,264 / 4,866,432 / 4,931,968 | 4,194,688 / 4,358,552 / 4,456,856 |
+| post-hide host, over headless | +1,310,720 / +1,409,048 / +1,458,200 | +1,261,568 / +1,474,584 / +1,523,736 |
+| post-hide libmalloc in-use over headless | within the 65,536 cap | within the cap |
+| slope, round 3 − round 1 | 147,480 | 262,168 |
+
+The two pre-registered tolerances that fail are the post-hide host
+footprint (cap 262,144 over headless) and the slope (cap 65,536). Their
+attribution, measured with a probe that spawns `/usr/bin/true` as the
+surface binary: the spawn machinery alone leaves 1,130,496 bytes in the
+host after a failed spawn (the child never received a byte), and the rest
+is the freed 1 MB frame the default zone keeps; the in-use heap returns to
+baseline. Two host-side reductions are already in: frames are written to
+the pipe from the painting itself (no encode or queue copy; before this the
+post-hide excess was 6.5 MB) and repaints paint into the frame the surface
+already owns. The child while shown costs about 23 MB in the tree
+(AppKit's one-time attachment measured in the candidate court plus the
+window and its bitmap), all of which the OS reclaims at hide.
+
+Court amendments after the freeze, mechanism only, recorded in the script:
+the page's load-time fetch settles its DOM mutation on the first
+evaluation after open, so the court evaluates twice before the first
+snapshot and retries a stale click reference once; the own-window capture
+is taken by the court rather than the host (a host-side capture cost the
+host 6 MB of CoreGraphics state); later rounds scroll back up by real input
+before clicking; the court waits for the host's `repainted` event to read
+the new hit map. Host-side mechanism notes: the child leaves through
+`_exit` after `CLOSED` because AppKit's exit handlers otherwise hang; the
+window floats (level 3) so it stays above ordinary windows without
+activation; role-bar colours keep every channel far from the classifier's
+midpoint.
+
+Gaps: post-hide host footprint and slope over the pre-registered caps (the
+spawn machinery's own cost); macOS only; one window size; keys are recorded
+and ignored; the painter is semantic rows, not layout; the WindowServer
+and compositor stay unattributed; Accessibility trust is required for the
+court's input.
+
+Verdict: `narrow`. The G3 mechanics (attach, real input, detach with a
+reaped child, owners to zero, target and CDP continuity, failure modes)
+are observed on this cell; the memory tolerances are not, so G3 stays
+open, as do G1, P6 and G6.
+
 ### Receipt provenance
 
 Each receipt records the SHA-256 of the host binary that produced it. The
@@ -1288,7 +1418,8 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
-| `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
+| `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
+| `native-dom-control-0.0.2-surface`, and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` | the host with the G3 surface process integration (`surface_sha256` names the child binary) | every regression was rerun on this build and all six receipts carry its hash | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
 
 ## Findings against product contracts
 

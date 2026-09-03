@@ -130,6 +130,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── repeated hide/show preserves page · realm · profile · scroll · Agent target
 │   ├── [~] synthetic buffer court proves ownership/state mechanics, not a native surface
 │   ├── [~] macOS candidate court (direct Cocoa vs winit+softbuffer): real windows attach/detach with pixels read back, but AppKit keeps ~10 MB after hide plus a per-cycle residual; surface-process design recommended, pending ruling
+│   ├── [~] surface process prototype (direct Cocoa child, bounded IPC): real input, CDP continuity, reaped detach, owners to zero on one live target (106/110); host post-hide footprint and slope over caps (spawn machinery ~1.1 MB)
 │   ├── hibernate is distinct: discard reconstructible state under memory pressure
 │   └── CLI, CDP and human input arbitrate focus and mutations deterministically
 ├── [P6] first-class profile system
@@ -1126,6 +1127,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the host's post-hide footprint is headless by construction; no surface is
   merged into the native host. Wry/Tauri stay rejected on the X9 evidence.
   G1, G3, P6 and G6 stay open.
+- [~] The ruling adopted the surface-process design and the native route
+  now carries it as a macOS prototype: a separate minimal `native-dom-surface`
+  binary (direct Cocoa, CPU bitmap, accessory policy) spawned by
+  `surface.show` through `posix_spawn` and ended by `surface.hide`, bounded
+  binary IPC over the child's stdio pipes (20-byte headers, generation and
+  sequence on every message, per-kind bounds, deadlines, one frame in
+  flight, kill and reap only as counted failure cleanup), a host-side
+  bounded semantic painter with a hit map, human input as a third source of
+  the host's multiplex loop applied while idle, engine-neutral public
+  results with a court-only file for window facts, owners.surfaces with
+  process counters and no pid or path in receipts. The frozen native court
+  passes 106 of 110 under both allocators: real window, own-window capture,
+  real click and scroll applied before any request, CDP session unchanged,
+  protocol exit with the child reaped in about 10 ms, owners to zero,
+  target, frame, realm and scroll continuity, kill and stop failure modes,
+  no stale input. The post-hide host footprint (1.26 to 1.52 MB over
+  headless) and the slope (147 to 262 KB) exceed the pre-registered caps,
+  attributed to the spawn machinery's own 1.13 MB and the default zone's
+  cache of the freed frame; every regression holds. Verdict `narrow`; G1,
+  G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

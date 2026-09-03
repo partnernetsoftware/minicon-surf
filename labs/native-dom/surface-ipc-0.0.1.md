@@ -1,6 +1,6 @@
 # G3 surface process for the native route: architecture, IPC and court (frozen)
 
-Status: `frozen, amended once before implementation` (architecture, message
+Status: `implemented, measured; narrow` (see section 7) (architecture, message
 set, failure semantics, owners and the native G3 court pre-registered
 before the implementation; amendment A1 keeps platform details out of
 public results and A2 applies input at idle; follows
@@ -52,7 +52,7 @@ is a 16-byte header followed by a bounded payload:
 
 | offset | field |
 |---|---|
-| 0 | magic `MCSF` |
+| 0 | magic `MCSF` (the header is 20 bytes: the length field below makes it so) |
 | 4 | version `1` |
 | 5 | kind |
 | 6 | flags (reserved, must be 0) |
@@ -137,19 +137,18 @@ Public results (A1): `surface.show` answers only engine-neutral fields:
 reaped: bool, ms}`. No window number, screen coordinate, capture verdict,
 hit map, pid or platform handle ever appears in a control response.
 
-Court-only channel (A1): only when the host is started with
-`--surface-court-dir DIR` (a directory the court creates under mktemp,
-mode 0700) it writes there, mode 0600: `surface.json` after each show
-(window number, content rectangle in CoreGraphics screen coordinates,
-the painter's rows → node map, and the own-window capture verdict, taken
-by the host through CoreGraphics on its own window number only) and
-`events.ndjson`, one line per event (`shown`, `frame_acked`,
-`input_applied` with kind, revision and scroll, `hidden`, `child_exit`),
-each with a monotonic millisecond stamp. The files are removed at hide
-and at exit. The format is court-only, outside the protocol and its
-schema; the receipt keeps sanitized conclusions only (present or gone,
-pixels matched, latencies) and no path or handle. Without the flag no
-file, no thread and no allocation exist for it.
+Court-only channel (A1, name corrected by cdx-k68): only when the host is
+started with `--surface-court-file FILE` (a file the court places under
+its mktemp directory) it appends there, mode 0600, one JSON line per
+event with a monotonic millisecond stamp: `shown` (window number, content
+rectangle in CoreGraphics screen coordinates, the painter's rows → node
+map, and the own-window capture verdict taken by the host through
+CoreGraphics on its own window number only), `frame_acked`,
+`input_applied` (kind, revision, scroll), `hidden` and `child_exit`. The
+file is removed when the host exits. The format is court-only, outside
+the protocol and its schema; the receipt keeps sanitized conclusions only
+(present or gone, pixels matched, latencies) and no path or handle.
+Without the flag no file, no thread and no allocation exist for it.
 
 ## 6. The native G3 court (frozen, unexecuted until implemented)
 
@@ -191,3 +190,18 @@ puppeteer-core driver of the CDP court:
 If the court cannot post input (the OS refuses synthetic events without
 Accessibility trust for the terminal), the input checks are recorded as
 not verifiable rather than passed, and the run says so.
+
+## 7. Result (recorded after the freeze)
+
+`native-dom-control-0.0.2-surface`, 106 of 110 under both allocators:
+every functional check holds (real window with a window number, own-window
+capture 19 of 19, real click and scroll applied by the idle host before any
+request in 0.3 to 13 ms, CDP session continuity, conflict on a duplicate
+show, protocol exit in 8 to 12 ms with the child reaped, owners to zero,
+target and realm continuity, kill and stop failure modes counted, no stale
+input). The post-hide host footprint stays 1.26 to 1.52 MB over headless
+(cap 262,144) with a slope of 147 to 262 KB over three rounds (cap
+65,536): the spawn machinery alone leaves 1.13 MB in the host after even a
+failed spawn, and the default zone keeps the freed frame. Verdict:
+`narrow`; G3 stays open. The court-only channel is `--surface-court-file`
+as corrected by cdx-k68.
