@@ -394,6 +394,119 @@ realms and a second platform behind the `Region` boundary are unmeasured,
 and the remaining retention is still not attributed to a tracked owner.
 Leak absence is not claimed. G1 stays open.
 
+### Long-cycle soak and fragmentation court
+
+[`arena-soak-court.py`](arena-soak-court.py) fixes its rules and adoption
+criteria before running (they are copied into the receipt and were committed
+first): two browser workloads, the interactive fixture (open, snapshot,
+revision-scoped click, revision wait, close) and the hermetic representative
+page (open over the bounded network, snapshot, close), run 128 open → use →
+close cycles in one host process per run, one warm-up plus seven runs per
+arm; physical footprint, RSS, libmalloc in-use and allocated, realm bytes and
+the arena's used, blocks, high-water, decommit mark, unmapped and leaked
+counts are sampled live and post-close at cycles 1, 2, 4, 8, 16, 24, 32, 48,
+64, 80, 96, 112 and 128; after every close a teardown check requires every
+owner at zero, no live arena, no leaked block and (arena arm) exactly one
+unmapped mapping per closed target, and any violation fails the run. The
+retained value is post-close minus the run's own empty footprint, the slope
+is a least-squares fit over the post-close samples from cycle 8, late growth
+is cycle 128 minus cycle 64, and the reopen cost is a live sample minus the
+previous post-close sample. A separate allocator-stress section opens
+`labs/court/fixtures/allocator-stress.html` (interleaved small objects and
+32 KiB buffers with every other one freed, mid-size arrays into the holes,
+one array grown and emptied twenty times, string growth) once per run and
+eight times in one process; it is an allocator microbenchmark, judged apart
+from the browser workloads, and `memory.trim` on its live realm is reported
+as what the arena path is, a tail-only mark of the free span after the last
+live block, never a whole-realm close recovery.
+
+Criteria fixed before the run, arena against the same-court default: C1
+retained at cycle 128 lower with an exact Mann-Whitney p < 0.05 on both
+workloads; C2 first-open live at most 1.10× the default; C3 slope at most
+4,096 bytes per cycle, late growth at most 512 KiB, and slope at most the
+default's plus 1,024; C4 reopen cost at cycle 128 at most 1.5× the cost at
+cycle 8; C5 RSS after the close at cycle 128 at most the default's; C6 zero
+teardown violations in every run; C7 dense-array capacity at least 0.90× the
+default's. The arena is court-eligible only if all seven hold, and the
+default stays unchanged and the arena opt-in either way.
+
+Results (`native-dom-control-0.0.2-arena-soak` receipt; medians of seven
+runs, bytes, empty footprint 1,343,800 in every run):
+
+| measure | interactive default | interactive arena | representative default | representative arena |
+|---|---|---|---|---|
+| first-open live − empty | 1,277,952 | 557,080 | 1,376,256 | 770,072 |
+| retained after cycle 1 | 1,277,952 | 262,144 | 1,425,408 | 409,600 |
+| retained after cycle 8 | 1,867,776 | 770,048 | 2,064,384 | 933,888 |
+| retained after cycle 32 | 2,064,384 | 1,032,192 | 2,211,840 | 1,163,264 |
+| retained after cycle 64 | 2,097,152 | 1,032,192 | 2,310,144 | 1,196,032 |
+| retained after cycle 128 | 2,146,304 | 1,048,576 | 2,326,528 | 1,196,032 |
+| slope, cycles 8–128 (bytes/cycle) | 1,851.8 | 1,149.3 | 1,584.6 | 1,251.6 |
+| late growth 64→128 | 49,152 | 16,384 | 32,768 | 0 |
+| reopen cost at cycle 8 | 147,456 | 426,008 | 114,688 | 573,464 |
+| reopen cost at cycle 128 | 0 | 311,320 | 0 | 393,240 |
+| RSS live at cycle 128 | 5,668,864 | 4,882,432 | 5,963,776 | 5,210,112 |
+| RSS after the close at cycle 128 | 5,668,864 | 4,587,520 | 5,963,776 | 4,833,280 |
+| libmalloc in-use after the close at 128 | 212,448 | 49,168 | 229,056 | 65,792 |
+| arena used / high-water, live at 128 | – | 278,240 / 291,408 | – | 343,952 / 362,976 |
+| teardown violations (runs) | 0 | 0 | 0 | 0 |
+
+Reading: both arms plateau, and the plateau is not an arena property. The
+default allocator's retained footprint climbs from 1.3–1.4 MB after the
+first cycle to 2.1–2.3 MB and is flat from cycle 80; the arena's climbs
+from 0.26–0.41 MB to 1.05–1.20 MB and is flat from cycle 24 (interactive)
+or 48 (representative), with the last 64 cycles adding at most one page.
+What remains in the arena arm after 128 closes is the default zone's
+reservation for the host's own parsed trees, network buffers and
+containers, since libmalloc in-use is back to 49–66 KB above empty and no
+arena, block or mapping survives a close (0 violations in 28 runs, 128
+mappings unmapped per run). The arena's cost is per open, not per cycle:
+each realm starts on fresh pages, so a reopen touches 311–573 KB against
+the default's reuse of warm pages (0–147 KB), and that cost falls, not
+rises, over the soak. The 128-cycle slopes over the sample cycles from 8
+are 1.1–1.3 KB per cycle for the arena against 1.6–1.9 KB for the default,
+both dominated by the early climb. Mann-Whitney on retained at cycle 128
+gives U = 0, p = 0.00058 on both workloads. Dense-array capacity is
+unchanged at 0.6805 of 16 MiB (default 0.7067). Under the frozen criteria
+C1–C7 all hold, so the arena is **court-eligible on this court**; the
+default allocator is nevertheless unchanged and the arena stays opt-in,
+because one platform, two workloads and one target per cycle are not a
+default decision, and the eligibility says nothing about other platforms.
+
+Allocator stress, judged apart (`allocator-stress.html`, one realm):
+
+| measure | default | arena |
+|---|---|---|
+| live − empty footprint | 18,481,176 | 19,316,784 |
+| realm bytes (QuickJS count) | 6,378,224 | 7,160,176 |
+| arena used / high-water / blocks | – | 7,701,296 / 19,359,024 / 33,820 |
+| high-water ÷ used (fragmentation) | – | 2.51 |
+| libmalloc allocated − in-use, live | 35,504,704 | 20,935,888 |
+| `memory.trim` on the live realm: reported / footprint change | 0 / 0 | 1,048,576 tail-only / −802,816 |
+| post-close − empty | 18,497,584 | 294,912 |
+| eighth in-process cycle − first, post-close | +1,671,168 | +393,216 |
+
+The adversarial shape does what it was designed to do: the boundary-tag
+heap ends the script with 2.5× more touched address space than live
+bytes, so the arena realm costs about 0.8 MB more footprint live than
+the default. The tail-only trim is exactly that: it marks the 1 MiB free
+span after the last live block reusable and the footprint falls by
+0.8 MB; the other fragmented holes stay resident until the realm closes,
+and this trim must not be read as a close recovery. On the other side of
+the ledger the default allocator keeps the whole 18.5 MB after the realm
+closes and grows a further 1.7 MB over eight in-process cycles, while the
+arena arm returns to 0.29 MB above empty and grows 0.39 MB over the same
+cycles. These are allocator numbers under one synthetic script and are not
+browser results; they do not enter C1–C7.
+
+An allocator reporting defect was found and fixed during this court and
+committed separately: `Arena::trim` used to count the untouched remainder
+of the 32 MiB reservation as released (15,253,504 bytes reported for a
+0.8 MB footprint change). It now clamps to the heap's high-water mark and
+reports only newly marked pages; the receipt above is from the fixed
+binary. No safety invariant was affected: every teardown check passed in
+both runs.
+
 ## Findings against product contracts
 
 ### Agent control

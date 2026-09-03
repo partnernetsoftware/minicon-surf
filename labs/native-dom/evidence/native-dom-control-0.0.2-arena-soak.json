@@ -1,0 +1,2560 @@
+{
+  "criteria": {
+    "C1_retained_128": "arena median retained at cycle 128 < system median, exact two-sided Mann-Whitney p < 0.05, both workloads",
+    "C2_first_open_live": "arena median (live at cycle 1 - empty) <= 1.10 x system median, both workloads",
+    "C3_slope_plateau": "arena slope <= 4096 bytes/cycle and median late growth <= 524288 bytes, and arena slope <= system slope + 1024, both workloads",
+    "C4_reopen_stable": "arena median reopen cost at cycle 128 <= 1.5 x median reopen cost at cycle 8, both workloads",
+    "C5_rss_post_close_128": "arena median RSS after the close at cycle 128 <= system median, both workloads",
+    "C6_teardown": "zero teardown-check violations in every run of every arm",
+    "C7_capacity": "arena median dense-array capacity ratio >= 0.90 x system median",
+    "verdict": "court-eligible only if C1..C7 all hold; the default allocator stays unchanged either way and the arena stays opt-in"
+  },
+  "evaluation": {
+    "C1_retained_128": true,
+    "C2_first_open_live": true,
+    "C3_slope_plateau": true,
+    "C4_reopen_stable": true,
+    "C5_rss_post_close_128": true,
+    "C6_teardown": true,
+    "C7_capacity": true,
+    "court_eligible": true,
+    "tests": {
+      "fixture-interactive": {
+        "n_a": 7,
+        "n_b": 7,
+        "p_two_sided": 0.0005827505827505828,
+        "u": 0.0
+      },
+      "representative-url": {
+        "n_a": 7,
+        "n_b": 7,
+        "p_two_sided": 0.0005827505827505828,
+        "u": 0.0
+      }
+    }
+  },
+  "host_sha256": "6a8414aa50018a54d775675f1eb735fb4a9430651afeb53d6829ee7c6e0477d0",
+  "limitations": [
+    "one macOS arm64 machine; one target per cycle; two browser workloads plus one synthetic allocator script",
+    "the arena's memory.trim marks only the free tail of a live realm reusable; it is not a whole-realm close recovery and is reported as tail-only",
+    "the default allocator's post-close retention is libmalloc reservation; leak absence is not claimed for any arm",
+    "the arena is a macOS mmap prototype; nothing here is a cross-platform result"
+  ],
+  "measurement": {
+    "allocator_stress": {
+      "arena": {
+        "arena_blocks_live": {
+          "maximum": 33820,
+          "median": 33820,
+          "minimum": 33820,
+          "values": [
+            33820,
+            33820,
+            33820,
+            33820,
+            33820,
+            33820,
+            33820
+          ]
+        },
+        "arena_high_water_live": {
+          "maximum": 19359024,
+          "median": 19359024,
+          "minimum": 19359024,
+          "values": [
+            19359024,
+            19359024,
+            19359024,
+            19359024,
+            19359024,
+            19359024,
+            19359024
+          ]
+        },
+        "arena_used_live": {
+          "maximum": 7701296,
+          "median": 7701296,
+          "minimum": 7701296,
+          "values": [
+            7701296,
+            7701296,
+            7701296,
+            7701296,
+            7701296,
+            7701296,
+            7701296
+          ]
+        },
+        "eighth_cycle_post_close_minus_first": {
+          "maximum": 458752,
+          "median": 393216,
+          "minimum": 360448,
+          "values": [
+            409600,
+            393216,
+            458752,
+            409600,
+            376832,
+            393216,
+            360448
+          ]
+        },
+        "fragmentation_high_water_over_used": {
+          "maximum": 2.5137,
+          "median": 2.5137,
+          "minimum": 2.5137,
+          "values": [
+            2.5137,
+            2.5137,
+            2.5137,
+            2.5137,
+            2.5137,
+            2.5137,
+            2.5137
+          ]
+        },
+        "libmalloc_allocated_minus_in_use_live": {
+          "maximum": 20935888,
+          "median": 20935888,
+          "minimum": 16741584,
+          "values": [
+            20935888,
+            20935888,
+            20935888,
+            20935888,
+            16741584,
+            20935888,
+            20935888
+          ]
+        },
+        "live_minus_empty_footprint": {
+          "maximum": 19333168,
+          "median": 19316784,
+          "minimum": 19316784,
+          "values": [
+            19316784,
+            19316784,
+            19316784,
+            19316784,
+            19316784,
+            19333168,
+            19316784
+          ]
+        },
+        "live_realm_bytes": {
+          "maximum": 7160176,
+          "median": 7160176,
+          "minimum": 7160176,
+          "values": [
+            7160176,
+            7160176,
+            7160176,
+            7160176,
+            7160176,
+            7160176,
+            7160176
+          ]
+        },
+        "page_reports": [
+          "small=10000 large=50 mid=500 rounds=20"
+        ],
+        "post_close_minus_empty_footprint": {
+          "maximum": 327680,
+          "median": 294912,
+          "minimum": 294912,
+          "values": [
+            294912,
+            294912,
+            294912,
+            294912,
+            311296,
+            311296,
+            327680
+          ]
+        },
+        "post_trim_minus_live_footprint": {
+          "maximum": -786432,
+          "median": -802816,
+          "minimum": -819200,
+          "values": [
+            -819200,
+            -802816,
+            -802816,
+            -819200,
+            -786432,
+            -786432,
+            -802816
+          ]
+        },
+        "teardown_violation_runs": 0,
+        "trim_arena_released_bytes_tail_only": {
+          "maximum": 1048576,
+          "median": 1048576,
+          "minimum": 1048576,
+          "values": [
+            1048576,
+            1048576,
+            1048576,
+            1048576,
+            1048576,
+            1048576,
+            1048576
+          ]
+        },
+        "trim_released_bytes": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "system": {
+        "arena_blocks_live": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "arena_high_water_live": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "arena_used_live": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "eighth_cycle_post_close_minus_first": {
+          "maximum": 2211840,
+          "median": 1671168,
+          "minimum": 868352,
+          "values": [
+            1671168,
+            2211840,
+            884760,
+            868352,
+            1687576,
+            1671168,
+            1638424
+          ]
+        },
+        "fragmentation_high_water_over_used": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "libmalloc_allocated_minus_in_use_live": {
+          "maximum": 35506352,
+          "median": 35504704,
+          "minimum": 22921072,
+          "values": [
+            31311296,
+            35504704,
+            22922272,
+            35506352,
+            35505520,
+            35505552,
+            22921072
+          ]
+        },
+        "live_minus_empty_footprint": {
+          "maximum": 18513944,
+          "median": 18481176,
+          "minimum": 18366512,
+          "values": [
+            18481200,
+            18366512,
+            18513944,
+            18415664,
+            18497584,
+            18464816,
+            18481176
+          ]
+        },
+        "live_realm_bytes": {
+          "maximum": 6378224,
+          "median": 6378224,
+          "minimum": 6378224,
+          "values": [
+            6378224,
+            6378224,
+            6378224,
+            6378224,
+            6378224,
+            6378224,
+            6378224
+          ]
+        },
+        "page_reports": [
+          "small=10000 large=50 mid=500 rounds=20"
+        ],
+        "post_close_minus_empty_footprint": {
+          "maximum": 18513944,
+          "median": 18497584,
+          "minimum": 18382896,
+          "values": [
+            18481200,
+            18382896,
+            18513944,
+            18432048,
+            18497584,
+            18497584,
+            18513944
+          ]
+        },
+        "post_trim_minus_live_footprint": {
+          "maximum": 16384,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            16384,
+            0,
+            0,
+            0
+          ]
+        },
+        "teardown_violation_runs": 0,
+        "trim_arena_released_bytes_tail_only": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "trim_released_bytes": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      }
+    },
+    "capacity_at_first_oom": {
+      "arena": {
+        "ratio_of_hard_cap": {
+          "maximum": 0.6805,
+          "median": 0.6805,
+          "minimum": 0.6805,
+          "values": [
+            0.6805,
+            0.6805,
+            0.6805,
+            0.6805,
+            0.6805,
+            0.6805,
+            0.6805
+          ]
+        },
+        "realm_live_bytes_after_first_oom": {
+          "maximum": 11417184,
+          "median": 11417184,
+          "minimum": 11417184,
+          "values": [
+            11417184,
+            11417184,
+            11417184,
+            11417184,
+            11417184,
+            11417184,
+            11417184
+          ]
+        }
+      },
+      "system": {
+        "ratio_of_hard_cap": {
+          "maximum": 0.7067,
+          "median": 0.7067,
+          "minimum": 0.7067,
+          "values": [
+            0.7067,
+            0.7067,
+            0.7067,
+            0.7067,
+            0.7067,
+            0.7067,
+            0.7067
+          ]
+        },
+        "realm_live_bytes_after_first_oom": {
+          "maximum": 11856928,
+          "median": 11856928,
+          "minimum": 11856928,
+          "values": [
+            11856928,
+            11856928,
+            11856928,
+            11856928,
+            11856928,
+            11856928,
+            11856928
+          ]
+        }
+      }
+    },
+    "cells": {
+      "fixture-interactive/arena": {
+        "allocator": "arena",
+        "arena_high_water_live_128": {
+          "maximum": 291408,
+          "median": 291408,
+          "minimum": 291408,
+          "values": [
+            291408,
+            291408,
+            291408,
+            291408,
+            291408,
+            291408,
+            291408
+          ]
+        },
+        "arena_used_live_128": {
+          "maximum": 278240,
+          "median": 278240,
+          "minimum": 278240,
+          "values": [
+            278240,
+            278240,
+            278240,
+            278240,
+            278240,
+            278240,
+            278240
+          ]
+        },
+        "first_open_live_minus_empty": {
+          "maximum": 606232,
+          "median": 557080,
+          "minimum": 540696,
+          "values": [
+            589848,
+            540696,
+            540696,
+            557080,
+            557080,
+            589848,
+            606232
+          ]
+        },
+        "late_growth_64_to_128": {
+          "maximum": 16384,
+          "median": 16384,
+          "minimum": 0,
+          "values": [
+            16384,
+            16384,
+            16384,
+            16384,
+            16384,
+            0,
+            16384
+          ]
+        },
+        "libmalloc_allocated_post_close_128": {
+          "maximum": 29360128,
+          "median": 20971520,
+          "minimum": 20971520,
+          "values": [
+            20971520,
+            29360128,
+            20971520,
+            20971520,
+            20971520,
+            25165824,
+            29360128
+          ]
+        },
+        "libmalloc_in_use_post_close_128": {
+          "maximum": 49232,
+          "median": 49168,
+          "minimum": 49168,
+          "values": [
+            49216,
+            49168,
+            49168,
+            49168,
+            49232,
+            49184,
+            49168
+          ]
+        },
+        "reopen_cost_128": {
+          "maximum": 311320,
+          "median": 311320,
+          "minimum": 311320,
+          "values": [
+            311320,
+            311320,
+            311320,
+            311320,
+            311320,
+            311320,
+            311320
+          ]
+        },
+        "reopen_cost_8": {
+          "maximum": 442392,
+          "median": 426008,
+          "minimum": 426008,
+          "values": [
+            426008,
+            426008,
+            442392,
+            426008,
+            426008,
+            442392,
+            426008
+          ]
+        },
+        "retained_128": {
+          "maximum": 1114112,
+          "median": 1048576,
+          "minimum": 1032192,
+          "values": [
+            1081344,
+            1032192,
+            1048576,
+            1048576,
+            1048576,
+            1114112,
+            1064960
+          ]
+        },
+        "retained_by_cycle_median": {
+          "1": 262144,
+          "2": 507904,
+          "4": 655360,
+          "8": 770048,
+          "16": 999424,
+          "24": 1032192,
+          "32": 1032192,
+          "48": 1032192,
+          "64": 1032192,
+          "80": 1048576,
+          "96": 1048576,
+          "112": 1048576,
+          "128": 1048576
+        },
+        "rss_live_128": {
+          "maximum": 4931584,
+          "median": 4882432,
+          "minimum": 4866048,
+          "values": [
+            4898816,
+            4882432,
+            4866048,
+            4866048,
+            4866048,
+            4931584,
+            4882432
+          ]
+        },
+        "rss_post_close_128": {
+          "maximum": 4636672,
+          "median": 4587520,
+          "minimum": 4571136,
+          "values": [
+            4603904,
+            4587520,
+            4571136,
+            4571136,
+            4571136,
+            4636672,
+            4587520
+          ]
+        },
+        "runs": [
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 589848,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 49216,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 426008,
+            "reopen_cost_by_cycle": {
+              "2": 475160,
+              "4": 442392,
+              "8": 426008,
+              "16": 524312,
+              "24": 360472,
+              "32": 344088,
+              "48": 311320,
+              "64": 311320,
+              "80": 327704,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1081344,
+            "retained_by_cycle": {
+              "1": 311296,
+              "2": 491520,
+              "4": 655360,
+              "8": 770048,
+              "16": 983040,
+              "24": 1032192,
+              "32": 1064960,
+              "48": 1064960,
+              "64": 1064960,
+              "80": 1081344,
+              "96": 1081344,
+              "112": 1081344,
+              "128": 1081344
+            },
+            "rss_live_128": 4898816,
+            "rss_post_close_128": 4603904,
+            "slope_bytes_per_cycle": 1464.270531400966,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1376568,
+            "first_open_live_minus_empty": 540696,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 49168,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 426008,
+            "reopen_cost_by_cycle": {
+              "2": 524312,
+              "4": 475160,
+              "8": 426008,
+              "16": 540696,
+              "24": 344088,
+              "32": 311320,
+              "48": 311320,
+              "64": 311320,
+              "80": 327704,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1032192,
+            "retained_by_cycle": {
+              "1": 262144,
+              "2": 475136,
+              "4": 638976,
+              "8": 753664,
+              "16": 983040,
+              "24": 1015808,
+              "32": 1015808,
+              "48": 1015808,
+              "64": 1015808,
+              "80": 1032192,
+              "96": 1032192,
+              "112": 1032192,
+              "128": 1032192
+            },
+            "rss_live_128": 4882432,
+            "rss_post_close_128": 4587520,
+            "slope_bytes_per_cycle": 1141.0756843800323,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 540696,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 49168,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 442392,
+            "reopen_cost_by_cycle": {
+              "2": 573464,
+              "4": 442392,
+              "8": 442392,
+              "16": 507928,
+              "24": 327704,
+              "32": 327704,
+              "48": 311320,
+              "64": 311320,
+              "80": 327704,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1048576,
+            "retained_by_cycle": {
+              "1": 262144,
+              "2": 540672,
+              "4": 671744,
+              "8": 802816,
+              "16": 999424,
+              "24": 1015808,
+              "32": 1032192,
+              "48": 1032192,
+              "64": 1032192,
+              "80": 1048576,
+              "96": 1048576,
+              "112": 1048576,
+              "128": 1048576
+            },
+            "rss_live_128": 4866048,
+            "rss_post_close_128": 4571136,
+            "slope_bytes_per_cycle": 1070.170692431562,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 557080,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 49168,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 426008,
+            "reopen_cost_by_cycle": {
+              "2": 589848,
+              "4": 426008,
+              "8": 426008,
+              "16": 557080,
+              "24": 327704,
+              "32": 311320,
+              "48": 311320,
+              "64": 311320,
+              "80": 327704,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1048576,
+            "retained_by_cycle": {
+              "1": 245760,
+              "2": 540672,
+              "4": 655360,
+              "8": 770048,
+              "16": 1015808,
+              "24": 1032192,
+              "32": 1032192,
+              "48": 1032192,
+              "64": 1032192,
+              "80": 1048576,
+              "96": 1048576,
+              "112": 1048576,
+              "128": 1048576
+            },
+            "rss_live_128": 4866048,
+            "rss_post_close_128": 4571136,
+            "slope_bytes_per_cycle": 1094.9049919484703,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 557080,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 49232,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 426008,
+            "reopen_cost_by_cycle": {
+              "2": 557080,
+              "4": 442392,
+              "8": 426008,
+              "16": 573464,
+              "24": 327704,
+              "32": 311320,
+              "48": 311320,
+              "64": 311320,
+              "80": 327704,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1048576,
+            "retained_by_cycle": {
+              "1": 245760,
+              "2": 507904,
+              "4": 638976,
+              "8": 753664,
+              "16": 1015808,
+              "24": 1032192,
+              "32": 1032192,
+              "48": 1032192,
+              "64": 1032192,
+              "80": 1048576,
+              "96": 1048576,
+              "112": 1048576,
+              "128": 1048576
+            },
+            "rss_live_128": 4866048,
+            "rss_post_close_128": 4571136,
+            "slope_bytes_per_cycle": 1149.3204508856684,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 589848,
+            "late_growth_64_to_128": 0,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 49184,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 442392,
+            "reopen_cost_by_cycle": {
+              "2": 442392,
+              "4": 491544,
+              "8": 442392,
+              "16": 557080,
+              "24": 344088,
+              "32": 327704,
+              "48": 311320,
+              "64": 327704,
+              "80": 311320,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1114112,
+            "retained_by_cycle": {
+              "1": 344064,
+              "2": 491520,
+              "4": 671744,
+              "8": 802816,
+              "16": 1048576,
+              "24": 1081344,
+              "32": 1097728,
+              "48": 1097728,
+              "64": 1114112,
+              "80": 1114112,
+              "96": 1114112,
+              "112": 1114112,
+              "128": 1114112
+            },
+            "rss_live_128": 4931584,
+            "rss_post_close_128": 4636672,
+            "slope_bytes_per_cycle": 1337.3011272141705,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 291408,
+            "arena_used_live_128": 278240,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 606232,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 49168,
+            "reopen_cost_128": 311320,
+            "reopen_cost_8": 426008,
+            "reopen_cost_by_cycle": {
+              "2": 524312,
+              "4": 458776,
+              "8": 426008,
+              "16": 475160,
+              "24": 376856,
+              "32": 327704,
+              "48": 311320,
+              "64": 311320,
+              "80": 327704,
+              "96": 311320,
+              "112": 311320,
+              "128": 311320
+            },
+            "retained_128": 1064960,
+            "retained_by_cycle": {
+              "1": 311296,
+              "2": 524288,
+              "4": 688128,
+              "8": 802816,
+              "16": 966656,
+              "24": 1032192,
+              "32": 1048576,
+              "48": 1048576,
+              "64": 1048576,
+              "80": 1064960,
+              "96": 1064960,
+              "112": 1064960,
+              "128": 1064960
+            },
+            "rss_live_128": 4882432,
+            "rss_post_close_128": 4587520,
+            "slope_bytes_per_cycle": 1263.098228663446,
+            "teardown_violations": {}
+          }
+        ],
+        "slope_bytes_per_cycle": {
+          "maximum": 1464.3,
+          "median": 1149.3,
+          "minimum": 1070.2,
+          "values": [
+            1464.3,
+            1141.1,
+            1070.2,
+            1094.9,
+            1149.3,
+            1337.3,
+            1263.1
+          ]
+        },
+        "teardown_violation_runs": 0,
+        "workload": "fixture-interactive"
+      },
+      "fixture-interactive/system": {
+        "allocator": "system",
+        "arena_high_water_live_128": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "arena_used_live_128": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "first_open_live_minus_empty": {
+          "maximum": 1310720,
+          "median": 1277952,
+          "minimum": 1179648,
+          "values": [
+            1277952,
+            1310720,
+            1179648,
+            1277952,
+            1261568,
+            1245184,
+            1277952
+          ]
+        },
+        "late_growth_64_to_128": {
+          "maximum": 65536,
+          "median": 49152,
+          "minimum": 32768,
+          "values": [
+            49152,
+            65536,
+            32768,
+            49152,
+            32768,
+            49152,
+            49152
+          ]
+        },
+        "libmalloc_allocated_post_close_128": {
+          "maximum": 29360128,
+          "median": 20971520,
+          "minimum": 16777216,
+          "values": [
+            20971520,
+            20971520,
+            29360128,
+            16777216,
+            29360128,
+            25165824,
+            16777216
+          ]
+        },
+        "libmalloc_in_use_post_close_128": {
+          "maximum": 228704,
+          "median": 212448,
+          "minimum": 196176,
+          "values": [
+            212448,
+            228704,
+            196176,
+            212448,
+            212432,
+            228624,
+            212480
+          ]
+        },
+        "reopen_cost_128": {
+          "maximum": 32768,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            32768,
+            0,
+            0,
+            16384,
+            16384,
+            0
+          ]
+        },
+        "reopen_cost_8": {
+          "maximum": 180224,
+          "median": 147456,
+          "minimum": 147456,
+          "values": [
+            163840,
+            180224,
+            147456,
+            163840,
+            147456,
+            147456,
+            147456
+          ]
+        },
+        "retained_128": {
+          "maximum": 2211840,
+          "median": 2146304,
+          "minimum": 2113536,
+          "values": [
+            2146304,
+            2195456,
+            2113536,
+            2129920,
+            2162688,
+            2211840,
+            2129920
+          ]
+        },
+        "retained_by_cycle_median": {
+          "1": 1277952,
+          "2": 1556480,
+          "4": 1720320,
+          "8": 1867776,
+          "16": 1998848,
+          "24": 2015232,
+          "32": 2064384,
+          "48": 2080768,
+          "64": 2097152,
+          "80": 2146304,
+          "96": 2146304,
+          "112": 2146304,
+          "128": 2146304
+        },
+        "rss_live_128": {
+          "maximum": 5734400,
+          "median": 5668864,
+          "minimum": 5636096,
+          "values": [
+            5668864,
+            5718016,
+            5636096,
+            5652480,
+            5718016,
+            5734400,
+            5652480
+          ]
+        },
+        "rss_post_close_128": {
+          "maximum": 5734400,
+          "median": 5668864,
+          "minimum": 5636096,
+          "values": [
+            5668864,
+            5718016,
+            5636096,
+            5652480,
+            5718016,
+            5734400,
+            5652480
+          ]
+        },
+        "runs": [
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1277952,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 212448,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 163840,
+            "reopen_cost_by_cycle": {
+              "2": 245760,
+              "4": 163840,
+              "8": 163840,
+              "16": 147456,
+              "24": 32768,
+              "32": 32768,
+              "48": 16384,
+              "64": 16384,
+              "80": 49152,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2146304,
+            "retained_by_cycle": {
+              "1": 1277952,
+              "2": 1523712,
+              "4": 1687552,
+              "8": 1851392,
+              "16": 1998848,
+              "24": 2031616,
+              "32": 2064384,
+              "48": 2080768,
+              "64": 2097152,
+              "80": 2146304,
+              "96": 2146304,
+              "112": 2146304,
+              "128": 2146304
+            },
+            "rss_live_128": 5668864,
+            "rss_post_close_128": 5668864,
+            "slope_bytes_per_cycle": 1851.7745571658613,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1310720,
+            "late_growth_64_to_128": 65536,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 228704,
+            "reopen_cost_128": 32768,
+            "reopen_cost_8": 180224,
+            "reopen_cost_by_cycle": {
+              "2": 344064,
+              "4": 65536,
+              "8": 180224,
+              "16": 114688,
+              "24": 16384,
+              "32": 32768,
+              "48": 49152,
+              "64": 0,
+              "80": 32768,
+              "96": 0,
+              "112": 0,
+              "128": 32768
+            },
+            "retained_128": 2195456,
+            "retained_by_cycle": {
+              "1": 1327104,
+              "2": 1671168,
+              "4": 1736704,
+              "8": 1916928,
+              "16": 2031616,
+              "24": 2048000,
+              "32": 2080768,
+              "48": 2129920,
+              "64": 2129920,
+              "80": 2162688,
+              "96": 2162688,
+              "112": 2162688,
+              "128": 2195456
+            },
+            "rss_live_128": 5718016,
+            "rss_post_close_128": 5718016,
+            "slope_bytes_per_cycle": 1757.7842190016102,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1179648,
+            "late_growth_64_to_128": 32768,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 196176,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 147456,
+            "reopen_cost_by_cycle": {
+              "2": 278528,
+              "4": 163840,
+              "8": 147456,
+              "16": 131072,
+              "24": 16384,
+              "32": 65536,
+              "48": 0,
+              "64": 16384,
+              "80": 32768,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2113536,
+            "retained_by_cycle": {
+              "1": 1245184,
+              "2": 1540096,
+              "4": 1703936,
+              "8": 1851392,
+              "16": 1982464,
+              "24": 1998848,
+              "32": 2064384,
+              "48": 2064384,
+              "64": 2080768,
+              "80": 2113536,
+              "96": 2113536,
+              "112": 2113536,
+              "128": 2113536
+            },
+            "rss_live_128": 5636096,
+            "rss_post_close_128": 5636096,
+            "slope_bytes_per_cycle": 1627.5169082125603,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1277952,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 16777216,
+            "libmalloc_in_use_post_close_128": 212448,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 163840,
+            "reopen_cost_by_cycle": {
+              "2": 245760,
+              "4": 163840,
+              "8": 163840,
+              "16": 114688,
+              "24": 32768,
+              "32": 49152,
+              "48": 16384,
+              "64": 16384,
+              "80": 49152,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2129920,
+            "retained_by_cycle": {
+              "1": 1277952,
+              "2": 1523712,
+              "4": 1687552,
+              "8": 1851392,
+              "16": 1966080,
+              "24": 1998848,
+              "32": 2048000,
+              "48": 2064384,
+              "64": 2080768,
+              "80": 2129920,
+              "96": 2129920,
+              "112": 2129920,
+              "128": 2129920
+            },
+            "rss_live_128": 5652480,
+            "rss_post_close_128": 5652480,
+            "slope_bytes_per_cycle": 1881.4557165861513,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1376568,
+            "first_open_live_minus_empty": 1261568,
+            "late_growth_64_to_128": 32768,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 212432,
+            "reopen_cost_128": 16384,
+            "reopen_cost_8": 147456,
+            "reopen_cost_by_cycle": {
+              "2": 294912,
+              "4": 147456,
+              "8": 147456,
+              "16": 131072,
+              "24": 16384,
+              "32": 49152,
+              "48": 16384,
+              "64": 49152,
+              "80": 16384,
+              "96": 0,
+              "112": 0,
+              "128": 16384
+            },
+            "retained_128": 2162688,
+            "retained_by_cycle": {
+              "1": 1261568,
+              "2": 1556480,
+              "4": 1720320,
+              "8": 1867776,
+              "16": 1998848,
+              "24": 2015232,
+              "32": 2064384,
+              "48": 2080768,
+              "64": 2129920,
+              "80": 2146304,
+              "96": 2146304,
+              "112": 2146304,
+              "128": 2162688
+            },
+            "rss_live_128": 5718016,
+            "rss_post_close_128": 5718016,
+            "slope_bytes_per_cycle": 1911.1368760064413,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1245184,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 228624,
+            "reopen_cost_128": 16384,
+            "reopen_cost_8": 147456,
+            "reopen_cost_by_cycle": {
+              "2": 294912,
+              "4": 147456,
+              "8": 147456,
+              "16": 131072,
+              "24": 16384,
+              "32": 49152,
+              "48": 32768,
+              "64": 32768,
+              "80": 32768,
+              "96": 0,
+              "112": 0,
+              "128": 16384
+            },
+            "retained_128": 2211840,
+            "retained_by_cycle": {
+              "1": 1261568,
+              "2": 1556480,
+              "4": 1736704,
+              "8": 1884160,
+              "16": 2031616,
+              "24": 2048000,
+              "32": 2097152,
+              "48": 2129920,
+              "64": 2162688,
+              "80": 2195456,
+              "96": 2195456,
+              "112": 2195456,
+              "128": 2211840
+            },
+            "rss_live_128": 5734400,
+            "rss_post_close_128": 5734400,
+            "slope_bytes_per_cycle": 2130.4476650563606,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1277952,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 16777216,
+            "libmalloc_in_use_post_close_128": 212480,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 147456,
+            "reopen_cost_by_cycle": {
+              "2": 245760,
+              "4": 163840,
+              "8": 147456,
+              "16": 114688,
+              "24": 32768,
+              "32": 32768,
+              "48": 16384,
+              "64": 16384,
+              "80": 49152,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2129920,
+            "retained_by_cycle": {
+              "1": 1310720,
+              "2": 1556480,
+              "4": 1720320,
+              "8": 1867776,
+              "16": 1982464,
+              "24": 2015232,
+              "32": 2048000,
+              "48": 2064384,
+              "64": 2080768,
+              "80": 2129920,
+              "96": 2129920,
+              "112": 2129920,
+              "128": 2129920
+            },
+            "rss_live_128": 5652480,
+            "rss_post_close_128": 5652480,
+            "slope_bytes_per_cycle": 1742.9436392914654,
+            "teardown_violations": {}
+          }
+        ],
+        "slope_bytes_per_cycle": {
+          "maximum": 2130.4,
+          "median": 1851.8,
+          "minimum": 1627.5,
+          "values": [
+            1851.8,
+            1757.8,
+            1627.5,
+            1881.5,
+            1911.1,
+            2130.4,
+            1742.9
+          ]
+        },
+        "teardown_violation_runs": 0,
+        "workload": "fixture-interactive"
+      },
+      "representative-url/arena": {
+        "allocator": "arena",
+        "arena_high_water_live_128": {
+          "maximum": 362976,
+          "median": 362976,
+          "minimum": 362976,
+          "values": [
+            362976,
+            362976,
+            362976,
+            362976,
+            362976,
+            362976,
+            362976
+          ]
+        },
+        "arena_used_live_128": {
+          "maximum": 343952,
+          "median": 343952,
+          "minimum": 343952,
+          "values": [
+            343952,
+            343952,
+            343952,
+            343952,
+            343952,
+            343952,
+            343952
+          ]
+        },
+        "first_open_live_minus_empty": {
+          "maximum": 786456,
+          "median": 770072,
+          "minimum": 753688,
+          "values": [
+            753688,
+            786456,
+            770072,
+            770072,
+            770072,
+            770072,
+            770072
+          ]
+        },
+        "late_growth_64_to_128": {
+          "maximum": 16384,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            16384,
+            0,
+            0,
+            16384,
+            0,
+            0,
+            16384
+          ]
+        },
+        "libmalloc_allocated_post_close_128": {
+          "maximum": 29360128,
+          "median": 20971520,
+          "minimum": 20971520,
+          "values": [
+            20971520,
+            20971520,
+            20971520,
+            25165824,
+            25165824,
+            29360128,
+            20971520
+          ]
+        },
+        "libmalloc_in_use_post_close_128": {
+          "maximum": 81984,
+          "median": 65792,
+          "minimum": 49568,
+          "values": [
+            81984,
+            65792,
+            65792,
+            65776,
+            65776,
+            65792,
+            49568
+          ]
+        },
+        "reopen_cost_128": {
+          "maximum": 409624,
+          "median": 393240,
+          "minimum": 393240,
+          "values": [
+            409624,
+            393240,
+            393240,
+            409624,
+            393240,
+            393240,
+            393240
+          ]
+        },
+        "reopen_cost_8": {
+          "maximum": 639000,
+          "median": 573464,
+          "minimum": 540696,
+          "values": [
+            639000,
+            557080,
+            589848,
+            557080,
+            540696,
+            573464,
+            573464
+          ]
+        },
+        "retained_128": {
+          "maximum": 1294336,
+          "median": 1196032,
+          "minimum": 1146880,
+          "values": [
+            1261568,
+            1146880,
+            1146880,
+            1294336,
+            1196032,
+            1179648,
+            1277952
+          ]
+        },
+        "retained_by_cycle_median": {
+          "1": 409600,
+          "2": 606208,
+          "4": 770048,
+          "8": 933888,
+          "16": 1064960,
+          "24": 1146880,
+          "32": 1163264,
+          "48": 1196032,
+          "64": 1196032,
+          "80": 1196032,
+          "96": 1196032,
+          "112": 1196032,
+          "128": 1196032
+        },
+        "rss_live_128": {
+          "maximum": 5308416,
+          "median": 5210112,
+          "minimum": 5160960,
+          "values": [
+            5275648,
+            5160960,
+            5160960,
+            5308416,
+            5210112,
+            5193728,
+            5292032
+          ]
+        },
+        "rss_post_close_128": {
+          "maximum": 4931584,
+          "median": 4833280,
+          "minimum": 4784128,
+          "values": [
+            4898816,
+            4784128,
+            4784128,
+            4931584,
+            4833280,
+            4816896,
+            4915200
+          ]
+        },
+        "runs": [
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 753688,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 81984,
+            "reopen_cost_128": 409624,
+            "reopen_cost_8": 639000,
+            "reopen_cost_by_cycle": {
+              "2": 606232,
+              "4": 557080,
+              "8": 639000,
+              "16": 557080,
+              "24": 442392,
+              "32": 393240,
+              "48": 426008,
+              "64": 393240,
+              "80": 393240,
+              "96": 393240,
+              "112": 393240,
+              "128": 409624
+            },
+            "retained_128": 1261568,
+            "retained_by_cycle": {
+              "1": 376832,
+              "2": 589824,
+              "4": 753664,
+              "8": 999424,
+              "16": 1163264,
+              "24": 1212416,
+              "32": 1212416,
+              "48": 1245184,
+              "64": 1245184,
+              "80": 1245184,
+              "96": 1245184,
+              "112": 1245184,
+              "128": 1261568
+            },
+            "rss_live_128": 5275648,
+            "rss_post_close_128": 4898816,
+            "slope_bytes_per_cycle": 1251.5555555555557,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 786456,
+            "late_growth_64_to_128": 0,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 65792,
+            "reopen_cost_128": 393240,
+            "reopen_cost_8": 557080,
+            "reopen_cost_by_cycle": {
+              "2": 507928,
+              "4": 573464,
+              "8": 557080,
+              "16": 491544,
+              "24": 458776,
+              "32": 409624,
+              "48": 426008,
+              "64": 393240,
+              "80": 393240,
+              "96": 393240,
+              "112": 393240,
+              "128": 393240
+            },
+            "retained_128": 1146880,
+            "retained_by_cycle": {
+              "1": 442368,
+              "2": 573440,
+              "4": 770048,
+              "8": 933888,
+              "16": 1032192,
+              "24": 1097728,
+              "32": 1114112,
+              "48": 1146880,
+              "64": 1146880,
+              "80": 1146880,
+              "96": 1146880,
+              "112": 1146880,
+              "128": 1146880
+            },
+            "rss_live_128": 5160960,
+            "rss_post_close_128": 4784128,
+            "slope_bytes_per_cycle": 1203.7359098228662,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 770072,
+            "late_growth_64_to_128": 0,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 65792,
+            "reopen_cost_128": 393240,
+            "reopen_cost_8": 589848,
+            "reopen_cost_by_cycle": {
+              "2": 573464,
+              "4": 557080,
+              "8": 589848,
+              "16": 475160,
+              "24": 458776,
+              "32": 409624,
+              "48": 409624,
+              "64": 393240,
+              "80": 393240,
+              "96": 393240,
+              "112": 393240,
+              "128": 393240
+            },
+            "retained_128": 1146880,
+            "retained_by_cycle": {
+              "1": 409600,
+              "2": 606208,
+              "4": 770048,
+              "8": 966656,
+              "16": 1048576,
+              "24": 1114112,
+              "32": 1130496,
+              "48": 1146880,
+              "64": 1146880,
+              "80": 1146880,
+              "96": 1146880,
+              "112": 1146880,
+              "128": 1146880
+            },
+            "rss_live_128": 5160960,
+            "rss_post_close_128": 4784128,
+            "slope_bytes_per_cycle": 981.1272141706924,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 770072,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 65776,
+            "reopen_cost_128": 409624,
+            "reopen_cost_8": 557080,
+            "reopen_cost_by_cycle": {
+              "2": 557080,
+              "4": 507928,
+              "8": 557080,
+              "16": 655384,
+              "24": 458776,
+              "32": 409624,
+              "48": 426008,
+              "64": 393240,
+              "80": 393240,
+              "96": 393240,
+              "112": 393240,
+              "128": 409624
+            },
+            "retained_128": 1294336,
+            "retained_by_cycle": {
+              "1": 409600,
+              "2": 606208,
+              "4": 737280,
+              "8": 901120,
+              "16": 1163264,
+              "24": 1228800,
+              "32": 1245184,
+              "48": 1277952,
+              "64": 1277952,
+              "80": 1277952,
+              "96": 1277952,
+              "112": 1277952,
+              "128": 1294336
+            },
+            "rss_live_128": 5308416,
+            "rss_post_close_128": 4931584,
+            "slope_bytes_per_cycle": 1817.1465378421901,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 770072,
+            "late_growth_64_to_128": 0,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 65776,
+            "reopen_cost_128": 393240,
+            "reopen_cost_8": 540696,
+            "reopen_cost_by_cycle": {
+              "2": 573464,
+              "4": 540696,
+              "8": 540696,
+              "16": 540696,
+              "24": 475160,
+              "32": 409624,
+              "48": 426008,
+              "64": 393240,
+              "80": 393240,
+              "96": 393240,
+              "112": 393240,
+              "128": 393240
+            },
+            "retained_128": 1196032,
+            "retained_by_cycle": {
+              "1": 425984,
+              "2": 622592,
+              "4": 770048,
+              "8": 917504,
+              "16": 1064960,
+              "24": 1146880,
+              "32": 1163264,
+              "48": 1196032,
+              "64": 1196032,
+              "80": 1196032,
+              "96": 1196032,
+              "112": 1196032,
+              "128": 1196032
+            },
+            "rss_live_128": 5210112,
+            "rss_post_close_128": 4833280,
+            "slope_bytes_per_cycle": 1467.5684380032205,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 770072,
+            "late_growth_64_to_128": 0,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 65792,
+            "reopen_cost_128": 393240,
+            "reopen_cost_8": 573464,
+            "reopen_cost_by_cycle": {
+              "2": 606232,
+              "4": 524312,
+              "8": 573464,
+              "16": 491544,
+              "24": 458776,
+              "32": 426008,
+              "48": 409624,
+              "64": 393240,
+              "80": 393240,
+              "96": 393240,
+              "112": 393240,
+              "128": 393240
+            },
+            "retained_128": 1179648,
+            "retained_by_cycle": {
+              "1": 442368,
+              "2": 655360,
+              "4": 786432,
+              "8": 966656,
+              "16": 1064960,
+              "24": 1130496,
+              "32": 1163264,
+              "48": 1179648,
+              "64": 1179648,
+              "80": 1179648,
+              "96": 1179648,
+              "112": 1179648,
+              "128": 1179648
+            },
+            "rss_live_128": 5193728,
+            "rss_post_close_128": 4816896,
+            "slope_bytes_per_cycle": 1174.0547504025765,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 362976,
+            "arena_used_live_128": 343952,
+            "arenas_unmapped_128": 128,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 770072,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 49568,
+            "reopen_cost_128": 393240,
+            "reopen_cost_8": 573464,
+            "reopen_cost_by_cycle": {
+              "2": 589848,
+              "4": 507928,
+              "8": 573464,
+              "16": 622616,
+              "24": 458776,
+              "32": 409624,
+              "48": 409624,
+              "64": 393240,
+              "80": 409624,
+              "96": 393240,
+              "112": 393240,
+              "128": 393240
+            },
+            "retained_128": 1277952,
+            "retained_by_cycle": {
+              "1": 409600,
+              "2": 622592,
+              "4": 753664,
+              "8": 933888,
+              "16": 1163264,
+              "24": 1228800,
+              "32": 1245184,
+              "48": 1261568,
+              "64": 1261568,
+              "80": 1277952,
+              "96": 1277952,
+              "112": 1277952,
+              "128": 1277952
+            },
+            "rss_live_128": 5292032,
+            "rss_post_close_128": 4915200,
+            "slope_bytes_per_cycle": 1648.9533011272142,
+            "teardown_violations": {}
+          }
+        ],
+        "slope_bytes_per_cycle": {
+          "maximum": 1817.1,
+          "median": 1251.6,
+          "minimum": 981.1,
+          "values": [
+            1251.6,
+            1203.7,
+            981.1,
+            1817.1,
+            1467.6,
+            1174.1,
+            1649.0
+          ]
+        },
+        "teardown_violation_runs": 0,
+        "workload": "representative-url"
+      },
+      "representative-url/system": {
+        "allocator": "system",
+        "arena_high_water_live_128": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "arena_used_live_128": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "first_open_live_minus_empty": {
+          "maximum": 1425408,
+          "median": 1376256,
+          "minimum": 1343488,
+          "values": [
+            1343488,
+            1392640,
+            1343488,
+            1425408,
+            1359872,
+            1376256,
+            1376256
+          ]
+        },
+        "late_growth_64_to_128": {
+          "maximum": 49152,
+          "median": 32768,
+          "minimum": 16384,
+          "values": [
+            16384,
+            49152,
+            16384,
+            16384,
+            32768,
+            49152,
+            49152
+          ]
+        },
+        "libmalloc_allocated_post_close_128": {
+          "maximum": 29360128,
+          "median": 25165824,
+          "minimum": 20971520,
+          "values": [
+            25165824,
+            25165824,
+            25165824,
+            29360128,
+            20971520,
+            29360128,
+            25165824
+          ]
+        },
+        "libmalloc_in_use_post_close_128": {
+          "maximum": 245472,
+          "median": 229056,
+          "minimum": 229008,
+          "values": [
+            245424,
+            229056,
+            229008,
+            245312,
+            229024,
+            229056,
+            245472
+          ]
+        },
+        "reopen_cost_128": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "reopen_cost_8": {
+          "maximum": 163840,
+          "median": 114688,
+          "minimum": 114688,
+          "values": [
+            147456,
+            131072,
+            114688,
+            114688,
+            114688,
+            163840,
+            114688
+          ]
+        },
+        "retained_128": {
+          "maximum": 2457600,
+          "median": 2326528,
+          "minimum": 2228224,
+          "values": [
+            2326528,
+            2260992,
+            2359296,
+            2457600,
+            2228224,
+            2277376,
+            2392064
+          ]
+        },
+        "retained_by_cycle_median": {
+          "1": 1425408,
+          "2": 1753088,
+          "4": 1900544,
+          "8": 2064384,
+          "16": 2179072,
+          "24": 2211840,
+          "32": 2211840,
+          "48": 2244608,
+          "64": 2310144,
+          "80": 2326528,
+          "96": 2326528,
+          "112": 2326528,
+          "128": 2326528
+        },
+        "rss_live_128": {
+          "maximum": 6094848,
+          "median": 5963776,
+          "minimum": 5865472,
+          "values": [
+            5963776,
+            5898240,
+            5996544,
+            6094848,
+            5865472,
+            5914624,
+            6029312
+          ]
+        },
+        "rss_post_close_128": {
+          "maximum": 6094848,
+          "median": 5963776,
+          "minimum": 5865472,
+          "values": [
+            5963776,
+            5898240,
+            5996544,
+            6094848,
+            5865472,
+            5914624,
+            6029312
+          ]
+        },
+        "runs": [
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1343488,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 245424,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 147456,
+            "reopen_cost_by_cycle": {
+              "2": 344064,
+              "4": 131072,
+              "8": 147456,
+              "16": 163840,
+              "24": 32768,
+              "32": 0,
+              "48": 32768,
+              "64": 65536,
+              "80": 16384,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2326528,
+            "retained_by_cycle": {
+              "1": 1392640,
+              "2": 1736704,
+              "4": 1867776,
+              "8": 2015232,
+              "16": 2179072,
+              "24": 2211840,
+              "32": 2211840,
+              "48": 2244608,
+              "64": 2310144,
+              "80": 2326528,
+              "96": 2326528,
+              "112": 2326528,
+              "128": 2326528
+            },
+            "rss_live_128": 5963776,
+            "rss_post_close_128": 5963776,
+            "slope_bytes_per_cycle": 1985.3397745571656,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1392640,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 229056,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 131072,
+            "reopen_cost_by_cycle": {
+              "2": 311296,
+              "4": 147456,
+              "8": 131072,
+              "16": 114688,
+              "24": 49152,
+              "32": 0,
+              "48": 16384,
+              "64": 16384,
+              "80": 32768,
+              "96": 0,
+              "112": 16384,
+              "128": 0
+            },
+            "retained_128": 2260992,
+            "retained_by_cycle": {
+              "1": 1425408,
+              "2": 1736704,
+              "4": 1884160,
+              "8": 2015232,
+              "16": 2129920,
+              "24": 2179072,
+              "32": 2179072,
+              "48": 2195456,
+              "64": 2211840,
+              "80": 2244608,
+              "96": 2244608,
+              "112": 2260992,
+              "128": 2260992
+            },
+            "rss_live_128": 5898240,
+            "rss_post_close_128": 5898240,
+            "slope_bytes_per_cycle": 1510.441223832528,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1343488,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 229008,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 114688,
+            "reopen_cost_by_cycle": {
+              "2": 442368,
+              "4": 147456,
+              "8": 114688,
+              "16": 81920,
+              "24": 32768,
+              "32": 65536,
+              "48": 32768,
+              "64": 32768,
+              "80": 16384,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2359296,
+            "retained_by_cycle": {
+              "1": 1359872,
+              "2": 1835008,
+              "4": 1982464,
+              "8": 2097152,
+              "16": 2179072,
+              "24": 2211840,
+              "32": 2277376,
+              "48": 2310144,
+              "64": 2342912,
+              "80": 2359296,
+              "96": 2359296,
+              "112": 2359296,
+              "128": 2359296
+            },
+            "rss_live_128": 5996544,
+            "rss_post_close_128": 5996544,
+            "slope_bytes_per_cycle": 1904.5410628019324,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1425408,
+            "late_growth_64_to_128": 16384,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 245312,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 114688,
+            "reopen_cost_by_cycle": {
+              "2": 475136,
+              "4": 180224,
+              "8": 114688,
+              "16": 81920,
+              "24": 32768,
+              "32": 32768,
+              "48": 16384,
+              "64": 49152,
+              "80": 0,
+              "96": 0,
+              "112": 16384,
+              "128": 0
+            },
+            "retained_128": 2457600,
+            "retained_by_cycle": {
+              "1": 1441792,
+              "2": 1933312,
+              "4": 2113536,
+              "8": 2228224,
+              "16": 2310144,
+              "24": 2342912,
+              "32": 2375680,
+              "48": 2392064,
+              "64": 2441216,
+              "80": 2441216,
+              "96": 2441216,
+              "112": 2457600,
+              "128": 2457600
+            },
+            "rss_live_128": 6094848,
+            "rss_post_close_128": 6094848,
+            "slope_bytes_per_cycle": 1584.644122383253,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1359872,
+            "late_growth_64_to_128": 32768,
+            "libmalloc_allocated_post_close_128": 20971520,
+            "libmalloc_in_use_post_close_128": 229024,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 114688,
+            "reopen_cost_by_cycle": {
+              "2": 311296,
+              "4": 147456,
+              "8": 114688,
+              "16": 98304,
+              "24": 32768,
+              "32": 0,
+              "48": 32768,
+              "64": 16384,
+              "80": 32768,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2228224,
+            "retained_by_cycle": {
+              "1": 1441792,
+              "2": 1753088,
+              "4": 1900544,
+              "8": 2015232,
+              "16": 2113536,
+              "24": 2146304,
+              "32": 2146304,
+              "48": 2179072,
+              "64": 2195456,
+              "80": 2228224,
+              "96": 2228224,
+              "112": 2228224,
+              "128": 2228224
+            },
+            "rss_live_128": 5865472,
+            "rss_post_close_128": 5865472,
+            "slope_bytes_per_cycle": 1401.610305958132,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1376256,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 29360128,
+            "libmalloc_in_use_post_close_128": 229056,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 163840,
+            "reopen_cost_by_cycle": {
+              "2": 311296,
+              "4": 163840,
+              "8": 163840,
+              "16": 98304,
+              "24": 32768,
+              "32": 0,
+              "48": 16384,
+              "64": 16384,
+              "80": 32768,
+              "96": 0,
+              "112": 16384,
+              "128": 0
+            },
+            "retained_128": 2277376,
+            "retained_by_cycle": {
+              "1": 1425408,
+              "2": 1736704,
+              "4": 1900544,
+              "8": 2064384,
+              "16": 2162688,
+              "24": 2195456,
+              "32": 2195456,
+              "48": 2211840,
+              "64": 2228224,
+              "80": 2260992,
+              "96": 2260992,
+              "112": 2277376,
+              "128": 2277376
+            },
+            "rss_live_128": 5914624,
+            "rss_post_close_128": 5914624,
+            "slope_bytes_per_cycle": 1355.4396135265702,
+            "teardown_violations": {}
+          },
+          {
+            "arena_high_water_live_128": 0,
+            "arena_used_live_128": 0,
+            "arenas_unmapped_128": 0,
+            "empty_footprint": 1343800,
+            "first_open_live_minus_empty": 1376256,
+            "late_growth_64_to_128": 49152,
+            "libmalloc_allocated_post_close_128": 25165824,
+            "libmalloc_in_use_post_close_128": 245472,
+            "reopen_cost_128": 0,
+            "reopen_cost_8": 114688,
+            "reopen_cost_by_cycle": {
+              "2": 294912,
+              "4": 196608,
+              "8": 114688,
+              "16": 180224,
+              "24": 32768,
+              "32": 16384,
+              "48": 16384,
+              "64": 32768,
+              "80": 49152,
+              "96": 0,
+              "112": 0,
+              "128": 0
+            },
+            "retained_128": 2392064,
+            "retained_by_cycle": {
+              "1": 1458176,
+              "2": 1753088,
+              "4": 1949696,
+              "8": 2064384,
+              "16": 2244608,
+              "24": 2277376,
+              "32": 2293760,
+              "48": 2310144,
+              "64": 2342912,
+              "80": 2392064,
+              "96": 2392064,
+              "112": 2392064,
+              "128": 2392064
+            },
+            "rss_live_128": 6029312,
+            "rss_post_close_128": 6029312,
+            "slope_bytes_per_cycle": 2003.4782608695652,
+            "teardown_violations": {}
+          }
+        ],
+        "slope_bytes_per_cycle": {
+          "maximum": 2003.5,
+          "median": 1584.6,
+          "minimum": 1355.4,
+          "values": [
+            1985.3,
+            1510.4,
+            1904.5,
+            1584.6,
+            1401.6,
+            1355.4,
+            2003.5
+          ]
+        },
+        "teardown_violation_runs": 0,
+        "workload": "representative-url"
+      }
+    },
+    "semantic": "physical footprint and RSS of one host process sampled from outside; memory.report owners, libmalloc and arena statistics from inside; one target per cycle, 128 cycles per run",
+    "stress_semantic": "allocator-stress.html is an allocator microbenchmark, not a page; its rows describe the allocator under that script and are judged apart from the browser workloads"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "rules": {
+    "capacity": "capacity-growth.html: realm live bytes at first OOM divided by 16 MiB, 1 warm-up + 7 runs",
+    "cycles": 128,
+    "late_growth": "post_close footprint at cycle 128 minus at cycle 64",
+    "measured_runs": 7,
+    "reopen_cost": "live footprint at a sample cycle minus post_close footprint at the previous sample cycle",
+    "retained": "post_close footprint minus the empty footprint of the same run",
+    "sample_cycles": [
+      1,
+      2,
+      4,
+      8,
+      16,
+      24,
+      32,
+      48,
+      64,
+      80,
+      96,
+      112,
+      128
+    ],
+    "settle_ms": 200,
+    "slope": "least-squares slope of post_close physical footprint over sample cycles >= 8, bytes per cycle",
+    "stages_per_sample_cycle": [
+      "live (target open, after use)",
+      "post_close (after target.close)"
+    ],
+    "stress": "allocator-stress.html opened once per run (1 warm-up + 7 runs) and eight open/close cycles in one process; judged separately from the browser workloads",
+    "targets_per_cycle": 1,
+    "teardown_check_after_every_close": [
+      "owners.targets.objects == 0",
+      "owners.script_realms.objects == 0",
+      "owners.script_realms.dedicated_arenas == []",
+      "owners.network.fetches == 0",
+      "allocator.arena_blocks_leaked_total == 0",
+      "allocator.zone_blocks_leaked_total == 0",
+      "arena arm: allocator.arenas_unmapped == cycles closed so far"
+    ],
+    "trim": "memory.trim on a live stress realm; the arena path only marks the free tail reusable and is reported as tail-only, never as close recovery",
+    "use_per_cycle": "target.snapshot (semantic, 64 nodes); on the interactive fixture also one revision-scoped click and a revision wait",
+    "warmup_runs": 1
+  },
+  "schema": "minicon-surf.native-dom-arena-soak-receipt/0.0.1",
+  "status": "observed",
+  "technology": "native-dom",
+  "technology_version": "0.0.2"
+}
