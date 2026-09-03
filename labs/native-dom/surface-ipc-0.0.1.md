@@ -238,6 +238,22 @@ its mechanics and criteria are unchanged. The attribution courts run their
 no-AppKit cells by default. `surface-headless-court.py` is the
 falsifiable acceptance (17 of 17 on the rule build).
 
+## 11. Control-plane churn (headless, recorded)
+
+`control-churn-court.py`: one operation repeated 128 times on a live
+target, footprint read from outside, court-only request stages inside.
+Every arm grows by 0.1 to 1.5 KB per request without reaching a plateau
+by request 128 (`profile.list` under the default allocator excepted);
+the growth is born in the dispatch (realm evals) and the response
+serialization; in-use returns within every request; nothing is retained
+by the host. The surface's own path is one contributor among
+`target.snapshot`, `memory.report` and the court's `target.inspect`
+calls. Authority: the realm's shim DOM is the only document state after
+open, so a host-native traversal would be a second authority and is not
+proposed; the single pre-registered candidate is a realm-side snapshot
+memo keyed by the revision, expected to reduce, not to pass. G3 stays
+open.
+
 ## 9. The frame region (approved, implemented, measured)
 
 `surface-frame-region-0.0.1.md` froze the candidate and its criteria

@@ -1162,6 +1162,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [~] Control-plane churn attribution (headless, read-only, 128 requests
+  per arm, fresh host, one warm-up plus seven, both allocators): every
+  operation grows the host by 0.1 to 1.5 KB per request with no plateau
+  by 128, born in the realm evals of the dispatch and in the response
+  serialization; in-use returns each time, so the growth is freed
+  small-block pages the default zone keeps (arena arms grow more, not
+  less); the surface's path is one contributor among snapshot, memory
+  report and the court's own inspect calls, so no single-operation host
+  change can pass the frozen S2 and S3. Authority closed: the realm's
+  shim DOM is the only document state after open; a host-native
+  traversal would be a second authority. One pre-registered candidate
+  for ruling, not implemented: a realm-side snapshot memo keyed by the
+  revision (partial reduction expected, not a pass). G1, G3, P6 and G6
+  stay open.
 - [~] Headless by default (owner rule after windows flashed from automated
   attribution runs): every court, regression and default command is
   strictly headless; a real window needs `--visual` plus

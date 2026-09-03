@@ -1645,8 +1645,96 @@ next step is a read-only measurement of (b) per control operation
 (`plateau-inspect` and `plateau-idle` cells are in the court for that
 and run headless) before any candidate is pre-registered.
 
+Control-plane churn attribution (headless, read-only, ruling after the
+snapshot attribution; `native-dom-control-0.0.2-control-churn` receipt,
+host `d41d5be2…`; [`control-churn-court.py`](control-churn-court.py),
+which refuses to run with the visible-court variable set and checks
+before and after that no surface child and no window owned by it exist;
+the surface arm uses the drain child that maps no AppKit). One operation
+repeated 128 times on one live target, fresh host, one warm-up plus
+seven runs, both allocators, the footprint read from outside
+(`proc_pid_rusage`, no observer effect) after each of the first seven
+requests and every eighth after; the same arms again with court-only
+request stages inside the host (`request_read`, `request_parsed`,
+`after_sync_io`, `after_dispatch`, `after_commit_io`, `after_execute`,
+`response_serialized`, `request_dropped`, `response_written`,
+`response_dropped`), whose observer effect is the difference of the
+outside readings at request 128 (−65,536 to +65,536: one to four pages,
+within the run-to-run spread). Footprint over headless after request 7
+and after request 128, medians, default / arena:
+
+| arm | after 7 | after 128 | per request over 8..128 |
+|---|---|---|---|
+| `profile.list` (not target-scoped, 217-byte response) | 0 / 16,384 | 0 / 81,920 | 0 / 273 |
+| `target.inspect` (revision read; working-copy sync and commit) | 65,536 / 114,688 | 81,920 / 180,224 | 137 / 546 |
+| `target.snapshot` (the shared snapshot path, 813-byte response) | 245,760 / 180,224 | 344,064 / 278,528 | 683 / 683 |
+| `memory.report` (the self-measuring request, 2,721-byte response) | 180,224 / 245,760 | 212,992 / 393,216 | 273 / 1,229 |
+| `surface.show` + `surface.hide` (drain child) | 327,680 / 425,984 | 425,984 / 606,208 | 683 / 1,502 |
+| CDP `Page.getFrameTree` over an attached session | 32,768 / 81,920 | 65,536 / 180,224 | 273 / 683 |
+
+The first request after which the outside footprint never returned to
+its pre-request value is request 1 in every run of the snapshot,
+memory.report and surface arms, and request 1 or 2 for `target.inspect`
+and the CDP arm. No arm reaches a plateau by request 128 except
+`profile.list` under the default allocator (0 throughout). Where the
+growth is born (stage sums over all 896 to 903 requests of the seven
+runs, default allocator): for `target.inspect`, the dispatch (the
+revision eval in the realm and the cookie and storage drains that follow
+every eval) 393,216 over 20 requests and the response serialization
+212,992 over 12; for `target.snapshot`, the dispatch 1,933,312 over 70
+requests and the serialization 163,840 over 10; for `memory.report`, the
+dispatch 409,600 over 21 and the serialization 573,440 over 26 (its own
+result is the largest response); for `surface.show`, the dispatch maps
+the frame (+1,032,192 each) and `surface.hide` returns it (−1,032,192
+each, 896 of 896), with the residual of the pair born in the show's
+snapshot eval and the hide's serialization. Request parsing, the
+working-copy sync and commit, and every drop stage grow nothing;
+libmalloc in-use returns within each request (parse +720, dispatch
++4,656, serialization −3,632, drops −896 and −832 for `target.inspect`:
+the sums cancel), so nothing is retained by the host and every byte of
+growth is a freed small-block page the default zone keeps resident (and,
+under the arena, the realm's arena pages plus the host's own default-zone
+pages, which is why the arena arms grow more, not less). The `memory.report`
+figures in this lab's other courts therefore carry their own churn: one
+extra page every three to four calls.
+
+What this settles for the G3 gate: after the frame region, the surface
+court's post-hide excess and slope are this per-request page churn of
+the whole control plane (about 0.1 to 1.5 KB per request, page-granular,
+not converging by 128 requests), of which the surface's own path is one
+contributor among `target.snapshot`, `memory.report` and the court's own
+`target.inspect` calls between rounds. A host-side change to one
+operation cannot bring the frozen S2 and S3 under the caps on its own.
+
+Authority (closed before any traversal candidate): at `target.open` the
+host parses with html5ever once, serializes the tree into the realm
+(`__mcsSeed`) and drops the parsed document; from then on the realm's
+shim DOM is the only document state (mutations by page scripts, the
+revision counter `window.__mcs.revision`, the snapshot's node array
+`s.nodes` that `act` indexes by `node_N` at the snapshot's revision). The
+host keeps only static numbers (fixture bytes, element count) and the
+profile mirrors (cookies, storage). A host-native semantic traversal
+would need a second DOM that the page's scripts do not mutate: a second
+authority, rejected. The realm-side direction is the coherent one.
+
+Candidate for ruling (at most one, pre-registered, not implemented): a
+realm-side snapshot memo — `snapshot_script` returns the previous JSON
+string when `s.snapshot === s.revision` and the node budget is
+unchanged, so an unchanged page costs no realm allocation on repeated
+snapshots (the cached string is realm-owned and bounded by the snapshot
+budget; the result for a given revision is identical by construction,
+so the Agent's snapshot semantics and the single authority are kept).
+Expected effect from the stage sums: the snapshot's realm-side growth
+(about 2 KB per request on `target.snapshot`, the largest single
+contributor) disappears for same-revision snapshots; the surface court's
+rounds change the revision by real input, so its show-time snapshots
+would still miss, and the control plane's serialization churn stays.
+Honest expectation: a partial reduction of the per-round growth, not a
+pass of S2 or S3; proposed for a decision on whether a partial reduction
+is worth a change to the snapshot script at all.
+
 Gaps: post-hide host footprint and slope over the pre-registered caps
-(small-block churn of the snapshot evaluation and the control plane; the
+(page churn of the whole control plane, see the attribution above; the
 frame itself now returns exactly at hide, and the spawn costs nothing
 that stays); macOS only; one window size; keys are recorded
 and ignored; the painter is semantic rows, not layout; the WindowServer
