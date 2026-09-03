@@ -15,7 +15,164 @@ use serde_json::{Value, json};
 
 pub const FRAME_WIDTH: u16 = 640;
 pub const FRAME_HEIGHT: u16 = 400;
-pub const FRAME_BYTES: usize = FRAME_WIDTH as usize * FRAME_HEIGHT as usize * 4;
+
+/// The frame's dimensions: the product frame is 640 × 400; the attribution
+/// court sets smaller ones through a court-only flag.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FrameSize {
+    pub width: u16,
+    pub height: u16,
+}
+
+impl FrameSize {
+    pub const DEFAULT: FrameSize = FrameSize {
+        width: FRAME_WIDTH,
+        height: FRAME_HEIGHT,
+    };
+
+    pub fn bytes(self) -> usize {
+        usize::from(self.width) * usize::from(self.height) * 4
+    }
+
+    pub fn parse(text: &str) -> Option<FrameSize> {
+        let (w, h) = text.split_once('x')?;
+        let (width, height) = (w.parse::<u16>().ok()?, h.parse::<u16>().ok()?);
+        (width >= 64 && height >= 64 && width <= 1024 && height <= 768)
+            .then_some(FrameSize { width, height })
+    }
+}
+
+/// Where this process stands: physical footprint and RSS from the kernel,
+/// libmalloc's in-use and allocated bytes, and the thread count. Used by the
+/// court-only stage log only.
+pub fn self_sample() -> Value {
+    #[repr(C)]
+    struct RusageInfoV2 {
+        uuid: [u8; 16],
+        user_time: u64,
+        system_time: u64,
+        pkg_idle_wkups: u64,
+        interrupt_wkups: u64,
+        pageins: u64,
+        wired_size: u64,
+        resident_size: u64,
+        phys_footprint: u64,
+        proc_start_abstime: u64,
+        proc_exit_abstime: u64,
+        child_user_time: u64,
+        child_system_time: u64,
+        child_pkg_idle_wkups: u64,
+        child_interrupt_wkups: u64,
+        child_pageins: u64,
+        child_elapsed_abstime: u64,
+        diskio_bytesread: u64,
+        diskio_byteswritten: u64,
+    }
+    #[repr(C)]
+    struct ProcTaskInfo {
+        virtual_size: u64,
+        resident_size: u64,
+        total_user: u64,
+        total_system: u64,
+        threads_user: u64,
+        threads_system: u64,
+        policy: i32,
+        faults: i32,
+        pageins: i32,
+        cow_faults: i32,
+        messages_sent: i32,
+        messages_received: i32,
+        syscalls_mach: i32,
+        syscalls_unix: i32,
+        csw: i32,
+        threadnum: i32,
+        numrunning: i32,
+        priority: i32,
+    }
+    #[repr(C)]
+    struct MallocStatistics {
+        blocks_in_use: u32,
+        size_in_use: usize,
+        max_size_in_use: usize,
+        size_allocated: usize,
+    }
+    unsafe extern "C" {
+        fn getpid() -> i32;
+        fn proc_pid_rusage(pid: i32, flavor: i32, buffer: *mut RusageInfoV2) -> i32;
+        fn proc_pidinfo(
+            pid: i32,
+            flavor: i32,
+            arg: u64,
+            buffer: *mut ProcTaskInfo,
+            size: i32,
+        ) -> i32;
+        fn malloc_zone_statistics(zone: *mut std::ffi::c_void, stats: *mut MallocStatistics);
+    }
+    let mut usage = RusageInfoV2 {
+        uuid: [0; 16],
+        user_time: 0,
+        system_time: 0,
+        pkg_idle_wkups: 0,
+        interrupt_wkups: 0,
+        pageins: 0,
+        wired_size: 0,
+        resident_size: 0,
+        phys_footprint: 0,
+        proc_start_abstime: 0,
+        proc_exit_abstime: 0,
+        child_user_time: 0,
+        child_system_time: 0,
+        child_pkg_idle_wkups: 0,
+        child_interrupt_wkups: 0,
+        child_pageins: 0,
+        child_elapsed_abstime: 0,
+        diskio_bytesread: 0,
+        diskio_byteswritten: 0,
+    };
+    let mut task = ProcTaskInfo {
+        virtual_size: 0,
+        resident_size: 0,
+        total_user: 0,
+        total_system: 0,
+        threads_user: 0,
+        threads_system: 0,
+        policy: 0,
+        faults: 0,
+        pageins: 0,
+        cow_faults: 0,
+        messages_sent: 0,
+        messages_received: 0,
+        syscalls_mach: 0,
+        syscalls_unix: 0,
+        csw: 0,
+        threadnum: 0,
+        numrunning: 0,
+        priority: 0,
+    };
+    let mut malloc = MallocStatistics {
+        blocks_in_use: 0,
+        size_in_use: 0,
+        max_size_in_use: 0,
+        size_allocated: 0,
+    };
+    // SAFETY: libproc and libmalloc queries on this process with correctly sized buffers.
+    unsafe {
+        let pid = getpid();
+        proc_pid_rusage(pid, 2, &mut usage);
+        proc_pidinfo(
+            pid,
+            4,
+            0,
+            &mut task,
+            std::mem::size_of::<ProcTaskInfo>() as i32,
+        );
+        malloc_zone_statistics(std::ptr::null_mut(), &mut malloc);
+    }
+    json!({
+        "footprint":usage.phys_footprint,"rss":usage.resident_size,"virtual":task.virtual_size,
+        "in_use":malloc.size_in_use,"allocated":malloc.size_allocated,"blocks":malloc.blocks_in_use,"threads":task.threadnum,
+    })
+}
 pub const ROW_HEIGHT: usize = 20;
 pub const MAX_SCROLL: u64 = 1_000_000;
 pub const MAX_SURFACES: usize = 8;
@@ -42,6 +199,7 @@ pub struct Painting {
     pub rows: Vec<Row>,
     pub revision: u64,
     pub scroll_y: u64,
+    pub size: FrameSize,
 }
 
 impl Painting {
@@ -51,7 +209,7 @@ impl Painting {
 
     pub fn layout_json(&self) -> Value {
         json!({
-            "frame":{"width":FRAME_WIDTH,"height":FRAME_HEIGHT,"row_height":ROW_HEIGHT},
+            "frame":{"width":self.size.width,"height":self.size.height,"row_height":ROW_HEIGHT},
             "revision":self.revision,"scroll_y":self.scroll_y,
             "rows":self.rows.iter().map(|r| json!({"node":r.node,"role":r.role,"y":r.y,"height":r.height,"bar_bgr":role_colour(&r.role)})).collect::<Vec<_>>(),
             "background_bgr":[24,24,28],
@@ -129,9 +287,9 @@ fn role_colour(role: &str) -> [u8; 3] {
     }
 }
 
-fn put(pixels: &mut [u8], x: usize, y: usize, bgr: [u8; 3]) {
-    if x < FRAME_WIDTH as usize && y < FRAME_HEIGHT as usize {
-        let at = (y * FRAME_WIDTH as usize + x) * 4;
+fn put(pixels: &mut [u8], size: FrameSize, x: usize, y: usize, bgr: [u8; 3]) {
+    if x < usize::from(size.width) && y < usize::from(size.height) {
+        let at = (y * usize::from(size.width) + x) * 4;
         pixels[at] = bgr[0];
         pixels[at + 1] = bgr[1];
         pixels[at + 2] = bgr[2];
@@ -139,7 +297,7 @@ fn put(pixels: &mut [u8], x: usize, y: usize, bgr: [u8; 3]) {
     }
 }
 
-fn draw_text(pixels: &mut [u8], x0: usize, y0: usize, text: &str, bgr: [u8; 3]) {
+fn draw_text(pixels: &mut [u8], size: FrameSize, x0: usize, y0: usize, text: &str, bgr: [u8; 3]) {
     let scale = 2;
     let mut x = x0;
     for c in text.chars().take(48) {
@@ -149,14 +307,14 @@ fn draw_text(pixels: &mut [u8], x0: usize, y0: usize, text: &str, bgr: [u8; 3]) 
                 if bits & (0x10 >> gx) != 0 {
                     for sy in 0..scale {
                         for sx in 0..scale {
-                            put(pixels, x + gx * scale + sx, y0 + gy * scale + sy, bgr);
+                            put(pixels, size, x + gx * scale + sx, y0 + gy * scale + sy, bgr);
                         }
                     }
                 }
             }
         }
         x += 6 * scale;
-        if x + 6 * scale > FRAME_WIDTH as usize {
+        if x + 6 * scale > usize::from(size.width) {
             break;
         }
     }
@@ -165,12 +323,18 @@ fn draw_text(pixels: &mut [u8], x0: usize, y0: usize, text: &str, bgr: [u8; 3]) 
 /// Paint the semantic snapshot as rows: role bar, name text, indented by
 /// the row index modulo nothing (the snapshot is flat); `scroll_y` shifts
 /// the rows up. Not a layout or CSS renderer.
-pub fn paint(nodes: &[(String, String, String)], scroll_y: u64, revision: u64) -> Painting {
+pub fn paint(
+    nodes: &[(String, String, String)],
+    scroll_y: u64,
+    revision: u64,
+    size: FrameSize,
+) -> Painting {
     let mut painting = Painting {
-        pixels: vec![0u8; FRAME_BYTES],
+        pixels: vec![0u8; size.bytes()],
         rows: Vec::new(),
         revision,
         scroll_y,
+        size,
     };
     paint_into(&mut painting, nodes, scroll_y, revision);
     painting
@@ -184,7 +348,8 @@ pub fn paint_into(
     scroll_y: u64,
     revision: u64,
 ) {
-    painting.pixels.resize(FRAME_BYTES, 0);
+    let size = painting.size;
+    painting.pixels.resize(size.bytes(), 0);
     let pixels = &mut painting.pixels;
     for px in pixels.chunks_exact_mut(4) {
         px.copy_from_slice(&[24, 24, 28, 255]);
@@ -192,6 +357,7 @@ pub fn paint_into(
     // A status strip: the painter's name and the revision, for humans.
     draw_text(
         pixels,
+        size,
         6,
         4,
         &format!("{PAINTER} REV {revision} SCROLL {scroll_y}"),
@@ -209,17 +375,18 @@ pub fn paint_into(
         if y < top {
             continue;
         }
-        if y + ROW_HEIGHT > FRAME_HEIGHT as usize {
+        if y + ROW_HEIGHT > usize::from(size.height) {
             break;
         }
         let colour = role_colour(role);
         for yy in y..y + ROW_HEIGHT - 2 {
             for xx in 0..8 {
-                put(pixels, 4 + xx, yy, colour);
+                put(pixels, size, 4 + xx, yy, colour);
             }
         }
         draw_text(
             pixels,
+            size,
             18,
             y + 3,
             &format!("{role}: {name}"),
@@ -315,6 +482,7 @@ pub struct Teardown {
 }
 
 pub struct Process {
+    size: FrameSize,
     child: Child,
     writer: Writer<std::process::ChildStdin>,
     generation: u32,
@@ -333,21 +501,31 @@ impl Process {
     /// Spawn the child (posix_spawn through `Command`: absolute path, no
     /// closure, no cwd, no uid/gid), send `HELLO` and the first frame, and
     /// wait for `READY` and the first `FRAME_ACK` under their deadlines.
+    #[allow(clippy::too_many_arguments)]
     pub fn spawn(
         binary: &Path,
         generation: u32,
         title: &str,
         first_frame: &[u8],
+        size: FrameSize,
+        child_mode: Option<&str>,
         stats: &mut Stats,
+        stage: &mut dyn FnMut(&str),
     ) -> Result<(Process, u64, u64), String> {
         stats.spawns_total += 1;
-        let mut child = Command::new(binary)
-            .arg(generation.to_string())
+        let mut command = Command::new(binary);
+        command.arg(generation.to_string());
+        if let Some(mode) = child_mode {
+            // Court-only: a lab-local child mode for the attribution court.
+            command.arg(mode);
+        }
+        let mut child = command
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null())
             .spawn()
             .map_err(|e| format!("surface spawn failed: {}", e.kind()))?;
+        stage("after_command_spawn");
         let stdin = child.stdin.take().expect("piped stdin");
         let stdout = child.stdout.take().expect("piped stdout");
         let (sender, events) = mpsc::channel();
@@ -376,7 +554,9 @@ impl Process {
                 }
             })
             .map_err(|e| format!("surface reader thread: {}", e.kind()))?;
+        stage("after_reader_thread");
         let mut process = Process {
+            size,
             child,
             writer: Writer::new(stdin, generation),
             generation,
@@ -398,8 +578,8 @@ impl Process {
         };
         let started = Instant::now();
         let hello = process.writer.send(Body::Hello {
-            width: FRAME_WIDTH,
-            height: FRAME_HEIGHT,
+            width: size.width,
+            height: size.height,
             max_fps: 30,
             queue_max: 1,
             title: title.chars().take(32).collect(),
@@ -433,6 +613,7 @@ impl Process {
                 return Err("surface did not become ready before the deadline".into());
             }
         };
+        stage("after_hello_ready");
         let frame_started = Instant::now();
         process.send_frame(first_frame, stats)?;
         match process.wait_for(frame_started + ACK_DEADLINE, |body| {
@@ -447,6 +628,7 @@ impl Process {
         }
         stats.frames_acked_total += 1;
         process.in_flight = None;
+        stage("after_first_frame_ack");
         Ok((
             process,
             ready_ms,
@@ -495,7 +677,7 @@ impl Process {
         let frame = self.next_frame;
         self.next_frame = self.next_frame.wrapping_add(1);
         self.writer
-            .send_frame(frame, FRAME_WIDTH, FRAME_HEIGHT, pixels)
+            .send_frame(frame, self.size.width, self.size.height, pixels)
             .map_err(|e| format!("surface frame refused: {e}"))?;
         stats.frames_sent_total += 1;
         self.in_flight = Some(frame);
@@ -713,16 +895,19 @@ mod tests {
             ),
             ("node_3".to_owned(), "link".to_owned(), "About".to_owned()),
         ];
-        let painting = paint(&nodes, 0, 7);
-        assert_eq!(painting.pixels.len(), FRAME_BYTES);
+        let painting = paint(&nodes, 0, 7, FrameSize::DEFAULT);
+        assert_eq!(painting.pixels.len(), FrameSize::DEFAULT.bytes());
         assert_eq!(painting.rows.len(), 3);
         let button = painting.rows.iter().find(|r| r.role == "button").unwrap();
         assert_eq!(painting.row_at(button.y + 5).unwrap().node, "node_2");
-        let scrolled = paint(&nodes, ROW_HEIGHT as u64, 8);
+        let scrolled = paint(&nodes, ROW_HEIGHT as u64, 8, FrameSize::DEFAULT);
         assert_eq!(scrolled.rows.len(), 2, "the first row scrolled out");
         assert_eq!(scrolled.rows[0].node, "node_2");
         assert_eq!(scrolled.rows[0].y, painting.rows[0].y);
-        let far = paint(&nodes, MAX_SCROLL, 9);
+        let far = paint(&nodes, MAX_SCROLL, 9, FrameSize::DEFAULT);
+        let small = paint(&nodes, 0, 1, FrameSize::parse("128x128").unwrap());
+        assert_eq!(small.pixels.len(), 128 * 128 * 4);
+        assert!(FrameSize::parse("32x32").is_none() && FrameSize::parse("2000x10").is_none());
         assert!(far.rows.is_empty());
     }
 

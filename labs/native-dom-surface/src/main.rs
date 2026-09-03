@@ -28,6 +28,53 @@ const EXIT_PROTOCOL: i32 = 65;
 const EXIT_DESCRIPTORS: i32 = 66;
 const EXIT_NO_MAIN_THREAD: i32 = 67;
 
+/// The protocol without a window: answers READY, acknowledges frames
+/// (keeping the latest when asked) and leaves at CLOSE. Court-only.
+fn headless_mode(generation: u32, keep_frames: bool) -> ! {
+    let mut reader = Reader::new(io::stdin().lock(), generation);
+    let mut writer = Writer::new(io::stdout().lock(), generation);
+    let mut kept: Option<Vec<u8>> = None;
+    let code = loop {
+        match reader.read_message() {
+            Ok(message) => match message.body {
+                Body::Hello { width, height, .. } => {
+                    if writer
+                        .send(Body::Ready {
+                            window_number: 0,
+                            screen_x: 0,
+                            screen_y: 0,
+                            content_width: width,
+                            content_height: height,
+                        })
+                        .is_err()
+                    {
+                        break EXIT_PROTOCOL;
+                    }
+                }
+                Body::Frame { frame, pixels, .. } => {
+                    if keep_frames {
+                        kept = Some(pixels);
+                    }
+                    if writer.send(Body::FrameAck { frame }).is_err() {
+                        break EXIT_PROTOCOL;
+                    }
+                }
+                Body::Close => {
+                    let _ = writer.send(Body::Closed);
+                    break 0;
+                }
+                _ => break EXIT_PROTOCOL,
+            },
+            Err(_) => break EXIT_PROTOCOL,
+        }
+    };
+    drop(kept);
+    drop(writer);
+    let _ = io::stdout().flush();
+    // SAFETY: the exchange is complete and stdout is flushed.
+    unsafe { libc::_exit(code) }
+}
+
 /// Descriptors open beyond 0, 1 and 2: the whitelist check.
 fn open_descriptors_beyond_stdio() -> u16 {
     let mut count = 0u16;
@@ -195,6 +242,16 @@ fn main() {
         .unwrap_or(0);
     if open_descriptors_beyond_stdio() > 0 {
         std::process::exit(EXIT_DESCRIPTORS);
+    }
+    // Court-only lab modes (second argument), used by the attribution court
+    // to separate the spawn machinery from AppKit and from frame bytes:
+    // `exit` leaves at once, `protocol` speaks the protocol without AppKit
+    // and discards frames, `drain` keeps the latest frame without AppKit.
+    match std::env::args().nth(2).as_deref() {
+        Some("exit") => unsafe { libc::_exit(0) },
+        Some("protocol") => headless_mode(generation, false),
+        Some("drain") => headless_mode(generation, true),
+        _ => {}
     }
     let Some(mtm) = MainThreadMarker::new() else {
         std::process::exit(EXIT_NO_MAIN_THREAD);

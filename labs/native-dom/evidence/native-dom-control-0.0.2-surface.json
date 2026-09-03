@@ -113,7 +113,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 836,
+     "monotonic_ms": 870,
      "revision": 2,
      "scroll_y": 0,
      "surface": "surface_1",
@@ -130,7 +130,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 881,
+     "monotonic_ms": 951,
      "revision": 3,
      "scroll_y": 240,
      "surface": "surface_1",
@@ -163,7 +163,7 @@
    "check": "[system] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 8,
+    "ms": 16,
     "reaped": true
    },
    "passed": true
@@ -293,7 +293,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 1602,
+     "monotonic_ms": 1691,
      "revision": 6,
      "scroll_y": 0,
      "surface": "surface_2",
@@ -310,7 +310,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 1639,
+     "monotonic_ms": 1730,
      "revision": 7,
      "scroll_y": 240,
      "surface": "surface_2",
@@ -460,7 +460,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 2352,
+     "monotonic_ms": 2443,
      "revision": 10,
      "scroll_y": 0,
      "surface": "surface_3",
@@ -477,7 +477,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 2401,
+     "monotonic_ms": 2492,
      "revision": 11,
      "scroll_y": 240,
      "surface": "surface_3",
@@ -497,7 +497,7 @@
    "check": "[system] round 3: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 9,
+    "ms": 8,
     "reaped": true
    },
    "passed": true
@@ -563,18 +563,18 @@
    "check": "[system] post-hide host footprint over headless, every round",
    "detail": {
     "per_round": [
-     1310720,
-     1409048,
-     1458200
+     1196032,
+     2424856,
+     2506800
     ],
-    "worst": 1458200
+    "worst": 2506800
    },
    "passed": false
   },
   {
    "check": "[system] no slope over the rounds",
    "detail": {
-    "slope": 147480
+    "slope": 1310768
    },
    "passed": false
   },
@@ -617,7 +617,7 @@
   {
    "check": "[system] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
    "detail": {
-    "forced_ms": 1002.9,
+    "forced_ms": 1007.2,
     "process": {
      "exits_clean_total": 3,
      "frames_acked_total": 13,
@@ -634,7 +634,7 @@
     },
     "teardown": {
      "exit": "killed",
-     "ms": 1002,
+     "ms": 1006,
      "reaped": true
     }
    },
@@ -768,7 +768,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 656,
+     "monotonic_ms": 640,
      "revision": 2,
      "scroll_y": 0,
      "surface": "surface_1",
@@ -785,7 +785,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 702,
+     "monotonic_ms": 686,
      "revision": 3,
      "scroll_y": 240,
      "surface": "surface_1",
@@ -818,7 +818,7 @@
    "check": "[arena] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 9,
+    "ms": 7,
     "reaped": true
    },
    "passed": true
@@ -948,7 +948,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 1422,
+     "monotonic_ms": 1400,
      "revision": 6,
      "scroll_y": 0,
      "surface": "surface_2",
@@ -965,7 +965,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 1458,
+     "monotonic_ms": 1447,
      "revision": 7,
      "scroll_y": 240,
      "surface": "surface_2",
@@ -985,7 +985,7 @@
    "check": "[arena] round 2: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 9,
+    "ms": 7,
     "reaped": true
    },
    "passed": true
@@ -1115,7 +1115,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 2175,
+     "monotonic_ms": 2147,
      "revision": 10,
      "scroll_y": 0,
      "surface": "surface_3",
@@ -1132,7 +1132,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 2221,
+     "monotonic_ms": 2184,
      "revision": 11,
      "scroll_y": 240,
      "surface": "surface_3",
@@ -1152,7 +1152,7 @@
    "check": "[arena] round 3: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 9,
+    "ms": 8,
     "reaped": true
    },
    "passed": true
@@ -1218,18 +1218,18 @@
    "check": "[arena] post-hide host footprint over headless, every round",
    "detail": {
     "per_round": [
-     1261568,
-     1474584,
-     1523736
+     1245184,
+     1425432,
+     2572312
     ],
-    "worst": 1523736
+    "worst": 2572312
    },
    "passed": false
   },
   {
    "check": "[arena] no slope over the rounds",
    "detail": {
-    "slope": 262168
+    "slope": 1327128
    },
    "passed": false
   },
@@ -1272,7 +1272,7 @@
   {
    "check": "[arena] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
    "detail": {
-    "forced_ms": 1005.5,
+    "forced_ms": 1007.6,
     "process": {
      "exits_clean_total": 3,
      "frames_acked_total": 13,
@@ -1289,7 +1289,7 @@
     },
     "teardown": {
      "exit": "killed",
-     "ms": 1003,
+     "ms": 1006,
      "reaped": true
     }
    },
@@ -1321,121 +1321,121 @@
  "design": "labs/native-dom/surface-ipc-0.0.1.md",
  "footprint_bytes": {
   "arena": {
-   "headless": 2949504,
-   "post_reap": 5587352,
+   "headless": 2916712,
+   "post_reap": 4522368,
    "rounds": [
     {
-     "first_frame_ms": 17,
-     "hide_ms": 12.3,
-     "input": {
-      "click_ms": 0.4,
-      "permitted": true,
-      "scroll_ms": 12.7,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 4211072,
-     "post_hide_in_use": 138736,
-     "ready_ms": 90,
-     "round": 1,
-     "show_ms": 110.5,
-     "shown_steady_host": 4194688,
-     "spawn_peak_tree": 27444280
-    },
-    {
-     "first_frame_ms": 17,
-     "hide_ms": 12.2,
-     "input": {
-      "click_ms": 0.4,
-      "permitted": true,
-      "scroll_ms": 6.6,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 4424088,
-     "post_hide_in_use": 138768,
-     "ready_ms": 91,
-     "round": 2,
-     "show_ms": 112.5,
-     "shown_steady_host": 4358552,
-     "spawn_peak_tree": 27395152
-    },
-    {
-     "first_frame_ms": 17,
-     "hide_ms": 10.4,
+     "first_frame_ms": 13,
+     "hide_ms": 9.6,
      "input": {
       "click_ms": 0.3,
       "permitted": true,
-      "scroll_ms": 6.7,
+      "scroll_ms": 7.9,
       "topmost_is_surface": true
      },
-     "post_hide_host": 4473240,
+     "post_hide_host": 4161896,
+     "post_hide_in_use": 138736,
+     "ready_ms": 82,
+     "round": 1,
+     "show_ms": 100.0,
+     "shown_steady_host": 4145512,
+     "spawn_peak_tree": 27460640
+    },
+    {
+     "first_frame_ms": 13,
+     "hide_ms": 8.8,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 7.2,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4342144,
      "post_hide_in_use": 138768,
      "ready_ms": 85,
+     "round": 2,
+     "show_ms": 104.6,
+     "shown_steady_host": 4325760,
+     "spawn_peak_tree": 27493432
+    },
+    {
+     "first_frame_ms": 13,
+     "hide_ms": 9.4,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 8.0,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 5489024,
+     "post_hide_in_use": 138768,
+     "ready_ms": 78,
      "round": 3,
-     "show_ms": 105.9,
-     "shown_steady_host": 4456856,
-     "spawn_peak_tree": 27771984
+     "show_ms": 96.3,
+     "shown_steady_host": 5472640,
+     "spawn_peak_tree": 28722232
     }
    ]
   },
   "system": {
-   "headless": 3457384,
-   "post_reap": 5996928,
+   "headless": 3342672,
+   "post_reap": 4850048,
    "rounds": [
     {
-     "first_frame_ms": 13,
-     "hide_ms": 9.9,
+     "first_frame_ms": 15,
+     "hide_ms": 19.8,
      "input": {
-      "click_ms": 0.3,
+      "click_ms": 3.5,
       "permitted": true,
-      "scroll_ms": 7.3,
+      "scroll_ms": 24.3,
       "topmost_is_surface": true
      },
-     "post_hide_host": 4768104,
+     "post_hide_host": 4538704,
      "post_hide_in_use": 446832,
      "ready_ms": 101,
      "round": 1,
-     "show_ms": 119.4,
-     "shown_steady_host": 4604264,
-     "spawn_peak_tree": 27624480
+     "show_ms": 119.8,
+     "shown_steady_host": 4440400,
+     "spawn_peak_tree": 27870216
     },
     {
-     "first_frame_ms": 14,
-     "hide_ms": 10.6,
-     "input": {
-      "click_ms": 1.6,
-      "permitted": true,
-      "scroll_ms": 7.3,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 4866432,
-     "post_hide_in_use": 451600,
-     "ready_ms": 93,
-     "round": 2,
-     "show_ms": 111.4,
-     "shown_steady_host": 4866432,
-     "spawn_peak_tree": 27952208
-    },
-    {
-     "first_frame_ms": 17,
-     "hide_ms": 10.8,
+     "first_frame_ms": 13,
+     "hide_ms": 11.1,
      "input": {
       "click_ms": 0.4,
       "permitted": true,
-      "scroll_ms": 6.4,
+      "scroll_ms": 6.8,
       "topmost_is_surface": true
      },
-     "post_hide_host": 4915584,
+     "post_hide_host": 5767528,
+     "post_hide_in_use": 451600,
+     "ready_ms": 82,
+     "round": 2,
+     "show_ms": 100.1,
+     "shown_steady_host": 5685608,
+     "spawn_peak_tree": 29049888
+    },
+    {
+     "first_frame_ms": 13,
+     "hide_ms": 10.0,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 8.1,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 5849472,
      "post_hide_in_use": 456336,
-     "ready_ms": 84,
+     "ready_ms": 78,
      "round": 3,
-     "show_ms": 103.9,
-     "shown_steady_host": 4931968,
-     "spawn_peak_tree": 27935800
+     "show_ms": 95.3,
+     "shown_steady_host": 5833088,
+     "spawn_peak_tree": 29246544
     }
    ]
   }
  },
- "host_sha256": "46f0b9f8c1a6a1d0e9de5f355dc3f0ac2cbcd3ba08574a60aca95e9d474bd8f6",
+ "host_sha256": "55fd1030531fa27de647990c0a5f2ac1e10aa638fcb2d7919ad7b3be3fcbfc39",
  "input_permitted": true,
  "limitations": [
   "the WindowServer, GPU and compositor memory live outside the process tree and are not attributed",
@@ -1445,8 +1445,8 @@
  ],
  "passed": false,
  "schema": "minicon-surf.native-dom-surface-receipt/0.0.1",
- "surface_binary_bytes": 544176,
- "surface_sha256": "8c79305da60305b129334b0252985443a73f0cf4d93777b9749bd559a31deaed",
+ "surface_binary_bytes": 561680,
+ "surface_sha256": "2884b05fe5ecccdbd2095505d2764a10b87aafc7b087c5a74ce2901ad810270d",
  "technology": "native-dom",
  "technology_version": "0.0.2"
 }

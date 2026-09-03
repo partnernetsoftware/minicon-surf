@@ -1273,6 +1273,11 @@ struct Host {
     surface_stats: surface::Stats,
     /// Court-only event log, present only with `--surface-court-file`.
     surface_court: Option<surface::CourtLog>,
+    /// Court-only: the attribution court's child mode, frame size and
+    /// in-process stage sampling (`--surface-court-stages`).
+    surface_child_mode: Option<String>,
+    surface_frame: surface::FrameSize,
+    surface_stages: bool,
 }
 
 /// One attached surface: its process and the frame it currently shows.
@@ -1353,6 +1358,19 @@ impl Host {
         Ok((nodes, revision))
     }
 
+    /// Court-only stage sample: appended to the court log only when it exists.
+    fn surface_stage(&self, label: &str) {
+        if !self.surface_stages {
+            return;
+        }
+        if let Some(log) = &self.surface_court {
+            let mut event = surface::self_sample();
+            event["event"] = json!("stage");
+            event["stage"] = json!(label);
+            log.append(event);
+        }
+    }
+
     fn surface_show(
         &mut self,
         arguments: &Value,
@@ -1387,21 +1405,44 @@ impl Host {
         }
         let policy = self.policy.clone();
         let started = Instant::now();
+        self.surface_stage("show_entry");
+        let frame_size = self.surface_frame;
         let target = self.target_mut(&target_id)?;
         let scroll_y = target.scroll_y;
         let (nodes, revision) = Self::surface_rows(target, deadline, &policy)?;
-        let painting = surface::paint(&nodes, scroll_y, revision);
+        self.surface_stage("after_snapshot");
+        let painting = surface::paint(&nodes, scroll_y, revision, frame_size);
+        self.surface_stage("after_painter");
         self.next_surface += 1;
         self.surface_generation = self.surface_generation.wrapping_add(1);
         let id = format!("surface_{}", self.next_surface);
-        let (process, ready_ms, first_frame_ms) = surface::Process::spawn(
+        let child_mode = self.surface_child_mode.clone();
+        let court = self.surface_court.take();
+        let stages = self.surface_stages;
+        let mut stage = |label: &str| {
+            if !stages {
+                return;
+            }
+            if let Some(log) = &court {
+                let mut event = surface::self_sample();
+                event["event"] = json!("stage");
+                event["stage"] = json!(label);
+                log.append(event);
+            }
+        };
+        let spawned = surface::Process::spawn(
             &binary,
             self.surface_generation,
             &id,
             &painting.pixels,
+            frame_size,
+            child_mode.as_deref(),
             &mut self.surface_stats,
-        )
-        .map_err(|detail| {
+            &mut stage,
+        );
+        self.surface_court = court;
+        let (process, ready_ms, first_frame_ms) = spawned.map_err(|detail| {
+            self.surface_stage("show_failed");
             ControlError::new("internal", "surface process did not start", true)
                 .scoped("target", &target_id)
                 .details(json!({"reason":"surface_process","detail":detail}))
@@ -1426,10 +1467,11 @@ impl Host {
                 painting,
             },
         );
+        self.surface_stage("shown");
         Ok(json!({
             "kind":"surface","surface":id,"target":target_id,"state":"headed",
             "presentation_bytes":presentation_bytes,
-            "frame":{"width":surface::FRAME_WIDTH,"height":surface::FRAME_HEIGHT,"format":"bgra8"},
+            "frame":{"width":frame_size.width,"height":frame_size.height,"format":"bgra8"},
             "painter":surface::PAINTER,
             "latency":{"ready_ms":ready_ms,"first_frame_ms":first_frame_ms,"show_ms":started.elapsed().as_millis() as u64},
         }))
@@ -1443,12 +1485,22 @@ impl Host {
             .remove(surface_id)
             .ok_or_else(|| not_found("surface", surface_id))?;
         let released = record.painting.pixels.len();
-        let teardown = record.process.hide(&mut self.surface_stats);
+        self.surface_stage("hide_entry");
+        let SurfaceRecord {
+            id: record_id,
+            target_id: record_target,
+            process,
+            painting,
+        } = record;
+        let teardown = process.hide(&mut self.surface_stats);
+        self.surface_stage("after_close_reap_join");
+        drop(painting);
+        self.surface_stage("after_frame_drop");
         if let Some(log) = &self.surface_court {
-            log.append(json!({"event":"hidden","surface":record.id,"target":record.target_id,"exit":teardown.exit.name(),"ms":teardown.ms}));
+            log.append(json!({"event":"hidden","surface":record_id,"target":record_target,"exit":teardown.exit.name(),"ms":teardown.ms}));
         }
         Ok(json!({
-            "kind":"surface_hidden","surface":record.id,"target":record.target_id,"state":"headless",
+            "kind":"surface_hidden","surface":record_id,"target":record_target,"state":"headless",
             "released_presentation_bytes":released,
             "teardown":{"exit":teardown.exit.name(),"reaped":teardown.reaped,"ms":teardown.ms},
         }))
@@ -1535,9 +1587,7 @@ impl Host {
         match input.kind {
             surface::INPUT_KIND_CLICK => {
                 // A click is valid only against the frame it was made on.
-                if current != frame_revision
-                    || usize::from(input.x) >= surface::FRAME_WIDTH as usize
-                {
+                if current != frame_revision || input.x >= self.surface_frame.width {
                     self.surface_stats.stale_events_dropped_total += 1;
                 } else if let Some(node) = hit
                     && let Some(index) = node
@@ -3299,7 +3349,7 @@ fn target_network(budget: &net::Budget, https: bool) -> Value {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]... [--surface-binary FILE] [--surface-court-file FILE]"
+        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]... [--surface-binary FILE] [--surface-court-file FILE] [--surface-child-mode MODE] [--surface-court-frame WxH] [--surface-court-stages 1]"
     );
     std::process::exit(64);
 }
@@ -3326,6 +3376,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut pinned_roots: Vec<PathBuf> = Vec::new();
     let mut surface_binary: Option<PathBuf> = None;
     let mut surface_court_path: Option<PathBuf> = None;
+    let mut surface_child_mode: Option<String> = None;
+    let mut surface_frame = surface::FrameSize::DEFAULT;
+    let mut surface_stages = false;
     for pair in arguments[6..].chunks_exact(2) {
         match pair[0].as_str() {
             "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
@@ -3349,6 +3402,15 @@ fn main() -> Result<(), Box<dyn Error>> {
             "--surface-court-file" if surface_court_path.is_none() => {
                 surface_court_path = Some(PathBuf::from(&pair[1]))
             }
+            // Court-only knobs for the attribution court; they change nothing
+            // unless given and are documented as such.
+            "--surface-child-mode" if surface_child_mode.is_none() => {
+                surface_child_mode = Some(pair[1].clone())
+            }
+            "--surface-court-frame" => {
+                surface_frame = surface::FrameSize::parse(&pair[1]).unwrap_or_else(|| usage())
+            }
+            "--surface-court-stages" => surface_stages = pair[1] == "1",
             _ => usage(),
         }
     }
@@ -3436,6 +3498,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface_generation: 0,
         surface_stats: surface::Stats::default(),
         surface_court,
+        surface_child_mode,
+        surface_frame,
+        surface_stages,
     };
     if let Some(root) = profile_root {
         host.enable_profile_store(root, PathBuf::from(&arguments[5]))?;
