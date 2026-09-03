@@ -244,6 +244,56 @@ attribution supports, with pre-registered criteria in the lab README, is
 keychain access outside the host process; it can only close the arena cell
 of the criterion. Verdict on the cap: unchanged.
 
+### 8c. Approved experiment: the bounded Keychain helper (arena cell)
+
+Approved after the attribution with these fixed constraints, all recorded
+in the code and the frozen `profile-helper-court.py`:
+
+1. No bare `fork` in the multi-threaded host: the helper is spawned through
+   `std::process::Command` with an absolute program path (the host's own
+   executable), no pre-exec closure, no uid/gid/groups/chroot and no working
+   directory, which is exactly the set of conditions under which Rust 1.97's
+   standard library uses `posix_spawnp` on Apple targets and never falls
+   back to `fork` (`library/std/src/sys/process/unix/unix.rs`, `spawn` and
+   `posix_spawn`); the hidden subcommand `keychain-helper` of the same
+   signed binary keeps the keychain ACL identity.
+2. The helper is part of the complete process tree: the court samples host
+   plus descendants at about one kilohertz through the whole run and reports
+   the transient peak next to the recovered steady state, with every
+   helper's pid, role, parent and lifetime.
+3. Secrets travel only inside the two anonymous pipes: a fixed-length,
+   versioned binary request (428 bytes: magic, version, op, account, bounded
+   AAD, bounded payload) and response (144 bytes: status, OSStatus code,
+   descriptor count, bounded payload); the host writes the request and
+   closes stdin, reads exactly one response and requires EOF; a 10 s
+   deadline kills and reaps the child as failure cleanup; both sides zeroize
+   buffers and keys; both refuse core dumps; the helper refuses to serve if
+   any descriptor beyond stdio is open; any extra output, short read,
+   non-zero exit or malformed envelope fails closed. Nothing reaches argv,
+   the environment, files or logs.
+4. Wrap flow: the host generates the DEK; the helper fetches the master key
+   and returns the authenticated wrapped DEK (wrap) or the DEK (unwrap); the
+   master key never leaves the helper. The wrap AAD binds store format,
+   protocol version, the canonical root (as its keychain account) and the
+   profile, so a wrapped key swapped from another root or profile does not
+   authenticate; the wrapped DEK is stored unchanged in the record and every
+   committed mutation re-seals the record with the cached DEK, so writes
+   never touch the keychain. Replay of an entire earlier record by a writer
+   with directory access is outside the threat model's local-user boundary
+   and is not detected.
+5. Child lifecycle: one helper per persistent `profile.create` and per
+   record open at store enable; always reaped; counters
+   (`owners.profiles.keychain_helper`: spawns, failures, timeout kills,
+   last pid, last lifetime, live) are the host's side of the attribution.
+   Keychain refusals, a different `cdhash` and a locked keychain keep the
+   fail-closed behaviour and never rewrite the record.
+6. The frozen caps do not move; added: the complete-tree peak while a
+   helper is alive must not exceed the in-process build's peak over the
+   same operations, and no descendant may remain after any operation.
+7. Verdict boundary: success can only move the arena cell of the P6 slice
+   to an observed/keep candidate on this macOS cell; the default cell stays
+   failed because feature-off churn alone crosses the line.
+
 ### 8b. Post-verdict security note: keychain ACL and the no-UI mode
 
 The master-key item carries the Security framework's default ACL for an

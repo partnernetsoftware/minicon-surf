@@ -1039,6 +1039,22 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   unattended (`-25293`, no prompt, fail closed, item and record untouched),
   so the no-UI mode is a fail-closed guarantee and not an unattended
   deployment guarantee. G1, G3, P6 and G6 stay open.
+- [x] The approved Keychain helper experiment (arena cell) was implemented
+  under its fixed constraints (posix_spawn through the standard library,
+  same signed binary, anonymous pipes with fixed-length versioned
+  envelopes, descriptor whitelist, no core dumps, zeroized keys, wrap once
+  and re-seal with the cached data key, reaped child, kilohertz sampling of
+  the complete process tree) and measured against its frozen court: five of
+  six criteria hold (step cost 81,920; in-use within 2,368; churned
+  total-live down 1,802,360 / 2,064,504; no descendant, kill or failure;
+  clean exits) and the arena cell of the v1 court passes on that build
+  (81 of 82). The complete-tree peak criterion fails on both allocators
+  (5,735,192 against 4,391,392 / 5,423,632): a second process of the same
+  binary pays the Security framework cost plus its own runtime baseline,
+  so the transient peak is structurally above the in-process peak. Per the
+  approval the experiment changes nothing: the in-process host is restored,
+  the implementation and receipts stay in history, the P6 slice stays
+  `narrow`, and P6 work moves to another gap. G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

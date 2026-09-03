@@ -590,14 +590,14 @@
   },
   "footprint_bytes": {
     "arena": {
-      "empty": 1950032,
-      "live_two_targets_one_session": 3080576,
-      "post_close": 2638160
+      "empty": 1933648,
+      "live_two_targets_one_session": 3015040,
+      "post_close": 2572624
     },
     "system": {
       "empty": 1950032,
-      "live_two_targets_one_session": 3621200,
-      "post_close": 4030800
+      "live_two_targets_one_session": 3604816,
+      "post_close": 3948880
     }
   },
   "frame_id_mapping": {
@@ -610,7 +610,7 @@
       "native_frame": "frame_1"
     }
   },
-  "host_sha256": "cd7292f6ed9288c6fc460947a4bfd7b9012e7e2c282640ac2bfe960e97127e3f",
+  "host_sha256": "6c797b557e35276f7170f1b07aff55b1c5fd20c06f6181d1d9c73140bf4533e5",
   "limitations": [
     "one named client and version; target.page() and every puppeteer Page API are outside the claim",
     "loopback only; one connection at a time",

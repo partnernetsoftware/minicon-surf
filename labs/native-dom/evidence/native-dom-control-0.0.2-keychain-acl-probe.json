@@ -14,6 +14,15 @@
   "the no-UI mode is therefore a fail-closed guarantee, not an unattended-deployment guarantee: a locked keychain, a different user session, or a rebuilt or re-signed binary all refuse",
   "an unattended deployment would need a stable designated requirement (a signing identity whose requirement is not a per-build cdhash) or a one-time interactive grant outside the host; both are open P6 work and not claimed"
  ],
+ "helper_build_probe": {
+  "builds": {
+   "build_1_cdhash": "ceac61861c0737bcb7fd25d1ee03766afe371799",
+   "build_2_cdhash": "a95b1e4898c724e9252a745f837fb7cb1ce3e3a8"
+  },
+  "note": "the same probe repeated on two builds of the helper experiment's source; the keychain is reached only from the helper subcommand",
+  "original_binary_again": "alpha available, session.open ok, profile.create ok, cookie sent",
+  "rebuilt_binary_same_path": "alpha unavailable (keychain unavailable), session.open not_found, profile.create unsupported_capability with keychain read refused: -25293, no prompt"
+ },
  "item_acl_after_create": {
   "applications": [
    "the creating binary (path recorded by the keychain), requirement: cdhash of build 1"

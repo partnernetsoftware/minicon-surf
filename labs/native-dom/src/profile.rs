@@ -6,11 +6,12 @@
 //! atomic write. Platform part: the master key, which lives only in the
 //! macOS keychain; without it persistent profiles fail closed.
 
+use std::cell::Cell;
 use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
@@ -630,17 +631,107 @@ impl StoreMode {
     }
 }
 
-/// Where the master key comes from. The key itself is fetched for one seal
-/// or open and zeroized right after.
+// ---------------------------------------------------------- master key
+
+pub const KEYCHAIN_SERVICE: &str = "minicon-surf.native-dom.profile-master-key";
+/// One helper exchange must finish within this; a kill after it is failure
+/// cleanup, recorded as such, never a memory-recovery mechanism.
+pub const HELPER_DEADLINE: Duration = Duration::from_secs(10);
+/// The hidden subcommand of this same binary that talks to the keychain.
+pub const HELPER_SUBCOMMAND: &str = "keychain-helper";
+
+const HELPER_MAGIC: &[u8; 4] = b"MCSK";
+const HELPER_VERSION: u8 = 1;
+const OP_WRAP: u8 = 1;
+const OP_UNWRAP: u8 = 2;
+const ACCOUNT_LEN: usize = 32;
+const AAD_MAX: usize = 256;
+const PAYLOAD_MAX: usize = 128;
+const DEK_LEN: usize = 32;
+const NONCE_LEN: usize = 24;
+const TAG_LEN: usize = 16;
+const WRAPPED_LEN: usize = NONCE_LEN + DEK_LEN + TAG_LEN;
+/// Fixed-length, versioned request: magic, version, op, reserved, account,
+/// AAD length and padded AAD, payload length and padded payload.
+pub const REQUEST_LEN: usize = 8 + ACCOUNT_LEN + 2 + AAD_MAX + 2 + PAYLOAD_MAX;
+/// Fixed-length response: magic, version, status, reserved, OSStatus code,
+/// open descriptors seen by the helper, payload length and padded payload.
+pub const RESPONSE_LEN: usize = 8 + 4 + 2 + 2 + PAYLOAD_MAX;
+
+const STATUS_OK: u8 = 0;
+const STATUS_KEYCHAIN: u8 = 1;
+const STATUS_MALFORMED: u8 = 2;
+const STATUS_FD_WHITELIST: u8 = 3;
+const STATUS_DOES_NOT_AUTHENTICATE: u8 = 4;
+const STATUS_ENTROPY: u8 = 5;
+
+/// The data key sealed under the master key. Stored once in the record and
+/// stable across writes; only the master-key holder can produce or open it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct WrappedDek {
+    pub nonce: Vec<u8>,
+    pub sealed: Vec<u8>,
+}
+
+impl WrappedDek {
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut out = self.nonce.clone();
+        out.extend_from_slice(&self.sealed);
+        out
+    }
+
+    fn from_bytes(bytes: &[u8]) -> Option<WrappedDek> {
+        if bytes.len() != WRAPPED_LEN {
+            return None;
+        }
+        Some(WrappedDek {
+            nonce: bytes[..NONCE_LEN].to_vec(),
+            sealed: bytes[NONCE_LEN..].to_vec(),
+        })
+    }
+}
+
+/// The AAD of the wrapped data key binds store format, protocol version,
+/// the canonical profile root (as its keychain account) and the profile,
+/// so a wrapped key swapped from another root or profile does not open.
+fn dek_aad(account: &str, profile_id: &str) -> Vec<u8> {
+    format!("{STORE_FORMAT}|{PROTOCOL_TAG}|{account}|{profile_id}|dek").into_bytes()
+}
+
+/// Counters the host reports under `owners.profiles.keychain_helper`.
+#[derive(Default)]
+pub struct HelperStats {
+    pub spawns_total: Cell<u64>,
+    pub failures_total: Cell<u64>,
+    pub timeout_kills_total: Cell<u64>,
+    pub last_pid: Cell<Option<u32>>,
+    pub last_lifetime_ms: Cell<Option<u64>>,
+    pub live: Cell<u32>,
+}
+
+impl HelperStats {
+    pub fn to_json(&self) -> Value {
+        json!({
+            "spawns_total":self.spawns_total.get(),"failures_total":self.failures_total.get(),
+            "timeout_kills_total":self.timeout_kills_total.get(),"last_pid":self.last_pid.get(),
+            "last_lifetime_ms":self.last_lifetime_ms.get(),"live":self.live.get(),
+            "deadline_ms":HELPER_DEADLINE.as_millis() as u64,
+        })
+    }
+}
+
+/// Where the master key lives. In keychain mode the host never touches the
+/// keychain itself: the master key is used only inside a short-lived helper
+/// process of this same binary, which wraps or unwraps the data key.
 pub struct KeySource {
     pub mode: StoreMode,
     /// Keychain account: the first 32 hex digits of SHA-256 of the canonical
     /// profile root, so each root has its own master key.
     pub account: String,
     pub keyfile: Option<PathBuf>,
+    binary: Option<PathBuf>,
+    pub helper: HelperStats,
 }
-
-pub const KEYCHAIN_SERVICE: &str = "minicon-surf.native-dom.profile-master-key";
 
 impl KeySource {
     pub fn new(mode: StoreMode, profile_root: &Path, config_dir: &Path) -> KeySource {
@@ -658,60 +749,428 @@ impl KeySource {
             account,
             keyfile: (mode == StoreMode::KeyfileExperiment)
                 .then(|| config_dir.join("profile-master.key")),
+            binary: std::env::current_exe().ok(),
+            helper: HelperStats::default(),
         }
     }
 
-    /// Fetch or create the master key. Never prompts: keychain interaction is
-    /// disabled for the host lifetime, so anything needing UI fails closed.
-    pub fn master_key(&self) -> Result<Zeroizing<Vec<u8>>, StoreError> {
+    pub fn key_id(&self) -> String {
+        format!("{}:{}", self.mode.name(), self.account)
+    }
+
+    /// Wrap a freshly generated data key. Keychain mode: one helper exchange.
+    pub fn wrap_dek(&self, profile_id: &str, dek: &[u8]) -> Result<WrappedDek, StoreError> {
+        if dek.len() != DEK_LEN {
+            return Err(StoreError::Io("data key length".into()));
+        }
         match self.mode {
-            StoreMode::KeychainEnvelope => keychain_master_key(&self.account),
-            StoreMode::KeyfileExperiment => {
-                let path = self.keyfile.as_ref().expect("keyfile mode has a path");
-                if let Ok(bytes) = fs::read(path) {
-                    if bytes.len() == 32 {
-                        return Ok(Zeroizing::new(bytes));
-                    }
-                    return Err(StoreError::Corrupt(
-                        "master key file has a wrong length".into(),
-                    ));
-                }
-                let key = random_bytes(32)?;
-                write_private(path, &key).map_err(StoreError::Io)?;
-                Ok(key)
+            StoreMode::KeychainEnvelope => {
+                let bytes = self.helper_call(OP_WRAP, profile_id, dek)?;
+                WrappedDek::from_bytes(&bytes).ok_or_else(|| {
+                    StoreError::KeychainUnavailable(
+                        "helper returned a malformed wrapped key".into(),
+                    )
+                })
             }
+            StoreMode::KeyfileExperiment => {
+                let master = self.keyfile_master_key()?;
+                let (nonce, sealed) =
+                    seal_with_aad(&master, &dek_aad(&self.account, profile_id), dek)?;
+                Ok(WrappedDek { nonce, sealed })
+            }
+        }
+    }
+
+    /// Unwrap a stored data key. Keychain mode: one helper exchange that
+    /// returns only the data key; the master key never leaves the helper.
+    pub fn unwrap_dek(
+        &self,
+        profile_id: &str,
+        wrapped: &WrappedDek,
+    ) -> Result<Zeroizing<Vec<u8>>, StoreError> {
+        match self.mode {
+            StoreMode::KeychainEnvelope => {
+                let dek = self.helper_call(OP_UNWRAP, profile_id, &wrapped.to_bytes())?;
+                if dek.len() != DEK_LEN {
+                    return Err(StoreError::Corrupt("data key length".into()));
+                }
+                Ok(dek)
+            }
+            StoreMode::KeyfileExperiment => {
+                let master = self.keyfile_master_key()?;
+                let dek = open_with_aad(
+                    &master,
+                    &dek_aad(&self.account, profile_id),
+                    &wrapped.nonce,
+                    &wrapped.sealed,
+                )?;
+                if dek.len() != DEK_LEN {
+                    return Err(StoreError::Corrupt("data key length".into()));
+                }
+                Ok(dek)
+            }
+        }
+    }
+
+    fn keyfile_master_key(&self) -> Result<Zeroizing<Vec<u8>>, StoreError> {
+        let path = self.keyfile.as_ref().expect("keyfile mode has a path");
+        if let Ok(bytes) = fs::read(path) {
+            if bytes.len() == DEK_LEN {
+                return Ok(Zeroizing::new(bytes));
+            }
+            return Err(StoreError::Corrupt(
+                "master key file has a wrong length".into(),
+            ));
+        }
+        let key = random_bytes(DEK_LEN)?;
+        write_private(path, &key).map_err(StoreError::Io)?;
+        Ok(key)
+    }
+
+    /// One exchange with the helper: spawn (posix_spawn through
+    /// `std::process::Command`: absolute program path, no pre-exec closure,
+    /// no uid/gid/groups/chroot/cwd), write the fixed request on the child's
+    /// stdin and close it, read exactly one fixed response then EOF, reap the
+    /// child, and fail closed on any deviation. Secrets travel only inside
+    /// the two pipes; nothing goes to argv, the environment, files or logs.
+    fn helper_call(
+        &self,
+        op: u8,
+        profile_id: &str,
+        payload: &[u8],
+    ) -> Result<Zeroizing<Vec<u8>>, StoreError> {
+        use std::io::Read;
+        use std::process::{Command, Stdio};
+        use std::sync::mpsc;
+        let Some(binary) = &self.binary else {
+            return Err(StoreError::KeychainUnavailable(
+                "helper binary path unknown".into(),
+            ));
+        };
+        let request = encode_request(
+            op,
+            &self.account,
+            &dek_aad(&self.account, profile_id),
+            payload,
+        )
+        .ok_or_else(|| StoreError::Io("helper request out of bounds".into()))?;
+        let stats = &self.helper;
+        stats.spawns_total.set(stats.spawns_total.get() + 1);
+        let started = Instant::now();
+        let mut child = Command::new(binary)
+            .arg(HELPER_SUBCOMMAND)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .spawn()
+            .map_err(|e| {
+                stats.failures_total.set(stats.failures_total.get() + 1);
+                StoreError::KeychainUnavailable(format!("helper spawn failed: {}", e.kind()))
+            })?;
+        stats.live.set(1);
+        stats.last_pid.set(Some(child.id()));
+        let fail = |detail: String| {
+            stats.failures_total.set(stats.failures_total.get() + 1);
+            StoreError::KeychainUnavailable(detail)
+        };
+        let mut stdin = child.stdin.take().expect("piped stdin");
+        let mut stdout = child.stdout.take().expect("piped stdout");
+        // A helper that exits early makes this write fail with EPIPE (SIGPIPE
+        // is ignored by the Rust runtime); the response, if any, still tells why.
+        let write_result = stdin.write_all(&request).and_then(|()| stdin.flush());
+        drop(stdin);
+        let (sender, receiver) = mpsc::channel();
+        let reader = std::thread::spawn(move || {
+            let mut buffer = Zeroizing::new(vec![0u8; RESPONSE_LEN]);
+            let outcome = stdout.read_exact(&mut buffer).and_then(|()| {
+                let mut extra = [0u8; 16];
+                stdout.read(&mut extra)
+            });
+            let _ = sender.send((buffer, outcome));
+        });
+        let received = receiver.recv_timeout(HELPER_DEADLINE);
+        let status = match received {
+            Ok(_) => child.wait(),
+            Err(_) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                stats
+                    .timeout_kills_total
+                    .set(stats.timeout_kills_total.get() + 1);
+                stats.live.set(0);
+                let _ = reader.join();
+                return Err(fail("helper deadline exceeded; killed and reaped".into()));
+            }
+        };
+        let _ = reader.join();
+        stats.live.set(0);
+        stats
+            .last_lifetime_ms
+            .set(Some(started.elapsed().as_millis() as u64));
+        let (buffer, outcome) = received.expect("received above");
+        let exit = status.map_err(|e| fail(format!("helper wait failed: {}", e.kind())))?;
+        match outcome {
+            Ok(0) => {}
+            Ok(_) => return Err(fail("helper produced output beyond one response".into())),
+            Err(e) => return Err(fail(format!("helper response incomplete: {}", e.kind()))),
+        }
+        if !exit.success() {
+            return Err(fail(format!(
+                "helper exited with {}",
+                exit.code().unwrap_or(-1)
+            )));
+        }
+        let response =
+            decode_response(&buffer).ok_or_else(|| fail("helper response malformed".into()))?;
+        if let (Err(e), STATUS_OK) = (write_result, response.status) {
+            return Err(fail(format!("helper request write failed: {}", e.kind())));
+        }
+        match response.status {
+            STATUS_OK => Ok(response.payload),
+            STATUS_DOES_NOT_AUTHENTICATE => {
+                stats.failures_total.set(stats.failures_total.get() + 1);
+                Err(StoreError::Corrupt(
+                    "wrapped data key does not authenticate for this root and profile".into(),
+                ))
+            }
+            STATUS_KEYCHAIN => Err(fail(format!("keychain read refused: {}", response.code))),
+            STATUS_FD_WHITELIST => Err(fail(format!(
+                "helper saw {} descriptors beyond stdio",
+                response.open_fds
+            ))),
+            STATUS_MALFORMED => Err(fail("helper rejected the request".into())),
+            STATUS_ENTROPY => Err(fail("helper had no entropy".into())),
+            other => Err(fail(format!("helper status {other}"))),
         }
     }
 }
 
+struct HelperResponse {
+    status: u8,
+    code: i32,
+    open_fds: u16,
+    payload: Zeroizing<Vec<u8>>,
+}
+
+fn encode_request(op: u8, account: &str, aad: &[u8], payload: &[u8]) -> Option<Zeroizing<Vec<u8>>> {
+    if account.len() != ACCOUNT_LEN || aad.len() > AAD_MAX || payload.len() > PAYLOAD_MAX {
+        return None;
+    }
+    let mut out = Zeroizing::new(vec![0u8; REQUEST_LEN]);
+    out[..4].copy_from_slice(HELPER_MAGIC);
+    out[4] = HELPER_VERSION;
+    out[5] = op;
+    out[8..8 + ACCOUNT_LEN].copy_from_slice(account.as_bytes());
+    let mut at = 8 + ACCOUNT_LEN;
+    out[at..at + 2].copy_from_slice(&(aad.len() as u16).to_be_bytes());
+    at += 2;
+    out[at..at + aad.len()].copy_from_slice(aad);
+    at += AAD_MAX;
+    out[at..at + 2].copy_from_slice(&(payload.len() as u16).to_be_bytes());
+    at += 2;
+    out[at..at + payload.len()].copy_from_slice(payload);
+    Some(out)
+}
+
+struct HelperRequest {
+    op: u8,
+    account: String,
+    aad: Vec<u8>,
+    payload: Zeroizing<Vec<u8>>,
+}
+
+fn decode_request(bytes: &[u8]) -> Option<HelperRequest> {
+    if bytes.len() != REQUEST_LEN
+        || &bytes[..4] != HELPER_MAGIC
+        || bytes[4] != HELPER_VERSION
+        || bytes[6..8] != [0, 0]
+    {
+        return None;
+    }
+    let op = bytes[5];
+    if op != OP_WRAP && op != OP_UNWRAP {
+        return None;
+    }
+    let account = std::str::from_utf8(&bytes[8..8 + ACCOUNT_LEN]).ok()?;
+    if !account.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return None;
+    }
+    let mut at = 8 + ACCOUNT_LEN;
+    let aad_len = u16::from_be_bytes([bytes[at], bytes[at + 1]]) as usize;
+    at += 2;
+    if aad_len == 0 || aad_len > AAD_MAX {
+        return None;
+    }
+    let aad = bytes[at..at + aad_len].to_vec();
+    at += AAD_MAX;
+    let payload_len = u16::from_be_bytes([bytes[at], bytes[at + 1]]) as usize;
+    at += 2;
+    if payload_len > PAYLOAD_MAX {
+        return None;
+    }
+    Some(HelperRequest {
+        op,
+        account: account.to_owned(),
+        aad,
+        payload: Zeroizing::new(bytes[at..at + payload_len].to_vec()),
+    })
+}
+
+fn encode_response(status: u8, code: i32, open_fds: u16, payload: &[u8]) -> Zeroizing<Vec<u8>> {
+    let mut out = Zeroizing::new(vec![0u8; RESPONSE_LEN]);
+    out[..4].copy_from_slice(HELPER_MAGIC);
+    out[4] = HELPER_VERSION;
+    out[5] = status;
+    out[8..12].copy_from_slice(&code.to_be_bytes());
+    out[12..14].copy_from_slice(&open_fds.to_be_bytes());
+    let len = payload.len().min(PAYLOAD_MAX);
+    out[14..16].copy_from_slice(&(len as u16).to_be_bytes());
+    out[16..16 + len].copy_from_slice(&payload[..len]);
+    out
+}
+
+fn decode_response(bytes: &[u8]) -> Option<HelperResponse> {
+    if bytes.len() != RESPONSE_LEN
+        || &bytes[..4] != HELPER_MAGIC
+        || bytes[4] != HELPER_VERSION
+        || bytes[6..8] != [0, 0]
+    {
+        return None;
+    }
+    let payload_len = u16::from_be_bytes([bytes[14], bytes[15]]) as usize;
+    if payload_len > PAYLOAD_MAX {
+        return None;
+    }
+    Some(HelperResponse {
+        status: bytes[5],
+        code: i32::from_be_bytes([bytes[8], bytes[9], bytes[10], bytes[11]]),
+        open_fds: u16::from_be_bytes([bytes[12], bytes[13]]),
+        payload: Zeroizing::new(bytes[16..16 + payload_len].to_vec()),
+    })
+}
+
+/// Serve one request as the helper: no core dumps, no descriptors beyond
+/// stdio, keychain UI disabled, one fixed request then EOF on stdin, one
+/// fixed response on stdout, then exit. Returns the process exit code: 0
+/// whenever a response was written (its status carries any refusal),
+/// non-zero only when the exchange itself broke.
 #[cfg(target_os = "macos")]
-fn keychain_master_key(account: &str) -> Result<Zeroizing<Vec<u8>>, StoreError> {
-    use security_framework::passwords::{get_generic_password, set_generic_password};
-    match get_generic_password(KEYCHAIN_SERVICE, account) {
-        Ok(bytes) if bytes.len() == 32 => Ok(Zeroizing::new(bytes)),
-        Ok(_) => Err(StoreError::KeychainUnavailable(
-            "keychain item has a wrong length".into(),
-        )),
-        Err(error) if error.code() == -25300 => {
-            // errSecItemNotFound: first use of this profile root.
-            let key = random_bytes(32)?;
-            set_generic_password(KEYCHAIN_SERVICE, account, &key).map_err(|e| {
-                StoreError::KeychainUnavailable(format!("keychain write refused: {}", e.code()))
-            })?;
-            Ok(key)
+pub fn run_keychain_helper() -> i32 {
+    use std::io::Read;
+    disable_core_dumps();
+    let mut stdout = std::io::stdout().lock();
+    let respond = |stdout: &mut std::io::StdoutLock<'_>,
+                   status: u8,
+                   code: i32,
+                   fds: u16,
+                   payload: &[u8]|
+     -> i32 {
+        let bytes = encode_response(status, code, fds, payload);
+        match stdout.write_all(&bytes).and_then(|()| stdout.flush()) {
+            Ok(()) => 0,
+            Err(_) => 65,
         }
-        Err(error) => Err(StoreError::KeychainUnavailable(format!(
-            "keychain read refused: {}",
-            error.code()
-        ))),
+    };
+    let open_fds = open_descriptors_beyond_stdio();
+    if open_fds > 0 {
+        return respond(&mut stdout, STATUS_FD_WHITELIST, 0, open_fds, &[]);
+    }
+    if !disable_keychain_interaction() {
+        return respond(&mut stdout, STATUS_KEYCHAIN, -1, 0, &[]);
+    }
+    let mut request = Zeroizing::new(vec![0u8; REQUEST_LEN]);
+    let mut stdin = std::io::stdin().lock();
+    if stdin.read_exact(&mut request).is_err() {
+        return respond(&mut stdout, STATUS_MALFORMED, 0, 0, &[]);
+    }
+    let mut extra = [0u8; 1];
+    if !matches!(stdin.read(&mut extra), Ok(0)) {
+        return respond(&mut stdout, STATUS_MALFORMED, 0, 0, &[]);
+    }
+    let Some(parsed) = decode_request(&request) else {
+        return respond(&mut stdout, STATUS_MALFORMED, 0, 0, &[]);
+    };
+    drop(request);
+    let master = match keychain_master_key(&parsed.account) {
+        Ok(key) => key,
+        Err(code) => return respond(&mut stdout, STATUS_KEYCHAIN, code, 0, &[]),
+    };
+    let outcome = match parsed.op {
+        OP_WRAP if parsed.payload.len() == DEK_LEN => {
+            match seal_with_aad(&master, &parsed.aad, &parsed.payload) {
+                Ok((nonce, sealed)) => Ok(Zeroizing::new(WrappedDek { nonce, sealed }.to_bytes())),
+                Err(StoreError::Io(_)) => Err(STATUS_ENTROPY),
+                Err(_) => Err(STATUS_MALFORMED),
+            }
+        }
+        OP_UNWRAP if parsed.payload.len() == WRAPPED_LEN => {
+            match WrappedDek::from_bytes(&parsed.payload) {
+                Some(wrapped) => {
+                    open_with_aad(&master, &parsed.aad, &wrapped.nonce, &wrapped.sealed)
+                        .map_err(|_| STATUS_DOES_NOT_AUTHENTICATE)
+                }
+                None => Err(STATUS_MALFORMED),
+            }
+        }
+        _ => Err(STATUS_MALFORMED),
+    };
+    drop(master);
+    match outcome {
+        Ok(payload) => respond(&mut stdout, STATUS_OK, 0, 0, &payload),
+        Err(status) => respond(&mut stdout, status, 0, 0, &[]),
     }
 }
 
 #[cfg(not(target_os = "macos"))]
-fn keychain_master_key(_account: &str) -> Result<Zeroizing<Vec<u8>>, StoreError> {
-    Err(StoreError::KeychainUnavailable(
-        "no master-key source on this platform".into(),
-    ))
+pub fn run_keychain_helper() -> i32 {
+    // No master-key source on this platform: the parent fails closed on the exit code.
+    66
+}
+
+/// Refuse core dumps for a process that holds key material.
+#[cfg(target_os = "macos")]
+pub fn disable_core_dumps() {
+    let limit = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    // SAFETY: setrlimit reads a valid, fully initialized rlimit struct.
+    unsafe {
+        libc::setrlimit(libc::RLIMIT_CORE, &limit);
+    }
+}
+
+#[cfg(not(target_os = "macos"))]
+pub fn disable_core_dumps() {}
+
+/// Descriptors open beyond 0, 1 and 2: the helper's whitelist check. Every
+/// descriptor the host opens is close-on-exec, so this must be zero.
+#[cfg(target_os = "macos")]
+fn open_descriptors_beyond_stdio() -> u16 {
+    let mut count = 0u16;
+    for fd in 3..1024 {
+        // SAFETY: F_GETFD only queries the descriptor flags.
+        if unsafe { libc::fcntl(fd, libc::F_GETFD) } != -1 {
+            count += 1;
+        }
+    }
+    count
+}
+
+#[cfg(target_os = "macos")]
+fn keychain_master_key(account: &str) -> Result<Zeroizing<Vec<u8>>, i32> {
+    use security_framework::passwords::{get_generic_password, set_generic_password};
+    match get_generic_password(KEYCHAIN_SERVICE, account) {
+        Ok(bytes) if bytes.len() == DEK_LEN => Ok(Zeroizing::new(bytes)),
+        Ok(_) => Err(-2),
+        Err(error) if error.code() == -25300 => {
+            // errSecItemNotFound: first use of this profile root.
+            let key = random_bytes(DEK_LEN).map_err(|_| -3)?;
+            set_generic_password(KEYCHAIN_SERVICE, account, &key).map_err(|e| e.code())?;
+            Ok(key)
+        }
+        Err(error) => Err(error.code()),
+    }
 }
 
 /// Disable every keychain UI for the process; returns whether it took.
@@ -742,53 +1201,45 @@ fn aad(profile_id: &str, kind: &str) -> Vec<u8> {
     format!("{STORE_FORMAT}|{PROTOCOL_TAG}|{profile_id}|{kind}").into_bytes()
 }
 
-fn seal(
+fn seal_with_aad(
     key: &[u8],
-    profile_id: &str,
-    kind: &str,
+    aad: &[u8],
     plaintext: &[u8],
 ) -> Result<(Vec<u8>, Vec<u8>), StoreError> {
-    let cipher =
-        XChaCha20Poly1305::new_from_slice(key).map_err(|_| StoreError::Io("key length".into()))?;
-    let nonce_bytes = random_bytes(24)?;
+    let cipher = XChaCha20Poly1305::new_from_slice(key)
+        .map_err(|_| StoreError::Corrupt("key length".into()))?;
+    let nonce_bytes = random_bytes(NONCE_LEN)?;
     let nonce = XNonce::from_slice(&nonce_bytes);
     let sealed = cipher
         .encrypt(
             nonce,
             Payload {
                 msg: plaintext,
-                aad: &aad(profile_id, kind),
+                aad,
             },
         )
-        .map_err(|_| StoreError::Io("seal failed".into()))?;
+        .map_err(|_| StoreError::Corrupt("seal failed".into()))?;
     Ok((nonce_bytes.to_vec(), sealed))
 }
 
-fn open(
+fn open_with_aad(
     key: &[u8],
-    profile_id: &str,
-    kind: &str,
+    aad: &[u8],
     nonce: &[u8],
     sealed: &[u8],
 ) -> Result<Zeroizing<Vec<u8>>, StoreError> {
-    if nonce.len() != 24 {
+    if nonce.len() != NONCE_LEN {
         return Err(StoreError::Corrupt("nonce length".into()));
     }
     let cipher = XChaCha20Poly1305::new_from_slice(key)
         .map_err(|_| StoreError::Corrupt("key length".into()))?;
     cipher
-        .decrypt(
-            XNonce::from_slice(nonce),
-            Payload {
-                msg: sealed,
-                aad: &aad(profile_id, kind),
-            },
-        )
+        .decrypt(XNonce::from_slice(nonce), Payload { msg: sealed, aad })
         .map(Zeroizing::new)
         .map_err(|_| StoreError::Corrupt("record does not authenticate".into()))
 }
 
-/// The on-disk file: a sealed data key and the sealed record. Only the
+/// The on-disk file: the wrapped data key and the sealed record. Only the
 /// metadata is in the clear.
 pub struct SealedFile {
     pub key_id: String,
@@ -799,6 +1250,13 @@ pub struct SealedFile {
 }
 
 impl SealedFile {
+    pub fn wrapped(&self) -> WrappedDek {
+        WrappedDek {
+            nonce: self.dek_nonce.clone(),
+            sealed: self.dek_sealed.clone(),
+        }
+    }
+
     fn to_json(&self, profile_id: &str) -> Value {
         json!({
             "format":STORE_FORMAT,"protocol":PROTOCOL_TAG,"profile":profile_id,"key_id":self.key_id,
@@ -834,70 +1292,70 @@ impl SealedFile {
     }
 }
 
-/// Seal `data` for `profile_id` under `dek`, wrapping `dek` with the master
-/// key from `source` (fetched and zeroized inside this call).
+/// Seal `data` for `profile_id` under `dek`, storing the stable wrapped key.
+/// No master key is involved: committed mutations never touch the keychain.
 pub fn seal_record(
-    source: &KeySource,
     profile_id: &str,
     dek: &[u8],
+    wrapped: &WrappedDek,
+    key_id: &str,
     data: &RecordData,
 ) -> Result<Vec<u8>, StoreError> {
-    let master = source.master_key()?;
-    let (dek_nonce, dek_sealed) = seal(&master, profile_id, "dek", dek)?;
-    drop(master);
     let plaintext =
         serde_json::to_vec(&data.to_json(profile_id)).map_err(|e| StoreError::Io(e.to_string()))?;
     if plaintext.len() > MAX_RECORD_BYTES {
         return Err(StoreError::Io("record exceeds the size limit".into()));
     }
-    let (record_nonce, record_sealed) = seal(dek, profile_id, "record", &plaintext)?;
+    let (record_nonce, record_sealed) = seal_with_aad(dek, &aad(profile_id, "record"), &plaintext)?;
     let file = SealedFile {
-        key_id: format!("{}:{}", source.mode.name(), source.account),
-        dek_nonce,
-        dek_sealed,
+        key_id: key_id.to_owned(),
+        dek_nonce: wrapped.nonce.clone(),
+        dek_sealed: wrapped.sealed.clone(),
         record_nonce,
         record_sealed,
     };
     serde_json::to_vec_pretty(&file.to_json(profile_id)).map_err(|e| StoreError::Io(e.to_string()))
 }
 
-/// Open a sealed file: returns the DEK (kept while the profile is loaded)
-/// and the record data.
-pub fn open_record(
-    source: &KeySource,
-    profile_id: &str,
-    bytes: &[u8],
-) -> Result<(Zeroizing<Vec<u8>>, RecordData), StoreError> {
+/// Parse a sealed file without any key: bounds and identity checks only.
+pub fn parse_record(profile_id: &str, bytes: &[u8]) -> Result<SealedFile, StoreError> {
     if bytes.len() > MAX_RECORD_BYTES {
         return Err(StoreError::Corrupt("record exceeds the size limit".into()));
     }
     let value: Value = serde_json::from_slice(bytes)
         .map_err(|_| StoreError::Corrupt("record is not JSON".into()))?;
-    let file = SealedFile::from_json(&value, profile_id)?;
-    let master = source.master_key()?;
-    let dek = open(
-        &master,
-        profile_id,
-        "dek",
-        &file.dek_nonce,
-        &file.dek_sealed,
-    )?;
-    drop(master);
-    if dek.len() != 32 {
-        return Err(StoreError::Corrupt("data key length".into()));
-    }
-    let plaintext = open(
-        &dek,
-        profile_id,
-        "record",
+    SealedFile::from_json(&value, profile_id)
+}
+
+/// Open the record data with an unwrapped data key.
+pub fn open_record_data(
+    profile_id: &str,
+    dek: &[u8],
+    file: &SealedFile,
+) -> Result<RecordData, StoreError> {
+    let plaintext = open_with_aad(
+        dek,
+        &aad(profile_id, "record"),
         &file.record_nonce,
         &file.record_sealed,
     )?;
     let record: Value = serde_json::from_slice(&plaintext)
         .map_err(|_| StoreError::Corrupt("sealed record is not JSON".into()))?;
-    let data = RecordData::from_json(&record, profile_id)
-        .ok_or_else(|| StoreError::Corrupt("record is incompatible or exceeds bounds".into()))?;
-    Ok((dek, data))
+    RecordData::from_json(&record, profile_id)
+        .ok_or_else(|| StoreError::Corrupt("record is incompatible or exceeds bounds".into()))
+}
+
+/// Parse, unwrap and open in one step (the host's load path).
+pub fn open_record(
+    source: &KeySource,
+    profile_id: &str,
+    bytes: &[u8],
+) -> Result<(Zeroizing<Vec<u8>>, WrappedDek, RecordData), StoreError> {
+    let file = parse_record(profile_id, bytes)?;
+    let wrapped = file.wrapped();
+    let dek = source.unwrap_dek(profile_id, &wrapped)?;
+    let data = open_record_data(profile_id, &dek, &file)?;
+    Ok((dek, wrapped, data))
 }
 
 // ------------------------------------------------------------------- files
@@ -1175,13 +1633,39 @@ mod tests {
         data.storage
             .set("http://127.0.0.1:1", "court", "alpha-1", 0)
             .unwrap();
-        let bytes = seal_record(&source, "profile_alpha", &dek, &data).unwrap();
+        let wrapped = source.wrap_dek("profile_alpha", &dek).unwrap();
+        let bytes = seal_record("profile_alpha", &dek, &wrapped, &source.key_id(), &data).unwrap();
         assert!(
             !bytes.windows(16).any(|w| w == b"court-alpha-7f3a"),
             "the value is not in the clear"
         );
-        let (dek_back, opened) = open_record(&source, "profile_alpha", &bytes).unwrap();
+        let (dek_back, wrapped_back, opened) =
+            open_record(&source, "profile_alpha", &bytes).unwrap();
         assert_eq!(&*dek_back, &*dek);
+        assert_eq!(wrapped_back, wrapped, "the wrapped key is stored unchanged");
+        let again = seal_record("profile_alpha", &dek, &wrapped, &source.key_id(), &data).unwrap();
+        let (_, wrapped_again, _) = open_record(&source, "profile_alpha", &again).unwrap();
+        assert_eq!(
+            wrapped_again, wrapped,
+            "a rewrite keeps the wrapped key stable"
+        );
+        let other_root = directory.join("other-root");
+        fs::create_dir_all(&other_root).unwrap();
+        let other = KeySource::new(StoreMode::KeyfileExperiment, &other_root, &directory);
+        assert!(
+            matches!(
+                other.unwrap_dek("profile_alpha", &wrapped),
+                Err(StoreError::Corrupt(_))
+            ),
+            "another root cannot unwrap the key even with the same master key file"
+        );
+        assert!(
+            matches!(
+                source.unwrap_dek("profile_beta", &wrapped),
+                Err(StoreError::Corrupt(_))
+            ),
+            "another profile cannot unwrap the key"
+        );
         assert_eq!(opened.persistent_cookies, data.persistent_cookies);
         assert_eq!(
             opened.storage.get("http://127.0.0.1:1", "court"),
@@ -1211,5 +1695,52 @@ mod tests {
                 && !directory.join(format!("{RECORD_FILE}.tmp")).exists()
         );
         let _ = fs::remove_dir_all(&directory);
+    }
+
+    #[test]
+    fn helper_envelopes_are_fixed_length_and_strict() {
+        let account = "0123456789abcdef0123456789abcdef";
+        let aad = dek_aad(account, "profile_alpha");
+        let request = encode_request(OP_WRAP, account, &aad, &[7u8; 32]).unwrap();
+        assert_eq!(request.len(), REQUEST_LEN);
+        let parsed = decode_request(&request).unwrap();
+        assert_eq!(parsed.op, OP_WRAP);
+        assert_eq!(parsed.account, account);
+        assert_eq!(parsed.aad, aad);
+        assert_eq!(&*parsed.payload, &[7u8; 32]);
+        assert!(encode_request(OP_WRAP, "short", &aad, &[0; 32]).is_none());
+        assert!(encode_request(OP_WRAP, account, &[0; 257], &[0; 32]).is_none());
+        assert!(encode_request(OP_WRAP, account, &aad, &[0; 129]).is_none());
+        let mut bad = request.clone();
+        bad[4] = 2;
+        assert!(decode_request(&bad).is_none(), "another version is refused");
+        let mut bad = request.clone();
+        bad[5] = 9;
+        assert!(decode_request(&bad).is_none(), "an unknown op is refused");
+        let mut bad = request.clone();
+        bad[6] = 1;
+        assert!(
+            decode_request(&bad).is_none(),
+            "reserved bytes must be zero"
+        );
+        assert!(decode_request(&request[..REQUEST_LEN - 1]).is_none());
+        let response = encode_response(STATUS_OK, 0, 0, &[9u8; 72]);
+        assert_eq!(response.len(), RESPONSE_LEN);
+        let decoded = decode_response(&response).unwrap();
+        assert_eq!(decoded.status, STATUS_OK);
+        assert_eq!(&*decoded.payload, &[9u8; 72]);
+        let refused = encode_response(STATUS_KEYCHAIN, -25293, 0, &[]);
+        let decoded = decode_response(&refused).unwrap();
+        assert_eq!(
+            (decoded.status, decoded.code, decoded.payload.len()),
+            (STATUS_KEYCHAIN, -25293, 0)
+        );
+        let mut bad = response.clone();
+        bad[14] = 1;
+        assert!(
+            decode_response(&bad).is_none(),
+            "a payload length over the bound is refused"
+        );
+        assert!(decode_response(&response[..RESPONSE_LEN - 1]).is_none());
     }
 }

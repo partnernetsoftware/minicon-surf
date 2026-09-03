@@ -887,6 +887,7 @@ gate):
 | `zeroize` | 1.9.0 | Apache-2.0 OR MIT | key material cleared on drop |
 | `fs2` | 0.4.3 | MIT/Apache-2.0 | `flock` writer lock |
 | `security-framework` (+ `security-framework-sys`, `core-foundation`, `core-foundation-sys`) | 3.7.0 | MIT OR Apache-2.0 | macOS Keychain generic password (macOS target only) |
+| `libc` | 0.2.189 | MIT OR Apache-2.0 | `setrlimit(RLIMIT_CORE, 0)` and the helper's descriptor whitelist check (macOS target only; already in the tree through other crates) |
 
 Keychain ACL and the no-UI mode, reviewed after the verdict
 (`native-dom-control-0.0.2-keychain-acl-probe` receipt): the item the host
@@ -1004,6 +1005,59 @@ python3 labs/native-dom/profile-attribution-court.py \
   --receipt labs/native-dom/evidence/native-dom-control-0.0.2-profile-attribution.json
 ```
 
+The approved experiment: a bounded Keychain helper (arena cell). After the
+attribution, one candidate was approved with fixed constraints (design
+section 8c): the host generates the data key and a short-lived helper
+process of the same signed binary, spawned through `std::process::Command`
+with an absolute program path and no pre-exec closure (the conditions under
+which Rust 1.97's standard library uses `posix_spawnp` on Apple targets and
+never falls back to `fork`), fetches the master key and returns the
+authenticated wrapped data key over an anonymous pipe in a fixed-length,
+versioned envelope; the wrapped key is stored unchanged, so committed
+mutations never touch the Keychain; the helper refuses to serve if any
+descriptor beyond stdio is open, both sides refuse core dumps and zeroize,
+a 10 s deadline kills and reaps as failure cleanup, and any deviation fails
+closed. [`profile-helper-court.py`](profile-helper-court.py) was frozen
+before the code with six criteria and samples the complete process tree at
+about one kilohertz through every run. Result
+(`native-dom-control-0.0.2-profile-helper` receipt, 58 of 60, default
+allocator / arena, medians of seven):
+
+| criterion | measured | limit | holds |
+|---|---|---|---|
+| C1 `profiles_created` step over feature-off | 81,920 / 81,920 | ≤ 524,288 | yes |
+| C2 libmalloc in-use after every close over feature-off | 2,272 / 2,368 | ≤ 65,536 | yes |
+| C3 churned total-live drop against the in-process build | 1,802,360 (6,275,528 → 4,473,168) / 2,064,504 (5,767,672 → 3,703,168) | ≥ 1,048,576 | yes |
+| C4 complete-tree peak while a helper is alive vs the in-process peak | 5,735,192 vs 4,391,392 / 5,735,168 vs 5,423,632 | not above | **no** |
+| C5 descendants after any operation; timeout kills; failures; counters vs sightings | 0; 0; 0; two helpers per run, role `keychain-helper`, same binary, lifetime median 3 ms (max 11.2 ms) | all zero and consistent | yes |
+| C6 clean exits, owners at zero | 48 of 48 runs | all | yes |
+
+The helper build also passes the v1 profile court 81 of 82 (the arena
+total-live check now holds at 3,801,472; the default cell stays at
+4,440,400 against the 4,178,196 line, as the attribution predicted), the
+journeys 27/27 and 35/35 under both allocators, the frame-realm court
+62/62, the CDP court 58/58, and the Keychain ACL probe repeated on two
+builds of it (a rebuilt `cdhash` is refused with `-25293`, fail closed).
+
+Why C4 fails, and why it cannot pass in this shape: the in-process peak is
+the host plus the Security framework's first use (about 2.1 MB); the tree
+peak is the host without that cost (2,179,408) plus a whole second process
+of this binary that pays the same framework cost on top of its own runtime
+baseline (helper peak 3,367,320 / 3,096,984). The difference, about 1.35
+MB, is the helper's process baseline, which a helper that must be the same
+signed binary cannot shed. Transient peak and recovered steady state are
+therefore both recorded: the steady state improves by 1.8 to 2.1 MB and the
+transient peak worsens by 0.3 to 1.3 MB for about 3 ms per create or open.
+
+Verdict: the experiment fails its frozen C4, so per the approval it changes
+nothing: the in-process path stays the default, the implementation and its
+evidence are kept in history (the commit that adds this paragraph carries
+the helper build; the next commit restores the in-process host and the
+receipts made with it), and P6 work moves to another gap. The arena cell of
+the P6 slice therefore stays `failed`/`narrow`. The measurements of
+constraints 2 and 5 (kilohertz tree sampling, helper lifetime and
+descendant checks) are reusable for any later out-of-process design.
+
 Gaps: macOS Keychain only (a second platform key source is a P6 gap); the
 `http` cell refuses `Secure` and `SameSite=None` as a cell limit, not a
 design limit; no public suffix list; no cache, history, downloads,
@@ -1028,6 +1082,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
+| `native-dom-control-0.0.2-profile-helper` | the helper build (the commit that adds the experiment's README paragraph; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 
 ## Findings against product contracts
 
@@ -1083,10 +1138,10 @@ target by footprint. Every later slice is measured against this row.
   cost on this court, but both are macOS opt-in experiments and the default
   is unchanged until the arena has been measured on more workloads and a
   second platform.
-- The profile store's next steps are the one attributed fix candidate
-  (keychain access outside the host process, criteria pre-registered
-  above), or else another P6 gap; a second platform key source; and
-  `https` with pinned roots; each passes only if the 27-item journey and the 35-item
+- The profile store's attributed fix candidate (keychain access outside
+  the host process) was tried under frozen criteria and failed its
+  complete-tree peak criterion, so the next P6 steps are another gap: a
+  second platform key source, and `https` with pinned roots; each passes only if the 27-item journey and the 35-item
   network court stay green and the footprint court row stays below
   Lightpanda's single server at one target. The arena's next steps are a second platform
   behind the same `Region` boundary, interior (not only tail) trimming, and

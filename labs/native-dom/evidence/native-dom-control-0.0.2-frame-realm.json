@@ -123,7 +123,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:50850/about.html"
+        "url": "http://127.0.0.1:53175/about.html"
       },
       "passed": true
     },
@@ -187,7 +187,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:50850/notfound"
+          "url": "http://127.0.0.1:53175/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -365,7 +365,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:50850/about.html"
+        "url": "http://127.0.0.1:53175/about.html"
       },
       "passed": true
     },
@@ -429,7 +429,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:50850/notfound"
+          "url": "http://127.0.0.1:53175/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -489,17 +489,17 @@
   "checks_total": 62,
   "footprint_bytes": {
     "arena": {
-      "empty": 1933648,
-      "post_close": 2638160,
-      "two_fixture_targets_live": 2883968
+      "empty": 1917264,
+      "post_close": 2670928,
+      "two_fixture_targets_live": 2851200
     },
     "system": {
-      "empty": 1933648,
-      "post_close": 4407632,
-      "two_fixture_targets_live": 3490128
+      "empty": 1917264,
+      "post_close": 4374864,
+      "two_fixture_targets_live": 3522896
     }
   },
-  "host_sha256": "cd7292f6ed9288c6fc460947a4bfd7b9012e7e2c282640ac2bfe960e97127e3f",
+  "host_sha256": "6c797b557e35276f7170f1b07aff55b1c5fd20c06f6181d1d9c73140bf4533e5",
   "losses": [
     "no child frames: every native-dom target is one main frame; frame_limit is 1",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",
