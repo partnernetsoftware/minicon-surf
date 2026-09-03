@@ -28,8 +28,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 3490152,
-      "virtual_bytes": 445756850176
+      "physical_footprint_bytes": 3391824,
+      "virtual_bytes": 445756735488
      },
      "live_bytes": 0,
      "regions": 0,
@@ -89,8 +89,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 4735336,
-      "virtual_bytes": 445758341120
+      "physical_footprint_bytes": 4669776,
+      "virtual_bytes": 445758226432
      },
      "live_bytes": 1024000,
      "regions": 1,
@@ -141,7 +141,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 864,
+     "monotonic_ms": 832,
      "revision": 2,
      "scroll_y": 0,
      "surface": "surface_1",
@@ -158,7 +158,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 906,
+     "monotonic_ms": 877,
      "revision": 3,
      "scroll_y": 240,
      "surface": "surface_1",
@@ -191,7 +191,7 @@
    "check": "[system] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 7,
+    "ms": 9,
     "reaped": true
    },
    "passed": true
@@ -208,8 +208,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 3883368,
-      "virtual_bytes": 445756850176
+      "physical_footprint_bytes": 3735888,
+      "virtual_bytes": 445756735488
      },
      "live_bytes": 0,
      "regions": 0,
@@ -297,8 +297,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 5013864,
-      "virtual_bytes": 445758341120
+      "physical_footprint_bytes": 4866384,
+      "virtual_bytes": 445758226432
      },
      "live_bytes": 1024000,
      "regions": 1,
@@ -349,7 +349,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 1632,
+     "monotonic_ms": 1576,
      "revision": 6,
      "scroll_y": 0,
      "surface": "surface_2",
@@ -366,7 +366,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 1675,
+     "monotonic_ms": 1619,
      "revision": 7,
      "scroll_y": 240,
      "surface": "surface_2",
@@ -403,8 +403,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 3998056,
-      "virtual_bytes": 445756850176
+      "physical_footprint_bytes": 3883344,
+      "virtual_bytes": 445756735488
      },
      "live_bytes": 0,
      "regions": 0,
@@ -492,8 +492,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 5079400,
-      "virtual_bytes": 445758341120
+      "physical_footprint_bytes": 4948304,
+      "virtual_bytes": 445758226432
      },
      "live_bytes": 1024000,
      "regions": 1,
@@ -544,7 +544,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 2400,
+     "monotonic_ms": 2313,
      "revision": 10,
      "scroll_y": 0,
      "surface": "surface_3",
@@ -561,7 +561,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 2443,
+     "monotonic_ms": 2356,
      "revision": 11,
      "scroll_y": 240,
      "surface": "surface_3",
@@ -598,8 +598,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 4063592,
-      "virtual_bytes": 445756850176
+      "physical_footprint_bytes": 3916112,
+      "virtual_bytes": 445756735488
      },
      "live_bytes": 0,
      "regions": 0,
@@ -661,11 +661,11 @@
    "check": "[system] post-hide host footprint over headless, every round",
    "detail": {
     "per_round": [
-     344064,
-     458752,
-     524288
+     278528,
+     425984,
+     458752
     ],
-    "worst": 524288
+    "worst": 458752
    },
    "passed": false
   },
@@ -715,7 +715,7 @@
   {
    "check": "[system] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
    "detail": {
-    "forced_ms": 1004.3,
+    "forced_ms": 1004.8,
     "process": {
      "exits_clean_total": 3,
      "frames_acked_total": 13,
@@ -732,7 +732,7 @@
     },
     "teardown": {
      "exit": "killed",
-     "ms": 1003,
+     "ms": 1002,
      "reaped": true
     }
    },
@@ -781,8 +781,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 2883944,
-      "virtual_bytes": 445789732864
+      "physical_footprint_bytes": 2785640,
+      "virtual_bytes": 445789814784
      },
      "live_bytes": 0,
      "regions": 0,
@@ -842,8 +842,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 4211072,
-      "virtual_bytes": 445791223808
+      "physical_footprint_bytes": 4129128,
+      "virtual_bytes": 445791305728
      },
      "live_bytes": 1024000,
      "regions": 1,
@@ -894,7 +894,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 662,
+     "monotonic_ms": 630,
      "revision": 2,
      "scroll_y": 0,
      "surface": "surface_1",
@@ -911,7 +911,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 700,
+     "monotonic_ms": 672,
      "revision": 3,
      "scroll_y": 240,
      "surface": "surface_1",
@@ -944,7 +944,7 @@
    "check": "[arena] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 9,
+    "ms": 7,
     "reaped": true
    },
    "passed": true
@@ -962,7 +962,7 @@
      "backing": "anonymous_mmap",
      "host": {
       "physical_footprint_bytes": 3162472,
-      "virtual_bytes": 445789732864
+      "virtual_bytes": 445789814784
      },
      "live_bytes": 0,
      "regions": 0,
@@ -1050,8 +1050,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 4325760,
-      "virtual_bytes": 445791223808
+      "physical_footprint_bytes": 4276584,
+      "virtual_bytes": 445791305728
      },
      "live_bytes": 1024000,
      "regions": 1,
@@ -1102,7 +1102,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 1431,
+     "monotonic_ms": 1360,
      "revision": 6,
      "scroll_y": 0,
      "surface": "surface_2",
@@ -1119,7 +1119,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 1475,
+     "monotonic_ms": 1404,
      "revision": 7,
      "scroll_y": 240,
      "surface": "surface_2",
@@ -1156,8 +1156,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 3342696,
-      "virtual_bytes": 445789732864
+      "physical_footprint_bytes": 3309928,
+      "virtual_bytes": 445789814784
      },
      "live_bytes": 0,
      "regions": 0,
@@ -1245,8 +1245,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 4440448,
-      "virtual_bytes": 445791223808
+      "physical_footprint_bytes": 4374888,
+      "virtual_bytes": 445791305728
      },
      "live_bytes": 1024000,
      "regions": 1,
@@ -1297,7 +1297,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 2219,
+     "monotonic_ms": 2102,
      "revision": 10,
      "scroll_y": 0,
      "surface": "surface_3",
@@ -1314,7 +1314,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 2262,
+     "monotonic_ms": 2143,
      "revision": 11,
      "scroll_y": 240,
      "surface": "surface_3",
@@ -1351,8 +1351,8 @@
     "frame": {
      "backing": "anonymous_mmap",
      "host": {
-      "physical_footprint_bytes": 3408232,
-      "virtual_bytes": 445789732864
+      "physical_footprint_bytes": 3375464,
+      "virtual_bytes": 445789814784
      },
      "live_bytes": 0,
      "regions": 0,
@@ -1414,18 +1414,18 @@
    "check": "[arena] post-hide host footprint over headless, every round",
    "detail": {
     "per_round": [
-     196608,
-     360448,
-     425984
+     311296,
+     442368,
+     507904
     ],
-    "worst": 425984
+    "worst": 507904
    },
    "passed": false
   },
   {
    "check": "[arena] no slope over the rounds",
    "detail": {
-    "slope": 229376
+    "slope": 196608
    },
    "passed": false
   },
@@ -1468,7 +1468,7 @@
   {
    "check": "[arena] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
    "detail": {
-    "forced_ms": 1003.8,
+    "forced_ms": 1005.4,
     "process": {
      "exits_clean_total": 3,
      "frames_acked_total": 13,
@@ -1485,7 +1485,7 @@
     },
     "teardown": {
      "exit": "killed",
-     "ms": 1002,
+     "ms": 1003,
      "reaped": true
     }
    },
@@ -1517,121 +1517,121 @@
  "design": "labs/native-dom/surface-ipc-0.0.1.md",
  "footprint_bytes": {
   "arena": {
-   "headless": 2982248,
-   "post_reap": 3473768,
+   "headless": 2867560,
+   "post_reap": 3441000,
    "rounds": [
     {
-     "first_frame_ms": 15,
-     "hide_ms": 10.7,
+     "first_frame_ms": 12,
+     "hide_ms": 8.5,
      "input": {
-      "click_ms": 0.3,
+      "click_ms": 0.2,
       "permitted": true,
-      "scroll_ms": 7.6,
+      "scroll_ms": 6.5,
       "topmost_is_surface": true
      },
      "post_hide_host": 3178856,
      "post_hide_in_use": 140288,
-     "ready_ms": 87,
+     "ready_ms": 73,
      "round": 1,
-     "show_ms": 106.8,
-     "shown_steady_host": 4211072,
-     "spawn_peak_tree": 27313208
+     "show_ms": 91.1,
+     "shown_steady_host": 4129128,
+     "spawn_peak_tree": 27509792
+    },
+    {
+     "first_frame_ms": 12,
+     "hide_ms": 9.7,
+     "input": {
+      "click_ms": 0.3,
+      "permitted": true,
+      "scroll_ms": 7.0,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3309928,
+     "post_hide_in_use": 140320,
+     "ready_ms": 74,
+     "round": 2,
+     "show_ms": 91.3,
+     "shown_steady_host": 4276584,
+     "spawn_peak_tree": 27345952
+    },
+    {
+     "first_frame_ms": 12,
+     "hide_ms": 11.1,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 6.5,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3375464,
+     "post_hide_in_use": 140320,
+     "ready_ms": 74,
+     "round": 3,
+     "show_ms": 90.4,
+     "shown_steady_host": 4374888,
+     "spawn_peak_tree": 27378720
+    }
+   ]
+  },
+  "system": {
+   "headless": 3457360,
+   "post_reap": 3948880,
+   "rounds": [
+    {
+     "first_frame_ms": 12,
+     "hide_ms": 10.8,
+     "input": {
+      "click_ms": 0.3,
+      "permitted": true,
+      "scroll_ms": 6.7,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3735888,
+     "post_hide_in_use": 448384,
+     "ready_ms": 74,
+     "round": 1,
+     "show_ms": 91.8,
+     "shown_steady_host": 4669776,
+     "spawn_peak_tree": 27722784
+    },
+    {
+     "first_frame_ms": 12,
+     "hide_ms": 10.5,
+     "input": {
+      "click_ms": 0.3,
+      "permitted": true,
+      "scroll_ms": 6.7,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3883344,
+     "post_hide_in_use": 453152,
+     "ready_ms": 75,
+     "round": 2,
+     "show_ms": 93.5,
+     "shown_steady_host": 4866384,
+     "spawn_peak_tree": 28050464
     },
     {
      "first_frame_ms": 12,
      "hide_ms": 10.1,
      "input": {
-      "click_ms": 0.3,
-      "permitted": true,
-      "scroll_ms": 11.2,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 3342696,
-     "post_hide_in_use": 140320,
-     "ready_ms": 92,
-     "round": 2,
-     "show_ms": 108.7,
-     "shown_steady_host": 4325760,
-     "spawn_peak_tree": 27313208
-    },
-    {
-     "first_frame_ms": 14,
-     "hide_ms": 11.0,
-     "input": {
-      "click_ms": 0.3,
+      "click_ms": 0.4,
       "permitted": true,
       "scroll_ms": 6.8,
       "topmost_is_surface": true
      },
-     "post_hide_host": 3408232,
-     "post_hide_in_use": 140320,
-     "ready_ms": 112,
-     "round": 3,
-     "show_ms": 131.3,
-     "shown_steady_host": 4440448,
-     "spawn_peak_tree": 27542584
-    }
-   ]
-  },
-  "system": {
-   "headless": 3539304,
-   "post_reap": 4096360,
-   "rounds": [
-    {
-     "first_frame_ms": 12,
-     "hide_ms": 9.6,
-     "input": {
-      "click_ms": 0.5,
-      "permitted": true,
-      "scroll_ms": 5.8,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 3883368,
-     "post_hide_in_use": 448384,
-     "ready_ms": 104,
-     "round": 1,
-     "show_ms": 119.7,
-     "shown_steady_host": 4735336,
-     "spawn_peak_tree": 27771936
-    },
-    {
-     "first_frame_ms": 15,
-     "hide_ms": 10.6,
-     "input": {
-      "click_ms": 0.2,
-      "permitted": true,
-      "scroll_ms": 5.9,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 3998056,
-     "post_hide_in_use": 453152,
-     "ready_ms": 91,
-     "round": 2,
-     "show_ms": 110.1,
-     "shown_steady_host": 5013864,
-     "spawn_peak_tree": 28279840
-    },
-    {
-     "first_frame_ms": 17,
-     "hide_ms": 10.3,
-     "input": {
-      "click_ms": 0.4,
-      "permitted": true,
-      "scroll_ms": 6.7,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 4063592,
+     "post_hide_host": 3916112,
      "post_hide_in_use": 457888,
-     "ready_ms": 87,
+     "ready_ms": 77,
      "round": 3,
-     "show_ms": 107.8,
-     "shown_steady_host": 5079400,
-     "spawn_peak_tree": 28165152
+     "show_ms": 94.1,
+     "shown_steady_host": 4948304,
+     "spawn_peak_tree": 27755528
     }
    ]
   }
  },
- "host_sha256": "470c855fab6c1b7aede69152e472f515cc747dafccbc3aae2bbf8f16c6f68fe1",
+ "host_sha256": "32343eb5cb3ee4a098d77c0b2ad87bc8708f814f415434355f6420d5ebb6b663",
  "input_permitted": true,
  "limitations": [
   "the WindowServer, GPU and compositor memory live outside the process tree and are not attributed",

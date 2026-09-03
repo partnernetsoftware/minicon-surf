@@ -1,0 +1,164 @@
+{
+ "checks": [
+  {
+   "check": "baseline: no on-screen window owned by the surface child and no surface process",
+   "detail": {
+    "on_screen_windows": 22,
+    "owner_windows": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "default court: exits 0 and records the headless drain child",
+   "detail": {
+    "child_mode": "drain",
+    "returncode": 0,
+    "stderr_tail": "",
+    "visual": false
+   },
+   "passed": true
+  },
+  {
+   "check": "default court: the surface child ran (at least one child seen by the watch)",
+   "detail": {
+    "children_seen": 11,
+    "samples": 51
+   },
+   "passed": true
+  },
+  {
+   "check": "default court: no window owned by the surface child at any of the samples",
+   "detail": {
+    "max_owner_windows": 0,
+    "samples": 51
+   },
+   "passed": true
+  },
+  {
+   "check": "default court: no surface child ever mapped AppKit, CoreGraphics or QuartzCore",
+   "detail": {
+    "children": 11,
+    "mapped": []
+   },
+   "passed": true
+  },
+  {
+   "check": "default court: the window list after equals the window list before (owner counts)",
+   "detail": {
+    "after_total": 22,
+    "before_total": 22,
+    "owner_after": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "default court: no residual surface or host process",
+   "passed": true
+  },
+  {
+   "check": "visual surface court without the opt-in: exit 3, an unverified line, no receipt, no child, no window",
+   "detail": {
+    "children_seen": 0,
+    "line": {
+     "passed": null,
+     "unverified": "surface court is visual: run with --visual and MINICON_SURF_ALLOW_VISIBLE_COURT=1 (it shows windows); nothing was started"
+    },
+    "returncode": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "surface-court.py --visual without the environment: exit 3, nothing started",
+   "detail": {
+    "returncode": 3,
+    "stdout_tail": "{\"passed\": null, \"unverified\": \"surface court is visual: run with --visual and MINICON_SURF_ALLOW_VISIBLE_COURT=1 (it shows windows); nothing was started\"}\n"
+   },
+   "passed": true
+  },
+  {
+   "check": "surface-attribution-court.py --visual without the environment: exit 3, nothing started",
+   "detail": {
+    "returncode": 3,
+    "stdout_tail": "{\"passed\": null, \"unverified\": \"--visual needs MINICON_SURF_ALLOW_VISIBLE_COURT=1; nothing was started\"}\n"
+   },
+   "passed": true
+  },
+  {
+   "check": "surface-snapshot-attribution-court.py --visual without the environment: exit 3, nothing started",
+   "detail": {
+    "returncode": 3,
+    "stdout_tail": "{\"passed\": null, \"unverified\": \"--visual needs MINICON_SURF_ALLOW_VISIBLE_COURT=1; nothing was started\"}\n"
+   },
+   "passed": true
+  },
+  {
+   "check": "host --visual 1 without the environment refuses to start (exit 2)",
+   "detail": {
+    "returncode": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "surface child in window mode without the environment exits 68 before any window",
+   "detail": {
+    "returncode": 68
+   },
+   "passed": true
+  },
+  {
+   "check": "default host refuses surface.show as unsupported_capability / visible_surface_not_enabled and spawns nothing",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "visible_surface_not_enabled"
+    },
+    "message": "visible surfaces are not enabled on this host (headless by default; --visual 1 with MINICON_SURF_ALLOW_VISIBLE_COURT=1 opts in)",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "host killed with SIGKILL while a headless surface is shown: the child leaves within two seconds",
+   "detail": {
+    "children_after": 0,
+    "children_before": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "court interrupted with SIGINT while its host is alive: exit 130, no residual process, no window, no receipt",
+   "detail": {
+    "host_alive_at_interrupt": true,
+    "residual_children": 0,
+    "residual_hosts": 0,
+    "returncode": 130
+   },
+   "passed": true
+  },
+  {
+   "check": "end: the window list equals the baseline and no experiment process remains",
+   "detail": {
+    "before_total": 22,
+    "final_total": 22
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 17,
+ "checks_total": 17,
+ "host_sha256": "6857ac3897e2f768e0df936aacfda697a3b0350ddb2a1cbb30619b67ec4120bc",
+ "limitations": [
+  "macOS only; the window list is CGWindowListCopyWindowInfo on-screen windows by owner name; framework mapping is read with lsof",
+  "the drain child is the surface binary in its no-AppKit mode: a separate process that maps no AppKit; a court that spawns no child at all would have no show/hide path to measure",
+  "no pid, path or command line is recorded"
+ ],
+ "passed": true,
+ "rule": "automated courts, regressions and default commands are strictly headless; a real window needs --visual plus MINICON_SURF_ALLOW_VISIBLE_COURT=1 in the same run and never steals focus",
+ "schema": "minicon-surf.native-dom-surface-headless-receipt/0.0.1",
+ "surface_sha256": "29c2a009739133d11e773e6babdb1708f5880da46812b9f287eda26e47bd2f2e",
+ "technology": "native-dom"
+}

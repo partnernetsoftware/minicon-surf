@@ -67,7 +67,7 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
@@ -82,7 +82,7 @@
   {
    "check": "[system] H1 enabled empty over feature-off empty",
    "detail": {
-    "delta": -32768
+    "delta": 32768
    },
    "passed": true
   },
@@ -346,7 +346,7 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
@@ -366,7 +366,7 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
@@ -434,7 +434,7 @@
      "details": {
       "detail": "server certificate does not match the URL host",
       "generation": 1,
-      "href": "https://127.0.0.1:50852/index.html",
+      "href": "https://127.0.0.1:58136/index.html",
       "navigation": "failed",
       "realm": "realm_18",
       "reason": "tls_hostname_mismatch"
@@ -452,21 +452,21 @@
   {
    "check": "[system] H2 first https target over first http target",
    "detail": {
-    "delta": 81920
+    "delta": 212992
    },
    "passed": true
   },
   {
    "check": "[system] H3 eight https targets over eight http targets, per target",
    "detail": {
-    "per_target": 53248
+    "per_target": 47104
    },
    "passed": true
   },
   {
    "check": "[system] H4 post-close libmalloc in-use enabled over feature-off",
    "detail": {
-    "delta": 61296
+    "delta": 29120
    },
    "passed": true
   },
@@ -482,7 +482,7 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
@@ -563,7 +563,7 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
@@ -842,7 +842,7 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
@@ -862,7 +862,7 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
@@ -930,7 +930,7 @@
      "details": {
       "detail": "server certificate does not match the URL host",
       "generation": 1,
-      "href": "https://127.0.0.1:50852/index.html",
+      "href": "https://127.0.0.1:58136/index.html",
       "navigation": "failed",
       "realm": "realm_18",
       "reason": "tls_hostname_mismatch"
@@ -948,7 +948,7 @@
   {
    "check": "[arena] H2 first https target over first http target",
    "detail": {
-    "delta": 131072
+    "delta": 163840
    },
    "passed": true
   },
@@ -978,7 +978,7 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
@@ -1003,46 +1003,46 @@
  "checks_total": 74,
  "design": "labs/native-dom/https-design-0.0.1.md",
  "fixtures": {
-  "generation_seconds": 0.135,
+  "generation_seconds": 0.091,
   "mode": "generated-disposable",
   "public_certificates": {
    "court-ca.pem": {
-    "not_after": "Oct  3 10:12:20 2026 GMT",
-    "not_before": "Sep  3 10:12:20 2026 GMT",
+    "not_after": "Oct  3 10:39:08 2026 GMT",
+    "not_before": "Sep  3 10:39:08 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "39:13:B0:6F:E5:46:4D:22:90:4F:1A:4D:98:B1:44:9A:96:DE:64:E2:F1:A7:25:7B:B6:D1:0D:E7:D1:29:0A:18",
+    "sha256_fingerprint": "CE:84:1D:42:89:14:7B:62:29:7C:8B:45:B5:B9:BC:EE:3B:20:F2:5C:7A:B8:94:B8:44:D5:4E:82:AD:04:15:DF",
     "subject": "CN=MiniCon Surf disposable court CA",
     "subject_alt_name": null
    },
    "loopback.pem": {
-    "not_after": "Oct  3 10:12:20 2026 GMT",
-    "not_before": "Sep  3 10:12:20 2026 GMT",
+    "not_after": "Oct  3 10:39:08 2026 GMT",
+    "not_before": "Sep  3 10:39:08 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "BC:90:B4:27:89:7B:83:CF:08:5C:11:02:00:52:6E:DC:50:6F:67:AE:90:53:75:31:D9:E4:B2:5F:6C:44:C8:ED",
+    "sha256_fingerprint": "12:FF:A3:65:58:25:79:8D:E5:31:70:61:03:6F:2F:E7:2F:36:FB:18:28:CD:2F:2E:78:EC:AB:42:D2:26:91:EF",
     "subject": "CN=loopback",
     "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
    },
    "other-ca-loopback.pem": {
-    "not_after": "Oct  3 10:12:20 2026 GMT",
-    "not_before": "Sep  3 10:12:20 2026 GMT",
+    "not_after": "Oct  3 10:39:08 2026 GMT",
+    "not_before": "Sep  3 10:39:08 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "04:A1:DF:5B:82:D4:B0:3A:8B:94:DF:8A:E3:C5:56:8A:41:79:7B:A4:41:53:AA:37:02:22:4A:13:2C:6D:4C:57",
+    "sha256_fingerprint": "D1:C6:57:09:E4:93:36:2B:14:72:00:5E:E3:08:DC:F7:84:8A:1B:48:82:61:2A:8F:23:1F:5B:4C:F3:F3:EB:2E",
     "subject": "CN=other-ca-loopback",
     "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
    },
    "other-ca.pem": {
-    "not_after": "Oct  3 10:12:20 2026 GMT",
-    "not_before": "Sep  3 10:12:20 2026 GMT",
+    "not_after": "Oct  3 10:39:08 2026 GMT",
+    "not_before": "Sep  3 10:39:08 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "2A:D2:B4:A7:3D:1E:BD:98:EC:A6:F3:48:9C:79:78:0D:BE:E3:84:FF:F1:A0:E3:5E:37:EC:49:67:CF:86:2E:A7",
+    "sha256_fingerprint": "80:DB:9E:D2:1D:93:17:5A:88:FF:E3:69:AC:83:41:7C:22:B0:58:11:04:56:E0:BA:FD:E7:02:BB:08:4B:6D:FB",
     "subject": "CN=MiniCon Surf disposable OTHER CA (not pinned)",
     "subject_alt_name": null
    },
    "wrong-name.pem": {
-    "not_after": "Oct  3 10:12:20 2026 GMT",
-    "not_before": "Sep  3 10:12:20 2026 GMT",
+    "not_after": "Oct  3 10:39:08 2026 GMT",
+    "not_before": "Sep  3 10:39:08 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "4A:F6:54:90:25:0C:A8:5E:7C:E7:21:7D:A6:DD:E2:92:3E:A9:1E:FA:63:31:C6:4A:A2:F5:AB:C9:39:AC:D7:5D",
+    "sha256_fingerprint": "B2:29:10:A1:DD:B8:3B:BA:1B:A1:92:19:D0:7A:C8:A4:A6:3A:4F:41:00:F9:6A:09:3F:80:13:57:8C:BF:20:25",
     "subject": "CN=wrong-name",
     "subject_alt_name": "DNS:wrong.invalid"
    }
@@ -1050,33 +1050,33 @@
  },
  "footprint_bytes": {
   "arena": {
-   "off_eight_http": 5882384,
-   "off_empty": 2146640,
-   "off_first_http": 2769256,
+   "off_eight_http": 5866000,
+   "off_empty": 2064720,
+   "off_first_http": 2736488,
    "off_post_close": 2867536,
    "off_post_close_in_use": 125632,
-   "on_eight_https": 6488592,
-   "on_empty": 2146640,
+   "on_eight_https": 6472208,
+   "on_empty": 2064720,
    "on_first_https": 2900328,
-   "on_post_close": 3473744,
+   "on_post_close": 3457360,
    "on_post_close_in_use": 138528,
-   "tree_peak_enabled": 6488592
+   "tree_peak_enabled": 6472208
   },
   "system": {
-   "off_eight_http": 5783888,
-   "off_empty": 2146640,
-   "off_first_http": 3359056,
-   "off_post_close": 5800272,
-   "off_post_close_in_use": 125632,
-   "on_eight_https": 6209872,
-   "on_empty": 2113872,
-   "on_first_https": 3440976,
-   "on_post_close": 6209872,
-   "on_post_close_in_use": 186928,
-   "tree_peak_enabled": 6209872
+   "off_eight_http": 5849424,
+   "off_empty": 2064720,
+   "off_first_http": 3244368,
+   "off_post_close": 5849424,
+   "off_post_close_in_use": 141952,
+   "on_eight_https": 6226256,
+   "on_empty": 2097488,
+   "on_first_https": 3457360,
+   "on_post_close": 6226256,
+   "on_post_close_in_use": 171072,
+   "tree_peak_enabled": 6226256
   }
  },
- "host_sha256": "470c855fab6c1b7aede69152e472f515cc747dafccbc3aae2bbf8f16c6f68fe1",
+ "host_sha256": "6857ac3897e2f768e0df936aacfda697a3b0350ddb2a1cbb30619b67ec4120bc",
  "limitations": [
   "pinned test roots on loopback only: no system roots, no public web, no root-store breadth claim",
   "the TLS server is Python's ssl (OpenSSL): court infrastructure outside the host's process tree, never sampled",
@@ -1084,7 +1084,7 @@
   "one platform, one fixture set, fake values only; no leak-absence claim"
  ],
  "passed": true,
- "release_binary_bytes": 5450400,
+ "release_binary_bytes": 5468688,
  "schema": "minicon-surf.native-dom-https-receipt/0.0.1",
  "technology": "native-dom",
  "technology_version": "0.0.2"
