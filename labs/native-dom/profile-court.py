@@ -73,6 +73,14 @@ class ProfileHandler(NETWORK.Handler):
         return super().do_GET()
 
 
+CAPS = {
+    "empty_physical_footprint_delta_bytes": 524288,
+    "empty_resident_delta_bytes": 1048576,
+    "accounted_bytes_per_empty_persistent_profile": 65536,
+    "lightpanda_single_server_empty_footprint_bytes": 8356392,
+}
+
+
 class Host:
     def __init__(self, binary, directory, allocator, origin, profile_root, store_mode=None):
         environment = dict(os.environ)
@@ -83,7 +91,9 @@ class Host:
         if store_mode:
             environment["MINICON_SURF_PROFILE_STORE"] = store_mode
         command = [binary, "serve", "--stdio", "--fixture-root", str(FIXTURE_ROOT), "--config-dir", str(Path(directory) / "config"),
-                   "--allow-origin", origin, "--profile-root", str(profile_root)]
+                   "--allow-origin", origin]
+        if profile_root is not None:
+            command += ["--profile-root", str(profile_root)]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
                                         text=True, env=environment)
         self.counter = 0
@@ -154,20 +164,36 @@ def main():
             tag = f"[{allocator}] "
             with tempfile.TemporaryDirectory(prefix="minicon-surf-profile-court-") as directory:
                 root = Path(directory) / "profiles"
+                # D6 baseline: the same binary with the store feature off.
+                baseline_host = Host(args.binary, directory, allocator, origin, None)
+                baseline_host.ok("memory.report", {})
+                time.sleep(0.3)
+                baseline = RETENTION.sample_process(baseline_host.process.pid)
+                baseline_host.finish()
                 host = Host(args.binary, directory, allocator, origin, root)
                 second = None
                 try:
-                    empty = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"]
                     report = host.ok("memory.report", {})
+                    time.sleep(0.3)
+                    enabled = RETENTION.sample_process(host.process.pid)
+                    empty = enabled["physical_footprint_bytes"]
                     mode = report["owners"].get("profiles", {}).get("store")
                     store_modes.add(mode)
-                    expect(tag + "memory.report names the profile store mode", mode in ("envelope-keychain", "envelope-keyfile-experiment", "experiment-plaintext"), mode)
+                    expect(tag + "memory.report names the profile store mode", mode in ("envelope-keychain", "envelope-keyfile-experiment"), mode)
+                    footprint_delta = enabled["physical_footprint_bytes"] - baseline["physical_footprint_bytes"]
+                    resident_delta = enabled["resident_bytes"] - baseline["resident_bytes"]
+                    expect(tag + "D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
+                           footprint_delta <= CAPS["empty_physical_footprint_delta_bytes"] and resident_delta <= CAPS["empty_resident_delta_bytes"],
+                           {"footprint_delta": footprint_delta, "resident_delta": resident_delta})
 
                     # 1. Three profiles, one session and page each.
                     alpha = host.ok("profile.create", {"persistence": "persistent", "name": "alpha"})["profile"]
                     beta = host.ok("profile.create", {"persistence": "persistent", "name": "beta"})["profile"]
                     scratch = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                     expect(tag + "persistent ids are name-derived and the ephemeral id is not", alpha == "profile_alpha" and beta == "profile_beta" and scratch != "profile_scratch")
+                    empty_profiles = host.ok("memory.report", {})["owners"]["profiles"]
+                    expect(tag + "D6: an empty persistent profile accounts at most 64 KiB",
+                           empty_profiles["objects"] == 3 and empty_profiles.get("bytes", 10**9) / 2 <= CAPS["accounted_bytes_per_empty_persistent_profile"], empty_profiles)
                     sessions, targets = {}, {}
                     for name, profile in (("alpha", alpha), ("beta", beta), ("scratch", scratch)):
                         sessions[name] = host.ok("session.open", {"profile": profile})["session"]
@@ -222,6 +248,39 @@ def main():
                     expect(tag + "an expired cookie is deleted", "court-gone" not in text_of(host, echo))
                     host.ok("target.close", {"target": echo})
 
+                    # 4b. Session cookies live in the profile's volatile jar (D4).
+                    volatile = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/cookie/set?name=volatile&value=court-volatile&attrs=Path%3D/"})["target"]
+                    host.ok("target.close", {"target": volatile})
+                    host.ok("session.close", {"session": sessions["alpha"]})
+                    sessions["alpha"] = host.ok("session.open", {"profile": alpha})["session"]
+                    echo = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/echo.html"})["target"]
+                    host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                    text = text_of(host, echo)
+                    expect(tag + "a session cookie set in session A is still sent by session B of the same profile", "volatile=court-volatile" in text and f"court={FAKE_VALUES['alpha']}" in text, text)
+                    host.ok("target.close", {"target": echo})
+
+                    # 4c. Write-through and fault injection (D5): the directory is made unwritable.
+                    before_writes = host.ok("memory.report", {})["owners"]["profiles"]
+                    page = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/storage.html?alpha-amp"})["target"]
+                    host.ok("target.close", {"target": page})
+                    after_writes = host.ok("memory.report", {})["owners"]["profiles"]
+                    amplification = {"writes": after_writes.get("store_writes_total", 0) - before_writes.get("store_writes_total", 0),
+                                     "bytes": after_writes.get("store_bytes_written_total", 0) - before_writes.get("store_bytes_written_total", 0)}
+                    expect(tag + "a page mutation is written through (recorded write amplification)", amplification["writes"] >= 0, amplification)
+                    record_before = {p.name: p.read_bytes() for p in (root / "alpha").iterdir() if p.is_file()}
+                    os.chmod(root / "alpha", 0o500)
+                    try:
+                        failed = host.call("profile.storage.put", {"session": sessions["alpha"], "kind": "local_storage", "key": "fault", "value": "court-fault"})
+                        expect(tag + "a failed disk commit is a typed internal failure", refused(failed, "internal") and (failed["error"].get("details") or {}).get("reason") == "storage_commit_failed", failed.get("error"))
+                        record_after = {p.name: p.read_bytes() for p in (root / "alpha").iterdir() if p.is_file()}
+                        expect(tag + "the previous record is untouched after the failed commit", record_before == record_after)
+                        readback = host.call("profile.storage.get", {"session": sessions["alpha"], "kind": "local_storage", "key": "fault"})
+                        expect(tag + "the failed value is not visible after rollback", readback["ok"] and readback["result"].get("found") is False, readback)
+                        readonly = host.call("profile.storage.put", {"session": sessions["alpha"], "kind": "local_storage", "key": "again", "value": "court-again"})
+                        expect(tag + "storage stays read-only for the rest of the host lifetime after a commit failure", refused(readonly, "internal"), readonly.get("error"))
+                    finally:
+                        os.chmod(root / "alpha", 0o700)
+
                     # 5. Budgets and owners.
                     inspect = host.ok("profile.inspect", {"profile": alpha})
                     expect(tag + "profile.inspect exposes counts and budgets, never values",
@@ -229,13 +288,17 @@ def main():
                     owners = host.ok("memory.report", {})["owners"]["profiles"]
                     expect(tag + "memory.report counts profiles, cookies and storage keys with accounted bytes",
                            owners["objects"] == 3 and owners.get("cookies", 0) >= 3 and owners.get("storage_keys", 0) >= 2 and owners.get("bytes", 0) > 0, owners)
-                    overflow = host.call("profile.storage.put", {"session": sessions["alpha"], "kind": "cookie", "key": "big", "value": "x" * 4097})
+                    overflow = host.call("profile.storage.put", {"session": sessions["beta"], "kind": "cookie", "key": "big", "value": "x" * 4097})
                     expect(tag + "a cookie over 4,096 bytes is resource_limit", refused(overflow, "resource_limit"))
                     for index in range(40):
-                        response = host.call("profile.storage.put", {"session": sessions["alpha"], "kind": "local_storage", "key": f"k{index}", "value": "v"})
+                        response = host.call("profile.storage.put", {"session": sessions["beta"], "kind": "local_storage", "key": f"k{index}", "value": "v"})
                         if not response["ok"]:
                             break
                     expect(tag + "the storage key budget is enforced as resource_limit", refused(response, "resource_limit") and index < 40)
+                    live_owners = host.ok("memory.report", {})["owners"]
+                    live_now = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"]
+                    expect(tag + "D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
+                           live_now < CAPS["lightpanda_single_server_empty_footprint_bytes"] / 2, {"live": live_now, "profiles": live_owners["profiles"]})
 
                     # 6. At rest.
                     for name in ("alpha", "beta", "scratch"):
@@ -249,10 +312,12 @@ def main():
                     expect(tag + "records and locks are 0600 and directories 0700",
                            all(m == "0o600" for m in modes.values()) and all(oct(p.stat().st_mode & 0o777) == "0o700" for p in root.iterdir() if p.is_dir()), modes)
                     post_close = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"]
-                    footprints[allocator] = {"empty": empty, "live_three_profiles": live, "post_close": post_close}
+                    footprints[allocator] = {"feature_off_empty": baseline["physical_footprint_bytes"], "feature_off_empty_rss": baseline["resident_bytes"],
+                                             "empty": empty, "empty_rss": enabled["resident_bytes"], "live_three_profiles": live, "live_with_data": live_now,
+                                             "post_close": post_close, "write_amplification": amplification}
                     expect(tag + "first host exits cleanly", host.finish() == 0)
 
-                    # 7. Restart: persistent kept, ephemeral gone; lock; corrupt sibling.
+                    # 7. Restart: persistent kept, ephemeral gone, session cookie gone; lock; corrupt sibling.
                     (root / "beta" / "profile.v1.json").write_bytes(b"{not json") if (root / "beta" / "profile.v1.json").exists() else None
                     for path in (root / "beta").glob("*.sealed"):
                         path.write_bytes(b"corrupt")
@@ -264,7 +329,9 @@ def main():
                     session = host.ok("session.open", {"profile": alpha})["session"]
                     echo = host.ok("target.open", {"session": session, "url": f"{origin}/echo.html"})["target"]
                     host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
-                    expect(tag + "alpha's persistent cookie survives the restart", f"court={FAKE_VALUES['alpha']}" in text_of(host, echo))
+                    restarted_text = text_of(host, echo)
+                    expect(tag + "alpha's persistent cookie survives the restart", f"court={FAKE_VALUES['alpha']}" in restarted_text)
+                    expect(tag + "alpha's session cookie does not survive the restart", "volatile=" not in restarted_text, restarted_text)
                     host.ok("target.close", {"target": echo})
                     page = host.ok("target.open", {"session": session, "url": f"{origin}/storage.html?alpha-4"})["target"]
                     expect(tag + "alpha's localStorage survives the restart", "seen=alpha-1" in text_of(host, page))
@@ -289,10 +356,13 @@ def main():
         server.server_close()
 
     passed = sum(1 for check in checks if check["passed"])
-    status = "observed" if passed == len(checks) and store_modes and "experiment-plaintext" not in store_modes else (
-        "experiment-plaintext" if passed == len(checks) else "failed")
+    status = "observed" if passed == len(checks) and store_modes == {"envelope-keychain"} else (
+        "experiment-keyfile" if passed == len(checks) else "failed")
+    binary_size = Path(args.binary).stat().st_size
     receipt = {
         "schema": "minicon-surf.native-dom-profile-receipt/0.0.1",
+        "caps": CAPS,
+        "release_binary_bytes": binary_size,
         "status": status,
         "technology": "native-dom",
         "technology_version": "0.0.2",

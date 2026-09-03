@@ -1,9 +1,9 @@
 # Native engine-backed profiles: design, threat model and frozen court (P6)
 
-Status: `design` — nothing below is implemented. The at-rest decision in
-section 4 is open and must be settled before the first line of storage code.
-This document and [`profile-court.py`](profile-court.py) are the pre-registered
-target; the court fails today by construction.
+Status: `decided` — the at-rest and semantics decisions D1–D6 below were
+settled before the first line of storage code; this document and
+[`profile-court.py`](profile-court.py) are the pre-registered target, frozen
+in a commit before the implementation commit.
 
 ## 1. Slice
 
@@ -56,7 +56,7 @@ the court uses fake ones), profile policy, profile identity.
 | a page or script in one profile reading another profile's data | jars and storage are looked up by the session's profile; no operation takes a profile id from page content | cross-profile cookie and storage negatives |
 | a page in one origin reading another origin's storage | storage keyed by origin; `document.cookie` filtered by domain, path and HttpOnly | origin negatives |
 | another local user reading the files | directories `0700`, records and locks `0600`, permissions validated on load | permission check, over-permissive record → unavailable |
-| disk theft or backup leak | **open decision (section 4)**: plaintext is not acceptable for a product conclusion | receipt records the at-rest mode; envelope mode: the fake cookie value must not appear in any file under the root |
+| disk theft or backup leak | envelope encryption with the master key in the macOS keychain (D1); no plaintext or key-file fallback | receipt records the at-rest mode; the fake cookie value must not appear in any file under the root |
 | two hosts writing one profile | advisory `writer.lock` (flock); second host `profile_locked`; released when the last session closes | concurrent-host negative |
 | crash mid-write | write to a temporary file, fsync, rename; a partial file is never the record | corrupt sibling court |
 | a corrupt or incompatible record | strict parse, format version, bounds, name match; unavailable, siblings healthy | corrupt sibling court |
@@ -64,7 +64,7 @@ the court uses fake ones), profile policy, profile identity.
 | memory | profiles are owners in `memory.report` with accounted bytes; footprint measured empty, live and post-close under default and arena | footprint rows |
 | real browser profiles | never read, never migrated, never referenced; the court uses fake `court=alpha`-style values only | by construction |
 
-## 4. At-rest strategies (decision required)
+## 4. At-rest strategies (decided: D1)
 
 | Option | What is on disk | Protects against | Cost | Verdict |
 |---|---|---|---|---|
@@ -75,12 +75,45 @@ the court uses fake ones), profile policy, profile identity.
 | B3. user passphrase → argon2 | nothing but ciphertext | strongest | `argon2` is a release candidate offline; interactive, not Agent-native | rejected for this slice |
 | C. every cookie as its own keychain item | items | keychain | churn, prompts, size limits, no portability | rejected |
 
-Proposal to settle before implementation: **B with B1 on macOS; without a
-master-key source, persistent profile creation fails closed with
-`unsupported_capability` while ephemeral profiles keep working; A only
-behind the experiment knob, and every receipt records which mode ran.**
-P6 does not close under A, and does not close under B either until a second
-platform key source and broader behaviour exist.
+### Decision D1 (recorded): B with B1 on macOS, the first real cell
+
+- Data key: a random 32-byte DEK per profile from the system entropy source
+  (`getrandom`); the record is XChaCha20-Poly1305 over the JSON with a fresh
+  24-byte nonce per write; the DEK itself is sealed by the master key with
+  XChaCha20-Poly1305 and its own fresh nonce.
+- AAD binds both seals to `minicon-surf.profile-store/1` (store format),
+  `minicon-surf.control/0.0.1` (protocol) and the canonical profile identity
+  `profile_<name>` plus the record kind (`dek` or `record`), so a record or
+  a sealed key moved between profiles, formats or versions fails to open.
+- Master key: 32 random bytes that live only in the macOS keychain as a
+  generic password item: service `minicon-surf.native-dom.profile-master-key`,
+  account = the SHA-256 (first 32 hex digits) of the canonical `--profile-root`
+  path, so each profile root has its own key; label
+  `MiniCon Surf native-dom profile master key`; not cloud-synchronized
+  (`kSecAttrSynchronizable` unset); accessibility is the login keychain's
+  default (`kSecAttrAccessibleWhenUnlocked` semantics for legacy items); no
+  access group (the binary is unsigned, so the data-protection keychain and
+  access groups are unavailable). The item's ACL is bound to the creating
+  application identity as the keychain sees it; a differently built or
+  signed binary that cannot read it fails closed, it never prompts.
+- No UI: `SecKeychainSetUserInteractionAllowed(false)` is set for the whole
+  host lifetime, so any keychain operation that would prompt returns
+  `errSecInteractionNotAllowed` and the host answers
+  `unsupported_capability` (`keychain unavailable`). Keychain locked, denied,
+  missing or interactive → the same typed refusal; persistent
+  `profile.create` and `session.open` fail closed and ephemeral profiles keep
+  working. There is no plaintext or key-file fallback of any kind.
+- Key lifetime: the master key is fetched for one seal or open and zeroized
+  immediately; the DEK lives in memory only while its profile is loaded and
+  is zeroized when the profile is dropped or the host exits.
+- Failure never overwrites: authentication failure, a corrupt record or a
+  failed write leaves the existing files untouched; the profile is listed
+  unavailable or the write reports a typed failure (section 7b).
+- B2 (`MINICON_SURF_PROFILE_STORE=envelope-keyfile-experiment`) exists only
+  as an explicitly labelled experiment knob for tests without a keychain; its
+  receipts carry the mode `envelope-keyfile-experiment`, are never marked
+  `observed`, and are never combined with B1 numbers. A second platform key
+  source stays a P6 gap.
 
 ## 5. Cookie semantics: supported and loss matrix
 
@@ -90,19 +123,29 @@ network path can honour them, and fails closed everywhere else.
 | Attribute or rule | Supported | Loss (fail closed) |
 |---|---|---|
 | `name=value`, size ≤ 4,096 bytes per cookie | yes | larger cookies rejected |
-| `Domain` | only when it equals the request host (case-insensitive) | any other domain, including parent domains, is rejected: no public suffix list exists, so suffix matching cannot be made safe |
+| `Domain` | only when it equals the request host (case-insensitive) (D2) | any other domain, including parent domains and anything that would need a public suffix list, is rejected on this cell |
 | `Path` | default-path rule and path-match | none |
-| `Secure` | never accepted: every origin here is `http` | Secure cookies are rejected on receipt |
+| `Secure` | not on this cell: the court's transport is `http` only (D3) | Secure cookies are rejected on receipt here; this is a statement about this transport and cell, not a claim that Secure is unsupported by the design |
 | `HttpOnly` | stored, sent, hidden from `document.cookie` | none |
 | `SameSite=Strict` / `Lax` | sent on same-site requests only; all requests here are to the allowlisted origin(s), and a request whose origin differs from the document's is cross-site and does not carry the cookie | none |
-| `SameSite=None` | requires `Secure`, which is unavailable | rejected |
+| `SameSite=None` | requires `Secure`, unavailable on this `http` cell (D3) | rejected here |
 | `Expires` / `Max-Age` | `Max-Age` wins; expired cookies deleted on receipt and on send | none |
-| session cookies (no expiry) | live until the owning `session.close` | not kept across restart |
+| session cookies (no expiry) | live in the profile's volatile jar (D4): shared by every session of the profile, surviving a single `session.close`, discarded when the host's profile writer lifetime ends | never written to the persistent record; gone after a restart |
 | `__Host-` / `__Secure-` prefixes | not supported | rejected |
 | `Partitioned` | not supported | rejected |
 | cookies per host / per profile | 32 / 256 | overflow is `resource_limit`, nothing evicted silently |
 | `document.cookie` read | non-HttpOnly cookies matching the document origin | none |
 | `document.cookie` write | same parser and rules as `Set-Cookie` | none |
+
+### Jar layout (D4)
+
+Each profile holds two jars with one matching rule: the persistent jar
+(cookies with `Expires`/`Max-Age`, written through to the record) and the
+volatile jar (session cookies, memory only). Both are consulted for every
+request of every session of the profile; only the persistent jar reaches
+disk. Ephemeral profiles have both jars in memory. The court sets a session
+cookie in session A, closes A, opens session B on the same profile and sees
+it sent; after a restart it is not sent while the persistent cookie is.
 
 ## 6. localStorage semantics
 
@@ -112,6 +155,39 @@ values, 64 KiB accounted bytes per profile; `getItem`, `setItem`,
 the host reports `resource_limit`; persistent profiles write through on every
 mutation (atomic replace), ephemeral ones stay in memory; fixture targets
 have the opaque origin and never persist.
+
+## 7a. Write ordering (D5)
+
+Order for a committed mutation of a persistent profile: the realm mirror
+(what the page sees synchronously) → the host's in-memory profile → the
+disk record (temporary file, `fsync`, atomic rename over the previous
+record, directory `fsync`) → the operation result. Because `localStorage`
+and `document.cookie` are synchronous inside the realm, the page observes
+the mirror before the host can commit; therefore the operation that ran the
+script (`target.open`, `target.act`, the fetch turn) is what reports the
+commit: on a disk failure the host rolls the realm mirror and its own memory
+back to the committed state, marks the profile's storage read-only for the
+rest of the host lifetime so later `setItem`/`document.cookie` writes throw
+in the realm, keeps the previous record untouched, and answers the operation
+with `internal` (`storage_commit_failed`). Write amplification per
+`localStorage` mutation is recorded by the court (writes per mutation, bytes
+per write); a bounded batch may be designed later without weakening these
+crash semantics.
+
+## 7b. Pre-registered memory and cost caps (D6)
+
+Baseline: the same binary with the store feature off (no `--profile-root`;
+the keychain is never touched). With the keychain-backed store enabled:
+
+| Cap | Limit |
+|---|---|
+| empty physical footprint delta | ≤ 524,288 bytes |
+| empty RSS delta | ≤ 1,048,576 bytes |
+| host-accounted live bytes per empty persistent profile | ≤ 65,536 bytes |
+| two profiles with the court's fixture data | the accounted owner bytes equal the sum of what was stored, and live footprint stays well below the same-machine Lightpanda single-server empty footprint (8,356,392 bytes on the recorded court) |
+| release binary size and dependency tree | recorded as deltas against the previous build; not a memory gate |
+
+Exceeding a cap narrows or optimizes the slice; the cap does not move.
 
 ## 7. Budgets and owners
 
@@ -143,9 +219,10 @@ footprint at empty, live and post-close under the default allocator and the
 arena. Its receipt names the at-rest mode and cannot pass in plaintext mode
 with the status `observed`; it passes as `experiment-plaintext`.
 
-## 9. Dependencies and memory cost, to be recorded
+## 9. Dependencies
 
-Any crate added for section 4 is recorded with version, SHA-256 from the
-registry cache, and the empty and live footprint delta it costs the host
-under default and arena; the arena's advantage must not be spent on profile
-bookkeeping (the court compares its footprints with the frame/realm court's).
+Every crate added for D1 is recorded in the lab README with version,
+license, the registry checksum and who owns its security updates; the court
+records the empty and live footprint deltas of section 7b under the default
+allocator and the arena, and the arena's advantage must not be spent on
+profile bookkeeping.
