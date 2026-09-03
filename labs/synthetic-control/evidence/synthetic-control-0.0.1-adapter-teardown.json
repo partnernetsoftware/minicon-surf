@@ -133,7 +133,7 @@
   ],
   "checks_passed": 24,
   "checks_total": 24,
-  "host_sha256": "87ca6f359615f15978bc829d751088a8edff868c82e616c0db93c54e4d555eb0",
+  "host_sha256": "ad96d6e37a65724fe418577961c4639bac623f3c0c494460183826b03eaf918a",
   "limitations": [
     "the stored-strong-reference failure path cannot be reached through CDP; it is covered by a unit test that keeps an upgraded reference and observes owner_reference_extended",
     "logical bytes are the host's accounted lower bound, not process memory",

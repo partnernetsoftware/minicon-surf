@@ -60,6 +60,9 @@ python3 labs/synthetic-control/capability-court.py \
 python3 labs/synthetic-control/adapter-teardown-court.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
   --receipt labs/synthetic-control/evidence/synthetic-control-0.0.1-adapter-teardown.json
+python3 labs/synthetic-control/frame-realm-court.py \
+  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
+  --receipt labs/synthetic-control/evidence/synthetic-control-0.0.1-frame-realm.json
 labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
 python3 labs/synthetic-control/staged-capacity-memory-macos-arm64.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
@@ -271,6 +274,70 @@ adapter exists.
 
 Verdict: `keep` as the [X9] adapter reference and teardown-order shape on
 the synthetic court. No gate moves: G1, G3, P6 and G6 stay open.
+
+### Frame and realm court (D4 design-first increment)
+
+Hypothesis: control 0.0.1 can name frames and realms with engine-neutral
+identity and lifetime rules that keep four concepts apart (target revision,
+frame identity, document generation, realm identity), enumerate them per
+target within a bound, refuse foreign, ended and unknown references alike,
+survive a same-frame navigation with the frame id but not the realm, and be
+observed identically through native stdio and the CDP edge, without a new
+operation, without letting CDP ids become authority, and without making a
+frame or realm a capability owner.
+
+Scope: the rules live in `protocol/README.md` ("Frames and realms") and the
+loss matrix in `protocol/cdp-mapping-0.0.1.json`; `target.snapshot` gains
+optional `frame`/`realm` arguments and its result names the observed frame,
+realm and generation; `target.inspect` lists bounded `frames[]`
+(main first, `parent`, `generation`, `realm`) and `realms[]`; the synthetic
+target has a main frame with heading, button and link plus one bounded
+child frame ("Embedded court"), eight frames at most; a click on the link is
+a same-frame navigation that advances the target revision, increments the
+main frame's generation, mints a new main realm, ends the child frame with
+its realm and leaves every earlier node reference stale; `memory.report`
+counts frames and realms as owners; the CDP edge answers `Page.getFrameTree`
+with adapter-scoped `cdp_frame_N` ids that are one-to-one with native frames
+while both live and never the native ids. Realm identity, navigation events,
+nested frames, isolated worlds and document generation are recorded losses
+with no projection. No `target.navigate` exists; hosts that do not implement
+the optional arguments fail closed with `invalid_request`.
+
+Reproduction: `frame-realm-court.py` above (native requests validated by
+`protocol/check_contract.py`, which now carries a frame-scoped snapshot and a
+retired-realm refusal among its 12 examples and 15 negatives).
+
+Evidence (`synthetic-control-0.0.1-frame-realm` receipt, 28 of 28): the
+enumeration lists the main frame first with one bounded child, each frame
+with its own generation and realm while the target carries the revision;
+ids are disjoint across targets; a snapshot without a frame observes the
+main frame and names frame, realm and generation, a child-frame snapshot
+observes the child document; another target's frame and an unknown frame
+are the same `not_found` with the same message, and a realm that is not the
+frame's live realm is `not_found` with realm scope; a target-owned capability
+allows a frame-narrowed snapshot, a frame or realm named as owner is
+`kind_is_not_an_owner`, and another target's capability is
+`owner_not_on_chain`; the CDP frame tree has the native shape with
+adapter-scoped ids and another target's CDP session sees different ids; the
+link click reports the surviving frame, generation 2, the retired realm, the
+ended child and revision 1; afterwards the old node reference is
+`stale_revision`, the retired realm `not_found` with a typed reason, the
+ended child `not_found` with frame scope, the new document observable
+through the surviving frame, CDP keeps the main id and drops the child, a
+CDP handle from before fails typed and `DOM.getDocument` re-observes the new
+document; a second navigation mints a third realm on the same frame; owners
+count three frames and realms across two targets and zero after both close.
+Two unit tests cover the same lifetimes and the owner rule in-process; the
+capability (33/33), adapter (24/24), G2 and G4 courts pass unchanged.
+
+Gaps: synthetic only, one child, one world, no nested frames, no navigation
+from CDP, no realm projection; engine hosts (Servo, Lightpanda, native)
+expose no frames yet and fail closed on the optional arguments; no external
+client was run.
+
+Verdict: `keep` as the D4 frame/realm rule set and its first court. It moves
+no gate: G1, G3, P6 and G6 stay open, and D4 stays open until an engine host
+and a named external client observe the same frames.
 
 All memory receipts remain `incomplete`. The lifecycle modes are separate
 fresh processes, while the staged companion supplies same-process capacity and

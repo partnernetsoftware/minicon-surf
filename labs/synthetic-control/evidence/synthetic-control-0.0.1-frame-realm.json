@@ -1,0 +1,159 @@
+{
+  "checks": [
+    {
+      "check": "enumeration lists the main frame first and one bounded child",
+      "detail": [
+        {
+          "frame": "frame_1",
+          "generation": 1,
+          "parent": null,
+          "realm": "realm_1"
+        },
+        {
+          "frame": "frame_2",
+          "generation": 1,
+          "parent": "frame_1",
+          "realm": "realm_2"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "check": "every frame carries its own generation and realm; the target carries the revision",
+      "passed": true
+    },
+    {
+      "check": "realms enumerate with their frame and world",
+      "passed": true
+    },
+    {
+      "check": "frame and realm ids are disjoint across targets",
+      "passed": true
+    },
+    {
+      "check": "a snapshot without a frame observes the main frame and names frame, realm and generation",
+      "passed": true
+    },
+    {
+      "check": "a child-frame snapshot observes the child document",
+      "passed": true
+    },
+    {
+      "check": "another target's frame and an unknown frame are the same not_found",
+      "passed": true
+    },
+    {
+      "check": "a realm that is not the frame's live realm is not_found with realm scope",
+      "passed": true
+    },
+    {
+      "check": "a target-owned capability allows a frame-narrowed snapshot",
+      "passed": true
+    },
+    {
+      "check": "a frame or realm named as owner is refused",
+      "passed": true
+    },
+    {
+      "check": "another target's capability cannot reach this target's frame",
+      "passed": true
+    },
+    {
+      "check": "CDP frame tree has the same shape as the native enumeration",
+      "passed": true
+    },
+    {
+      "check": "CDP frame ids are adapter-scoped, never the native ids",
+      "passed": true
+    },
+    {
+      "check": "another target's CDP session sees different frame ids",
+      "passed": true
+    },
+    {
+      "check": "a link click is a same-frame navigation",
+      "detail": {
+        "applied": true,
+        "ended_frames": [
+          "frame_2"
+        ],
+        "frame": "frame_1",
+        "generation": 2,
+        "kind": "action",
+        "navigated": true,
+        "realm": "realm_5",
+        "retired_realm": "realm_1",
+        "revision": 1,
+        "target": "target_1"
+      },
+      "passed": true
+    },
+    {
+      "check": "the frame id survives, the realm is replaced, the child frame ended, the revision advanced",
+      "passed": true
+    },
+    {
+      "check": "a node reference from before the navigation is stale_revision",
+      "passed": true
+    },
+    {
+      "check": "the retired realm is not_found with realm scope and a typed reason",
+      "passed": true
+    },
+    {
+      "check": "the ended child frame is not_found with frame scope",
+      "passed": true
+    },
+    {
+      "check": "the new document is observable through the surviving frame",
+      "passed": true
+    },
+    {
+      "check": "CDP keeps the main frame id and drops the ended child",
+      "passed": true
+    },
+    {
+      "check": "a CDP handle from before the navigation fails typed",
+      "passed": true
+    },
+    {
+      "check": "CDP re-observes the new document",
+      "passed": true
+    },
+    {
+      "check": "a second navigation mints a third realm on the same frame",
+      "passed": true
+    },
+    {
+      "check": "frame and realm owners count the live frames",
+      "passed": true
+    },
+    {
+      "check": "closing the targets leaves zero frames and realms",
+      "passed": true
+    },
+    {
+      "check": "a closed target's frame is not_found at the target",
+      "passed": true
+    },
+    {
+      "check": "host exits cleanly",
+      "passed": true
+    }
+  ],
+  "checks_passed": 28,
+  "checks_total": 28,
+  "host_sha256": "ad96d6e37a65724fe418577961c4639bac623f3c0c494460183826b03eaf918a",
+  "losses": [
+    "realm identity is not projected to CDP (no Runtime.enable or execution-context events); a CDP client sees realm replacement only as stale DOM handles",
+    "no navigation events are projected; navigation is a native link click, not Page.navigate",
+    "one bounded child frame, one world; no nested frames",
+    "document generation has no CDP equivalent"
+  ],
+  "passed": true,
+  "schema": "minicon-surf.synthetic-frame-realm-receipt/0.0.1",
+  "semantic": "native stdio and the loopback CDP edge observe one target's frames and realms before and after a same-frame navigation; native requests validated by protocol/check_contract.py",
+  "status": "observed",
+  "technology": "synthetic-control",
+  "technology_version": "0.0.1"
+}

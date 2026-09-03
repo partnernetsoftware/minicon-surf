@@ -211,6 +211,22 @@ struct ConnectionState {
     next_native_request: u64,
     next_session: u64,
     sessions: BTreeMap<String, SessionState>,
+    /// Adapter-scoped `Page.FrameId`s: one per native frame id seen on this
+    /// connection, stable while the connection lives, never the native id.
+    frame_ids: BTreeMap<String, String>,
+    next_frame: u64,
+}
+
+impl ConnectionState {
+    fn frame_id(&mut self, native: &str) -> String {
+        if let Some(id) = self.frame_ids.get(native) {
+            return id.clone();
+        }
+        self.next_frame += 1;
+        let id = format!("cdp_frame_{}", self.next_frame);
+        self.frame_ids.insert(native.to_owned(), id.clone());
+        id
+    }
 }
 
 struct SessionState {
@@ -337,6 +353,7 @@ fn dispatch(
         "Target.getTargets" => target_get_targets(state, connection),
         "Target.attachToTarget" => target_attach(&params, state, connection),
         "Target.detachFromTarget" => target_detach(&params, state, connection),
+        "Page.getFrameTree" => page_get_frame_tree(session_id, state, connection),
         "DOM.getDocument" => dom_get_document(session_id, state, connection),
         "DOM.querySelector" => dom_query_selector(session_id, &params, state, connection),
         "DOM.resolveNode" => dom_resolve_node(session_id, &params, connection),
@@ -481,6 +498,43 @@ fn native_as_adapter(
     response
         .into_outcome()
         .map_err(|_| (-32000, "native control operation failed"))
+}
+
+/// `Page.getFrameTree`: the native enumeration projected through
+/// adapter-scoped ids. Document generation and realms have no projection.
+fn page_get_frame_tree(
+    session_id: Option<&str>,
+    state: &Arc<Mutex<ControlState>>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
+    let target = live_target(session_id, connection)?;
+    let inspect = native_as_adapter(
+        state,
+        connection,
+        &target,
+        "Page.getFrameTree",
+        "target.inspect",
+        json!({"target":target}),
+    )?;
+    let frames = inspect["frames"].as_array().cloned().unwrap_or_default();
+    let describe = |connection: &mut ConnectionState, frame: &Value| -> Value {
+        let id = connection.frame_id(frame["frame"].as_str().unwrap_or(""));
+        let mut description = json!({"id":id,"loaderId":"","url":"about:synthetic","securityOrigin":"","mimeType":"text/html"});
+        if let Some(parent) = frame["parent"].as_str() {
+            description["parentId"] = json!(connection.frame_id(parent));
+        }
+        description
+    };
+    let Some(main) = frames.first() else {
+        return Err((-32000, "target has no frames"));
+    };
+    let main_description = describe(connection, main);
+    let children = frames
+        .iter()
+        .skip(1)
+        .map(|frame| json!({"frame":describe(connection, frame),"childFrames":[]}))
+        .collect::<Vec<_>>();
+    Ok(json!({"frameTree":{"frame":main_description,"childFrames":children}}))
 }
 
 fn dom_get_document(

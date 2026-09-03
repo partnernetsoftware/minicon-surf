@@ -119,6 +119,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── first candidate domains: Target · Page · Runtime · DOM · Network · Input
 │   ├── domain/method/version matrix names exact supported behavior
 │   ├── [~] tool journeys qualify selected Playwright/Puppeteer clients: puppeteer-core 24.15 connects and lists the Servo target; page handles need frame/realm/network mapping
+│   ├── [~] frame/realm rules: target revision · frame identity · document generation · realm identity kept distinct; bounded per-target enumeration; foreign, ended and unknown ids refused alike; frames and realms never owners; synthetic court 28/28 with Page.getFrameTree adapter-scoped ids; realm projection, navigation events and nesting are recorded losses
 │   └── [-] no claim that Chromium-specific behavior exists when it does not
 ├── [H5] dynamic presentation surface
 │   ├── browser session and page lifetime do not belong to the GUI
@@ -201,7 +202,7 @@ flowchart LR
 
     subgraph ENTRY["Control doors"]
         CLI["CLI door [A3]<br/>bounded JSON · waits · actions"]
-        CDP["CDP door [D4]<br/>discovery · WebSocket<br/>qualified domains"]
+        CDP["CDP door [D4]<br/>discovery · WebSocket<br/>qualified domains · adapter-scoped frame ids"]
     end
 
     subgraph ID["Profile Cabinet [P6]"]
@@ -929,6 +930,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   script stays an allocator risk on record, not a browser cost. The default allocator is unchanged and the arena stays
   opt-in; nothing here is cross-platform and leak absence is not claimed.
   G1, G3, P6 and G6 stay open.
+- [~] D4 now has its frame/realm rules, designed before any engine carries
+  them. Control 0.0.1 keeps four concepts apart: the target revision
+  advances on any observable change, a frame id is minted with its
+  browsing-context node and survives same-frame navigation (the main frame
+  lives with its target, a child ends when removed or when its parent's
+  document is replaced), a document generation counts replacements per
+  frame, and a realm id names one (frame, generation, world) and is retired
+  with its document, never reused. Enumeration is bounded and only through
+  the owning target (`target.inspect` `frames[]`/`realms[]`, main first);
+  `target.snapshot` takes optional `frame` and `realm` and names what it
+  observed; a foreign, ended or unknown id is the same `not_found`; frames
+  and realms are never capability owners. No operation was added:
+  navigation on the synthetic host is a link click, and hosts without the
+  optional arguments fail closed. The synthetic court passes 28 of 28 with
+  native stdio and the CDP edge observing the same frames before and after a
+  navigation through adapter-scoped `Page.FrameId`s that are never the native
+  ids; realm identity, navigation events, nested frames, isolated worlds and
+  document generation are recorded losses in the CDP mapping. D4 stays open
+  until an engine host exposes frames and a named external client observes
+  them; G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -985,7 +1006,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    and returned by an opt-in arena per realm without the zone's live cost on
    one platform, and holds through a 128-cycle soak under frozen criteria.
    Next: a second platform behind the arena's region boundary and interior
-   (not only tail) trimming, then D4 frame/realm mapping and bounded
+   (not only tail) trimming, then carry the D4 frame/realm rules (synthetic
+   28/28) into an engine host with a named external client, and bounded
    engine-backed profile work. Rerun Servo only when a driver-free rendering
    context exists. G1 closes only when one route is both materially below the
    baselines and low-slope on the shared court.

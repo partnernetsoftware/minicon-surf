@@ -34,6 +34,7 @@ pub const MAX_SESSIONS: usize = 16;
 pub const MAX_TARGETS: usize = 32;
 pub const MAX_SURFACES: usize = 8;
 pub const MAX_NODES_PER_TARGET: usize = 128;
+pub const MAX_FRAMES_PER_TARGET: usize = 8;
 pub const SYNTHETIC_PRESENTATION_BYTES: usize = 65_536;
 pub const KNOWN_OPERATIONS: &[&str] = &[
     "profile.create",
@@ -372,14 +373,25 @@ struct Session {
     profile_id: String,
 }
 
+/// One browsing-context node of a target. The frame id survives same-frame
+/// navigation; the document generation and the realm do not.
+#[derive(Debug, Clone)]
+struct Frame {
+    id: String,
+    parent: Option<String>,
+    generation: u64,
+    realm_id: String,
+    nodes: Vec<Node>,
+}
+
 #[derive(Debug, Clone)]
 struct Target {
     id: String,
     session_id: String,
-    realm_id: String,
     revision: u64,
     scroll_y: u64,
-    nodes: Vec<Node>,
+    /// Main frame first, then bounded child frames in creation order.
+    frames: Vec<Frame>,
     /// The only strong reference to this target's identity; adapters hold
     /// `Weak` copies and the teardown checks that none was upgraded and kept.
     anchor: std::sync::Arc<TargetAnchor>,
@@ -416,6 +428,8 @@ pub struct ControlState {
     audit: VecDeque<AuditRecord>,
     adapters: BTreeMap<String, adapter::Adapter>,
     next_adapter: u64,
+    next_frame: u64,
+    next_realm: u64,
     targets_closed_total: usize,
     adapters_detached_total: usize,
     owner_references_extended_total: usize,
@@ -956,7 +970,7 @@ impl ControlState {
         }
         self.next_target += 1;
         let id = format!("target_{}", self.next_target);
-        let nodes = vec![
+        let main_nodes = vec![
             Node {
                 id: "node_heading_1".into(),
                 role: "heading".into(),
@@ -967,26 +981,90 @@ impl ControlState {
                 role: "button".into(),
                 name: "Continue".into(),
             },
+            Node {
+                id: "node_link_1".into(),
+                role: "link".into(),
+                name: "Example result".into(),
+            },
         ];
-        debug_assert!(nodes.len() <= MAX_NODES_PER_TARGET);
-        let realm_id = format!("realm_{}", self.next_target);
+        let child_nodes = vec![Node {
+            id: "node_embedded_heading_1".into(),
+            role: "heading".into(),
+            name: "Embedded court".into(),
+        }];
+        debug_assert!(main_nodes.len() + child_nodes.len() <= MAX_NODES_PER_TARGET);
+        let main = self.new_frame(None, main_nodes);
+        let child = self.new_frame(Some(main.id.clone()), child_nodes);
+        let anchor_realm = main.realm_id.clone();
         self.targets.insert(
             id.clone(),
             Target {
                 id: id.clone(),
                 session_id: session.to_owned(),
-                realm_id: realm_id.clone(),
                 revision: 0,
                 scroll_y: 0,
-                nodes,
+                frames: vec![main, child],
                 anchor: std::sync::Arc::new(TargetAnchor {
                     target_id: id.clone(),
                     session_id: session.to_owned(),
-                    realm_id,
+                    realm_id: anchor_realm,
                 }),
             },
         );
         Ok(json!({"kind":"target","target":id,"session":session,"revision":0}))
+    }
+
+    /// Mint a frame with its first document and realm. Ids are host-wide
+    /// counters and are never reused within this host generation.
+    fn new_frame(&mut self, parent: Option<String>, nodes: Vec<Node>) -> Frame {
+        self.next_frame += 1;
+        self.next_realm += 1;
+        Frame {
+            id: format!("frame_{}", self.next_frame),
+            parent,
+            generation: 1,
+            realm_id: format!("realm_{}", self.next_realm),
+            nodes,
+        }
+    }
+
+    /// Same-frame navigation of the main frame: the frame id survives, its
+    /// generation advances, its realm is retired and a new one minted, every
+    /// child frame ends with its realm, and the target revision advances.
+    fn navigate_main(&mut self, target_id: &str) -> Result<Value, ControlError> {
+        self.next_realm += 1;
+        let realm_id = format!("realm_{}", self.next_realm);
+        let target = self
+            .targets
+            .get_mut(target_id)
+            .ok_or_else(|| not_found("target", target_id))?;
+        let ended: Vec<String> = target.frames.drain(1..).map(|frame| frame.id).collect();
+        let main = &mut target.frames[0];
+        main.generation += 1;
+        let retired = std::mem::replace(&mut main.realm_id, realm_id.clone());
+        let generation = main.generation;
+        main.nodes = vec![
+            Node {
+                id: format!("node_heading_g{generation}"),
+                role: "heading".into(),
+                name: "Navigated court".into(),
+            },
+            Node {
+                id: format!("node_button_g{generation}"),
+                role: "button".into(),
+                name: "Continue".into(),
+            },
+            Node {
+                id: format!("node_link_g{generation}"),
+                role: "link".into(),
+                name: "Example result".into(),
+            },
+        ];
+        target.revision += 1;
+        Ok(json!({
+            "kind":"action","target":target.id,"revision":target.revision,"applied":true,"navigated":true,
+            "frame":target.frames[0].id,"generation":generation,"realm":realm_id,"retired_realm":retired,"ended_frames":ended,
+        }))
     }
 
     fn target_list(&self, arguments: &Value) -> Result<Value, ControlError> {
@@ -1015,7 +1093,11 @@ impl ControlState {
     }
 
     fn target_snapshot(&self, arguments: &Value) -> Result<Value, ControlError> {
-        let object = exact_object(arguments, &["target", "format", "max_bytes", "max_nodes"])?;
+        let object = allowed_object(
+            arguments,
+            &["target", "format", "max_bytes", "max_nodes"],
+            &["frame", "realm"],
+        )?;
         let target_id = typed_field(object, "target", "target")?;
         if string_field(object, "format")? != "semantic" {
             return Err(invalid("snapshot format differs"));
@@ -1026,7 +1108,29 @@ impl ControlState {
             .targets
             .get(target_id)
             .ok_or_else(|| not_found("target", target_id))?;
-        let nodes = target
+        // A foreign, ended or unknown frame is one and the same refusal.
+        let frame = match object.get("frame") {
+            None => &target.frames[0],
+            Some(_) => {
+                let frame_id = typed_field(object, "frame", "frame")?;
+                target
+                    .frames
+                    .iter()
+                    .find(|frame| frame.id == frame_id)
+                    .ok_or_else(|| {
+                        not_found("frame", frame_id)
+                            .details(json!({"reason":"frame_not_live_in_target"}))
+                    })?
+            }
+        };
+        if object.get("realm").is_some() {
+            let realm_id = typed_field(object, "realm", "realm")?;
+            if realm_id != frame.realm_id {
+                return Err(not_found("realm", realm_id)
+                    .details(json!({"reason":"realm_not_live_in_target","frame":frame.id})));
+            }
+        }
+        let nodes = frame
             .nodes
             .iter()
             .take(max_nodes)
@@ -1042,7 +1146,10 @@ impl ControlState {
             "kind":"semantic_snapshot",
             "target":target.id,
             "revision":target.revision,
-            "truncated":nodes.len() < target.nodes.len(),
+            "frame":frame.id,
+            "realm":frame.realm_id,
+            "generation":frame.generation,
+            "truncated":nodes.len() < frame.nodes.len(),
             "nodes":nodes,
         });
         if serde_json::to_vec(&result).map_or(true, |encoded| encoded.len() > max_bytes) {
@@ -1084,7 +1191,11 @@ impl ControlState {
             .scoped("target", target_id)
             .details(json!({"reference_revision":revision,"current_revision":target.revision})));
         }
-        if !target.nodes.iter().any(|node| node.id == node_id) {
+        if !target
+            .frames
+            .iter()
+            .any(|frame| frame.nodes.iter().any(|node| node.id == node_id))
+        {
             return Err(ControlError::new("not_found", "node does not exist", false)
                 .scoped("target", target_id));
         }
@@ -1109,23 +1220,32 @@ impl ControlState {
             ));
         }
         let node = target
-            .nodes
+            .frames
             .iter_mut()
+            .flat_map(|frame| frame.nodes.iter_mut())
             .find(|node| node.id == node_id)
             .ok_or_else(|| {
                 ControlError::new("not_found", "node does not exist", false)
                     .scoped("target", target_id)
             })?;
-        if node.role != "button" {
-            return Err(ControlError::new(
+        match node.role.as_str() {
+            "button" => {
+                node.name = "Clicked".into();
+                target.revision += 1;
+                Ok(
+                    json!({"kind":"action","target":target.id,"revision":target.revision,"applied":true}),
+                )
+            }
+            "link" => {
+                let target_id = target_id.to_owned();
+                self.navigate_main(&target_id)
+            }
+            _ => Err(ControlError::new(
                 "unsupported_capability",
-                "click requires a button node",
+                "click requires a button or link node",
                 false,
-            ));
+            )),
         }
-        node.name = "Clicked".into();
-        target.revision += 1;
-        Ok(json!({"kind":"action","target":target.id,"revision":target.revision,"applied":true}))
     }
 
     fn surface_show(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -1243,13 +1363,24 @@ impl ControlState {
                 size_of::<Target>()
                     + item.id.capacity()
                     + item.session_id.capacity()
-                    + item.realm_id.capacity()
-                    + item.nodes.capacity() * size_of::<Node>()
                     + item
-                        .nodes
+                        .frames
                         .iter()
-                        .map(|node| {
-                            node.id.capacity() + node.role.capacity() + node.name.capacity()
+                        .map(|frame| {
+                            size_of::<Frame>()
+                                + frame.id.capacity()
+                                + frame.realm_id.capacity()
+                                + frame.parent.as_ref().map_or(0, String::capacity)
+                                + frame.nodes.capacity() * size_of::<Node>()
+                                + frame
+                                    .nodes
+                                    .iter()
+                                    .map(|node| {
+                                        node.id.capacity()
+                                            + node.role.capacity()
+                                            + node.name.capacity()
+                                    })
+                                    .sum::<usize>()
                         })
                         .sum::<usize>()
             })
@@ -1272,6 +1403,8 @@ impl ControlState {
                 "profiles":{"objects":self.profiles.len(),"bytes":profile_bytes,"object_limit":MAX_PROFILES},
                 "sessions":{"objects":self.sessions.len(),"bytes":session_bytes,"object_limit":MAX_SESSIONS},
                 "targets":{"objects":self.targets.len(),"bytes":target_bytes,"object_limit":MAX_TARGETS},
+                "frames":{"objects":self.targets.values().map(|t| t.frames.len()).sum::<usize>(),"object_limit":MAX_TARGETS * MAX_FRAMES_PER_TARGET},
+                "realms":{"objects":self.targets.values().map(|t| t.frames.len()).sum::<usize>(),"worlds_per_frame":1},
                 "surfaces":{"objects":self.surfaces.len(),"bytes":surface_bytes,"object_limit":MAX_SURFACES},
                 "adapters":{"objects":self.adapters.len(),"bytes":adapter_bytes,"object_limit":adapter::MAX_ADAPTERS},
             },
@@ -1321,9 +1454,16 @@ fn target_summary(target: &Target) -> Value {
         "kind":"target",
         "target":target.id,
         "session":target.session_id,
-        "realm":target.realm_id,
+        "realm":target.frames[0].realm_id,
         "revision":target.revision,
         "scroll_y":target.scroll_y,
+        "frames":target.frames.iter().map(|frame| json!({
+            "frame":frame.id,"parent":frame.parent,"generation":frame.generation,"realm":frame.realm_id,
+        })).collect::<Vec<_>>(),
+        "realms":target.frames.iter().map(|frame| json!({
+            "realm":frame.realm_id,"frame":frame.id,"world":"main",
+        })).collect::<Vec<_>>(),
+        "frame_limit":MAX_FRAMES_PER_TARGET,
     })
 }
 
@@ -2090,6 +2230,196 @@ mod tests {
             "deadline_ms":1,"operation":"profile.list","arguments":nested,
         });
         assert!(parse_request(&serde_json::to_vec(&document).unwrap()).is_err());
+    }
+
+    #[test]
+    fn frames_and_realms_have_distinct_identities_and_lifetimes() {
+        let mut state = ControlState::default();
+        let profile = result(state.execute(request(
+            "req_p",
+            "profile.create",
+            json!({"persistence":"ephemeral"}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let session = result(state.execute(request(
+            "req_s",
+            "session.open",
+            json!({"profile":profile}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let target = result(state.execute(request(
+            "req_t",
+            "target.open",
+            json!({"session":session}),
+        )))["target"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let other = result(state.execute(request(
+            "req_t2",
+            "target.open",
+            json!({"session":session}),
+        )))["target"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let inspect =
+            result(state.execute(request("req_i", "target.inspect", json!({"target":target}))));
+        let frames = inspect["frames"].as_array().unwrap();
+        assert_eq!(frames.len(), 2, "main frame plus one bounded child");
+        assert!(frames[0]["parent"].is_null() && frames[1]["parent"] == frames[0]["frame"]);
+        assert_eq!(frames[0]["generation"], 1);
+        assert_eq!(inspect["realms"].as_array().unwrap().len(), 2);
+        assert_eq!(inspect["frame_limit"], MAX_FRAMES_PER_TARGET);
+        let main = frames[0]["frame"].as_str().unwrap().to_owned();
+        let child = frames[1]["frame"].as_str().unwrap().to_owned();
+        let main_realm = frames[0]["realm"].as_str().unwrap().to_owned();
+        let child_realm = frames[1]["realm"].as_str().unwrap().to_owned();
+        let snap = |state: &mut ControlState, extra: Value| {
+            let mut arguments =
+                json!({"target":target,"format":"semantic","max_bytes":65536,"max_nodes":16});
+            for (key, value) in extra.as_object().unwrap() {
+                arguments[key] = value.clone();
+            }
+            state.execute(request("req_snap", "target.snapshot", arguments))
+        };
+        let default = result(snap(&mut state, json!({})));
+        assert_eq!(default["frame"], main);
+        assert_eq!(default["realm"], main_realm);
+        assert_eq!(default["generation"], 1);
+        assert_eq!(default["nodes"].as_array().unwrap().len(), 3);
+        let embedded = result(snap(&mut state, json!({"frame":child,"realm":child_realm})));
+        assert_eq!(embedded["nodes"][0]["name"], "Embedded court");
+        // Foreign, ended and unknown frames are one refusal.
+        let foreign_frame = result(state.execute(request(
+            "req_i2",
+            "target.inspect",
+            json!({"target":other}),
+        )))["frames"][0]["frame"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        for frame in [foreign_frame.as_str(), "frame_9999"] {
+            let refused = snap(&mut state, json!({"frame":frame}));
+            assert!(!refused.ok);
+            let error = refused.error.unwrap();
+            assert_eq!(error.code, "not_found");
+            assert_eq!(error.scope.as_ref().unwrap().kind, "frame");
+        }
+        let wrong_realm = snap(&mut state, json!({"frame":main,"realm":child_realm}));
+        assert_eq!(wrong_realm.error.unwrap().code, "not_found");
+        // Navigation through the link: frame survives, generation and realm change, child ends.
+        let link = default["nodes"][2]["reference"].clone();
+        let navigated = result(state.execute(request(
+            "req_nav",
+            "target.act",
+            json!({"target":target,"reference":link,"action":{"kind":"click"}}),
+        )));
+        assert_eq!(navigated["navigated"], true);
+        assert_eq!(navigated["frame"], main);
+        assert_eq!(navigated["generation"], 2);
+        assert_eq!(navigated["retired_realm"], main_realm);
+        assert_eq!(navigated["ended_frames"][0], child);
+        assert_eq!(navigated["revision"], 1);
+        let after = result(state.execute(request(
+            "req_i3",
+            "target.inspect",
+            json!({"target":target}),
+        )));
+        assert_eq!(after["frames"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            after["frames"][0]["frame"], main,
+            "the frame id survived the navigation"
+        );
+        assert_ne!(after["frames"][0]["realm"], main_realm, "the realm did not");
+        assert_eq!(after["revision"], 1);
+        let stale = state.execute(request("req_stale", "target.act", json!({"target":target,"reference":default["nodes"][1]["reference"],"action":{"kind":"click"}})));
+        assert_eq!(stale.error.unwrap().code, "stale_revision");
+        let retired = snap(&mut state, json!({"frame":main,"realm":main_realm}));
+        let error = retired.error.unwrap();
+        assert_eq!(error.code, "not_found");
+        assert_eq!(error.scope.as_ref().unwrap().kind, "realm");
+        let ended = snap(&mut state, json!({"frame":child}));
+        assert_eq!(ended.error.unwrap().code, "not_found");
+        let fresh = result(snap(&mut state, json!({"frame":main})));
+        assert_eq!(fresh["generation"], 2);
+        assert_eq!(fresh["nodes"][0]["name"], "Navigated court");
+        // A second navigation keeps the frame and mints yet another realm.
+        let second_realm = fresh["realm"].as_str().unwrap().to_owned();
+        let again = result(state.execute(request("req_nav2", "target.act", json!({"target":target,"reference":fresh["nodes"][2]["reference"],"action":{"kind":"click"}}))));
+        assert_eq!(again["generation"], 3);
+        assert_ne!(again["realm"], second_realm);
+        assert_eq!(again["frame"], main);
+        // Owners: two targets held four frames, now three; closing both leaves zero.
+        let report = result(state.execute(request("req_m", "memory.report", json!({}))));
+        assert_eq!(report["owners"]["frames"]["objects"], 3);
+        assert_eq!(report["owners"]["realms"]["objects"], 3);
+        result(state.execute(request("req_c1", "target.close", json!({"target":target}))));
+        result(state.execute(request("req_c2", "target.close", json!({"target":other}))));
+        let report = result(state.execute(request("req_m2", "memory.report", json!({}))));
+        assert_eq!(report["owners"]["frames"]["objects"], 0);
+        assert_eq!(report["owners"]["realms"]["objects"], 0);
+    }
+
+    #[test]
+    fn frame_and_realm_arguments_narrow_but_never_own() {
+        let mut state = ControlState::default();
+        let profile = result(state.execute(request(
+            "req_p",
+            "profile.create",
+            json!({"persistence":"ephemeral"}),
+        )))["profile"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let session = result(state.execute(request(
+            "req_s",
+            "session.open",
+            json!({"profile":profile}),
+        )))["session"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let target = result(state.execute(request(
+            "req_t",
+            "target.open",
+            json!({"session":session}),
+        )))["target"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+        let inspect =
+            result(state.execute(request("req_i", "target.inspect", json!({"target":target}))));
+        let child = inspect["frames"][1]["frame"].as_str().unwrap().to_owned();
+        let arguments = json!({"target":target,"format":"semantic","max_bytes":65536,"max_nodes":16,"frame":child});
+        let owned = Capability::parse(&json!({"owner":{"kind":"target","id":target},"scope":["target.snapshot"],"budget":{"result_bytes":65536,"deadline_ms":100},"audit":{"actor":"agent.test","reason":"frame"}})).unwrap();
+        let chain = state
+            .authorize(&owned, "target.snapshot", &arguments, 50)
+            .unwrap();
+        assert_eq!(
+            chain.target.as_deref(),
+            Some(target.as_str()),
+            "the chain comes from the target, the frame only narrows"
+        );
+        let frame_owner = Capability::parse(&json!({"owner":{"kind":"frame","id":child},"scope":["target.snapshot"],"budget":{"result_bytes":65536,"deadline_ms":100},"audit":{"actor":"agent.test","reason":"frame"}})).unwrap();
+        let error = state
+            .authorize(&frame_owner, "target.snapshot", &arguments, 50)
+            .unwrap_err();
+        assert_eq!(error.code, "permission_denied");
+        assert_eq!(error.details.unwrap()["reason"], "kind_is_not_an_owner");
+        let realm_owner = Capability::parse(&json!({"owner":{"kind":"realm","id":inspect["frames"][1]["realm"]},"scope":["target.snapshot"],"budget":{"result_bytes":65536,"deadline_ms":100},"audit":{"actor":"agent.test","reason":"realm"}})).unwrap();
+        assert_eq!(
+            state
+                .authorize(&realm_owner, "target.snapshot", &arguments, 50)
+                .unwrap_err()
+                .details
+                .unwrap()["reason"],
+            "kind_is_not_an_owner"
+        );
     }
 
     #[test]
