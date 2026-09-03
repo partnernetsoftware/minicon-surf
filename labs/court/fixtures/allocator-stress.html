@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Allocator Stress Court</title></head>
+  <body>
+    <main>
+      <h1>Allocator Stress Court</h1>
+      <p id="stress">running</p>
+    </main>
+    <script>
+      // Adversarial allocation shapes for a boundary-tag heap, kept under
+      // the 16 MiB realm cap. This is an allocator microbenchmark, not a
+      // page: its numbers describe the allocator under this script only.
+      // Phase 1: interleave many small objects with a large buffer every
+      // 200th step, then free every other one of each so the heap holds
+      // alternating live and free blocks of two very different sizes.
+      const small = [];
+      const large = [];
+      for (let i = 0; i < 20000; i++) {
+        small.push({ i, s: "x".repeat(i % 64) });
+        if (i % 200 === 0) large.push(new ArrayBuffer(32 * 1024));
+      }
+      for (let i = 0; i < small.length; i += 2) small[i] = null;
+      for (let i = 0; i < large.length; i += 2) large[i] = null;
+      // Phase 2: mid-size arrays that must fit into the holes or extend the heap.
+      const mid = [];
+      for (let i = 0; i < 2000; i++) mid.push(new Array(256).fill(i));
+      // Phase 3: one array grown and emptied twenty times, so its backing
+      // store is reallocated up and down across the fragmented heap.
+      let grown = [];
+      for (let round = 0; round < 20; round++) {
+        for (let i = 0; i < 50000; i++) grown.push(i);
+        grown = [];
+      }
+      // Phase 4: strings concatenated then dropped, then a final sweep
+      // that keeps only every fourth mid array.
+      let text = "";
+      for (let i = 0; i < 2000; i++) text += "chunk-" + i;
+      text = "";
+      for (let i = 0; i < mid.length; i++) if (i % 4 !== 0) mid[i] = null;
+      let liveSmall = 0;
+      for (const item of small) if (item) liveSmall += 1;
+      document.getElementById("stress").textContent =
+        "small=" + liveSmall + " large=" + large.filter(Boolean).length +
+        " mid=" + mid.filter(Boolean).length + " rounds=20";
+    </script>
+  </body>
+</html>
