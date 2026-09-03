@@ -1,8 +1,8 @@
 # HTTPS for the native route: design and measurement before any dependency
 
-Status: `frozen` (candidate court and selection criteria pre-registered
-before any candidate was measured; nothing here is in the default native
-route).
+Status: `measured` (candidate court and selection criteria pre-registered
+before any candidate was measured; results in `labs/tls-court/README.md`;
+nothing here is in the default native route, pending cdx-k68's ruling).
 
 ## 1. Why now, and what this is not
 
@@ -150,6 +150,21 @@ post-close, all over the complete process tree, under the default allocator
 and the arena. Its flags (`--pinned-root`, `--allow-origin https://…`) are
 the design's; an implementation must honour them or the court is amended
 with a recorded reason before it runs.
+
+## 8. Result of the candidate court (recorded after the freeze)
+
+`labs/tls-court/evidence/tls-court-0.0.1.json`, 60 of 65: rustls 0.23.43
+with the ring provider meets S1–S10; rustls with aws-lc-rs fails S8 (153,088
+bytes of heap kept after close); SecureTransport fails S1 (TLS 1.2 only:
+the platform refuses a TLS 1.3 maximum with `-9830`), S5 (524,312, over by
+24 bytes), S6 (1,359,968) and S8 (185,552), and its verification runs
+partly in `trustd`/`securityd` outside the process tree. Two mechanism
+amendments are recorded: the rustls client cache must hold 16 entries (two
+server slots) for resumption to be observable, so section 2's "at most 8
+entries" reads "16 entries, per process, finite" for that stack; the probe
+leaves SecureTransport's platform maximum in place. Recommendation: rustls
++ ring for the pinned-roots slice, subject to ruling; the slice's rules in
+section 2 are unchanged, and Network.framework stays unmeasured.
 
 ## 7. Out of scope of the slice
 

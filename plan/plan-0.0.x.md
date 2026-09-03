@@ -1055,6 +1055,24 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   approval the experiment changes nothing: the in-process host is restored,
   the implementation and receipts stay in history, the P6 slice stays
   `narrow`, and P6 work moves to another gap. G1, G3, P6 and G6 stay open.
+- [~] HTTPS for the native route, design and measurement first: the
+  pinned-roots-only slice, its cookie and redirect rules and the candidate
+  selection criteria S1–S10 were frozen before any TLS dependency; the
+  standalone `labs/tls-court` probes measured rustls+ring, rustls+aws-lc-rs
+  and macOS SecureTransport against a hermetic loopback server with
+  disposable, never-committed fixtures (60 of 65). rustls+ring meets every
+  criterion (TLS 1.3 and 1.2 with pinned roots, names and IP SANs verified
+  in process, negatives refused before HTTP, resumption with a finite
+  per-process cache, 65,536 bytes idle, 32,768 first handshake, about 42 KB
+  per live connection, heap returned after close, one process and thread,
+  no dynamic library; 1.53 MB of binary and ring's C/perlasm crypto);
+  aws-lc-rs keeps 153 KB of heap after close; SecureTransport is TLS
+  1.2-only on this macOS, deprecated, two extra threads and system daemons
+  outside the tree, and misses three memory criteria. Two mechanism
+  amendments are recorded (rustls's cache needs 16 entries to resume;
+  SecureTransport refuses an explicit 1.3 maximum). Recommendation rustls +
+  ring, awaiting ruling; nothing merged into the native route; no public-web
+  claim. G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

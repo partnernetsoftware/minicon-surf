@@ -52,6 +52,7 @@ CRITERIA = {
     "s8_in_use_after_close_over_idle_bytes": 65536,
 }
 SETTLE_SECONDS = 0.03
+SESSION_CACHE_ENTRIES = 16
 
 
 def load_module(name, path):
@@ -238,13 +239,15 @@ def build(stack, skip_build):
     record["built"] = True
     record["binary_bytes"] = binary.stat().st_size
     record["binary_sha256"] = hashlib.sha256(binary.read_bytes()).hexdigest()
-    tree = ["cargo", "tree", "--offline", "--edges", "normal", "--prefix", "none", "--target-dir", str(target)]
+    tree = ["cargo", "tree", "--offline", "--edges", "normal", "--prefix", "none"]
     if features:
         tree += ["--features", ",".join(features)]
     listing = subprocess.run(tree, cwd=LAB, capture_output=True, text=True).stdout
-    crates = sorted({line.split(" ")[0] + " " + line.split(" ")[1] for line in listing.splitlines() if " v" in line})
+    crates = sorted({" ".join(line.split(" ")[:2]) for line in listing.splitlines() if " v" in line})
     record["crates"] = len(crates)
     record["crate_list"] = crates
+    libraries = subprocess.run(["otool", "-L", str(binary)], capture_output=True, text=True).stdout.splitlines()[1:]
+    record["dynamic_libraries"] = sorted(line.strip().split(" (")[0] for line in libraries)
     return binary, record
 
 
@@ -269,7 +272,8 @@ class Probe:
         time.sleep(SETTLE_SECONDS)
         outside = RETENTION.sample_process(self.process.pid)
         report = self.call(op="report")
-        return {"stage": label, "physical_footprint_bytes": outside["physical_footprint_bytes"], "resident_bytes": outside["resident_bytes"],
+        threads = max(0, len(subprocess.run(["ps", "-M", "-p", str(self.process.pid)], capture_output=True, text=True).stdout.splitlines()) - 1)
+        return {"stage": label, "threads": threads, "physical_footprint_bytes": outside["physical_footprint_bytes"], "resident_bytes": outside["resident_bytes"],
                 "libmalloc_size_in_use": report["libmalloc"]["size_in_use"], "libmalloc_size_allocated": report["libmalloc"]["size_allocated"],
                 "live": report["live"], "handshakes_total": report["handshakes_total"], "resumed_total": report["resumed_total"]}
 
@@ -288,7 +292,13 @@ def run_once(binary, stack, fixtures, port, plain_port):
     stages, facts = [], {}
     try:
         stages.append(probe.sample("empty"))
-        configured = probe.call(op="configure", roots=[fixtures.path("court-ca.pem")], server_name="localhost", resumption=4, min_version="1.2")
+        # Court amendment (mechanism, recorded): rustls 0.23.43's in-memory client cache
+        # sized at 8 sessions or fewer rounds to one server slot that its own eviction
+        # rule empties right after the first insert, so no ticket is ever retrievable;
+        # 16 sessions (two server slots) is the smallest bound under which resumption
+        # can be observed. The bound is still finite and per process.
+        configured = probe.call(op="configure", roots=[fixtures.path("court-ca.pem")], server_name="localhost",
+                                resumption=SESSION_CACHE_ENTRIES, min_version="1.2")
         if not configured["ok"]:
             raise RuntimeError(f"configure: {configured['error']}")
         stages.append(probe.sample("idle"))
@@ -358,7 +368,7 @@ def aggregate(runs):
     for stage in [s["stage"] for s in runs[0]["stages"]]:
         rows = [next(s for s in r["stages"] if s["stage"] == stage) for r in runs]
         stages[stage] = {key: summarize([row[key] for row in rows]) for key in
-                         ("physical_footprint_bytes", "resident_bytes", "libmalloc_size_in_use", "libmalloc_size_allocated", "live")}
+                         ("physical_footprint_bytes", "resident_bytes", "libmalloc_size_in_use", "libmalloc_size_allocated", "live", "threads")}
         if stage == "post_trim":
             stages[stage]["trim_released_bytes"] = summarize([row["trim_released_bytes"] for row in rows])
     return {
@@ -488,10 +498,21 @@ def main():
                      "parameters": {"key": "P-256", "signature": "sha256", "validity_days": 30,
                                     "loopback_san": "IP:127.0.0.1,DNS:localhost", "wrong_name_san": "DNS:wrong.invalid"}},
         "tls_server": tls_facts,
+        "measurement_boundary": {
+            "fixture_generation": "openssl command line in a private temporary directory, timed, finished before any probe process exists; not part of any client window",
+            "fixture_server": "Python ssl on loopback in the court process: court infrastructure, not part of any candidate's process tree, never sampled",
+            "probe": "each candidate probe is a fresh process per run; host-plus-descendants sampled at about one kilohertz through the run and descendants checked after every command",
+            "platform_services": "SecureTransport verification and session handling run partly in trustd/securityd, which are not descendants and are not measured: recorded as an unattributed platform-service gap, not as zero cost; rustls verifies in-process (rustls-webpki) with no service, and its thread and dynamic-library boundary is recorded per stage and per build",
+        },
         "builds": builds,
         "results": results,
         "checks": checks,
         "passed": all(c["passed"] for c in checks),
+        "session_cache_entries": SESSION_CACHE_ENTRIES,
+        "amendments": [
+            "rustls: ClientSessionMemoryCache::new(n) with n <= 8 yields one server slot that LimitedCache evicts right after the first insert (limited_cache.rs, 'ensure next insertion does not require a realloc'), so in_memory_sessions(4) never resumes; the court configures 16 entries and records this as a finding against the design's 'at most 8 entries' wording",
+            "secure-transport: SSLSetProtocolVersionMax(kTLSProtocol13) is refused with errSSLIllegalParam (-9830) on the recording macOS and aborts every handshake; the probe leaves the platform maximum in place and records the negotiated version",
+        ],
         "limitations": [
             "the hermetic server is Python's ssl (OpenSSL); negatives that the local OpenSSL refuses to serve are recorded as not exercised",
             "SecureTransport does not expose resumption or its session store; S4 is recorded, not observed, for it",

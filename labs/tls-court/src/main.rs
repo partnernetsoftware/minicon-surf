@@ -355,7 +355,14 @@ mod stack {
             let context = self.0.context();
             json!({
                 "tls":true,
-                "version":context.negotiated_protocol_version().ok().map(|v| format!("{v:?}")),
+                "version":context.negotiated_protocol_version().ok().map(|v| match v {
+                    SslProtocol::TLS13 => "TLSv1_3".to_owned(),
+                    SslProtocol::TLS12 => "TLSv1_2".to_owned(),
+                    SslProtocol::TLS11 => "TLSv1_1".to_owned(),
+                    SslProtocol::TLS1 => "TLSv1_0".to_owned(),
+                    other => format!("{other:?}"),
+                }),
+                "protocol_max_setting":"platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
                 "cipher":context.negotiated_cipher().ok().map(|c| format!("{c:?}")),
                 "alpn":context.alpn_protocols().ok().and_then(|p| p.first().cloned()),
                 "resumed":Value::Null,
@@ -380,7 +387,9 @@ mod stack {
             .trust_anchor_certificates_only(true)
             .alpn_protocols(&["http/1.1"])
             .protocol_min(config.min)
-            .protocol_max(SslProtocol::TLS13)
+            // Court amendment (mechanism, recorded): SSLSetProtocolVersionMax(kTLSProtocol13)
+            // is refused by SecureTransport on the recording macOS with errSSLIllegalParam
+            // (-9830) and aborts every handshake, so the platform's own maximum is used.
             .enable_session_tickets(config.tickets);
         let stream = builder.handshake(name, tcp(port)?).map_err(|e| {
             format!("handshake: {e:?}")

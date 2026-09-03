@@ -1,0 +1,4074 @@
+{
+ "amendments": [
+  "rustls: ClientSessionMemoryCache::new(n) with n <= 8 yields one server slot that LimitedCache evicts right after the first insert (limited_cache.rs, 'ensure next insertion does not require a realloc'), so in_memory_sessions(4) never resumes; the court configures 16 entries and records this as a finding against the design's 'at most 8 entries' wording",
+  "secure-transport: SSLSetProtocolVersionMax(kTLSProtocol13) is refused with errSSLIllegalParam (-9830) on the recording macOS and aborts every handshake; the probe leaves the platform maximum in place and records the negotiated version",
+  "crate counts were recomputed from the same lock file after the run because the run's cargo tree call carried an unsupported flag and returned nothing; the counts are recorded, not gated"
+ ],
+ "builds": {
+  "plain": {
+   "binary_bytes": 579408,
+   "binary_sha256": "d6890469cf6bd95b3695b9accc735b993d9d89e49b8a4eb05db3815cfa85fdd6",
+   "build_seconds": 0.9,
+   "built": true,
+   "crate_list": [
+    "base64 v0.22.1",
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "memchr v2.8.3",
+    "minicon-surf-tls-court v0.0.0",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "zmij v1.0.23"
+   ],
+   "crates": 8,
+   "dynamic_libraries": [
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib"
+   ],
+   "features": [],
+   "stack": "plain"
+  },
+  "rustls-aws-lc": {
+   "binary_bytes": 3646656,
+   "binary_sha256": "b3a4620643864430f90c86cfeab76ca88587d09323f3bbac237fee78ce4e7b96",
+   "build_seconds": 18.4,
+   "built": true,
+   "crate_list": [
+    "aws-lc-rs v1.18.0",
+    "aws-lc-sys v0.44.0",
+    "base64 v0.22.1",
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "log v0.4.34",
+    "memchr v2.8.3",
+    "minicon-surf-tls-court v0.0.0",
+    "once_cell v1.21.4",
+    "rustls v0.23.43",
+    "rustls-pki-types v1.15.1",
+    "rustls-webpki v0.103.15",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "subtle v2.6.1",
+    "untrusted v0.9.0",
+    "zeroize v1.9.0",
+    "zmij v1.0.23"
+   ],
+   "crates": 18,
+   "dynamic_libraries": [
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib"
+   ],
+   "features": [
+    "rustls-aws-lc"
+   ],
+   "stack": "rustls-aws-lc"
+  },
+  "rustls-ring": {
+   "binary_bytes": 2108784,
+   "binary_sha256": "920d0e7d7e1d960dc988e9d2cf8b3478865055ba5e65fce385c452ab18f2902b",
+   "build_seconds": 0.5,
+   "built": true,
+   "crate_list": [
+    "base64 v0.22.1",
+    "cfg-if v1.0.4",
+    "getrandom v0.2.17",
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "log v0.4.34",
+    "memchr v2.8.3",
+    "minicon-surf-tls-court v0.0.0",
+    "once_cell v1.21.4",
+    "ring v0.17.14",
+    "rustls v0.23.43",
+    "rustls-pki-types v1.15.1",
+    "rustls-webpki v0.103.15",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "subtle v2.6.1",
+    "untrusted v0.9.0",
+    "zeroize v1.9.0",
+    "zmij v1.0.23"
+   ],
+   "crates": 19,
+   "dynamic_libraries": [
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib"
+   ],
+   "features": [
+    "rustls-ring"
+   ],
+   "stack": "rustls-ring"
+  },
+  "secure-transport": {
+   "binary_bytes": 689296,
+   "binary_sha256": "1368ed6e49b8a079a30a68e87140119d68435f9e6b308e9ad43b9a9141379683",
+   "build_seconds": 0.0,
+   "built": true,
+   "crate_list": [
+    "base64 v0.22.1",
+    "bitflags v2.13.1",
+    "core-foundation v0.10.1",
+    "core-foundation-sys v0.8.7",
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "memchr v2.8.3",
+    "minicon-surf-tls-court v0.0.0",
+    "security-framework v3.7.0",
+    "security-framework-sys v2.17.0",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "zmij v1.0.23"
+   ],
+   "crates": 13,
+   "dynamic_libraries": [
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+    "/System/Library/Frameworks/Security.framework/Versions/A/Security",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib"
+   ],
+   "features": [
+    "secure-transport"
+   ],
+   "stack": "secure-transport"
+  }
+ },
+ "checks": [
+  {
+   "check": "[plain] run 0: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 1: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 2: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 3: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 4: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 5: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 6: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 7: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 0: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 1: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 2: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 3: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 4: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 5: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 6: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] run 7: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 0: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 1: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 2: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 3: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 4: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 5: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 6: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] run 7: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 0: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 1: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 2: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 3: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 4: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 5: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 6: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] run 7: probe exits cleanly with no live connection and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S1 TLS 1.3 negotiated with the pinned root, and TLS 1.2 against a TLS 1.2-only server",
+   "detail": {
+    "first": "TLSv1_3",
+    "tls12_only": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S2 wrong-name, unpinned-issuer and TLS 1.1-only servers are refused before HTTP",
+   "detail": {
+    "tls11_only": {
+     "connections": [],
+     "refused": "handshake: received fatal alert: ProtocolVersion"
+    },
+    "unpinned_issuer": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: UnknownIssuer"
+    },
+    "wrong_name": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: certificate not valid for name \"localhost\"; certificate is only valid for DnsName(\"wrong.invalid\")"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S3 ALPN http/1.1 negotiated; an h2-only server yields no http/1.1 ALPN",
+   "detail": {
+    "first_alpn": "http/1.1",
+    "h2_only": {
+     "connections": [
+      {
+       "alpn": null,
+       "bytes": 209,
+       "cipher": "TLS13_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_3"
+      }
+     ],
+     "refused": null
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S4 the second handshake reports resumption or the stack cannot report it (recorded)",
+   "detail": {
+    "resumed": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] IP SAN: the loopback leaf verifies for 127.0.0.1",
+   "detail": {
+    "connections": [
+     {
+      "alpn": "http/1.1",
+      "bytes": 209,
+      "cipher": "TLS13_AES_256_GCM_SHA384",
+      "peer_certificates": 1,
+      "resumed": false,
+      "tls": true,
+      "version": "TLSv1_3"
+     }
+    ],
+    "refused": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S5 TLS-enabled idle over the feature-off probe",
+   "detail": {
+    "delta": 65536
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S6 first handshake over idle",
+   "detail": {
+    "delta": 32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S7 eight live connections over one, per connection",
+   "detail": {
+    "per_connection": 42130
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S8 libmalloc in-use after closing all connections is within 64 KiB of idle",
+   "detail": {
+    "delta": 3072
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S9 one process, no descendant at any stage",
+   "passed": true
+  },
+  {
+   "check": "[rustls-ring] S10 teardown: live connections are zero after close",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S1 TLS 1.3 negotiated with the pinned root, and TLS 1.2 against a TLS 1.2-only server",
+   "detail": {
+    "first": "TLSv1_3",
+    "tls12_only": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S2 wrong-name, unpinned-issuer and TLS 1.1-only servers are refused before HTTP",
+   "detail": {
+    "tls11_only": {
+     "connections": [],
+     "refused": "handshake: received fatal alert: ProtocolVersion"
+    },
+    "unpinned_issuer": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: UnknownIssuer"
+    },
+    "wrong_name": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: certificate not valid for name \"localhost\"; certificate is only valid for DnsName(\"wrong.invalid\")"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S3 ALPN http/1.1 negotiated; an h2-only server yields no http/1.1 ALPN",
+   "detail": {
+    "first_alpn": "http/1.1",
+    "h2_only": {
+     "connections": [
+      {
+       "alpn": null,
+       "bytes": 209,
+       "cipher": "TLS13_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_3"
+      }
+     ],
+     "refused": null
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S4 the second handshake reports resumption or the stack cannot report it (recorded)",
+   "detail": {
+    "resumed": [
+     true,
+     true,
+     true,
+     true,
+     true,
+     true,
+     true
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] IP SAN: the loopback leaf verifies for 127.0.0.1",
+   "detail": {
+    "connections": [
+     {
+      "alpn": "http/1.1",
+      "bytes": 209,
+      "cipher": "TLS13_AES_256_GCM_SHA384",
+      "peer_certificates": 1,
+      "resumed": false,
+      "tls": true,
+      "version": "TLSv1_3"
+     }
+    ],
+    "refused": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S5 TLS-enabled idle over the feature-off probe",
+   "detail": {
+    "delta": 131072
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S6 first handshake over idle",
+   "detail": {
+    "delta": 278552
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S7 eight live connections over one, per connection",
+   "detail": {
+    "per_connection": 58514
+   },
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S8 libmalloc in-use after closing all connections is within 64 KiB of idle",
+   "detail": {
+    "delta": 153088
+   },
+   "passed": false
+  },
+  {
+   "check": "[rustls-aws-lc] S9 one process, no descendant at any stage",
+   "passed": true
+  },
+  {
+   "check": "[rustls-aws-lc] S10 teardown: live connections are zero after close",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] S1 TLS 1.3 negotiated with the pinned root, and TLS 1.2 against a TLS 1.2-only server",
+   "detail": {
+    "first": "TLSv1_2",
+    "tls12_only": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "CipherSuite(49196)",
+       "peer_certificates": "present",
+       "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+       "resumed": null,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "[secure-transport] S2 wrong-name, unpinned-issuer and TLS 1.1-only servers are refused before HTTP",
+   "detail": {
+    "tls11_only": {
+     "connections": [],
+     "refused": "handshake: Failure(Error { code: -9801, message: \"Cipher Suite negotiation failure\" })"
+    },
+    "unpinned_issuer": {
+     "connections": [],
+     "refused": "handshake: Failure(Error { code: -25318, message: \"One or more certificates required to validate this certificate cannot be found.\" })"
+    },
+    "wrong_name": {
+     "connections": [],
+     "refused": "handshake: Failure(Error { code: -67602, message: \"A host name mismatch has occurred.\" })"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] S3 ALPN http/1.1 negotiated; an h2-only server yields no http/1.1 ALPN",
+   "detail": {
+    "first_alpn": "http/1.1",
+    "h2_only": {
+     "connections": [
+      {
+       "alpn": null,
+       "bytes": 209,
+       "cipher": "CipherSuite(49196)",
+       "peer_certificates": "present",
+       "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+       "resumed": null,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] S4 the second handshake reports resumption or the stack cannot report it (recorded)",
+   "detail": {
+    "resumed": [
+     null,
+     null,
+     null,
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] IP SAN: the loopback leaf verifies for 127.0.0.1",
+   "detail": {
+    "connections": [
+     {
+      "alpn": "http/1.1",
+      "bytes": 209,
+      "cipher": "CipherSuite(49196)",
+      "peer_certificates": "present",
+      "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+      "resumed": null,
+      "tls": true,
+      "version": "TLSv1_2"
+     }
+    ],
+    "refused": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] S5 TLS-enabled idle over the feature-off probe",
+   "detail": {
+    "delta": 524312
+   },
+   "passed": false
+  },
+  {
+   "check": "[secure-transport] S6 first handshake over idle",
+   "detail": {
+    "delta": 1359968
+   },
+   "passed": false
+  },
+  {
+   "check": "[secure-transport] S7 eight live connections over one, per connection",
+   "detail": {
+    "per_connection": 42130
+   },
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] S8 libmalloc in-use after closing all connections is within 64 KiB of idle",
+   "detail": {
+    "delta": 185552
+   },
+   "passed": false
+  },
+  {
+   "check": "[secure-transport] S9 one process, no descendant at any stage",
+   "passed": true
+  },
+  {
+   "check": "[secure-transport] S10 teardown: live connections are zero after close",
+   "passed": true
+  }
+ ],
+ "criteria": {
+  "s5_idle_over_feature_off_bytes": 524288,
+  "s6_first_handshake_over_idle_bytes": 1048576,
+  "s7_per_connection_bytes": 131072,
+  "s8_in_use_after_close_over_idle_bytes": 65536
+ },
+ "design": "labs/native-dom/https-design-0.0.1.md",
+ "fixtures": {
+  "generation_seconds": 0.092,
+  "mode": "generated-disposable",
+  "parameters": {
+   "key": "P-256",
+   "loopback_san": "IP:127.0.0.1,DNS:localhost",
+   "signature": "sha256",
+   "validity_days": 30,
+   "wrong_name_san": "DNS:wrong.invalid"
+  },
+  "public_certificates": {
+   "court-ca.pem": {
+    "not_after": "Oct  3 07:54:20 2026 GMT",
+    "not_before": "Sep  3 07:54:20 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "F2:80:00:BD:86:4F:4A:78:C7:0D:6F:E9:2A:A3:ED:F5:32:E8:C2:A9:E8:2E:F6:A9:B4:C2:07:8B:0B:C6:4B:BB",
+    "subject": "CN=MiniCon Surf disposable court CA",
+    "subject_alt_name": null
+   },
+   "loopback.pem": {
+    "not_after": "Oct  3 07:54:20 2026 GMT",
+    "not_before": "Sep  3 07:54:20 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "53:46:2A:40:15:3F:E6:AA:CF:00:B6:2B:E6:CF:B1:A8:D0:67:B3:7E:D0:2D:10:BE:D4:E5:42:80:19:DA:B0:35",
+    "subject": "CN=loopback",
+    "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
+   },
+   "other-ca-loopback.pem": {
+    "not_after": "Oct  3 07:54:20 2026 GMT",
+    "not_before": "Sep  3 07:54:20 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "A8:A5:AE:83:1C:65:D9:4A:CC:52:4F:EA:98:E1:C4:6D:60:05:88:71:46:51:B5:00:CF:81:75:DB:E2:9A:D1:C6",
+    "subject": "CN=other-ca-loopback",
+    "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
+   },
+   "other-ca.pem": {
+    "not_after": "Oct  3 07:54:20 2026 GMT",
+    "not_before": "Sep  3 07:54:20 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "D9:8B:2F:20:FD:49:A7:D9:13:A6:CE:57:15:E1:DE:40:33:E2:3E:45:8B:73:9C:78:61:86:DA:17:D9:98:10:DA",
+    "subject": "CN=MiniCon Surf disposable OTHER CA (not pinned)",
+    "subject_alt_name": null
+   },
+   "wrong-name.pem": {
+    "not_after": "Oct  3 07:54:20 2026 GMT",
+    "not_before": "Sep  3 07:54:20 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "31:C4:E0:E9:1F:DD:AF:6F:6A:ED:2B:06:B8:BA:8B:D7:29:62:E8:B4:D6:6E:36:7E:2E:52:A1:DF:9C:E9:93:61",
+    "subject": "CN=wrong-name",
+    "subject_alt_name": "DNS:wrong.invalid"
+   }
+  }
+ },
+ "limitations": [
+  "the hermetic server is Python's ssl (OpenSSL); negatives that the local OpenSSL refuses to serve are recorded as not exercised",
+  "SecureTransport does not expose resumption or its session store; S4 is recorded, not observed, for it",
+  "system daemons (trustd, securityd) serve SecureTransport's verification outside the process tree and are not measured",
+  "one platform, loopback only, no public network, no leak-absence claim"
+ ],
+ "measurement_boundary": {
+  "fixture_generation": "openssl command line in a private temporary directory, timed, finished before any probe process exists; not part of any client window",
+  "fixture_server": "Python ssl on loopback in the court process: court infrastructure, not part of any candidate's process tree, never sampled",
+  "platform_services": "SecureTransport verification and session handling run partly in trustd/securityd, which are not descendants and are not measured: recorded as an unattributed platform-service gap, not as zero cost; rustls verifies in-process (rustls-webpki) with no service, and its thread and dynamic-library boundary is recorded per stage and per build",
+  "probe": "each candidate probe is a fresh process per run; host-plus-descendants sampled at about one kilohertz through the run and descendants checked after every command"
+ },
+ "openssl": "OpenSSL 3.6.4 25 Aug 2026 (Library: OpenSSL 3.6.4 25 Aug 2026)",
+ "passed": false,
+ "python_ssl": "OpenSSL 3.6.4 25 Aug 2026",
+ "repetitions": 7,
+ "results": {
+  "plain": {
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "facts": {
+    "first": {
+     "bytes": 209,
+     "tls": false
+    },
+    "second": {
+     "bytes": 209,
+     "tls": false
+    }
+   },
+   "resumed_on_second_handshake": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "stages": {
+    "empty": {
+     "libmalloc_size_allocated": {
+      "maximum": 8388608,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 20656,
+      "median": 20656,
+      "minimum": 20656,
+      "values": [
+       20656,
+       20656,
+       20656,
+       20656,
+       20656,
+       20656,
+       20656
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1032504,
+      "median": 1032504,
+      "minimum": 1032504,
+      "values": [
+       1032504,
+       1032504,
+       1032504,
+       1032504,
+       1032504,
+       1032504,
+       1032504
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1638400,
+      "median": 1638400,
+      "minimum": 1638400,
+      "values": [
+       1638400,
+       1638400,
+       1638400,
+       1638400,
+       1638400,
+       1638400,
+       1638400
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "first_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       12582912,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       12582912,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 21840,
+      "median": 21840,
+      "minimum": 21840,
+      "values": [
+       21840,
+       21840,
+       21840,
+       21840,
+       21840,
+       21840,
+       21840
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1130808,
+      "median": 1114424,
+      "minimum": 1114424,
+      "values": [
+       1130808,
+       1114424,
+       1114424,
+       1114424,
+       1114424,
+       1130808,
+       1114424
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1835008,
+      "median": 1818624,
+      "minimum": 1818624,
+      "values": [
+       1835008,
+       1818624,
+       1818624,
+       1818624,
+       1818624,
+       1835008,
+       1818624
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "idle": {
+     "libmalloc_size_allocated": {
+      "maximum": 8388608,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 21760,
+      "median": 21760,
+      "minimum": 21760,
+      "values": [
+       21760,
+       21760,
+       21760,
+       21760,
+       21760,
+       21760,
+       21760
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1098040,
+      "median": 1098040,
+      "minimum": 1098040,
+      "values": [
+       1098040,
+       1098040,
+       1098040,
+       1098040,
+       1098040,
+       1098040,
+       1098040
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1802240,
+      "median": 1802240,
+      "minimum": 1802240,
+      "values": [
+       1802240,
+       1802240,
+       1802240,
+       1802240,
+       1802240,
+       1802240,
+       1802240
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_close": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       12582912,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       12582912,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 21888,
+      "median": 21888,
+      "minimum": 21888,
+      "values": [
+       21888,
+       21888,
+       21888,
+       21888,
+       21888,
+       21888,
+       21888
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1130808,
+      "median": 1114424,
+      "minimum": 1114424,
+      "values": [
+       1130808,
+       1114424,
+       1114424,
+       1114424,
+       1114424,
+       1130808,
+       1114424
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1835008,
+      "median": 1818624,
+      "minimum": 1818624,
+      "values": [
+       1835008,
+       1818624,
+       1818624,
+       1818624,
+       1818624,
+       1835008,
+       1818624
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_trim": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       12582912,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       12582912,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 21888,
+      "median": 21888,
+      "minimum": 21888,
+      "values": [
+       21888,
+       21888,
+       21888,
+       21888,
+       21888,
+       21888,
+       21888
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1130808,
+      "median": 1114424,
+      "minimum": 1114424,
+      "values": [
+       1130808,
+       1114424,
+       1114424,
+       1114424,
+       1114424,
+       1130808,
+       1114424
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1835008,
+      "median": 1818624,
+      "minimum": 1818624,
+      "values": [
+       1835008,
+       1818624,
+       1818624,
+       1818624,
+       1818624,
+       1835008,
+       1818624
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "trim_released_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "second_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       12582912,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       12582912,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 21840,
+      "median": 21840,
+      "minimum": 21840,
+      "values": [
+       21840,
+       21840,
+       21840,
+       21840,
+       21840,
+       21840,
+       21840
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1130808,
+      "median": 1114424,
+      "minimum": 1114424,
+      "values": [
+       1130808,
+       1114424,
+       1114424,
+       1114424,
+       1114424,
+       1130808,
+       1114424
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1835008,
+      "median": 1818624,
+      "minimum": 1818624,
+      "values": [
+       1835008,
+       1818624,
+       1818624,
+       1818624,
+       1818624,
+       1835008,
+       1818624
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "targets_1": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       12582912,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       12582912,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 21840,
+      "median": 21840,
+      "minimum": 21840,
+      "values": [
+       21840,
+       21840,
+       21840,
+       21840,
+       21840,
+       21840,
+       21840
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1130808,
+      "median": 1114424,
+      "minimum": 1114424,
+      "values": [
+       1130808,
+       1114424,
+       1114424,
+       1114424,
+       1114424,
+       1130808,
+       1114424
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1835008,
+      "median": 1818624,
+      "minimum": 1818624,
+      "values": [
+       1835008,
+       1818624,
+       1818624,
+       1818624,
+       1818624,
+       1835008,
+       1818624
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "targets_8": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 8388608,
+      "minimum": 8388608,
+      "values": [
+       12582912,
+       8388608,
+       8388608,
+       8388608,
+       8388608,
+       12582912,
+       8388608
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 22016,
+      "median": 22016,
+      "minimum": 22016,
+      "values": [
+       22016,
+       22016,
+       22016,
+       22016,
+       22016,
+       22016,
+       22016
+      ]
+     },
+     "live": {
+      "maximum": 8,
+      "median": 8,
+      "minimum": 8,
+      "values": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1130808,
+      "median": 1114424,
+      "minimum": 1114424,
+      "values": [
+       1130808,
+       1114424,
+       1114424,
+       1114424,
+       1114424,
+       1130808,
+       1114424
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1835008,
+      "median": 1818624,
+      "minimum": 1818624,
+      "values": [
+       1835008,
+       1818624,
+       1818624,
+       1818624,
+       1818624,
+       1835008,
+       1818624
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "host_peak": {
+     "maximum": 1147192,
+     "median": 1114424,
+     "minimum": 1114424,
+     "values": [
+      1130808,
+      1147192,
+      1114424,
+      1114424,
+      1114424,
+      1130808,
+      1114424
+     ]
+    },
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 112,
+     "median": 105,
+     "minimum": 98,
+     "values": [
+      98,
+      108,
+      112,
+      105,
+      104,
+      104,
+      106
+     ]
+    },
+    "tree_peak": {
+     "maximum": 1147192,
+     "median": 1114424,
+     "minimum": 1114424,
+     "values": [
+      1130808,
+      1147192,
+      1114424,
+      1114424,
+      1114424,
+      1130808,
+      1114424
+     ]
+    }
+   }
+  },
+  "rustls-aws-lc": {
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "facts": {
+    "first": {
+     "alpn": "http/1.1",
+     "bytes": 209,
+     "cipher": "TLS13_AES_256_GCM_SHA384",
+     "peer_certificates": 1,
+     "resumed": false,
+     "tls": true,
+     "version": "TLSv1_3"
+    },
+    "second": {
+     "alpn": "http/1.1",
+     "bytes": 209,
+     "cipher": "TLS13_AES_256_GCM_SHA384",
+     "peer_certificates": 1,
+     "resumed": true,
+     "tls": true,
+     "version": "TLSv1_3"
+    }
+   },
+   "negatives": {
+    "alpn_h2_only": {
+     "connections": [
+      {
+       "alpn": null,
+       "bytes": 209,
+       "cipher": "TLS13_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_3"
+      }
+     ],
+     "refused": null
+    },
+    "descendants_seen": 0,
+    "ip_san": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "TLS13_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_3"
+      }
+     ],
+     "refused": null
+    },
+    "refused_total": 3,
+    "tls11_only": {
+     "connections": [],
+     "refused": "handshake: received fatal alert: ProtocolVersion"
+    },
+    "tls12_only": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    },
+    "unpinned_issuer": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: UnknownIssuer"
+    },
+    "wrong_name": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: certificate not valid for name \"localhost\"; certificate is only valid for DnsName(\"wrong.invalid\")"
+    }
+   },
+   "resumed_on_second_handshake": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "stages": {
+    "empty": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 20672,
+      "median": 20672,
+      "minimum": 20672,
+      "values": [
+       20672,
+       20672,
+       20672,
+       20672,
+       20672,
+       20672,
+       20672
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1147192,
+      "median": 1147192,
+      "minimum": 1147192,
+      "values": [
+       1147192,
+       1147192,
+       1147192,
+       1147192,
+       1147192,
+       1147192,
+       1147192
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1851392,
+      "median": 1851392,
+      "minimum": 1851392,
+      "values": [
+       1851392,
+       1851392,
+       1851392,
+       1851392,
+       1851392,
+       1851392,
+       1851392
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "first_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 25165824,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       25165824,
+       16777216,
+       20971520
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 186128,
+      "median": 186128,
+      "minimum": 186128,
+      "values": [
+       186128,
+       186128,
+       186128,
+       186128,
+       186128,
+       186128,
+       186128
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1638712,
+      "median": 1507664,
+      "minimum": 1507664,
+      "values": [
+       1507664,
+       1507664,
+       1507664,
+       1524048,
+       1540432,
+       1507664,
+       1638712
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 4014080,
+      "median": 3866624,
+      "minimum": 3866624,
+      "values": [
+       3866624,
+       3866624,
+       3866624,
+       3883008,
+       3899392,
+       3866624,
+       4014080
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "idle": {
+     "libmalloc_size_allocated": {
+      "maximum": 16777216,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       16777216,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 24400,
+      "median": 24400,
+      "minimum": 24400,
+      "values": [
+       24400,
+       24400,
+       24400,
+       24400,
+       24400,
+       24400,
+       24400
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1245496,
+      "median": 1229112,
+      "minimum": 1229112,
+      "values": [
+       1229112,
+       1229112,
+       1229112,
+       1229112,
+       1245496,
+       1229112,
+       1229112
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2408448,
+      "median": 2392064,
+      "minimum": 2392064,
+      "values": [
+       2392064,
+       2392064,
+       2392064,
+       2392064,
+       2408448,
+       2392064,
+       2392064
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_close": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 25165824,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       25165824,
+       25165824,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 177488,
+      "median": 177488,
+      "minimum": 177488,
+      "values": [
+       177488,
+       177488,
+       177488,
+       177488,
+       177488,
+       177488,
+       177488
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 2113848,
+      "median": 1999184,
+      "minimum": 1917264,
+      "values": [
+       1950032,
+       1917264,
+       2048336,
+       2031952,
+       1982800,
+       1999184,
+       2113848
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 4489216,
+      "median": 4358144,
+      "minimum": 4276224,
+      "values": [
+       4308992,
+       4276224,
+       4407296,
+       4390912,
+       4341760,
+       4358144,
+       4489216
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_trim": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 25165824,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       25165824,
+       25165824,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 177488,
+      "median": 177488,
+      "minimum": 177488,
+      "values": [
+       177488,
+       177488,
+       177488,
+       177488,
+       177488,
+       177488,
+       177488
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 2130232,
+      "median": 2015568,
+      "minimum": 1917264,
+      "values": [
+       1966416,
+       1917264,
+       2048336,
+       2031952,
+       1999184,
+       2015568,
+       2130232
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 4505600,
+      "median": 4374528,
+      "minimum": 4276224,
+      "values": [
+       4325376,
+       4276224,
+       4407296,
+       4390912,
+       4358144,
+       4374528,
+       4505600
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "trim_released_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "second_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 25165824,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       25165824,
+       25165824,
+       20971520
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 185968,
+      "median": 185968,
+      "minimum": 185968,
+      "values": [
+       185968,
+       185968,
+       185968,
+       185968,
+       185968,
+       185968,
+       185968
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1737016,
+      "median": 1589584,
+      "minimum": 1573200,
+      "values": [
+       1589584,
+       1573200,
+       1589584,
+       1589584,
+       1638736,
+       1622352,
+       1737016
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 4112384,
+      "median": 3948544,
+      "minimum": 3932160,
+      "values": [
+       3948544,
+       3932160,
+       3948544,
+       3948544,
+       3997696,
+       3981312,
+       4112384
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "targets_1": {
+     "libmalloc_size_allocated": {
+      "maximum": 25165824,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       25165824,
+       25165824,
+       20971520
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 185968,
+      "median": 185968,
+      "minimum": 185968,
+      "values": [
+       185968,
+       185968,
+       185968,
+       185968,
+       185968,
+       185968,
+       185968
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1737016,
+      "median": 1589584,
+      "minimum": 1573200,
+      "values": [
+       1589584,
+       1573200,
+       1589584,
+       1589584,
+       1638736,
+       1622352,
+       1737016
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 4112384,
+      "median": 3948544,
+      "minimum": 3932160,
+      "values": [
+       3948544,
+       3932160,
+       3948544,
+       3948544,
+       3997696,
+       3981312,
+       4112384
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "targets_8": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 25165824,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       25165824,
+       25165824,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 245840,
+      "median": 245840,
+      "minimum": 245840,
+      "values": [
+       245840,
+       245840,
+       245840,
+       245840,
+       245840,
+       245840,
+       245840
+      ]
+     },
+     "live": {
+      "maximum": 8,
+      "median": 8,
+      "minimum": 8,
+      "values": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 2113848,
+      "median": 1999184,
+      "minimum": 1917264,
+      "values": [
+       1950032,
+       1917264,
+       2031952,
+       2015568,
+       1982800,
+       1999184,
+       2113848
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 4489216,
+      "median": 4358144,
+      "minimum": 4276224,
+      "values": [
+       4308992,
+       4276224,
+       4390912,
+       4374528,
+       4341760,
+       4358144,
+       4489216
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "host_peak": {
+     "maximum": 2130232,
+     "median": 2015568,
+     "minimum": 1917264,
+     "values": [
+      1966416,
+      1917264,
+      2048336,
+      2031952,
+      1999184,
+      2015568,
+      2130232
+     ]
+    },
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 114,
+     "median": 108,
+     "minimum": 97,
+     "values": [
+      110,
+      108,
+      108,
+      109,
+      114,
+      101,
+      97
+     ]
+    },
+    "tree_peak": {
+     "maximum": 2130232,
+     "median": 2015568,
+     "minimum": 1917264,
+     "values": [
+      1966416,
+      1917264,
+      2048336,
+      2031952,
+      1999184,
+      2015568,
+      2130232
+     ]
+    }
+   }
+  },
+  "rustls-ring": {
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "facts": {
+    "first": {
+     "alpn": "http/1.1",
+     "bytes": 209,
+     "cipher": "TLS13_AES_256_GCM_SHA384",
+     "peer_certificates": 1,
+     "resumed": false,
+     "tls": true,
+     "version": "TLSv1_3"
+    },
+    "second": {
+     "alpn": "http/1.1",
+     "bytes": 209,
+     "cipher": "TLS13_AES_256_GCM_SHA384",
+     "peer_certificates": 1,
+     "resumed": true,
+     "tls": true,
+     "version": "TLSv1_3"
+    }
+   },
+   "negatives": {
+    "alpn_h2_only": {
+     "connections": [
+      {
+       "alpn": null,
+       "bytes": 209,
+       "cipher": "TLS13_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_3"
+      }
+     ],
+     "refused": null
+    },
+    "descendants_seen": 0,
+    "ip_san": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "TLS13_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_3"
+      }
+     ],
+     "refused": null
+    },
+    "refused_total": 3,
+    "tls11_only": {
+     "connections": [],
+     "refused": "handshake: received fatal alert: ProtocolVersion"
+    },
+    "tls12_only": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+       "peer_certificates": 1,
+       "resumed": false,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    },
+    "unpinned_issuer": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: UnknownIssuer"
+    },
+    "wrong_name": {
+     "connections": [],
+     "refused": "handshake: invalid peer certificate: certificate not valid for name \"localhost\"; certificate is only valid for DnsName(\"wrong.invalid\")"
+    }
+   },
+   "resumed_on_second_handshake": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "stages": {
+    "empty": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 20672,
+      "median": 20672,
+      "minimum": 20672,
+      "values": [
+       20672,
+       20672,
+       20672,
+       20672,
+       20672,
+       20672,
+       20672
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1081656,
+      "median": 1081656,
+      "minimum": 1081656,
+      "values": [
+       1081656,
+       1081656,
+       1081656,
+       1081656,
+       1081656,
+       1081656,
+       1081656
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 1703936,
+      "median": 1703936,
+      "minimum": 1703936,
+      "values": [
+       1703936,
+       1703936,
+       1703936,
+       1703936,
+       1703936,
+       1703936,
+       1703936
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "first_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 36000,
+      "median": 36000,
+      "minimum": 36000,
+      "values": [
+       36000,
+       36000,
+       36000,
+       36000,
+       36000,
+       36000,
+       36000
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1196344,
+      "median": 1196344,
+      "minimum": 1196344,
+      "values": [
+       1196344,
+       1196344,
+       1196344,
+       1196344,
+       1196344,
+       1196344,
+       1196344
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2883584,
+      "median": 2883584,
+      "minimum": 2883584,
+      "values": [
+       2883584,
+       2883584,
+       2883584,
+       2883584,
+       2883584,
+       2883584,
+       2883584
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "idle": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 24384,
+      "median": 24384,
+      "minimum": 24384,
+      "values": [
+       24384,
+       24384,
+       24384,
+       24384,
+       24384,
+       24384,
+       24384
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1163576,
+      "median": 1163576,
+      "minimum": 1163576,
+      "values": [
+       1163576,
+       1163576,
+       1163576,
+       1163576,
+       1163576,
+       1163576,
+       1163576
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2211840,
+      "median": 2211840,
+      "minimum": 2211840,
+      "values": [
+       2211840,
+       2211840,
+       2211840,
+       2211840,
+       2211840,
+       2211840,
+       2211840
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_close": {
+     "libmalloc_size_allocated": {
+      "maximum": 16777216,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       16777216,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 27456,
+      "median": 27456,
+      "minimum": 27456,
+      "values": [
+       27456,
+       27456,
+       27456,
+       27456,
+       27456,
+       27456,
+       27456
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1605944,
+      "median": 1540408,
+      "minimum": 1507640,
+      "values": [
+       1507640,
+       1540408,
+       1556792,
+       1524024,
+       1605944,
+       1589560,
+       1524024
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 3293184,
+      "median": 3227648,
+      "minimum": 3194880,
+      "values": [
+       3194880,
+       3227648,
+       3244032,
+       3211264,
+       3293184,
+       3276800,
+       3211264
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_trim": {
+     "libmalloc_size_allocated": {
+      "maximum": 16777216,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       16777216,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 27456,
+      "median": 27456,
+      "minimum": 27456,
+      "values": [
+       27456,
+       27456,
+       27456,
+       27456,
+       27456,
+       27456,
+       27456
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1605944,
+      "median": 1556792,
+      "minimum": 1507640,
+      "values": [
+       1507640,
+       1556792,
+       1573176,
+       1540408,
+       1605944,
+       1589560,
+       1524024
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 3293184,
+      "median": 3244032,
+      "minimum": 3194880,
+      "values": [
+       3194880,
+       3244032,
+       3260416,
+       3227648,
+       3293184,
+       3276800,
+       3211264
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "trim_released_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "second_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 35840,
+      "median": 35840,
+      "minimum": 35840,
+      "values": [
+       35840,
+       35840,
+       35840,
+       35840,
+       35840,
+       35840,
+       35840
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1261880,
+      "median": 1229112,
+      "minimum": 1229112,
+      "values": [
+       1229112,
+       1245496,
+       1229112,
+       1261880,
+       1229112,
+       1229112,
+       1229112
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2949120,
+      "median": 2916352,
+      "minimum": 2916352,
+      "values": [
+       2916352,
+       2932736,
+       2916352,
+       2949120,
+       2916352,
+       2916352,
+       2916352
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "targets_1": {
+     "libmalloc_size_allocated": {
+      "maximum": 12582912,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 35840,
+      "median": 35840,
+      "minimum": 35840,
+      "values": [
+       35840,
+       35840,
+       35840,
+       35840,
+       35840,
+       35840,
+       35840
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1261880,
+      "median": 1229112,
+      "minimum": 1229112,
+      "values": [
+       1229112,
+       1245496,
+       1229112,
+       1261880,
+       1229112,
+       1229112,
+       1229112
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2949120,
+      "median": 2916352,
+      "minimum": 2916352,
+      "values": [
+       2916352,
+       2932736,
+       2916352,
+       2949120,
+       2916352,
+       2916352,
+       2916352
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "targets_8": {
+     "libmalloc_size_allocated": {
+      "maximum": 16777216,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       16777216,
+       12582912,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 95040,
+      "median": 95040,
+      "minimum": 95040,
+      "values": [
+       95040,
+       95040,
+       95040,
+       95040,
+       95040,
+       95040,
+       95040
+      ]
+     },
+     "live": {
+      "maximum": 8,
+      "median": 8,
+      "minimum": 8,
+      "values": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1573176,
+      "median": 1524024,
+      "minimum": 1507640,
+      "values": [
+       1507640,
+       1524024,
+       1540408,
+       1524024,
+       1573176,
+       1573176,
+       1524024
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 3260416,
+      "median": 3211264,
+      "minimum": 3194880,
+      "values": [
+       3194880,
+       3211264,
+       3227648,
+       3211264,
+       3260416,
+       3260416,
+       3211264
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "host_peak": {
+     "maximum": 1605944,
+     "median": 1573176,
+     "minimum": 1507640,
+     "values": [
+      1507640,
+      1573176,
+      1573176,
+      1540408,
+      1605944,
+      1589560,
+      1524024
+     ]
+    },
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 114,
+     "median": 108,
+     "minimum": 103,
+     "values": [
+      114,
+      113,
+      104,
+      106,
+      113,
+      108,
+      103
+     ]
+    },
+    "tree_peak": {
+     "maximum": 1605944,
+     "median": 1573176,
+     "minimum": 1507640,
+     "values": [
+      1507640,
+      1573176,
+      1573176,
+      1540408,
+      1605944,
+      1589560,
+      1524024
+     ]
+    }
+   }
+  },
+  "secure-transport": {
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "facts": {
+    "first": {
+     "alpn": "http/1.1",
+     "bytes": 209,
+     "cipher": "CipherSuite(49196)",
+     "peer_certificates": "present",
+     "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+     "resumed": null,
+     "tls": true,
+     "version": "TLSv1_2"
+    },
+    "second": {
+     "alpn": "http/1.1",
+     "bytes": 209,
+     "cipher": "CipherSuite(49196)",
+     "peer_certificates": "present",
+     "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+     "resumed": null,
+     "tls": true,
+     "version": "TLSv1_2"
+    }
+   },
+   "negatives": {
+    "alpn_h2_only": {
+     "connections": [
+      {
+       "alpn": null,
+       "bytes": 209,
+       "cipher": "CipherSuite(49196)",
+       "peer_certificates": "present",
+       "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+       "resumed": null,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    },
+    "descendants_seen": 0,
+    "ip_san": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "CipherSuite(49196)",
+       "peer_certificates": "present",
+       "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+       "resumed": null,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    },
+    "refused_total": 3,
+    "tls11_only": {
+     "connections": [],
+     "refused": "handshake: Failure(Error { code: -9801, message: \"Cipher Suite negotiation failure\" })"
+    },
+    "tls12_only": {
+     "connections": [
+      {
+       "alpn": "http/1.1",
+       "bytes": 209,
+       "cipher": "CipherSuite(49196)",
+       "peer_certificates": "present",
+       "protocol_max_setting": "platform maximum (SSLSetProtocolVersionMax(kTLSProtocol13) refused with -9830 on the recording macOS)",
+       "resumed": null,
+       "tls": true,
+       "version": "TLSv1_2"
+      }
+     ],
+     "refused": null
+    },
+    "unpinned_issuer": {
+     "connections": [],
+     "refused": "handshake: Failure(Error { code: -25318, message: \"One or more certificates required to validate this certificate cannot be found.\" })"
+    },
+    "wrong_name": {
+     "connections": [],
+     "refused": "handshake: Failure(Error { code: -67602, message: \"A host name mismatch has occurred.\" })"
+    }
+   },
+   "resumed_on_second_handshake": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+   ],
+   "stages": {
+    "empty": {
+     "libmalloc_size_allocated": {
+      "maximum": 20971520,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       20971520,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 89376,
+      "median": 89376,
+      "minimum": 89376,
+      "values": [
+       89376,
+       89376,
+       89376,
+       89376,
+       89376,
+       89376,
+       89376
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1589584,
+      "median": 1556816,
+      "minimum": 1556816,
+      "values": [
+       1556816,
+       1556816,
+       1556816,
+       1589584,
+       1556816,
+       1556816,
+       1556816
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 6078464,
+      "median": 6045696,
+      "minimum": 6045696,
+      "values": [
+       6045696,
+       6045696,
+       6045696,
+       6078464,
+       6045696,
+       6045696,
+       6045696
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "first_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 25165824,
+      "minimum": 20971520,
+      "values": [
+       20971520,
+       20971520,
+       20971520,
+       29360128,
+       29360128,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 316144,
+      "median": 314864,
+      "minimum": 314864,
+      "values": [
+       314864,
+       314864,
+       314864,
+       314864,
+       315056,
+       315056,
+       316144
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 3113392,
+      "median": 2982320,
+      "minimum": 2965936,
+      "values": [
+       2965936,
+       2982320,
+       2982320,
+       2982320,
+       3064240,
+       2982320,
+       3113392
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 9568256,
+      "median": 9404416,
+      "minimum": 9388032,
+      "values": [
+       9388032,
+       9404416,
+       9404416,
+       9404416,
+       9486336,
+       9404416,
+       9568256
+      ]
+     },
+     "threads": {
+      "maximum": 3,
+      "median": 3,
+      "minimum": 3,
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     }
+    },
+    "idle": {
+     "libmalloc_size_allocated": {
+      "maximum": 20971520,
+      "median": 12582912,
+      "minimum": 12582912,
+      "values": [
+       12582912,
+       12582912,
+       12582912,
+       20971520,
+       12582912,
+       12582912,
+       12582912
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 93360,
+      "median": 93360,
+      "minimum": 93360,
+      "values": [
+       93360,
+       93360,
+       93360,
+       93360,
+       93360,
+       93360,
+       93360
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1655120,
+      "median": 1622352,
+      "minimum": 1622352,
+      "values": [
+       1622352,
+       1622352,
+       1622352,
+       1655120,
+       1622352,
+       1622352,
+       1622352
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 6324224,
+      "median": 6291456,
+      "minimum": 6291456,
+      "values": [
+       6291456,
+       6291456,
+       6291456,
+       6324224,
+       6291456,
+       6291456,
+       6291456
+      ]
+     },
+     "threads": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "post_close": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 29360128,
+      "minimum": 20971520,
+      "values": [
+       29360128,
+       20971520,
+       20971520,
+       29360128,
+       29360128,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 280192,
+      "median": 278912,
+      "minimum": 278912,
+      "values": [
+       278912,
+       278912,
+       278912,
+       278912,
+       279104,
+       279104,
+       280192
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 3441072,
+      "median": 3342768,
+      "minimum": 3310000,
+      "values": [
+       3391920,
+       3342768,
+       3342768,
+       3326384,
+       3408304,
+       3310000,
+       3441072
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 9895936,
+      "median": 9764864,
+      "minimum": 9732096,
+      "values": [
+       9814016,
+       9764864,
+       9764864,
+       9748480,
+       9830400,
+       9732096,
+       9895936
+      ]
+     },
+     "threads": {
+      "maximum": 3,
+      "median": 3,
+      "minimum": 3,
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     }
+    },
+    "post_trim": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 29360128,
+      "minimum": 20971520,
+      "values": [
+       29360128,
+       20971520,
+       20971520,
+       29360128,
+       29360128,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 280192,
+      "median": 278912,
+      "minimum": 278912,
+      "values": [
+       278912,
+       278912,
+       278912,
+       278912,
+       279104,
+       279104,
+       280192
+      ]
+     },
+     "live": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 3441072,
+      "median": 3342768,
+      "minimum": 3310000,
+      "values": [
+       3391920,
+       3342768,
+       3342768,
+       3326384,
+       3408304,
+       3310000,
+       3441072
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 9895936,
+      "median": 9764864,
+      "minimum": 9732096,
+      "values": [
+       9814016,
+       9764864,
+       9764864,
+       9748480,
+       9830400,
+       9732096,
+       9895936
+      ]
+     },
+     "threads": {
+      "maximum": 3,
+      "median": 3,
+      "minimum": 3,
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     },
+     "trim_released_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "second_handshake": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 25165824,
+      "minimum": 20971520,
+      "values": [
+       20971520,
+       20971520,
+       20971520,
+       29360128,
+       29360128,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 311424,
+      "median": 310144,
+      "minimum": 310144,
+      "values": [
+       310144,
+       310144,
+       310144,
+       310144,
+       310336,
+       310336,
+       311424
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 3162544,
+      "median": 3047856,
+      "minimum": 3015088,
+      "values": [
+       3015088,
+       3031472,
+       3015088,
+       3047856,
+       3113392,
+       3064240,
+       3162544
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 9617408,
+      "median": 9469952,
+      "minimum": 9437184,
+      "values": [
+       9437184,
+       9453568,
+       9437184,
+       9469952,
+       9535488,
+       9486336,
+       9617408
+      ]
+     },
+     "threads": {
+      "maximum": 3,
+      "median": 3,
+      "minimum": 3,
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     }
+    },
+    "targets_1": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 25165824,
+      "minimum": 20971520,
+      "values": [
+       20971520,
+       20971520,
+       20971520,
+       29360128,
+       29360128,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 311424,
+      "median": 310144,
+      "minimum": 310144,
+      "values": [
+       310144,
+       310144,
+       310144,
+       310144,
+       310336,
+       310336,
+       311424
+      ]
+     },
+     "live": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 3162544,
+      "median": 3047856,
+      "minimum": 3015088,
+      "values": [
+       3015088,
+       3031472,
+       3015088,
+       3047856,
+       3113392,
+       3064240,
+       3162544
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 9617408,
+      "median": 9469952,
+      "minimum": 9437184,
+      "values": [
+       9437184,
+       9453568,
+       9437184,
+       9469952,
+       9535488,
+       9486336,
+       9617408
+      ]
+     },
+     "threads": {
+      "maximum": 3,
+      "median": 3,
+      "minimum": 3,
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     }
+    },
+    "targets_8": {
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 29360128,
+      "minimum": 20971520,
+      "values": [
+       29360128,
+       20971520,
+       20971520,
+       29360128,
+       29360128,
+       25165824,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 530560,
+      "median": 529280,
+      "minimum": 529280,
+      "values": [
+       529280,
+       529280,
+       529280,
+       529280,
+       529472,
+       529472,
+       530560
+      ]
+     },
+     "live": {
+      "maximum": 8,
+      "median": 8,
+      "minimum": 8,
+      "values": [
+       8,
+       8,
+       8,
+       8,
+       8,
+       8,
+       8
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 3441072,
+      "median": 3342768,
+      "minimum": 3310000,
+      "values": [
+       3391920,
+       3342768,
+       3342768,
+       3326384,
+       3408304,
+       3310000,
+       3441072
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 9895936,
+      "median": 9764864,
+      "minimum": 9732096,
+      "values": [
+       9814016,
+       9764864,
+       9764864,
+       9748480,
+       9830400,
+       9732096,
+       9895936
+      ]
+     },
+     "threads": {
+      "maximum": 3,
+      "median": 3,
+      "minimum": 3,
+      "values": [
+       3,
+       3,
+       3,
+       3,
+       3,
+       3,
+       3
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "host_peak": {
+     "maximum": 3441072,
+     "median": 3342768,
+     "minimum": 3310000,
+     "values": [
+      3391920,
+      3342768,
+      3342768,
+      3326384,
+      3408304,
+      3310000,
+      3441072
+     ]
+    },
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 106,
+     "median": 97,
+     "minimum": 90,
+     "values": [
+      104,
+      106,
+      105,
+      93,
+      90,
+      96,
+      97
+     ]
+    },
+    "tree_peak": {
+     "maximum": 3441072,
+     "median": 3342768,
+     "minimum": 3310000,
+     "values": [
+      3391920,
+      3342768,
+      3342768,
+      3326384,
+      3408304,
+      3310000,
+      3441072
+     ]
+    }
+   }
+  }
+ },
+ "schema": "minicon-surf.tls-court-receipt/0.0.1",
+ "session_cache_entries": 16,
+ "tls_server": {
+  "alpn": [
+   "http/1.1"
+  ],
+  "cert": "loopback.pem",
+  "maximum": null,
+  "minimum": "771",
+  "tls": true
+ },
+ "warmup": 1
+}
