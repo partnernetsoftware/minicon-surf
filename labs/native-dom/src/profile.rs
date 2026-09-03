@@ -39,10 +39,20 @@ pub const RECORD_FILE: &str = "profile.v1.sealed";
 pub const LOCK_FILE: &str = "writer.lock";
 
 pub fn now_seconds() -> u64 {
-    SystemTime::now()
+    let wall = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
-        .unwrap_or(0)
+        .unwrap_or(0);
+    // Court knob: a fixed clock offset in seconds, read once, so expiry and
+    // deletion semantics can be observed without sleeping on the wall clock.
+    static OFFSET: std::sync::OnceLock<i64> = std::sync::OnceLock::new();
+    let offset = *OFFSET.get_or_init(|| {
+        std::env::var("MINICON_SURF_CLOCK_OFFSET_SECONDS")
+            .ok()
+            .and_then(|v| v.parse::<i64>().ok())
+            .unwrap_or(0)
+    });
+    wall.saturating_add_signed(offset)
 }
 
 pub fn valid_profile_name(name: &str) -> bool {
