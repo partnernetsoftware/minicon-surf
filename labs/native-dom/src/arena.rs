@@ -673,21 +673,39 @@ impl Arena {
     }
 
     /// Mark the whole pages of the free tail reusable and report their bytes.
+    /// Mark the whole pages of the free tail reusable and report the bytes
+    /// newly marked. Only the touched extent counts: pages above the heap's
+    /// high-water mark were never written, cost nothing, and are not
+    /// reported; pages already marked by an earlier trim are not counted
+    /// again. The marked region is always `[decommitted_from, capacity)`.
     pub fn trim(&self) -> usize {
         // SAFETY: as in `statistics`.
-        let span = unsafe { (*self.heap.get()).tail_free_span() };
+        let (span, high_water) = unsafe {
+            let heap = &*self.heap.get();
+            (heap.tail_free_span(), heap.high_water)
+        };
         let Some((offset, len)) = span else {
             return 0;
         };
-        let Some((start, len)) = self.region.pages_within(offset, len) else {
+        let end = (offset + len).min(high_water);
+        if end <= offset {
+            return 0;
+        }
+        let Some((start, len)) = self.region.pages_within(offset, end - offset) else {
             return 0;
         };
         if !self.region.advise(start, len, MADV_FREE_REUSABLE) {
             return 0;
         }
-        let from = self.decommitted_from.get().map_or(start, |f| f.min(start));
+        let already = self.decommitted_from.get();
+        let newly = match already {
+            Some(from) if from <= start => 0,
+            Some(from) => from.min(start + len) - start,
+            None => len,
+        };
+        let from = already.map_or(start, |f| f.min(start));
         self.decommitted_from.set(Some(from));
-        len
+        newly
     }
 
     /// After the heap grew past a trimmed tail, tell the kernel those pages
@@ -1085,10 +1103,13 @@ mod macos_tests {
         unsafe { allocator.dealloc(block) };
         let released = arena.trim();
         let page = Region::page_size();
+        let touched = arena.statistics().high_water;
+        assert!(touched >= 100_000 && touched < 100_000 + 2 * page);
         assert!(
-            released >= (1 << 20) - 100_000 - 2 * page,
-            "most of the mapping is reusable"
+            released >= touched - 3 * page && released <= touched,
+            "only the touched pages of the free tail are reported, never the untouched reservation: {released} of {touched}"
         );
+        assert_eq!(arena.trim(), 0, "a second trim marks nothing new");
         assert!(arena.decommitted_from().is_some());
         let again = allocator.alloc(200_000);
         assert!(!again.is_null());
@@ -1103,6 +1124,10 @@ mod macos_tests {
                 .all(|b| *b == 0x22)
         );
         unsafe { allocator.dealloc(again) };
-        assert!(arena.trim() > 0);
+        let again_released = arena.trim();
+        assert!(
+            again_released > 0 && again_released <= 200_000 + 2 * page,
+            "regrown pages are reported once more after they were recommitted: {again_released}"
+        );
     }
 }
