@@ -219,7 +219,38 @@
     return true;
   };
   g.__mcsNetPending = () => net.pending.size;
-  g.__mcsLocation = (href) => { try { const u = new URL(href); g.location = { href: u.href, origin: u.origin, protocol: u.protocol, host: u.host, hostname: u.hostname, port: u.port, pathname: u.pathname, search: u.search, hash: u.hash, toString() { return u.href; } }; } catch (e) { g.location = { href, toString() { return href; } }; } };
+  // Profile-backed cookies and storage. The host seeds the mirrors before a
+  // script runs and drains the write queues after it; the page sees its own
+  // writes synchronously, the host commits them in order and re-seeds on a
+  // commit failure, so a failed commit is never a silently kept write.
+  const store = { cookie: "", cookieWrites: [], entries: new Map(), ops: [], readonly: false, keyLimit: 32, valueLimit: 1024 };
+  Object.defineProperty(Document.prototype, "cookie", {
+    get() { return store.cookie; },
+    set(value) { store.cookieWrites.push(String(value)); },
+    configurable: true,
+  });
+  const quota = (why) => { const e = new Error(why); e.name = "QuotaExceededError"; return e; };
+  const storage = {
+    getItem(key) { const v = store.entries.get(String(key)); return v === undefined ? null : v; },
+    setItem(key, value) {
+      key = String(key); value = String(value);
+      if (store.readonly) throw quota("localStorage is read-only after a failed commit");
+      if (value.length > store.valueLimit) throw quota("value exceeds the profile budget");
+      if (!store.entries.has(key) && store.entries.size >= store.keyLimit) throw quota("key count exceeds the profile budget");
+      store.entries.set(key, value); store.ops.push({ op: "set", key, value });
+    },
+    removeItem(key) { key = String(key); if (store.readonly) throw quota("localStorage is read-only after a failed commit"); if (store.entries.delete(key)) store.ops.push({ op: "remove", key }); },
+    clear() { if (store.readonly) throw quota("localStorage is read-only after a failed commit"); if (store.entries.size) { store.entries.clear(); store.ops.push({ op: "clear" }); } },
+    key(index) { const keys = Array.from(store.entries.keys()); return index < keys.length ? keys[index] : null; },
+    get length() { return store.entries.size; },
+  };
+  g.localStorage = storage;
+  g.__mcsCookieSeed = (text) => { store.cookie = String(text); };
+  g.__mcsCookieTake = () => { const q = store.cookieWrites; store.cookieWrites = []; return JSON.stringify(q); };
+  g.__mcsStorageSeed = (json, readonly) => { store.entries = new Map(Object.entries(JSON.parse(json))); store.ops = []; store.readonly = !!readonly; };
+  g.__mcsStorageTake = () => { const q = store.ops; store.ops = []; return JSON.stringify(q); };
+  // The realm has no URL global; the host passes the parsed parts of the document URL.
+  g.__mcsLocation = (parts) => { g.location = { href: parts.href, origin: parts.origin, protocol: parts.protocol, host: parts.host, hostname: parts.hostname, port: parts.port, pathname: parts.pathname, search: parts.search, hash: parts.hash, toString() { return parts.href; } }; };
   g.window = g; g.self = g; g.document = document;
   g.Node = Node; g.Element = Element; g.Text = Text; g.Document = Document; g.Event = Event; g.MutationObserver = MutationObserver;
   g.queueMicrotask = (fn) => { Promise.resolve().then(fn); };

@@ -25,6 +25,7 @@ use url::Url;
 mod arena;
 mod cdp;
 mod net;
+mod profile;
 
 const PROTOCOL: &str = "minicon-surf.control";
 const VERSION: &str = "0.0.1";
@@ -33,6 +34,7 @@ const MAX_RESPONSE_BYTES: usize = 4_194_304;
 const MAX_DEADLINE_MS: u64 = 120_000;
 const MAX_TARGETS: usize = 8;
 const MAX_PROFILES: usize = 8;
+const MAX_SESSIONS: usize = 8;
 const MAX_SNAPSHOT_NODES: u64 = 128;
 const MAX_FIXTURE_BYTES: u64 = 1_048_576;
 const REALM_MEMORY_LIMIT: usize = 16 * 1024 * 1024;
@@ -192,6 +194,46 @@ impl ControlError {
 
 fn invalid(message: &str) -> ControlError {
     ControlError::new("invalid_request", message, false)
+}
+
+fn profile_budgets() -> Value {
+    json!({
+        "cookies_per_host":profile::MAX_COOKIES_PER_HOST,
+        "cookies_per_profile":profile::MAX_COOKIES_PER_PROFILE,
+        "cookie_bytes":profile::MAX_COOKIE_BYTES,
+        "storage_keys_per_origin":profile::MAX_STORAGE_KEYS_PER_ORIGIN,
+        "storage_value_bytes":profile::MAX_STORAGE_VALUE_BYTES,
+        "accounted_bytes_per_profile":profile::MAX_ACCOUNTED_BYTES_PER_PROFILE,
+        "record_bytes":profile::MAX_RECORD_BYTES,
+    })
+}
+
+fn store_error(error: profile::StoreError, profile_id: &str) -> ControlError {
+    let message = match &error {
+        profile::StoreError::KeychainUnavailable(_) => {
+            "keychain unavailable: persistent profiles fail closed"
+        }
+        profile::StoreError::Corrupt(_) => "profile record is corrupt or incompatible",
+        profile::StoreError::Io(_) => "profile record could not be written",
+    };
+    ControlError::new(error.code(), message, false)
+        .scoped("profile", profile_id)
+        .details(json!({"reason":error.detail()}))
+}
+
+fn commit_failed(scope_id: &str, detail: &str) -> ControlError {
+    let kind = if scope_id.starts_with("target_") {
+        "target"
+    } else {
+        "profile"
+    };
+    ControlError::new(
+        "internal",
+        "profile storage commit failed; the previous record is kept",
+        false,
+    )
+    .scoped(kind, scope_id)
+    .details(json!({"reason":"storage_commit_failed","detail":detail}))
 }
 
 fn not_found(kind: &'static str, id: &str) -> ControlError {
@@ -878,9 +920,52 @@ fn serialize_children(node: &NodeRef, out: &mut Vec<Value>) {
 
 // ------------------------------------------------------------------- host
 
+/// One profile: identity, its two cookie jars, its origin-keyed storage and,
+/// for persistent profiles, the sealed record on disk and the writer lock.
 struct Profile {
     id: String,
     name: Option<String>,
+    persistent: bool,
+    jar: profile::Jar,
+    storage: profile::Storage,
+    /// The data key while the profile is loaded (persistent only); zeroized
+    /// when the profile is dropped.
+    dek: Option<zeroize::Zeroizing<Vec<u8>>>,
+    directory: Option<PathBuf>,
+    /// Set after a failed disk commit: no further writes for this host.
+    read_only: bool,
+    /// Held while a session is open on a persistent profile.
+    lock: Option<std::fs::File>,
+}
+
+/// A target's working copy of its profile's jar and storage, synced from the
+/// profile before an operation and committed back after it.
+#[derive(Debug, Clone)]
+struct TargetIo {
+    jar: profile::Jar,
+    storage: profile::Storage,
+    origin: String,
+    document_host: Option<String>,
+    cookie_rejections: u64,
+}
+
+struct JarHooks<'a> {
+    jar: &'a mut profile::Jar,
+    document_host: Option<&'a str>,
+    now: u64,
+    rejections: &'a mut u64,
+}
+
+impl net::CookieHooks for JarHooks<'_> {
+    fn cookie_header(&mut self, url: &Url) -> Option<String> {
+        self.jar.header_for(url, self.document_host, self.now)
+    }
+
+    fn store(&mut self, url: &Url, set_cookie: &str) {
+        if self.jar.store(url, set_cookie, self.now).is_err() {
+            *self.rejections += 1;
+        }
+    }
 }
 
 struct Session {
@@ -911,6 +996,7 @@ struct Target {
     /// Target revisions are monotonic across navigations: the realm counts
     /// from zero for each document, so its count is offset by this base.
     revision_base: u64,
+    io: TargetIo,
 }
 
 /// Where a document comes from: a court fixture file or a URL fetched under
@@ -941,7 +1027,92 @@ impl Target {
     ) -> Result<String, ControlError> {
         let result = self.realm.eval(script, deadline, &self.id)?;
         self.pump_network(deadline, policy)?;
+        self.drain_store_writes(deadline)?;
         Ok(result)
+    }
+
+    /// The document's URL for cookie purposes; fixture targets have none.
+    fn document_url(&self) -> Option<Url> {
+        self.url.clone()
+    }
+
+    /// Seed the realm's cookie and storage mirrors from the working copy.
+    fn seed_store(&mut self, deadline: Instant, read_only: bool) -> Result<(), ControlError> {
+        let now = profile::now_seconds();
+        let cookie = self
+            .document_url()
+            .map(|url| self.io.jar.document_cookie(&url, now))
+            .unwrap_or_default();
+        self.realm.eval(
+            &format!("__mcsCookieSeed({})", json!(cookie)),
+            deadline,
+            &self.id,
+        )?;
+        let seed = self.io.storage.origin_json(&self.io.origin);
+        self.realm.eval(
+            &format!(
+                "__mcsStorageSeed({}, {})",
+                json!(serde_json::to_string(&seed).expect("storage serializes")),
+                read_only
+            ),
+            deadline,
+            &self.id,
+        )?;
+        Ok(())
+    }
+
+    /// Apply the page's synchronous cookie and storage writes to the working
+    /// copy, in order; the host commits them afterwards.
+    fn drain_store_writes(&mut self, deadline: Instant) -> Result<(), ControlError> {
+        let now = profile::now_seconds();
+        let writes = self.realm.eval("__mcsCookieTake()", deadline, &self.id)?;
+        let writes: Vec<String> = serde_json::from_str(&writes).unwrap_or_default();
+        if let Some(url) = self.document_url() {
+            for line in &writes {
+                if self.io.jar.store(&url, line, now).is_err() {
+                    self.io.cookie_rejections += 1;
+                }
+            }
+            if !writes.is_empty() {
+                let cookie = self.io.jar.document_cookie(&url, now);
+                self.realm.eval(
+                    &format!("__mcsCookieSeed({})", json!(cookie)),
+                    deadline,
+                    &self.id,
+                )?;
+            }
+        }
+        let ops = self.realm.eval("__mcsStorageTake()", deadline, &self.id)?;
+        let ops: Vec<Value> = serde_json::from_str(&ops).unwrap_or_default();
+        for op in &ops {
+            match op["op"].as_str() {
+                Some("set") => {
+                    let (Some(key), Some(value)) = (op["key"].as_str(), op["value"].as_str())
+                    else {
+                        continue;
+                    };
+                    let other = self.io.jar.accounted_bytes();
+                    // The realm mirror already enforced the budgets; a
+                    // rejection here is counted and the write dropped.
+                    if self
+                        .io
+                        .storage
+                        .set(&self.io.origin, key, value, other)
+                        .is_err()
+                    {
+                        self.io.cookie_rejections += 1;
+                    }
+                }
+                Some("remove") => {
+                    if let Some(key) = op["key"].as_str() {
+                        self.io.storage.remove(&self.io.origin, key);
+                    }
+                }
+                Some("clear") => self.io.storage.clear(&self.io.origin),
+                _ => {}
+            }
+        }
+        Ok(())
     }
 
     fn pump_network(
@@ -975,7 +1146,22 @@ impl Target {
                     })
                 } else {
                     match self.resolve(raw) {
-                        Ok(url) => net::fetch(url.as_str(), policy, &mut self.budget, deadline),
+                        Ok(url) => {
+                            let document_host = self.io.document_host.clone();
+                            let mut hooks = JarHooks {
+                                jar: &mut self.io.jar,
+                                document_host: document_host.as_deref(),
+                                now: profile::now_seconds(),
+                                rejections: &mut self.io.cookie_rejections,
+                            };
+                            net::fetch_with(
+                                url.as_str(),
+                                policy,
+                                &mut self.budget,
+                                deadline,
+                                Some(&mut hooks),
+                            )
+                        }
                         Err(error) => Err(error),
                     }
                 };
@@ -1035,7 +1221,7 @@ struct Host {
     policy: net::Policy,
     realm_allocation: RealmAllocation,
     profiles: BTreeMap<String, Profile>,
-    session: Option<Session>,
+    sessions: BTreeMap<String, Session>,
     targets: BTreeMap<String, Target>,
     next_profile: u64,
     next_session: u64,
@@ -1051,9 +1237,22 @@ struct Host {
     next_adapter: u64,
     adapters_detached_total: u64,
     next_bridge_request: u64,
+    /// Persistent profile store (D1); `None` keeps the host ephemeral-only.
+    profile_root: Option<PathBuf>,
+    key_source: Option<profile::KeySource>,
+    /// Persistent profile directories that failed to load, by name, with
+    /// the reason; they never block healthy siblings.
+    unavailable_profiles: BTreeMap<String, String>,
+    store_writes_total: u64,
+    store_bytes_written_total: u64,
+    cookie_rejections_total: u64,
 }
 
 const MAX_ADAPTERS: usize = 16;
+
+/// The control-plane storage origin: `profile.storage.*` reads and writes
+/// here; pages never reach it and it is persisted like any other origin.
+const CONTROL_ORIGIN: &str = "minicon-surf://control";
 
 struct AdapterRecord {
     target_id: String,
@@ -1146,6 +1345,268 @@ impl Host {
         detached
     }
 
+    /// The profile behind a target, through its session.
+    fn target_profile_id(&self, target_id: &str) -> Option<String> {
+        let target = self.targets.get(target_id)?;
+        self.sessions
+            .get(&target.session_id)
+            .map(|s| s.profile_id.clone())
+    }
+
+    /// A working copy of a session's profile for a document at `url`.
+    fn io_for(&self, session_id: &str, url: Option<&Url>) -> Result<TargetIo, ControlError> {
+        let profile_id = self
+            .sessions
+            .get(session_id)
+            .map(|s| s.profile_id.clone())
+            .ok_or_else(|| not_found("session", session_id))?;
+        let profile = self
+            .profiles
+            .get(&profile_id)
+            .ok_or_else(|| not_found("profile", &profile_id))?;
+        Ok(TargetIo {
+            jar: profile.jar.clone(),
+            storage: profile.storage.clone(),
+            origin: url.map_or_else(
+                || profile::OPAQUE_ORIGIN.to_owned(),
+                |u| u.origin().ascii_serialization(),
+            ),
+            document_host: url.and_then(|u| u.host_str().map(|h| h.to_ascii_lowercase())),
+            cookie_rejections: 0,
+        })
+    }
+
+    /// Refresh a target's working copy from its profile before an operation
+    /// so writes made through other targets or the control plane are seen.
+    fn sync_target_io(&mut self, id: &str) {
+        let Some(profile_id) = self.target_profile_id(id) else {
+            return;
+        };
+        let (Some(target), Some(profile)) =
+            (self.targets.get_mut(id), self.profiles.get(&profile_id))
+        else {
+            return;
+        };
+        target.io.jar = profile.jar.clone();
+        target.io.storage = profile.storage.clone();
+    }
+
+    /// Seal and write a persistent profile's record (D5 order); ephemeral
+    /// profiles commit in memory only.
+    fn write_profile(&mut self, profile_id: &str) -> Result<(), ControlError> {
+        let profile = self
+            .profiles
+            .get(profile_id)
+            .ok_or_else(|| not_found("profile", profile_id))?;
+        if !profile.persistent {
+            return Ok(());
+        }
+        let (Some(source), Some(dek), Some(directory)) =
+            (&self.key_source, &profile.dek, &profile.directory)
+        else {
+            return Err(ControlError::new(
+                "internal",
+                "persistent profile lacks its key or directory",
+                false,
+            )
+            .scoped("profile", profile_id));
+        };
+        let data = profile::RecordData {
+            persistent_cookies: profile.jar.persistent.clone(),
+            storage: profile.storage.clone(),
+        };
+        let bytes = profile::seal_record(source, profile_id, dek, &data)
+            .map_err(|e| store_error(e, profile_id))?;
+        let written =
+            profile::commit_record(directory, &bytes).map_err(|e| store_error(e, profile_id))?;
+        self.store_writes_total += 1;
+        self.store_bytes_written_total += written as u64;
+        Ok(())
+    }
+
+    /// Commit a target's working copy back to its profile: disk first for a
+    /// persistent profile, memory only otherwise. A failed disk commit rolls
+    /// the target and the profile back, marks the profile read-only for the
+    /// rest of the host lifetime and reseeds the realm mirrors read-only.
+    fn commit_target_io(&mut self, id: &str, deadline: Instant) -> Result<(), ControlError> {
+        let Some(profile_id) = self.target_profile_id(id) else {
+            return Ok(());
+        };
+        let Some(target) = self.targets.get(id) else {
+            return Ok(());
+        };
+        let rejections = target.io.cookie_rejections;
+        let (jar, storage) = (target.io.jar.clone(), target.io.storage.clone());
+        let Some(profile) = self.profiles.get(&profile_id) else {
+            return Ok(());
+        };
+        let unchanged = jar.persistent == profile.jar.persistent
+            && jar.volatile == profile.jar.volatile
+            && storage == profile.storage;
+        self.cookie_rejections_total += rejections;
+        if let Some(target) = self.targets.get_mut(id) {
+            target.io.cookie_rejections = 0;
+        }
+        if unchanged {
+            return Ok(());
+        }
+        if profile.read_only {
+            self.rollback_target_io(id, &profile_id, deadline)?;
+            return Err(commit_failed(
+                id,
+                "storage is read-only after an earlier failed commit",
+            ));
+        }
+        let previous = {
+            let profile = self.profiles.get_mut(&profile_id).expect("profile exists");
+            (
+                std::mem::replace(&mut profile.jar, jar),
+                std::mem::replace(&mut profile.storage, storage),
+            )
+        };
+        match self.write_profile(&profile_id) {
+            Ok(()) => Ok(()),
+            Err(error) => {
+                let profile = self.profiles.get_mut(&profile_id).expect("profile exists");
+                profile.jar = previous.0;
+                profile.storage = previous.1;
+                profile.read_only = true;
+                self.rollback_target_io(id, &profile_id, deadline)?;
+                Err(commit_failed(id, &error.message))
+            }
+        }
+    }
+
+    fn rollback_target_io(
+        &mut self,
+        id: &str,
+        profile_id: &str,
+        deadline: Instant,
+    ) -> Result<(), ControlError> {
+        let (Some(target), Some(profile)) =
+            (self.targets.get_mut(id), self.profiles.get(profile_id))
+        else {
+            return Ok(());
+        };
+        target.io.jar = profile.jar.clone();
+        target.io.storage = profile.storage.clone();
+        target.seed_store(deadline, true)
+    }
+
+    /// A control-plane mutation of the session's profile with the same
+    /// commit-or-rollback rule as page writes.
+    fn commit_control_mutation(
+        &mut self,
+        profile_id: &str,
+        mutate: impl FnOnce(&mut profile::Jar, &mut profile::Storage) -> Result<(), ControlError>,
+    ) -> Result<(), ControlError> {
+        let profile = self
+            .profiles
+            .get_mut(profile_id)
+            .ok_or_else(|| not_found("profile", profile_id))?;
+        if profile.read_only {
+            return Err(commit_failed(
+                profile_id,
+                "storage is read-only after an earlier failed commit",
+            ));
+        }
+        let previous = (profile.jar.clone(), profile.storage.clone());
+        mutate(&mut profile.jar, &mut profile.storage)?;
+        if let Err(error) = self.write_profile(profile_id) {
+            let profile = self.profiles.get_mut(profile_id).expect("profile exists");
+            profile.jar = previous.0;
+            profile.storage = previous.1;
+            profile.read_only = true;
+            return Err(commit_failed(profile_id, &error.message));
+        }
+        Ok(())
+    }
+
+    /// D1 start-up: no keychain UI for the host lifetime, then load every
+    /// persistent profile directory; a directory that fails to load is
+    /// listed unavailable with its reason and never touched.
+    fn enable_profile_store(&mut self, root: PathBuf, config_dir: PathBuf) -> io::Result<()> {
+        std::fs::create_dir_all(&root)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700))?;
+        }
+        std::fs::create_dir_all(&config_dir)?;
+        let mode = match std::env::var("MINICON_SURF_PROFILE_STORE").as_deref() {
+            Ok("envelope-keyfile-experiment") => profile::StoreMode::KeyfileExperiment,
+            _ => profile::StoreMode::KeychainEnvelope,
+        };
+        if mode == profile::StoreMode::KeychainEnvelope && !profile::disable_keychain_interaction()
+        {
+            eprintln!(
+                "native-dom-control: keychain interaction could not be disabled; persistent profiles fail closed"
+            );
+        }
+        let source = profile::KeySource::new(mode, &root, &config_dir);
+        let mut entries: Vec<_> = std::fs::read_dir(&root)?.flatten().collect();
+        entries.sort_by_key(|e| e.file_name());
+        for entry in entries {
+            let Some(name) = entry.file_name().to_str().map(str::to_owned) else {
+                continue;
+            };
+            if !entry.path().is_dir() || !profile::valid_profile_name(&name) {
+                continue;
+            }
+            let id = format!("profile_{name}");
+            let directory = entry.path();
+            let loaded = profile::check_permissions(&directory)
+                .and_then(|()| {
+                    std::fs::read(directory.join(profile::RECORD_FILE))
+                        .map_err(|e| profile::StoreError::Corrupt(format!("record: {e}")))
+                })
+                .and_then(|bytes| profile::open_record(&source, &id, &bytes));
+            match loaded {
+                Ok((dek, data)) if self.profiles.len() < MAX_PROFILES => {
+                    self.profiles.insert(
+                        id.clone(),
+                        Profile {
+                            id,
+                            name: Some(name),
+                            persistent: true,
+                            jar: profile::Jar {
+                                persistent: data.persistent_cookies,
+                                volatile: Vec::new(),
+                            },
+                            storage: data.storage,
+                            dek: Some(dek),
+                            directory: Some(directory),
+                            read_only: false,
+                            lock: None,
+                        },
+                    );
+                }
+                Ok(_) => {
+                    self.unavailable_profiles
+                        .insert(name, "profile capacity exceeded during load".into());
+                }
+                Err(error) => {
+                    // The reason names the failure class, never file contents.
+                    self.unavailable_profiles.insert(
+                        name,
+                        match error {
+                            profile::StoreError::KeychainUnavailable(_) => {
+                                "keychain unavailable".into()
+                            }
+                            profile::StoreError::Corrupt(detail) => {
+                                format!("corrupt or incompatible: {detail}")
+                            }
+                            profile::StoreError::Io(detail) => format!("unreadable: {detail}"),
+                        },
+                    );
+                }
+            }
+        }
+        self.profile_root = Some(root);
+        self.key_source = Some(source);
+        Ok(())
+    }
+
     fn target_mut(&mut self, id: &str) -> Result<&mut Target, ControlError> {
         self.targets
             .get_mut(id)
@@ -1190,11 +1651,45 @@ impl Host {
     fn execute(&mut self, request: &Request) -> Result<Value, ControlError> {
         let deadline = Instant::now() + request.deadline;
         let a = &request.arguments;
+        // Target operations run on a working copy of the profile that is
+        // synced before and committed after; a failed commit is the
+        // operation's typed failure.
+        let target_scoped = matches!(
+            request.operation.as_str(),
+            "target.inspect" | "target.snapshot" | "target.act" | "target.wait"
+        );
+        let target_id = if target_scoped {
+            a.get("target").and_then(Value::as_str).map(str::to_owned)
+        } else {
+            None
+        };
+        if let Some(id) = &target_id {
+            self.sync_target_io(id);
+        }
+        let outcome = self.dispatch(request, deadline);
+        if let Some(id) = &target_id
+            && self.targets.contains_key(id)
+        {
+            self.commit_target_io(id, deadline)?;
+        }
+        outcome
+    }
+
+    fn dispatch(&mut self, request: &Request, deadline: Instant) -> Result<Value, ControlError> {
+        let a = &request.arguments;
         match request.operation.as_str() {
             "profile.create" => self.profile_create(a),
-            "profile.list" => Ok(
-                json!({"kind":"profile_list","profiles":self.profiles.values().map(|p| json!({"profile":p.id,"name":p.name,"persistence":"ephemeral"})).collect::<Vec<_>>()}),
-            ),
+            "profile.list" => {
+                let mut profiles = self
+                    .profiles
+                    .values()
+                    .map(|p| json!({"profile":p.id,"name":p.name,"persistence":if p.persistent { "persistent" } else { "ephemeral" },"available":true}))
+                    .collect::<Vec<_>>();
+                for (name, reason) in &self.unavailable_profiles {
+                    profiles.push(json!({"profile":format!("profile_{name}"),"name":name,"persistence":"persistent","available":false,"reason":reason}));
+                }
+                Ok(json!({"kind":"profile_list","profiles":profiles}))
+            }
             "profile.inspect" => {
                 let object = exact_object(a, &["profile"])?;
                 let id = typed_field(object, "profile", "profile")?;
@@ -1202,9 +1697,16 @@ impl Host {
                     .profiles
                     .get(id)
                     .ok_or_else(|| not_found("profile", id))?;
-                Ok(
-                    json!({"kind":"profile","profile":profile.id,"name":profile.name,"persistence":"ephemeral","sessions":self.session.iter().filter(|s| s.profile_id == profile.id).count()}),
-                )
+                Ok(json!({
+                    "kind":"profile","profile":profile.id,"name":profile.name,
+                    "persistence":if profile.persistent { "persistent" } else { "ephemeral" },
+                    "sessions":self.sessions.values().filter(|s| s.profile_id == profile.id).count(),
+                    "cookies":{"objects":profile.jar.len(),"persistent":profile.jar.persistent.len(),"volatile":profile.jar.volatile.len(),"bytes":profile.jar.accounted_bytes()},
+                    "storage":{"keys":profile.storage.keys(),"origins":profile.storage.origins.len(),"bytes":profile.storage.accounted_bytes()},
+                    "read_only":profile.read_only,
+                    "store":self.key_source.as_ref().map(|k| k.mode.name()),
+                    "budgets":profile_budgets(),
+                }))
             }
             "profile.delete" => {
                 let object = exact_object(a, &["profile"])?;
@@ -1212,18 +1714,32 @@ impl Host {
                 if !self.profiles.contains_key(id) {
                     return Err(not_found("profile", id));
                 }
-                if self.session.as_ref().is_some_and(|s| s.profile_id == id) {
+                if self.sessions.values().any(|s| s.profile_id == id) {
                     return Err(
                         ControlError::new("conflict", "profile has a live session", true)
                             .scoped("profile", id),
                     );
                 }
-                self.profiles.remove(id);
-                Ok(json!({"kind":"profile_deleted","profile":id,"persistence":"ephemeral"}))
+                let profile = self.profiles.remove(id).expect("profile exists");
+                if let Some(directory) = &profile.directory {
+                    std::fs::remove_dir_all(directory).map_err(|e| {
+                        ControlError::new(
+                            "internal",
+                            format!("profile directory removal failed: {e}"),
+                            true,
+                        )
+                        .scoped("profile", id)
+                    })?;
+                }
+                Ok(
+                    json!({"kind":"profile_deleted","profile":id,"persistence":if profile.persistent { "persistent" } else { "ephemeral" }}),
+                )
             }
+            "profile.storage.put" => self.profile_storage_put(a),
+            "profile.storage.get" => self.profile_storage_get(a),
             "session.open" => self.session_open(a),
             "session.list" => Ok(
-                json!({"kind":"session_list","sessions":self.session.iter().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()}),
+                json!({"kind":"session_list","sessions":self.sessions.values().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()}),
             ),
             "session.close" => self.session_close(a),
             "target.open" => self.target_open(a, deadline),
@@ -1304,16 +1820,13 @@ impl Host {
                 "profile.create accepts persistence and an optional name",
             ));
         }
-        match string_field(object, "persistence")? {
-            "ephemeral" => {}
-            "persistent" => {
-                return Err(ControlError::new(
-                    "unsupported_capability",
-                    "the native DOM slice offers ephemeral profiles only",
-                    false,
-                ));
-            }
+        let persistent = match string_field(object, "persistence")? {
+            "ephemeral" => false,
+            "persistent" => true,
             _ => return Err(invalid("persistence must be ephemeral or persistent")),
+        };
+        if persistent {
+            return self.profile_create_persistent(object);
         }
         let name = match object.get("name") {
             None => None,
@@ -1354,10 +1867,88 @@ impl Host {
             Profile {
                 id: id.clone(),
                 name: name.clone(),
+                persistent: false,
+                jar: profile::Jar::default(),
+                storage: profile::Storage::default(),
+                dek: None,
+                directory: None,
+                read_only: false,
+                lock: None,
             },
         );
         Ok(
             json!({"kind":"profile","profile":id,"name":name,"persistence":"ephemeral","created":true}),
+        )
+    }
+
+    /// D1: a persistent profile exists only when the keychain-backed store
+    /// can seal its first record; nothing is written before that succeeds.
+    fn profile_create_persistent(
+        &mut self,
+        object: &Map<String, Value>,
+    ) -> Result<Value, ControlError> {
+        let (Some(root), Some(source)) = (self.profile_root.clone(), self.key_source.as_ref())
+        else {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "persistent profiles need --profile-root and a master-key source",
+                false,
+            ));
+        };
+        let name = object
+            .get("name")
+            .and_then(Value::as_str)
+            .ok_or_else(|| invalid("persistent profiles need a name"))?;
+        if !profile::valid_profile_name(name) {
+            return Err(invalid(
+                "name must be 1 to 32 lowercase letters, digits or hyphens",
+            ));
+        }
+        let id = format!("profile_{name}");
+        if self.profiles.contains_key(&id)
+            || self.unavailable_profiles.contains_key(name)
+            || root.join(name).exists()
+        {
+            return Err(
+                ControlError::new("conflict", "profile name already exists", false)
+                    .scoped("profile", &id),
+            );
+        }
+        if self.profiles.len() >= MAX_PROFILES {
+            return Err(ControlError::new(
+                "resource_limit",
+                "profile capacity reached",
+                true,
+            ));
+        }
+        let dek = profile::random_bytes(32).map_err(|e| store_error(e, &id))?;
+        // Seal first: a missing or locked keychain fails here, before any file.
+        let bytes = profile::seal_record(source, &id, &dek, &profile::RecordData::default())
+            .map_err(|e| store_error(e, &id))?;
+        let directory =
+            profile::create_profile_dir(&root, name).map_err(|e| store_error(e, &id))?;
+        if let Err(error) = profile::commit_record(&directory, &bytes) {
+            let _ = std::fs::remove_dir_all(&directory);
+            return Err(store_error(error, &id));
+        }
+        self.store_writes_total += 1;
+        self.store_bytes_written_total += bytes.len() as u64;
+        self.profiles.insert(
+            id.clone(),
+            Profile {
+                id: id.clone(),
+                name: Some(name.to_owned()),
+                persistent: true,
+                jar: profile::Jar::default(),
+                storage: profile::Storage::default(),
+                dek: Some(dek),
+                directory: Some(directory),
+                read_only: false,
+                lock: None,
+            },
+        );
+        Ok(
+            json!({"kind":"profile","profile":id,"name":name,"persistence":"persistent","created":true,"store":source.mode.name()}),
         )
     }
 
@@ -1367,41 +1958,155 @@ impl Host {
         if !self.profiles.contains_key(profile) {
             return Err(not_found("profile", profile));
         }
-        if self.session.is_some() {
+        if self.sessions.len() >= MAX_SESSIONS {
             return Err(ControlError::new(
                 "resource_limit",
-                "this host owns one live session; close it first",
+                "session capacity reached",
                 true,
             ));
         }
+        // One live session per profile: a session is the profile's live handle, and
+        // the volatile jar (D4) is shared across the profile's sessions in sequence.
+        if self.sessions.values().any(|s| s.profile_id == profile) {
+            return Err(ControlError::new(
+                "resource_limit",
+                "this profile owns one live session; close it first",
+                true,
+            ));
+        }
+        let record = self.profiles.get_mut(profile).expect("profile exists");
+        record.jar.expire(profile::now_seconds());
+        if record.persistent && record.lock.is_none() {
+            let directory = record
+                .directory
+                .clone()
+                .expect("persistent profile has a directory");
+            match profile::try_lock(&directory) {
+                Ok(Some(file)) => record.lock = Some(file),
+                Ok(None) => {
+                    return Err(ControlError::new(
+                        "profile_locked",
+                        "another host holds this profile's writer lock",
+                        true,
+                    )
+                    .scoped("profile", profile));
+                }
+                Err(error) => return Err(store_error(error, profile)),
+            }
+        }
         self.next_session += 1;
         let id = format!("session_{}", self.next_session);
-        self.session = Some(Session {
-            id: id.clone(),
-            profile_id: profile.to_owned(),
-        });
+        self.sessions.insert(
+            id.clone(),
+            Session {
+                id: id.clone(),
+                profile_id: profile.to_owned(),
+            },
+        );
         Ok(json!({"kind":"session","session":id,"profile":profile}))
     }
 
     fn session_close(&mut self, arguments: &Value) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["session"])?;
         let id = typed_field(object, "session", "session")?;
-        let session = match self.session.take() {
-            Some(session) if session.id == id => session,
-            other => {
-                self.session = other;
-                return Err(not_found("session", id));
-            }
-        };
-        let closed = self.targets.len();
-        let ids: Vec<String> = self.targets.keys().cloned().collect();
+        let session = self
+            .sessions
+            .remove(id)
+            .ok_or_else(|| not_found("session", id))?;
+        let ids: Vec<String> = self
+            .targets
+            .values()
+            .filter(|t| t.session_id == session.id)
+            .map(|t| t.id.clone())
+            .collect();
+        let closed = ids.len();
         let mut detached = 0;
         for id in ids {
             self.targets.remove(&id);
             detached += self.detach_adapters_of(&id);
         }
+        // The writer lock goes last and only when no session of this profile
+        // remains; the volatile jar stays with the profile.
+        if !self
+            .sessions
+            .values()
+            .any(|s| s.profile_id == session.profile_id)
+            && let Some(profile) = self.profiles.get_mut(&session.profile_id)
+        {
+            profile.lock = None;
+        }
         Ok(
-            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed,"teardown":{"adapters_detached":detached,"order":["adapters","targets"]}}),
+            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed,"teardown":{"adapters_detached":detached,"order":["adapters","targets","profile_lock"]}}),
+        )
+    }
+
+    fn session_profile_for(&self, session_id: &str) -> Result<String, ControlError> {
+        self.sessions
+            .get(session_id)
+            .map(|s| s.profile_id.clone())
+            .ok_or_else(|| not_found("session", session_id))
+    }
+
+    fn profile_storage_put(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session", "kind", "key", "value"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let profile_id = self.session_profile_for(session_id)?;
+        let kind = string_field(object, "kind")?.to_owned();
+        let key = string_field(object, "key")?.to_owned();
+        // The value bound is wide enough for the jar and storage budgets to be the
+        // deciding limit (a cookie over 4,096 bytes must surface as resource_limit).
+        let value = object
+            .get("value")
+            .and_then(Value::as_str)
+            .filter(|s| s.len() <= 2 * profile::MAX_COOKIE_BYTES)
+            .ok_or_else(|| invalid("value must be a string of at most 8192 bytes"))?
+            .to_owned();
+        if key.is_empty() || key.len() > profile::MAX_STORAGE_KEY_BYTES {
+            return Err(invalid("key must be 1 to 64 bytes"));
+        }
+        let now = profile::now_seconds();
+        let outcome =
+            self.commit_control_mutation(&profile_id, |jar, storage| match kind.as_str() {
+                "cookie" => jar.put_control(&key, &value, now).map_err(|rejection| {
+                    ControlError::new("resource_limit", "cookie refused", false)
+                        .scoped("profile", &profile_id)
+                        .details(json!({"reason":rejection.name()}))
+                }),
+                "local_storage" => {
+                    let other = jar.accounted_bytes();
+                    storage
+                        .set(CONTROL_ORIGIN, &key, &value, other)
+                        .map_err(|rejection| {
+                            ControlError::new("resource_limit", "storage budget exceeded", false)
+                                .scoped("profile", &profile_id)
+                                .details(
+                                    json!({"reason":format!("{rejection:?}").to_ascii_lowercase()}),
+                                )
+                        })
+                }
+                _ => Err(invalid("kind must be cookie or local_storage")),
+            });
+        outcome?;
+        Ok(json!({"kind":"profile_storage_put","profile":profile_id,"stored":true}))
+    }
+
+    fn profile_storage_get(&self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session", "kind", "key"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let profile_id = self.session_profile_for(session_id)?;
+        let kind = string_field(object, "kind")?;
+        let key = string_field(object, "key")?;
+        let profile = self
+            .profiles
+            .get(&profile_id)
+            .ok_or_else(|| not_found("profile", &profile_id))?;
+        let value = match kind {
+            "cookie" => profile.jar.get_control(key),
+            "local_storage" => profile.storage.get(CONTROL_ORIGIN, key),
+            _ => return Err(invalid("kind must be cookie or local_storage")),
+        };
+        Ok(
+            json!({"kind":"profile_storage_get","profile":profile_id,"found":value.is_some(),"value":value}),
         )
     }
 
@@ -1419,7 +2124,7 @@ impl Host {
             ));
         }
         let session = typed_field(object, "session", "session")?;
-        if self.session.as_ref().map(|s| s.id.as_str()) != Some(session) {
+        if !self.sessions.contains_key(session) {
             return Err(not_found("session", session));
         }
         if self.targets.len() >= MAX_TARGETS {
@@ -1442,6 +2147,7 @@ impl Host {
         self.next_frame += 1;
         let id = format!("target_{}", self.next_target);
         let frame_id = format!("frame_{}", self.next_frame);
+        let io = self.io_for(session, None)?;
         let mut target = self.build_target(
             &id,
             session,
@@ -1451,6 +2157,7 @@ impl Host {
             1,
             0,
             deadline,
+            io,
         )?;
         let policy = self.policy.clone();
         let revision = Self::revision(&mut target, deadline, &policy)?;
@@ -1461,7 +2168,11 @@ impl Host {
             "frame":target.frame_id,"generation":target.generation,"realm":target.realm_id,
             "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
         });
-        self.targets.insert(id, target);
+        self.targets.insert(id.clone(), target);
+        // The page's writes during load reach the profile now; a failed
+        // commit keeps the target (its document is real) but reports the
+        // failure with the target id, and its storage is read-only.
+        self.commit_target_io(&id, deadline)?;
         Ok(summary)
     }
 
@@ -1482,8 +2193,10 @@ impl Host {
         generation: u64,
         revision_base: u64,
         deadline: Instant,
+        mut io: TargetIo,
     ) -> Result<Target, ControlError> {
         let policy = self.policy.clone();
+        let now = profile::now_seconds();
         let (label, base, bytes, framing) = match source {
             Source::Fixture(fixture) => {
                 let path = self.fixture_root.join(&fixture);
@@ -1501,8 +2214,16 @@ impl Host {
                 (fixture, None, bytes, "fixture")
             }
             Source::Url(raw) => {
-                let response = net::fetch(&raw, &policy, &mut budget, deadline)
-                    .map_err(|error| net_error(error, id))?;
+                let response = {
+                    let mut hooks = JarHooks {
+                        jar: &mut io.jar,
+                        document_host: None,
+                        now,
+                        rejections: &mut io.cookie_rejections,
+                    };
+                    net::fetch_with(&raw, &policy, &mut budget, deadline, Some(&mut hooks))
+                        .map_err(|error| net_error(error, id))?
+                };
                 if response.status >= 400 {
                     return Err(ControlError::new(
                         "not_found",
@@ -1570,7 +2291,20 @@ impl Host {
                         continue;
                     }
                     external += 1;
-                    match net::fetch(resolved.as_str(), &policy, &mut budget, deadline) {
+                    let document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
+                    let mut hooks = JarHooks {
+                        jar: &mut io.jar,
+                        document_host: document_host.as_deref(),
+                        now,
+                        rejections: &mut io.cookie_rejections,
+                    };
+                    match net::fetch_with(
+                        resolved.as_str(),
+                        &policy,
+                        &mut budget,
+                        deadline,
+                        Some(&mut hooks),
+                    ) {
                         Ok(response) if response.status < 400 => scripts
                             .push((src, String::from_utf8_lossy(&response.body).into_owned())),
                         Ok(response) => skipped.push(
@@ -1594,10 +2328,31 @@ impl Host {
         realm.eval(&seed, deadline, id)?;
         if let Some(base_url) = &base {
             realm.eval(
-                &format!("__mcsLocation({})", json!(base_url.as_str())),
+                &format!(
+                    "__mcsLocation({})",
+                    json!({
+                        "href": base_url.as_str(),
+                        "origin": base_url.origin().ascii_serialization(),
+                        "protocol": format!("{}:", base_url.scheme()),
+                        "host": base_url.host_str().map(|h| match base_url.port() {
+                            Some(p) => format!("{h}:{p}"),
+                            None => h.to_owned(),
+                        }).unwrap_or_default(),
+                        "hostname": base_url.host_str().unwrap_or_default(),
+                        "port": base_url.port().map(|p| p.to_string()).unwrap_or_default(),
+                        "pathname": base_url.path(),
+                        "search": base_url.query().map(|q| format!("?{q}")).unwrap_or_default(),
+                        "hash": base_url.fragment().map(|f| format!("#{f}")).unwrap_or_default(),
+                    })
+                ),
                 deadline,
                 id,
             )?;
+            io.origin = base_url.origin().ascii_serialization();
+            io.document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
+        } else {
+            io.origin = profile::OPAQUE_ORIGIN.to_owned();
+            io.document_host = None;
         }
         // The realm id is minted only once the document exists; a failed
         // build never consumes one.
@@ -1619,7 +2374,14 @@ impl Host {
             generation,
             realm_id: format!("realm_{}", self.next_realm),
             revision_base,
+            io,
         };
+        let read_only = self
+            .sessions
+            .get(session)
+            .and_then(|s| self.profiles.get(&s.profile_id))
+            .is_some_and(|p| p.read_only);
+        target.seed_store(deadline, read_only)?;
         for (index, (origin, script)) in scripts.iter().enumerate() {
             if let Err(error) = target.eval(script, deadline, &policy) {
                 let mut details = error.details.clone().unwrap_or_else(|| json!({}));
@@ -1673,17 +2435,78 @@ impl Host {
             })
         };
         let built = match prepared {
-            Ok((session, source, budget, frame_id, generation, base_revision)) => self
-                .build_target(
-                    id,
-                    &session,
-                    source,
-                    budget,
-                    frame_id,
-                    generation + 1,
-                    base_revision + 1,
-                    deadline,
-                ),
+            Ok((session, source, budget, frame_id, generation, base_revision)) => {
+                match self.io_for(&session, None) {
+                    Ok(io) => self.build_target(
+                        id,
+                        &session,
+                        source,
+                        budget,
+                        frame_id,
+                        generation + 1,
+                        base_revision + 1,
+                        deadline,
+                        io,
+                    ),
+                    Err(error) => Err(error),
+                }
+            }
+            Err(error) => Err(error),
+        };
+        // The new document's writes commit before the swap; if the disk
+        // refuses them the navigation fails and the old target stays.
+        let built = match built {
+            Ok(mut replacement) => {
+                let profile_id = self.target_profile_id(id);
+                let committed = match profile_id.as_deref().and_then(|p| self.profiles.get(p)) {
+                    Some(profile)
+                        if profile.persistent
+                            && (replacement.io.jar.persistent != profile.jar.persistent
+                                || replacement.io.storage != profile.storage) =>
+                    {
+                        if profile.read_only {
+                            Err(commit_failed(
+                                id,
+                                "storage is read-only after an earlier failed commit",
+                            ))
+                        } else {
+                            let profile_id = profile_id.clone().expect("profile id");
+                            let previous = {
+                                let profile =
+                                    self.profiles.get_mut(&profile_id).expect("profile exists");
+                                (
+                                    std::mem::replace(&mut profile.jar, replacement.io.jar.clone()),
+                                    std::mem::replace(
+                                        &mut profile.storage,
+                                        replacement.io.storage.clone(),
+                                    ),
+                                )
+                            };
+                            match self.write_profile(&profile_id) {
+                                Ok(()) => Ok(()),
+                                Err(error) => {
+                                    let profile =
+                                        self.profiles.get_mut(&profile_id).expect("profile exists");
+                                    profile.jar = previous.0;
+                                    profile.storage = previous.1;
+                                    profile.read_only = true;
+                                    Err(commit_failed(id, &error.message))
+                                }
+                            }
+                        }
+                    }
+                    Some(_) => {
+                        let profile_id = profile_id.clone().expect("profile id");
+                        let profile = self.profiles.get_mut(&profile_id).expect("profile exists");
+                        profile.jar = replacement.io.jar.clone();
+                        profile.storage = replacement.io.storage.clone();
+                        Ok(())
+                    }
+                    None => Ok(()),
+                };
+                replacement.io.cookie_rejections = 0;
+                committed.map(|()| replacement)
+            }
             Err(error) => Err(error),
         };
         let target = self.target_mut(id)?;
@@ -1990,8 +2813,20 @@ impl Host {
             "kind":"memory_report",
             "semantic":"native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics",
             "owners":{
-                "profiles":{"objects":self.profiles.len(),"object_limit":MAX_PROFILES},
-                "sessions":{"objects":self.session.iter().count(),"object_limit":1},
+                "profiles":{
+                    "objects":self.profiles.len(),"object_limit":MAX_PROFILES,
+                    "persistent":self.profiles.values().filter(|p| p.persistent).count(),
+                    "unavailable":self.unavailable_profiles.len(),
+                    "bytes":self.profiles.values().map(|p| p.jar.accounted_bytes() + p.storage.accounted_bytes()).sum::<usize>(),
+                    "cookies":self.profiles.values().map(|p| p.jar.len()).sum::<usize>(),
+                    "storage_keys":self.profiles.values().map(|p| p.storage.keys()).sum::<usize>(),
+                    "store":self.key_source.as_ref().map(|k| k.mode.name()),
+                    "store_writes_total":self.store_writes_total,
+                    "store_bytes_written_total":self.store_bytes_written_total,
+                    "cookie_rejections_total":self.cookie_rejections_total,
+                    "budgets":profile_budgets(),
+                },
+                "sessions":{"objects":self.sessions.len(),"object_limit":MAX_SESSIONS},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
                 "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
@@ -2053,7 +2888,7 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Line> {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]..."
+        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR]"
     );
     std::process::exit(64);
 }
@@ -2076,6 +2911,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut policy = net::Policy::default();
     let mut cdp_port = None;
     let mut ready_file = None;
+    let mut profile_root: Option<PathBuf> = None;
     for pair in arguments[6..].chunks_exact(2) {
         match pair[0].as_str() {
             "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
@@ -2089,6 +2925,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 cdp_port = Some(pair[1].parse::<u16>().unwrap_or_else(|_| usage()));
             }
             "--ready-file" if ready_file.is_none() => ready_file = Some(PathBuf::from(&pair[1])),
+            "--profile-root" if profile_root.is_none() => {
+                profile_root = Some(PathBuf::from(&pair[1]))
+            }
             _ => usage(),
         }
     }
@@ -2113,7 +2952,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         policy,
         realm_allocation,
         profiles: BTreeMap::new(),
-        session: None,
+        sessions: BTreeMap::new(),
         targets: BTreeMap::new(),
         next_profile: 0,
         next_session: 0,
@@ -2126,7 +2965,16 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_adapter: 0,
         adapters_detached_total: 0,
         next_bridge_request: 0,
+        profile_root: None,
+        key_source: None,
+        unavailable_profiles: BTreeMap::new(),
+        store_writes_total: 0,
+        store_bytes_written_total: 0,
+        cookie_rejections_total: 0,
     };
+    if let Some(root) = profile_root {
+        host.enable_profile_store(root, PathBuf::from(&arguments[5]))?;
+    }
     // The optional loopback CDP edge reaches this same host through a
     // channel; its requests are executed here, at operation boundaries,
     // against the same targets the stdio door uses.

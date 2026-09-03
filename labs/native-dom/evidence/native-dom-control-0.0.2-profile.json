@@ -1,0 +1,778 @@
+{
+  "caps": {
+    "accounted_bytes_per_empty_persistent_profile": 65536,
+    "empty_physical_footprint_delta_bytes": 524288,
+    "empty_resident_delta_bytes": 1048576,
+    "lightpanda_single_server_empty_footprint_bytes": 8356392
+  },
+  "checks": [
+    {
+      "check": "[system] memory.report names the profile store mode",
+      "detail": "envelope-keychain",
+      "passed": true
+    },
+    {
+      "check": "[system] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
+      "detail": {
+        "footprint_delta": 294912,
+        "resident_delta": 868352
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] persistent ids are name-derived and the ephemeral id is not",
+      "passed": true
+    },
+    {
+      "check": "[system] D6: an empty persistent profile accounts at most 64 KiB",
+      "detail": {
+        "budgets": {
+          "accounted_bytes_per_profile": 131072,
+          "cookie_bytes": 4096,
+          "cookies_per_host": 32,
+          "cookies_per_profile": 256,
+          "record_bytes": 4194304,
+          "storage_keys_per_origin": 32,
+          "storage_value_bytes": 1024
+        },
+        "bytes": 0,
+        "cookie_rejections_total": 0,
+        "cookies": 0,
+        "object_limit": 8,
+        "objects": 3,
+        "persistent": 2,
+        "storage_keys": 0,
+        "store": "envelope-keychain",
+        "store_bytes_written_total": 1031,
+        "store_writes_total": 2,
+        "unavailable": 0
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] profile alpha's request carries only its own cookie",
+      "detail": "sent=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[system] profile beta's request carries only its own cookie",
+      "detail": "sent=court=court-beta-2c9e",
+      "passed": true
+    },
+    {
+      "check": "[system] profile scratch's request carries only its own cookie",
+      "detail": "sent=court=court-scratch-51d0",
+      "passed": true
+    },
+    {
+      "check": "[system] profile alpha's storage starts empty and its document.cookie shows its cookie",
+      "detail": "seen=none cookie=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[system] profile alpha reads back only what it wrote",
+      "detail": "seen=alpha-1 cookie=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[system] profile beta's storage starts empty and its document.cookie shows its cookie",
+      "detail": "seen=none cookie=court=court-beta-2c9e",
+      "passed": true
+    },
+    {
+      "check": "[system] profile beta reads back only what it wrote",
+      "detail": "seen=beta-1 cookie=court=court-beta-2c9e",
+      "passed": true
+    },
+    {
+      "check": "[system] an HttpOnly cookie is sent but hidden from document.cookie",
+      "detail": "seen=alpha-1 cookie=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[system] the HttpOnly cookie is still sent on requests",
+      "passed": true
+    },
+    {
+      "check": "[system] Secure over http cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[system] foreign Domain cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[system] SameSite=None without Secure cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[system] __Host- prefix cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[system] Partitioned cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[system] an expired cookie is deleted",
+      "passed": true
+    },
+    {
+      "check": "[system] a session cookie set in session A is still sent by session B of the same profile",
+      "detail": "sent=court=court-alpha-7f3a; hidden=court-hidden; volatile=court-volatile",
+      "passed": true
+    },
+    {
+      "check": "[system] a page mutation is written through (recorded write amplification)",
+      "detail": {
+        "bytes": 910,
+        "writes": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] a failed disk commit is a typed internal failure",
+      "detail": {
+        "code": "internal",
+        "details": {
+          "detail": "profile record could not be written",
+          "reason": "storage_commit_failed"
+        },
+        "message": "profile storage commit failed; the previous record is kept",
+        "retryable": false,
+        "scope": {
+          "id": "profile_alpha",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the previous record is untouched after the failed commit",
+      "passed": true
+    },
+    {
+      "check": "[system] the failed value is not visible after rollback",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_profile_94",
+        "result": {
+          "found": false,
+          "kind": "profile_storage_get",
+          "profile": "profile_alpha",
+          "value": null
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] storage stays read-only for the rest of the host lifetime after a commit failure",
+      "detail": {
+        "code": "internal",
+        "details": {
+          "detail": "storage is read-only after an earlier failed commit",
+          "reason": "storage_commit_failed"
+        },
+        "message": "profile storage commit failed; the previous record is kept",
+        "retryable": false,
+        "scope": {
+          "id": "profile_alpha",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] profile.inspect exposes counts and budgets, never values",
+      "detail": {
+        "budgets": {
+          "accounted_bytes_per_profile": 131072,
+          "cookie_bytes": 4096,
+          "cookies_per_host": 32,
+          "cookies_per_profile": 256,
+          "record_bytes": 4194304,
+          "storage_keys_per_origin": 32,
+          "storage_value_bytes": 1024
+        },
+        "cookies": {
+          "bytes": 177,
+          "objects": 4,
+          "persistent": 2,
+          "volatile": 2
+        },
+        "kind": "profile",
+        "name": "alpha",
+        "persistence": "persistent",
+        "profile": "profile_alpha",
+        "read_only": true,
+        "sessions": 1,
+        "storage": {
+          "bytes": 50,
+          "keys": 1,
+          "origins": 1
+        },
+        "store": "envelope-keychain"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] memory.report counts profiles, cookies and storage keys with accounted bytes",
+      "detail": {
+        "budgets": {
+          "accounted_bytes_per_profile": 131072,
+          "cookie_bytes": 4096,
+          "cookies_per_host": 32,
+          "cookies_per_profile": 256,
+          "record_bytes": 4194304,
+          "storage_keys_per_origin": 32,
+          "storage_value_bytes": 1024
+        },
+        "bytes": 371,
+        "cookie_rejections_total": 5,
+        "cookies": 6,
+        "object_limit": 8,
+        "objects": 3,
+        "persistent": 2,
+        "storage_keys": 2,
+        "store": "envelope-keychain",
+        "store_bytes_written_total": 6311,
+        "store_writes_total": 9,
+        "unavailable": 0
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] a cookie over 4,096 bytes is resource_limit",
+      "passed": true
+    },
+    {
+      "check": "[system] the storage key budget is enforced as resource_limit",
+      "passed": true
+    },
+    {
+      "check": "[system] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
+      "detail": {
+        "live": 6111688,
+        "profiles": {
+          "budgets": {
+            "accounted_bytes_per_profile": 131072,
+            "cookie_bytes": 4096,
+            "cookies_per_host": 32,
+            "cookies_per_profile": 256,
+            "record_bytes": 4194304,
+            "storage_keys_per_origin": 32,
+            "storage_value_bytes": 1024
+          },
+          "bytes": 1023,
+          "cookie_rejections_total": 5,
+          "cookies": 6,
+          "object_limit": 8,
+          "objects": 3,
+          "persistent": 2,
+          "storage_keys": 34,
+          "store": "envelope-keychain",
+          "store_bytes_written_total": 37947,
+          "store_writes_total": 41,
+          "unavailable": 0
+        }
+      },
+      "passed": false
+    },
+    {
+      "check": "[system] the fake cookie value appears in no file under the profile root",
+      "detail": [],
+      "passed": true
+    },
+    {
+      "check": "[system] records and locks are 0600 and directories 0700",
+      "detail": {
+        "profile.v1.sealed": "0o600",
+        "writer.lock": "0o600"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] first host exits cleanly",
+      "passed": true
+    },
+    {
+      "check": "[system] after restart alpha is listed, beta is unavailable, scratch is gone",
+      "detail": {
+        "kind": "profile_list",
+        "profiles": [
+          {
+            "available": true,
+            "name": "alpha",
+            "persistence": "persistent",
+            "profile": "profile_alpha"
+          },
+          {
+            "available": false,
+            "name": "beta",
+            "persistence": "persistent",
+            "profile": "profile_beta",
+            "reason": "corrupt or incompatible: record is not JSON"
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] alpha's persistent cookie survives the restart",
+      "passed": true
+    },
+    {
+      "check": "[system] alpha's session cookie does not survive the restart",
+      "detail": "sent=court=court-alpha-7f3a; amp=court-amp",
+      "passed": true
+    },
+    {
+      "check": "[system] alpha's localStorage survives the restart",
+      "passed": true
+    },
+    {
+      "check": "[system] the corrupt sibling fails closed",
+      "detail": {
+        "code": "not_found",
+        "message": "profile does not exist",
+        "retryable": false,
+        "scope": {
+          "id": "profile_beta",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] a second host is profile_locked while the first holds alpha",
+      "detail": {
+        "code": "profile_locked",
+        "message": "another host holds this profile's writer lock",
+        "retryable": true,
+        "scope": {
+          "id": "profile_alpha",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the lock is released when the owner closes",
+      "passed": true
+    },
+    {
+      "check": "[system] both hosts exit cleanly",
+      "passed": true
+    },
+    {
+      "check": "[arena] memory.report names the profile store mode",
+      "detail": "envelope-keychain",
+      "passed": true
+    },
+    {
+      "check": "[arena] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
+      "detail": {
+        "footprint_delta": 278528,
+        "resident_delta": 851968
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] persistent ids are name-derived and the ephemeral id is not",
+      "passed": true
+    },
+    {
+      "check": "[arena] D6: an empty persistent profile accounts at most 64 KiB",
+      "detail": {
+        "budgets": {
+          "accounted_bytes_per_profile": 131072,
+          "cookie_bytes": 4096,
+          "cookies_per_host": 32,
+          "cookies_per_profile": 256,
+          "record_bytes": 4194304,
+          "storage_keys_per_origin": 32,
+          "storage_value_bytes": 1024
+        },
+        "bytes": 0,
+        "cookie_rejections_total": 0,
+        "cookies": 0,
+        "object_limit": 8,
+        "objects": 3,
+        "persistent": 2,
+        "storage_keys": 0,
+        "store": "envelope-keychain",
+        "store_bytes_written_total": 1031,
+        "store_writes_total": 2,
+        "unavailable": 0
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] profile alpha's request carries only its own cookie",
+      "detail": "sent=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile beta's request carries only its own cookie",
+      "detail": "sent=court=court-beta-2c9e",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile scratch's request carries only its own cookie",
+      "detail": "sent=court=court-scratch-51d0",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile alpha's storage starts empty and its document.cookie shows its cookie",
+      "detail": "seen=none cookie=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile alpha reads back only what it wrote",
+      "detail": "seen=alpha-1 cookie=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile beta's storage starts empty and its document.cookie shows its cookie",
+      "detail": "seen=none cookie=court=court-beta-2c9e",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile beta reads back only what it wrote",
+      "detail": "seen=beta-1 cookie=court=court-beta-2c9e",
+      "passed": true
+    },
+    {
+      "check": "[arena] an HttpOnly cookie is sent but hidden from document.cookie",
+      "detail": "seen=alpha-1 cookie=court=court-alpha-7f3a",
+      "passed": true
+    },
+    {
+      "check": "[arena] the HttpOnly cookie is still sent on requests",
+      "passed": true
+    },
+    {
+      "check": "[arena] Secure over http cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[arena] foreign Domain cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[arena] SameSite=None without Secure cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[arena] __Host- prefix cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[arena] Partitioned cookie is refused and never sent",
+      "passed": true
+    },
+    {
+      "check": "[arena] an expired cookie is deleted",
+      "passed": true
+    },
+    {
+      "check": "[arena] a session cookie set in session A is still sent by session B of the same profile",
+      "detail": "sent=court=court-alpha-7f3a; hidden=court-hidden; volatile=court-volatile",
+      "passed": true
+    },
+    {
+      "check": "[arena] a page mutation is written through (recorded write amplification)",
+      "detail": {
+        "bytes": 910,
+        "writes": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] a failed disk commit is a typed internal failure",
+      "detail": {
+        "code": "internal",
+        "details": {
+          "detail": "profile record could not be written",
+          "reason": "storage_commit_failed"
+        },
+        "message": "profile storage commit failed; the previous record is kept",
+        "retryable": false,
+        "scope": {
+          "id": "profile_alpha",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the previous record is untouched after the failed commit",
+      "passed": true
+    },
+    {
+      "check": "[arena] the failed value is not visible after rollback",
+      "detail": {
+        "ok": true,
+        "protocol": "minicon-surf.control",
+        "request_id": "req_profile_94",
+        "result": {
+          "found": false,
+          "kind": "profile_storage_get",
+          "profile": "profile_alpha",
+          "value": null
+        },
+        "version": "0.0.1"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] storage stays read-only for the rest of the host lifetime after a commit failure",
+      "detail": {
+        "code": "internal",
+        "details": {
+          "detail": "storage is read-only after an earlier failed commit",
+          "reason": "storage_commit_failed"
+        },
+        "message": "profile storage commit failed; the previous record is kept",
+        "retryable": false,
+        "scope": {
+          "id": "profile_alpha",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] profile.inspect exposes counts and budgets, never values",
+      "detail": {
+        "budgets": {
+          "accounted_bytes_per_profile": 131072,
+          "cookie_bytes": 4096,
+          "cookies_per_host": 32,
+          "cookies_per_profile": 256,
+          "record_bytes": 4194304,
+          "storage_keys_per_origin": 32,
+          "storage_value_bytes": 1024
+        },
+        "cookies": {
+          "bytes": 177,
+          "objects": 4,
+          "persistent": 2,
+          "volatile": 2
+        },
+        "kind": "profile",
+        "name": "alpha",
+        "persistence": "persistent",
+        "profile": "profile_alpha",
+        "read_only": true,
+        "sessions": 1,
+        "storage": {
+          "bytes": 50,
+          "keys": 1,
+          "origins": 1
+        },
+        "store": "envelope-keychain"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] memory.report counts profiles, cookies and storage keys with accounted bytes",
+      "detail": {
+        "budgets": {
+          "accounted_bytes_per_profile": 131072,
+          "cookie_bytes": 4096,
+          "cookies_per_host": 32,
+          "cookies_per_profile": 256,
+          "record_bytes": 4194304,
+          "storage_keys_per_origin": 32,
+          "storage_value_bytes": 1024
+        },
+        "bytes": 371,
+        "cookie_rejections_total": 5,
+        "cookies": 6,
+        "object_limit": 8,
+        "objects": 3,
+        "persistent": 2,
+        "storage_keys": 2,
+        "store": "envelope-keychain",
+        "store_bytes_written_total": 6311,
+        "store_writes_total": 9,
+        "unavailable": 0
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] a cookie over 4,096 bytes is resource_limit",
+      "passed": true
+    },
+    {
+      "check": "[arena] the storage key budget is enforced as resource_limit",
+      "passed": true
+    },
+    {
+      "check": "[arena] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
+      "detail": {
+        "live": 5849592,
+        "profiles": {
+          "budgets": {
+            "accounted_bytes_per_profile": 131072,
+            "cookie_bytes": 4096,
+            "cookies_per_host": 32,
+            "cookies_per_profile": 256,
+            "record_bytes": 4194304,
+            "storage_keys_per_origin": 32,
+            "storage_value_bytes": 1024
+          },
+          "bytes": 1023,
+          "cookie_rejections_total": 5,
+          "cookies": 6,
+          "object_limit": 8,
+          "objects": 3,
+          "persistent": 2,
+          "storage_keys": 34,
+          "store": "envelope-keychain",
+          "store_bytes_written_total": 37947,
+          "store_writes_total": 41,
+          "unavailable": 0
+        }
+      },
+      "passed": false
+    },
+    {
+      "check": "[arena] the fake cookie value appears in no file under the profile root",
+      "detail": [],
+      "passed": true
+    },
+    {
+      "check": "[arena] records and locks are 0600 and directories 0700",
+      "detail": {
+        "profile.v1.sealed": "0o600",
+        "writer.lock": "0o600"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] first host exits cleanly",
+      "passed": true
+    },
+    {
+      "check": "[arena] after restart alpha is listed, beta is unavailable, scratch is gone",
+      "detail": {
+        "kind": "profile_list",
+        "profiles": [
+          {
+            "available": true,
+            "name": "alpha",
+            "persistence": "persistent",
+            "profile": "profile_alpha"
+          },
+          {
+            "available": false,
+            "name": "beta",
+            "persistence": "persistent",
+            "profile": "profile_beta",
+            "reason": "corrupt or incompatible: record is not JSON"
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] alpha's persistent cookie survives the restart",
+      "passed": true
+    },
+    {
+      "check": "[arena] alpha's session cookie does not survive the restart",
+      "detail": "sent=court=court-alpha-7f3a; amp=court-amp",
+      "passed": true
+    },
+    {
+      "check": "[arena] alpha's localStorage survives the restart",
+      "passed": true
+    },
+    {
+      "check": "[arena] the corrupt sibling fails closed",
+      "detail": {
+        "code": "not_found",
+        "message": "profile does not exist",
+        "retryable": false,
+        "scope": {
+          "id": "profile_beta",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] a second host is profile_locked while the first holds alpha",
+      "detail": {
+        "code": "profile_locked",
+        "message": "another host holds this profile's writer lock",
+        "retryable": true,
+        "scope": {
+          "id": "profile_alpha",
+          "kind": "profile"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the lock is released when the owner closes",
+      "passed": true
+    },
+    {
+      "check": "[arena] both hosts exit cleanly",
+      "passed": true
+    }
+  ],
+  "checks_passed": 80,
+  "checks_total": 82,
+  "design": "labs/native-dom/profile-design-0.0.1.md",
+  "footprint_bytes": {
+    "arena": {
+      "empty": 2261328,
+      "empty_rss": 7962624,
+      "feature_off_empty": 1982800,
+      "feature_off_empty_rss": 7110656,
+      "live_three_profiles": 5538296,
+      "live_with_data": 5849592,
+      "post_close": 5194184,
+      "restart_live_one_target": 3604864,
+      "write_amplification": {
+        "bytes": 910,
+        "writes": 1
+      }
+    },
+    "system": {
+      "empty": 2277712,
+      "empty_rss": 7979008,
+      "feature_off_empty": 1982800,
+      "feature_off_empty_rss": 7110656,
+      "live_three_profiles": 5521864,
+      "live_with_data": 6111688,
+      "post_close": 6111688,
+      "restart_live_one_target": 4211048,
+      "write_amplification": {
+        "bytes": 910,
+        "writes": 1
+      }
+    }
+  },
+  "host_sha256": "cd7292f6ed9288c6fc460947a4bfd7b9012e7e2c282640ac2bfe960e97127e3f",
+  "limitations": [
+    "fake court values only; no real browser profile is read or migrated",
+    "http only: Secure and SameSite=None cookies are refused by design",
+    "no public suffix list: Domain attributes other than the request host are refused"
+  ],
+  "passed": false,
+  "release_binary_bytes": 3764000,
+  "schema": "minicon-surf.native-dom-profile-receipt/0.0.1",
+  "status": "failed",
+  "store_modes": [
+    "envelope-keychain"
+  ],
+  "technology": "native-dom",
+  "technology_version": "0.0.2"
+}

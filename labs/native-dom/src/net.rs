@@ -130,6 +130,15 @@ pub struct Response {
     pub framing: Framing,
 }
 
+/// The profile's cookie jar as the network path sees it: a header for each
+/// hop and every `Set-Cookie` line each hop answered with. The network
+/// module never knows what a profile is; the host implements this over the
+/// session's profile.
+pub trait CookieHooks {
+    fn cookie_header(&mut self, url: &Url) -> Option<String>;
+    fn store(&mut self, url: &Url, set_cookie: &str);
+}
+
 /// IPv4 addresses outside every IANA special-purpose range (RFC 6890 and
 /// successors). Anything listed there is refused.
 fn is_public_v4(v4: Ipv4Addr) -> bool {
@@ -281,11 +290,25 @@ fn resolve(name: &str, port: u16) -> Result<Vec<SocketAddr>, NetError> {
 /// Perform one bounded GET, following at most `MAX_REDIRECTS` redirects with
 /// the policy re-applied at every hop. `deadline` is the request deadline;
 /// each hop is additionally capped by `PER_FETCH_TIMEOUT`.
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn fetch(
     url: &str,
     policy: &Policy,
     budget: &mut Budget,
     deadline: Instant,
+) -> Result<Response, NetError> {
+    fetch_with(url, policy, budget, deadline, None)
+}
+
+/// `fetch` with a cookie jar: the request of every hop carries the jar's
+/// header for that hop's URL and every hop's `Set-Cookie` lines reach the
+/// jar, redirects included, before the next hop is followed.
+pub fn fetch_with(
+    url: &str,
+    policy: &Policy,
+    budget: &mut Budget,
+    deadline: Instant,
+    mut cookies: Option<&mut dyn CookieHooks>,
 ) -> Result<Response, NetError> {
     let mut current = Url::parse(url)
         .map_err(|e| NetError::new("invalid_request", "url", format!("URL is malformed: {e}")))?;
@@ -304,8 +327,22 @@ pub fn fetch(
         let hop_deadline = std::cmp::min(deadline, Instant::now() + PER_FETCH_TIMEOUT);
         let remaining_budget = MAX_BYTES_PER_TARGET.saturating_sub(budget.bytes);
         let cap = std::cmp::min(MAX_RESPONSE_BYTES, remaining_budget);
-        let hop = get_once(&current, &addresses, cap, hop_deadline)?;
+        let cookie_header = cookies
+            .as_deref_mut()
+            .and_then(|jar| jar.cookie_header(&current));
+        let hop = get_once(
+            &current,
+            &addresses,
+            cap,
+            hop_deadline,
+            cookie_header.as_deref(),
+        )?;
         budget.bytes += hop.body.len();
+        if let Some(jar) = cookies.as_deref_mut() {
+            for line in &hop.set_cookie {
+                jar.store(&current, line);
+            }
+        }
         if matches!(hop.status, 301 | 302 | 303 | 307 | 308) {
             let location = hop.location.as_deref().ok_or_else(|| {
                 NetError::new(
@@ -348,6 +385,7 @@ struct Hop {
     status: u16,
     content_type: Option<String>,
     location: Option<String>,
+    set_cookie: Vec<String>,
     body: Vec<u8>,
     framing: Framing,
 }
@@ -385,6 +423,7 @@ fn get_once(
     addresses: &[SocketAddr],
     body_cap: usize,
     deadline: Instant,
+    cookie_header: Option<&str>,
 ) -> Result<Hop, NetError> {
     let mut stream = connect(addresses, deadline)?;
     let remaining = deadline.saturating_duration_since(Instant::now());
@@ -403,8 +442,12 @@ fn get_once(
         Some(query) => format!("{}?{}", url.path(), query),
         None => url.path().to_owned(),
     };
+    let cookie_line = cookie_header
+        .filter(|value| !value.is_empty())
+        .map(|value| format!("Cookie: {value}\r\n"))
+        .unwrap_or_default();
     let request = format!(
-        "GET {path} HTTP/1.0\r\nHost: {host_header}\r\nUser-Agent: {USER_AGENT}\r\nAccept: text/html, application/json, text/javascript, */*;q=0.5\r\nConnection: close\r\n\r\n"
+        "GET {path} HTTP/1.0\r\nHost: {host_header}\r\nUser-Agent: {USER_AGENT}\r\nAccept: text/html, application/json, text/javascript, */*;q=0.5\r\n{cookie_line}Connection: close\r\n\r\n"
     );
     stream
         .write_all(request.as_bytes())
@@ -445,6 +488,7 @@ fn get_once(
     let head = parse_head(&buffer[..header_end])?;
     let content_type = head.content_type.clone();
     let location = head.location.clone();
+    let set_cookie = head.set_cookie.clone();
     let mut body = buffer[header_end + 4..].to_vec();
     let framing = match head.content_length {
         _ if matches!(head.status, 204 | 304) => Framing::NoBody,
@@ -456,6 +500,7 @@ fn get_once(
             status: head.status,
             content_type,
             location,
+            set_cookie,
             body: Vec::new(),
             framing,
         });
@@ -508,6 +553,7 @@ fn get_once(
         status: head.status,
         content_type,
         location,
+        set_cookie,
         body,
         framing,
     })
@@ -531,6 +577,7 @@ struct Head {
     content_length: Option<usize>,
     content_type: Option<String>,
     location: Option<String>,
+    set_cookie: Vec<String>,
 }
 
 /// Parse the status line and headers strictly: HTTP/1.x only, no
@@ -565,6 +612,7 @@ fn parse_head(head: &[u8]) -> Result<Head, NetError> {
     let mut content_length: Option<usize> = None;
     let mut content_type = None;
     let mut location = None;
+    let mut set_cookie = Vec::new();
     for line in lines {
         let Some((name, value)) = line.split_once(':') else {
             if line.is_empty() {
@@ -614,6 +662,7 @@ fn parse_head(head: &[u8]) -> Result<Head, NetError> {
             }
             "content-type" => content_type = Some(value.to_ascii_lowercase()),
             "location" => location = Some(value.to_owned()),
+            "set-cookie" => set_cookie.push(value.to_owned()),
             _ => {}
         }
     }
@@ -622,6 +671,7 @@ fn parse_head(head: &[u8]) -> Result<Head, NetError> {
         content_length,
         content_type,
         location,
+        set_cookie,
     })
 }
 
@@ -884,7 +934,7 @@ mod tests {
             b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok",
         );
         let url = Url::parse("http://example.com/vetted").unwrap();
-        let hop = get_once(&url, &[address], 1024, soon()).unwrap();
+        let hop = get_once(&url, &[address], 1024, soon(), None).unwrap();
         assert_eq!(
             (hop.status, hop.body.as_slice(), hop.framing),
             (200, &b"ok"[..], Framing::ContentLength)
@@ -939,6 +989,7 @@ mod tests {
             &[truncated],
             1024,
             soon(),
+            None,
         )
         .unwrap_err();
         assert_eq!((err.code, err.reason), ("not_found", "response"));
@@ -950,6 +1001,7 @@ mod tests {
             &[until_close],
             1024,
             soon(),
+            None,
         )
         .unwrap();
         assert_eq!(
@@ -963,6 +1015,7 @@ mod tests {
             &[too_big],
             1024,
             soon(),
+            None,
         )
         .unwrap_err();
         assert_eq!((err.code, err.reason), ("resource_limit", "response-bytes"));
@@ -975,6 +1028,7 @@ mod tests {
             &[chunked],
             1024,
             soon(),
+            None,
         )
         .unwrap_err();
         assert_eq!((err.code, err.reason), ("not_found", "response"));
@@ -985,6 +1039,7 @@ mod tests {
             &[no_body],
             1024,
             soon(),
+            None,
         )
         .unwrap();
         assert_eq!((hop.framing, hop.body.len()), (Framing::NoBody, 0));

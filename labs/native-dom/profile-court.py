@@ -17,6 +17,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib.parse
 from http import cookies as http_cookies
 from pathlib import Path
 
@@ -51,7 +52,9 @@ class ProfileHandler(NETWORK.Handler):
         path, _, query = self.path.partition("?")
         params = dict(item.split("=", 1) for item in query.split("&") if "=" in item)
         if path == "/cookie/set":
-            attributes = params.get("attrs", "").replace("%3B", ";").replace("%20", " ")
+            # Court amendment (fixture mechanism): decode every percent-escape, not only %3B and %20;
+            # the frozen fixture URLs escape "=" as %3D, which the first version left literal.
+            attributes = urllib.parse.unquote(params.get("attrs", ""))
             header = f"{params.get('name', 'court')}={params.get('value', 'unset')}{'; ' + attributes if attributes else ''}"
             body = b"<!doctype html><html><body><main><h1>Cookie set</h1></main></body></html>"
             return self.reply(200, body, "text/html", extra=[("Set-Cookie", header)])
@@ -159,6 +162,14 @@ def main():
         snapshot = host.ok("target.snapshot", {"target": target, "format": "semantic", "max_bytes": 65536, "max_nodes": 32})
         return " ".join(n["name"] for n in snapshot["nodes"] if n["role"] == "text")
 
+    def settle_echo(host, target):
+        # Court amendment (implementation mechanism, not criterion): the echo page's fetch
+        # resolves while the document loads, so the first snapshot already carries `sent=`
+        # at revision 0. Wait for a later revision only when the load did not settle it.
+        if "sent=" in text_of(host, target):
+            return
+        host.ok("target.wait", {"target": target, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+
     try:
         for allocator in ("system", "arena"):
             tag = f"[{allocator}] "
@@ -203,7 +214,7 @@ def main():
                     # 2. Cookies travel only with their own profile's requests.
                     for name in ("alpha", "beta", "scratch"):
                         echo = host.ok("target.open", {"session": sessions[name], "url": f"{origin}/echo.html"})["target"]
-                        host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                        settle_echo(host, echo)
                         text = text_of(host, echo)
                         expect(tag + f"profile {name}'s request carries only its own cookie",
                                f"court={FAKE_VALUES[name]}" in text and not any(f"court={v}" in text for k, v in FAKE_VALUES.items() if k != name), text)
@@ -227,7 +238,7 @@ def main():
                     expect(tag + "an HttpOnly cookie is sent but hidden from document.cookie", "hidden=" not in text and f"court={FAKE_VALUES['alpha']}" in text, text)
                     host.ok("target.close", {"target": page})
                     echo = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/echo.html"})["target"]
-                    host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                    settle_echo(host, echo)
                     expect(tag + "the HttpOnly cookie is still sent on requests", "hidden=court-hidden" in text_of(host, echo))
                     host.ok("target.close", {"target": echo})
 
@@ -238,13 +249,13 @@ def main():
                         page = host.ok("target.open", {"session": sessions["beta"], "url": f"{origin}/cookie/set?name={name}&value=court-neg&attrs={attrs}"})["target"]
                         host.ok("target.close", {"target": page})
                         echo = host.ok("target.open", {"session": sessions["beta"], "url": f"{origin}/echo.html"})["target"]
-                        host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                        settle_echo(host, echo)
                         expect(tag + f"{label} cookie is refused and never sent", "court-neg" not in text_of(host, echo))
                         host.ok("target.close", {"target": echo})
                     expired = host.ok("target.open", {"session": sessions["beta"], "url": f"{origin}/cookie/set?name=gone&value=court-gone&attrs=Max-Age%3D0"})["target"]
                     host.ok("target.close", {"target": expired})
                     echo = host.ok("target.open", {"session": sessions["beta"], "url": f"{origin}/echo.html"})["target"]
-                    host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                    settle_echo(host, echo)
                     expect(tag + "an expired cookie is deleted", "court-gone" not in text_of(host, echo))
                     host.ok("target.close", {"target": echo})
 
@@ -254,14 +265,17 @@ def main():
                     host.ok("session.close", {"session": sessions["alpha"]})
                     sessions["alpha"] = host.ok("session.open", {"profile": alpha})["session"]
                     echo = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/echo.html"})["target"]
-                    host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                    settle_echo(host, echo)
                     text = text_of(host, echo)
                     expect(tag + "a session cookie set in session A is still sent by session B of the same profile", "volatile=court-volatile" in text and f"court={FAKE_VALUES['alpha']}" in text, text)
                     host.ok("target.close", {"target": echo})
 
                     # 4c. Write-through and fault injection (D5): the directory is made unwritable.
                     before_writes = host.ok("memory.report", {})["owners"]["profiles"]
-                    page = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/storage.html?alpha-amp"})["target"]
+                    # Court amendment (fixture mechanism): the first version re-opened storage.html, whose
+                    # script only writes when the key is absent, so it measured a no-op. A page whose
+                    # response sets a persistent cookie is a real page-driven committed mutation.
+                    page = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/cookie/set?name=amp&value=court-amp&attrs=Path%3D/%3B%20Max-Age%3D3600"})["target"]
                     host.ok("target.close", {"target": page})
                     after_writes = host.ok("memory.report", {})["owners"]["profiles"]
                     amplification = {"writes": after_writes.get("store_writes_total", 0) - before_writes.get("store_writes_total", 0),
@@ -284,7 +298,10 @@ def main():
                     # 5. Budgets and owners.
                     inspect = host.ok("profile.inspect", {"profile": alpha})
                     expect(tag + "profile.inspect exposes counts and budgets, never values",
-                           inspect.get("cookies", {}).get("objects") == 2 and "budgets" in inspect and FAKE_VALUES["alpha"] not in json.dumps(inspect), inspect)
+                           # Court amendment (consistency with the D4 step 4b): alpha holds court (persistent),
+                           # hidden (HttpOnly session), volatile (session) and amp (persistent, step 4c), so four objects, two persistent.
+                           inspect.get("cookies", {}).get("objects") == 4 and inspect["cookies"].get("persistent") == 2
+                           and "budgets" in inspect and FAKE_VALUES["alpha"] not in json.dumps(inspect), inspect)
                     owners = host.ok("memory.report", {})["owners"]["profiles"]
                     expect(tag + "memory.report counts profiles, cookies and storage keys with accounted bytes",
                            owners["objects"] == 3 and owners.get("cookies", 0) >= 3 and owners.get("storage_keys", 0) >= 2 and owners.get("bytes", 0) > 0, owners)
@@ -328,13 +345,16 @@ def main():
                            "alpha" in names and names.get("beta", {}).get("available") is False and not any(p["profile"] == scratch for p in listed["profiles"]), listed)
                     session = host.ok("session.open", {"profile": alpha})["session"]
                     echo = host.ok("target.open", {"session": session, "url": f"{origin}/echo.html"})["target"]
-                    host.ok("target.wait", {"target": echo, "condition": {"kind": "revision_at_least", "revision": 1}}, 5000)
+                    settle_echo(host, echo)
                     restarted_text = text_of(host, echo)
                     expect(tag + "alpha's persistent cookie survives the restart", f"court={FAKE_VALUES['alpha']}" in restarted_text)
                     expect(tag + "alpha's session cookie does not survive the restart", "volatile=" not in restarted_text, restarted_text)
                     host.ok("target.close", {"target": echo})
                     page = host.ok("target.open", {"session": session, "url": f"{origin}/storage.html?alpha-4"})["target"]
                     expect(tag + "alpha's localStorage survives the restart", "seen=alpha-1" in text_of(host, page))
+                    # Supplementary D6 record (not a gate): the restarted host holds the persisted
+                    # profile and its fixture data with one open target and no churn history.
+                    footprints[allocator]["restart_live_one_target"] = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"]
                     host.ok("target.close", {"target": page})
                     opened = host.call("session.open", {"profile": "profile_beta"})
                     expect(tag + "the corrupt sibling fails closed", refused(opened, "not_found") or refused(opened, "unsupported_capability"), opened.get("error"))
