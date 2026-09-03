@@ -107,10 +107,20 @@ A request may carry one optional `capability` object beside its six fixed
 fields. It is an attenuation of the caller's existing authority for that one
 request and never a grant: a request with a capability may do at most what
 the same request without one may do, the host keeps no grant store, and the
-profile/session/target ownership above stays the only authority. Requests
-without the field are unchanged, so the extension is compatible within
-`0.0.1`. A host that does not implement it answers `invalid_request`
-(`request fields differ`), a typed refusal rather than silent acceptance.
+profile/session/target ownership above stays the only authority.
+
+Compatibility is stated precisely. Existing requests without the field are
+wire-compatible: byte for byte the same request and the same response on
+every `0.0.1` host. A request that carries the field is supported only on a
+host that explicitly implements this extension; a host that does not
+implements the strict parser and fails closed with `invalid_request`
+(`request fields differ`). That refusal is a safety property, because an
+attenuation must never be silently ignored. A caller that requires
+attenuation MUST NOT remove the `capability` field and retry on that
+refusal; it must surface the refusal. There is no feature negotiation yet:
+a caller cannot ask a host whether it implements the extension before
+sending, which is recorded as a gap for a later handshake, not simulated by
+a fallback.
 
 | Field | Meaning | Refusal when violated |
 |---|---|---|

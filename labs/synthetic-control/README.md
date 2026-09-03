@@ -203,8 +203,10 @@ native-dom 35-item network court pass unchanged with the extended checker.
 
 Gaps: the target is synthetic; no engine host, CDP edge or embedder carries
 a capability yet; budgets are per request, not cumulative; the ledger is
-in-memory and per host; hosts that do not implement the field answer
-`invalid_request`, which is typed but coarser than `unsupported_capability`.
+in-memory and per host; hosts that do not implement the field fail closed
+with `invalid_request` (a safety property: attenuation is never silently
+ignored), a caller that requires attenuation must not strip the field and
+retry, and there is no feature negotiation to discover support beforehand.
 
 Verdict: `keep` as the [X9] typed-capability mechanism on the synthetic
 court. It moves no gate: G1, G3, P6 and G6 stay open.

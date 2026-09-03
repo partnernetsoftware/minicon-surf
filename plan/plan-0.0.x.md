@@ -814,8 +814,12 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   stay open.
 - [~] ME1 is done on the synthetic court. Control 0.0.1 gains one optional
   `capability` field on the request envelope (schema, checker, four examples
-  and five negative self-tests first; requests without it are unchanged, so
-  the extension is compatible within the version). It is attenuation only:
+  and five negative self-tests first). Existing requests without the field
+  are wire-compatible; a request carrying it is supported only on a host
+  that implements the extension, an older host fails closed with
+  `invalid_request`, and a caller that requires attenuation must not strip
+  the field and retry; feature negotiation does not exist yet and is a gap
+  for a later handshake. It is attenuation only:
   the host resolves the operation's ownership chain from its own state,
   requires the named owner to be the target, its session or its profile,
   the operation to be in scope, the deadline and result inside the budget,
