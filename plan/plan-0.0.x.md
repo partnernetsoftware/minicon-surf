@@ -31,7 +31,7 @@ surrendered; memory may not be hidden or waived because a route accelerates
 Agent automation. Conversely, low memory cannot excuse a pixel-only or
 sleep-driven Agent interface.
 
-Six contracts are fixed before implementation choices:
+Seven contracts are fixed before implementation choices:
 
 1. **Memory optimization is measured product value.** Major live and retained
    bytes have an owner, budget, observable report, bounded failure, and
@@ -59,6 +59,14 @@ Six contracts are fixed before implementation choices:
    toward a memory-bounded Rust browser core. It is not a commitment to ship a
    permanent generic browser launcher or to expose backend differences as the
    product model.
+7. **The ecosystem surrounds the core.** Electron's durable application
+   objects, Wry's thin embedding boundary, and Tauri's capability/permission
+   model are references for a later developer platform, not candidate browser
+   kernels. Embedding, SDK, plugin, packaging, and compatibility layers remain
+   optional and pay near-zero resident cost when absent. They consume the same
+   Agent-native authority and resource ledger; they cannot introduce an
+   unbounded IPC escape hatch, bind target lifetime back to a window, or make
+   full Node/Chromium compatibility a prerequisite for the native core.
 
 The 0.0.x series is allowed to reject every initial engine route. It is not
 allowed to dilute either primary outcome to select a winner, hide total memory
@@ -147,6 +155,16 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
 │   ├── a compatibility-only route is labelled and cannot set the product memory claim
 │   └── default route survives only if it satisfies ↳ [N0] ↳ [H5] ↳ [P6]
+├── [X9] optional developer ecosystem — follows the core, never defines it
+│   ├── Electron reference: stable App · Window · WebContents · Session concepts
+│   ├── Wry reference: small engine/view adapter and platform event-loop boundary
+│   ├── Tauri reference: manifest · scoped commands · permissions · plugins · packaging
+│   ├── Surf mapping: runtime · surface · target · profile/session · typed capability channel
+│   ├── future layers: Agent runtime → embeddable SurfView → optional Surf App framework
+│   ├── adapters and plugins expose owner · scope · deadline · budget · audit · teardown
+│   ├── unloaded ecosystem features have near-zero resident/process/dependency cost
+│   ├── [~] first research artifact is a concept/capability mapping, not API compatibility
+│   └── [-] no Node-in-page default, generic IPC, engine-specific public model or 0.0.x framework build
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
 │   ├── G1 memory court can attribute/cap synthetic state; allocator purge/relief rejected as recovery path for Servo, gate open
@@ -219,6 +237,12 @@ flowchart LR
 
     CORE["native browser-core convergence<br/>Rust · bounded ownership<br/>capabilities absorbed incrementally"]
 
+    subgraph ECO["Optional ecosystem [X9]"]
+        EMBED["SurfView embedding<br/>Rust API · later C ABI / SDK"]
+        APP["Surf App layer<br/>manifest · scoped commands · plugins"]
+        MIGRATE["concept migration<br/>Electron · Wry · Tauri"]
+    end
+
     SYN["synthetic control court<br/>shared authority · bounded surface<br/>persistent profile mechanics"]
 
     AT["AgenTerm<br/>later versioned consumer"]
@@ -244,6 +268,9 @@ flowchart LR
     DECIDE -->|keep / combine evidence| LEARN
     LEARN -->|adopt only with courts and budgets| CORE
     CORE -->|implements the same authority| CTRL
+    CTRL -->|stable bounded contract| EMBED --> APP
+    MIGRATE -. concepts, not inherited engine .-> EMBED & APP
+    APP -. optional; no authority bypass .-> CTRL
     AT -. same protocol .-> CTRL
     MINI -. product family only .-> CLI
 ```
@@ -282,6 +309,29 @@ explicitly bounded `combine` role. Backend-specific shortcuts do not become
 public semantics. Over time, the native route should absorb the best proven
 mechanisms so that multi-backend research increases confidence in, rather than
 postpones, a MiniCon Surf browser core of our own.
+
+### 3b. Ecosystem reference doctrine
+
+Electron, Wry and Tauri answer a different question from Servo, Lightpanda or
+the native route. The latter group helps test browser engines; the former group
+helps design how developers embed, extend, package and reason about a mature
+runtime. MiniCon Surf should borrow their successful concepts without
+inheriting their engine choice or compatibility burden:
+
+| Reference | Borrow | Do not inherit |
+|---|---|---|
+| Electron | stable application/window/page/session objects, lifecycle events, diagnostics and a large extension surface | bundled Chromium/Node cost, page-wide host authority, generic unbounded IPC, window-owned page lifetime |
+| Wry | thin WebView/engine adapter, custom protocol hooks and platform event-loop integration | opaque system-engine behavior, startup-only headed/headless, backend identity leaking into the public contract |
+| Tauri | capability manifests, scoped commands, permissions, plugins and packaging ergonomics | permissions without memory owners/budgets, plugins that bypass target/profile authority |
+
+The intended long-term layers are separable deliverables: the Agent browser
+runtime remains useful alone; an embeddable `SurfView` may expose Rust first
+and later a C ABI and language SDKs; only after the native core and surface
+contracts are earned may an optional application framework add manifests,
+plugins and packaging. Conceptual migration guides and narrow adapters precede
+any Electron/Tauri API-compatibility claim. Every layer is measured both loaded
+and absent, and its processes, allocations and capabilities remain attributable
+to a profile, target, surface or plugin owner.
 
 ## 4. 0.0.x evidence ledger
 
@@ -809,6 +859,11 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    memory, lifecycle or Agent-semantics regression. Keep a non-native backend
    in a shipped `combine` role only when that role is explicit, bounded and
    useful beyond what the current native slice can safely provide.
+9. [ ] Maintain an engine-neutral ecosystem concept map for Electron, Wry and
+   Tauri, including lifecycle, capability and resource-ownership mappings.
+   This is design input only during 0.0.x: do not build a plugin framework,
+   Node compatibility layer or application packager before G1/G3/P6/G6 and
+   the native embedding boundary have earned them.
 
 The first code milestone is therefore not “render a website.” It is “one
 bounded target has one identity and state while CLI, CDP, and an optional
