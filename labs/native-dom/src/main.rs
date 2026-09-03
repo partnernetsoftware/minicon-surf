@@ -1467,6 +1467,21 @@ impl Host {
         Ok((nodes, revision))
     }
 
+    /// Court-only request stage sample with the operation name, for the
+    /// control-plane churn court. Same gate as `surface_stage`.
+    fn request_stage(&self, label: &str, operation: Option<&str>) {
+        if !self.surface_stages {
+            return;
+        }
+        if let Some(log) = &self.surface_court {
+            let mut event = surface::self_sample();
+            event["event"] = json!("stage");
+            event["stage"] = json!(label);
+            event["operation"] = json!(operation);
+            log.append(event);
+        }
+    }
+
     /// Court-only stage sample: appended to the court log only when it exists.
     fn surface_stage(&self, label: &str) {
         if !self.surface_stages {
@@ -2275,12 +2290,15 @@ impl Host {
         };
         if let Some(id) = &target_id {
             self.sync_target_io(id);
+            self.request_stage("after_sync_io", Some(&request.operation));
         }
         let outcome = self.dispatch(request, deadline);
+        self.request_stage("after_dispatch", Some(&request.operation));
         if let Some(id) = &target_id
             && self.targets.contains_key(id)
         {
             self.commit_target_io(id, deadline)?;
+            self.request_stage("after_commit_io", Some(&request.operation));
         }
         outcome
     }
@@ -3781,6 +3799,11 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
         };
+        // Court-only request stages (`--surface-court-stages 1`): the line
+        // bytes alive, the request parsed, executed, serialized, the request
+        // dropped, the response written and dropped.
+        host.request_stage("request_read", None);
+        let mut operation: Option<String> = None;
         let response = match line {
             Line::Eof => break,
             Line::Oversized => envelope("req_invalid", Err(invalid("request exceeds byte limit"))),
@@ -3789,15 +3812,26 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             Line::Bytes(bytes) => match parse_request(&bytes) {
                 Ok(request) => {
+                    if host.surface_stages {
+                        operation = Some(request.operation.clone());
+                    }
+                    host.request_stage("request_parsed", operation.as_deref());
                     let body = host.execute(&request);
-                    envelope(&request.request_id, body)
+                    host.request_stage("after_execute", operation.as_deref());
+                    let serialized = envelope(&request.request_id, body);
+                    host.request_stage("response_serialized", operation.as_deref());
+                    serialized
                 }
                 Err(error) => envelope(&error.0, Err(error.1)),
             },
         };
+        host.request_stage("request_dropped", operation.as_deref());
         out.write_all(&response)?;
         out.write_all(b"\n")?;
         out.flush()?;
+        host.request_stage("response_written", operation.as_deref());
+        drop(response);
+        host.request_stage("response_dropped", operation.as_deref());
     }
     // Stop answering the edge before the server thread is joined, so a
     // connection still cleaning up gets an immediate error instead of
