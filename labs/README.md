@@ -17,7 +17,7 @@ Planned first landscape:
 
 | Lab | Initial role | Status |
 |---|---|---|
-| `lightpanda` | low-memory/Agent reference and process-per-target combine candidate | active — W1/W2/W3/W7; Rust control host with one engine process per target observed |
+| `lightpanda` | low-memory/Agent reference and process-per-target combine candidate | active — W1/W2/W3/W7; Rust control host with one engine process per target; attributable per-target process metrics reconciled with the shared sampler (X9 ME3) |
 | `chrome` | named contemporary comparison baseline | active — same-CDP-live-target W1 observed |
 | `servo` | Rust embeddable full-engine candidate | active — API + software W1 runtime observed |
 | `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + loopback CDP on one target; profile isolation; lifecycle RSS; capability attenuation court 33/33 (X9 ME1); adapter teardown court 24/24 (X9 ME2) |

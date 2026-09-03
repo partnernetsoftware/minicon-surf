@@ -1,0 +1,1659 @@
+{
+  "design": {
+    "bracket": "each host value must lie within [min(before, after) - slack, max(before, after) + slack] where slack = max(1 MiB, 5% of the larger sample)",
+    "independent_sampler": "labs/court/cdp-target-retention-macos-arm64.py process_tree (ps pid/ppid/rss) and physical_footprint (proc_pid_rusage RUSAGE_INFO_V4)",
+    "measured_repetitions": 7,
+    "rules": [
+      "pid sets equal to both samples",
+      "report complete",
+      "child count equals open targets",
+      "every child running with identity verified",
+      "no unattributed descendants",
+      "per-process resident and footprint inside the bracket",
+      "summed values inside the bracket",
+      "private bytes declared unavailable",
+      "no path, command line or environment strings",
+      "closed child absent from report and sampler",
+      "spawn/reap counters equal eight after the closes"
+    ],
+    "settle_ms": 500,
+    "stages": [
+      "empty",
+      "one_target",
+      "eight_targets",
+      "post_close"
+    ],
+    "targets": 8,
+    "warmups": 1
+  },
+  "engine_sha256": "840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7",
+  "host": "labs/lightpanda/host (process-per-target Rust host)",
+  "host_sha256": "28242c5c94ff92dac96e36cab5c4a798a26fab0f91aa0f0e66cc4aa7297a9de4",
+  "limitations": [
+    "one macOS arm64 machine, one static fixture, eight targets; agreement is within a fixed bracket, not identity, because the samples are taken at different instants",
+    "private/shared bytes are unavailable to both the host and the sampler",
+    "the report attributes children by the host's spawn; the engine exposes no in-process owner ledger",
+    "the report is diagnostics only and grants nothing"
+  ],
+  "measurement": {
+    "runs": [
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 72766168,
+            "complete": true,
+            "host_physical_footprint_bytes": 1605944,
+            "host_resident_bytes": 2473984,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 74372112,
+            "summed_resident_bytes": 228835328
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74404880,
+              "summed_resident_bytes": 228868096
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74355728,
+              "summed_resident_bytes": 228818944
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1065272,
+            "host_resident_bytes": 1884160,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1065272,
+            "summed_resident_bytes": 1884160
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1065272,
+              "summed_resident_bytes": 1900544
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9257536,
+            "complete": true,
+            "host_physical_footprint_bytes": 1163576,
+            "host_resident_bytes": 2031616,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10421112,
+            "summed_resident_bytes": 30507008
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10437496,
+              "summed_resident_bytes": 30523392
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10404728,
+              "summed_resident_bytes": 30490624
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1655096,
+            "host_resident_bytes": 2523136,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1655096,
+            "summed_resident_bytes": 2523136
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1671480,
+              "summed_resident_bytes": 2539520
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1655096,
+              "summed_resident_bytes": 2523136
+            }
+          }
+        }
+      },
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 73028384,
+            "complete": true,
+            "host_physical_footprint_bytes": 1687864,
+            "host_resident_bytes": 2555904,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 74716248,
+            "summed_resident_bytes": 229130240
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74732632,
+              "summed_resident_bytes": 229146624
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74683480,
+              "summed_resident_bytes": 229097472
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1048888,
+            "host_resident_bytes": 1867776,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1048888,
+            "summed_resident_bytes": 1867776
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1065272,
+              "summed_resident_bytes": 1900544
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9077312,
+            "complete": true,
+            "host_physical_footprint_bytes": 1163576,
+            "host_resident_bytes": 2031616,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10240888,
+            "summed_resident_bytes": 30326784
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10273656,
+              "summed_resident_bytes": 30359552
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10240888,
+              "summed_resident_bytes": 30326784
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1720632,
+            "host_resident_bytes": 2588672,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1720632,
+            "summed_resident_bytes": 2588672
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1737016,
+              "summed_resident_bytes": 2605056
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1720632,
+              "summed_resident_bytes": 2588672
+            }
+          }
+        }
+      },
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 73503472,
+            "complete": true,
+            "host_physical_footprint_bytes": 1605944,
+            "host_resident_bytes": 2473984,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 75109416,
+            "summed_resident_bytes": 229556224
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 75142184,
+              "summed_resident_bytes": 229588992
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 75093032,
+              "summed_resident_bytes": 229539840
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1065272,
+            "host_resident_bytes": 1884160,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1065272,
+            "summed_resident_bytes": 1884160
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1065272,
+              "summed_resident_bytes": 1900544
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9011800,
+            "complete": true,
+            "host_physical_footprint_bytes": 1163576,
+            "host_resident_bytes": 2031616,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10175376,
+            "summed_resident_bytes": 30244864
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10191760,
+              "summed_resident_bytes": 30261248
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10158992,
+              "summed_resident_bytes": 30228480
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1655096,
+            "host_resident_bytes": 2523136,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1655096,
+            "summed_resident_bytes": 2523136
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1671480,
+              "summed_resident_bytes": 2539520
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1655096,
+              "summed_resident_bytes": 2523136
+            }
+          }
+        }
+      },
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 72536792,
+            "complete": true,
+            "host_physical_footprint_bytes": 1622328,
+            "host_resident_bytes": 2490368,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 74159120,
+            "summed_resident_bytes": 228622336
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74208272,
+              "summed_resident_bytes": 228671488
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74159120,
+              "summed_resident_bytes": 228622336
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1065272,
+            "host_resident_bytes": 1884160,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1065272,
+            "summed_resident_bytes": 1884160
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1065272,
+              "summed_resident_bytes": 1900544
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9126488,
+            "complete": true,
+            "host_physical_footprint_bytes": 1130808,
+            "host_resident_bytes": 1998848,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10257296,
+            "summed_resident_bytes": 30326784
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10290064,
+              "summed_resident_bytes": 30359552
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10257296,
+              "summed_resident_bytes": 30326784
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1687864,
+            "host_resident_bytes": 2555904,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1687864,
+            "summed_resident_bytes": 2555904
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1687864,
+              "summed_resident_bytes": 2555904
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1687864,
+              "summed_resident_bytes": 2555904
+            }
+          }
+        }
+      },
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 72864520,
+            "complete": true,
+            "host_physical_footprint_bytes": 1622328,
+            "host_resident_bytes": 2490368,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 74486848,
+            "summed_resident_bytes": 228917248
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74503232,
+              "summed_resident_bytes": 228933632
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74470464,
+              "summed_resident_bytes": 228900864
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1048888,
+            "host_resident_bytes": 1867776,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1048888,
+            "summed_resident_bytes": 1867776
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1065272,
+              "summed_resident_bytes": 1900544
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9077312,
+            "complete": true,
+            "host_physical_footprint_bytes": 1147192,
+            "host_resident_bytes": 2015232,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10224504,
+            "summed_resident_bytes": 30310400
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10257272,
+              "summed_resident_bytes": 30343168
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10224504,
+              "summed_resident_bytes": 30310400
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1655096,
+            "host_resident_bytes": 2523136,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1655096,
+            "summed_resident_bytes": 2523136
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1704248,
+              "summed_resident_bytes": 2572288
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1655096,
+              "summed_resident_bytes": 2523136
+            }
+          }
+        }
+      },
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 72733448,
+            "complete": true,
+            "host_physical_footprint_bytes": 1704248,
+            "host_resident_bytes": 2572288,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 74437696,
+            "summed_resident_bytes": 228868096
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74454080,
+              "summed_resident_bytes": 228884480
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74388544,
+              "summed_resident_bytes": 228818944
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1048888,
+            "host_resident_bytes": 1867776,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1048888,
+            "summed_resident_bytes": 1867776
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1065272,
+              "summed_resident_bytes": 1900544
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9208432,
+            "complete": true,
+            "host_physical_footprint_bytes": 1163576,
+            "host_resident_bytes": 2031616,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10372008,
+            "summed_resident_bytes": 30425088
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10388392,
+              "summed_resident_bytes": 30441472
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10372008,
+              "summed_resident_bytes": 30425088
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1720632,
+            "host_resident_bytes": 2588672,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1720632,
+            "summed_resident_bytes": 2588672
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1737016,
+              "summed_resident_bytes": 2605056
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1720632,
+              "summed_resident_bytes": 2588672
+            }
+          }
+        }
+      },
+      {
+        "eight_targets": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            },
+            {
+              "child": "child_2",
+              "spawned_generation": 2,
+              "state": "running",
+              "target": "target_2"
+            },
+            {
+              "child": "child_3",
+              "spawned_generation": 3,
+              "state": "running",
+              "target": "target_3"
+            },
+            {
+              "child": "child_4",
+              "spawned_generation": 4,
+              "state": "running",
+              "target": "target_4"
+            },
+            {
+              "child": "child_5",
+              "spawned_generation": 5,
+              "state": "running",
+              "target": "target_5"
+            },
+            {
+              "child": "child_6",
+              "spawned_generation": 6,
+              "state": "running",
+              "target": "target_6"
+            },
+            {
+              "child": "child_7",
+              "spawned_generation": 7,
+              "state": "running",
+              "target": "target_7"
+            },
+            {
+              "child": "child_8",
+              "spawned_generation": 8,
+              "state": "running",
+              "target": "target_8"
+            }
+          ],
+          "findings": [],
+          "generation": 8,
+          "report": {
+            "children_physical_footprint_bytes": 72831728,
+            "complete": true,
+            "host_physical_footprint_bytes": 1638712,
+            "host_resident_bytes": 2506752,
+            "processes": 9,
+            "summed_physical_footprint_bytes": 74470440,
+            "summed_resident_bytes": 228917248
+          },
+          "sampler": {
+            "after": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74486824,
+              "summed_resident_bytes": 228933632
+            },
+            "before": {
+              "processes": 9,
+              "summed_physical_footprint_bytes": 74454056,
+              "summed_resident_bytes": 228900864
+            }
+          }
+        },
+        "empty": {
+          "agrees": true,
+          "children": [],
+          "findings": [],
+          "generation": 0,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1048888,
+            "host_resident_bytes": 1867776,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1048888,
+            "summed_resident_bytes": 1867776
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1081656,
+              "summed_resident_bytes": 1916928
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1048888,
+              "summed_resident_bytes": 1867776
+            }
+          }
+        },
+        "one_target": {
+          "agrees": true,
+          "children": [
+            {
+              "child": "child_1",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "findings": [],
+          "generation": 1,
+          "report": {
+            "children_physical_footprint_bytes": 9192024,
+            "complete": true,
+            "host_physical_footprint_bytes": 1163576,
+            "host_resident_bytes": 2031616,
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10355600,
+            "summed_resident_bytes": 30425088
+          },
+          "sampler": {
+            "after": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10371984,
+              "summed_resident_bytes": 30441472
+            },
+            "before": {
+              "processes": 2,
+              "summed_physical_footprint_bytes": 10355600,
+              "summed_resident_bytes": 30425088
+            }
+          }
+        },
+        "post_close": {
+          "agrees": true,
+          "children": [],
+          "closed_child_absent": true,
+          "counters": {
+            "children_reaped_total": 8,
+            "children_spawned_total": 8
+          },
+          "findings": [],
+          "generation": 16,
+          "report": {
+            "children_physical_footprint_bytes": 0,
+            "complete": true,
+            "host_physical_footprint_bytes": 1671480,
+            "host_resident_bytes": 2539520,
+            "processes": 1,
+            "summed_physical_footprint_bytes": 1671480,
+            "summed_resident_bytes": 2539520
+          },
+          "sampler": {
+            "after": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1687864,
+              "summed_resident_bytes": 2555904
+            },
+            "before": {
+              "processes": 1,
+              "summed_physical_footprint_bytes": 1671480,
+              "summed_resident_bytes": 2539520
+            }
+          }
+        }
+      }
+    ],
+    "semantic": "host memory.report per-process resident (pti_resident_size) and physical footprint (ri_phys_footprint) versus the sampler's ps rss and proc_pid_rusage footprint; summed resident double counts shared pages and is not total memory",
+    "stages": {
+      "eight_targets": {
+        "agreements": 7,
+        "findings": [],
+        "processes": {
+          "maximum": 9,
+          "median": 9,
+          "minimum": 9,
+          "values": [
+            9,
+            9,
+            9,
+            9,
+            9,
+            9,
+            9
+          ]
+        },
+        "report_children_physical_footprint_bytes": {
+          "maximum": 73503472,
+          "median": 72831728,
+          "minimum": 72536792,
+          "values": [
+            72766168,
+            73028384,
+            73503472,
+            72536792,
+            72864520,
+            72733448,
+            72831728
+          ]
+        },
+        "report_host_physical_footprint_bytes": {
+          "maximum": 1704248,
+          "median": 1622328,
+          "minimum": 1605944,
+          "values": [
+            1605944,
+            1687864,
+            1605944,
+            1622328,
+            1622328,
+            1704248,
+            1638712
+          ]
+        },
+        "report_summed_physical_footprint_bytes": {
+          "maximum": 75109416,
+          "median": 74470440,
+          "minimum": 74159120,
+          "values": [
+            74372112,
+            74716248,
+            75109416,
+            74159120,
+            74486848,
+            74437696,
+            74470440
+          ]
+        },
+        "report_summed_resident_bytes": {
+          "maximum": 229556224,
+          "median": 228917248,
+          "minimum": 228622336,
+          "values": [
+            228835328,
+            229130240,
+            229556224,
+            228622336,
+            228917248,
+            228868096,
+            228917248
+          ]
+        },
+        "sampler_before_summed_physical_footprint_bytes": {
+          "maximum": 75093032,
+          "median": 74454056,
+          "minimum": 74159120,
+          "values": [
+            74355728,
+            74683480,
+            75093032,
+            74159120,
+            74470464,
+            74388544,
+            74454056
+          ]
+        },
+        "sampler_before_summed_resident_bytes": {
+          "maximum": 229539840,
+          "median": 228900864,
+          "minimum": 228622336,
+          "values": [
+            228818944,
+            229097472,
+            229539840,
+            228622336,
+            228900864,
+            228818944,
+            228900864
+          ]
+        }
+      },
+      "empty": {
+        "agreements": 7,
+        "findings": [],
+        "processes": {
+          "maximum": 1,
+          "median": 1,
+          "minimum": 1,
+          "values": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "report_children_physical_footprint_bytes": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "report_host_physical_footprint_bytes": {
+          "maximum": 1065272,
+          "median": 1048888,
+          "minimum": 1048888,
+          "values": [
+            1065272,
+            1048888,
+            1065272,
+            1065272,
+            1048888,
+            1048888,
+            1048888
+          ]
+        },
+        "report_summed_physical_footprint_bytes": {
+          "maximum": 1065272,
+          "median": 1048888,
+          "minimum": 1048888,
+          "values": [
+            1065272,
+            1048888,
+            1065272,
+            1065272,
+            1048888,
+            1048888,
+            1048888
+          ]
+        },
+        "report_summed_resident_bytes": {
+          "maximum": 1884160,
+          "median": 1867776,
+          "minimum": 1867776,
+          "values": [
+            1884160,
+            1867776,
+            1884160,
+            1884160,
+            1867776,
+            1867776,
+            1867776
+          ]
+        },
+        "sampler_before_summed_physical_footprint_bytes": {
+          "maximum": 1048888,
+          "median": 1048888,
+          "minimum": 1048888,
+          "values": [
+            1048888,
+            1048888,
+            1048888,
+            1048888,
+            1048888,
+            1048888,
+            1048888
+          ]
+        },
+        "sampler_before_summed_resident_bytes": {
+          "maximum": 1867776,
+          "median": 1867776,
+          "minimum": 1867776,
+          "values": [
+            1867776,
+            1867776,
+            1867776,
+            1867776,
+            1867776,
+            1867776,
+            1867776
+          ]
+        }
+      },
+      "one_target": {
+        "agreements": 7,
+        "findings": [],
+        "processes": {
+          "maximum": 2,
+          "median": 2,
+          "minimum": 2,
+          "values": [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2
+          ]
+        },
+        "report_children_physical_footprint_bytes": {
+          "maximum": 9257536,
+          "median": 9126488,
+          "minimum": 9011800,
+          "values": [
+            9257536,
+            9077312,
+            9011800,
+            9126488,
+            9077312,
+            9208432,
+            9192024
+          ]
+        },
+        "report_host_physical_footprint_bytes": {
+          "maximum": 1163576,
+          "median": 1163576,
+          "minimum": 1130808,
+          "values": [
+            1163576,
+            1163576,
+            1163576,
+            1130808,
+            1147192,
+            1163576,
+            1163576
+          ]
+        },
+        "report_summed_physical_footprint_bytes": {
+          "maximum": 10421112,
+          "median": 10257296,
+          "minimum": 10175376,
+          "values": [
+            10421112,
+            10240888,
+            10175376,
+            10257296,
+            10224504,
+            10372008,
+            10355600
+          ]
+        },
+        "report_summed_resident_bytes": {
+          "maximum": 30507008,
+          "median": 30326784,
+          "minimum": 30244864,
+          "values": [
+            30507008,
+            30326784,
+            30244864,
+            30326784,
+            30310400,
+            30425088,
+            30425088
+          ]
+        },
+        "sampler_before_summed_physical_footprint_bytes": {
+          "maximum": 10404728,
+          "median": 10257296,
+          "minimum": 10158992,
+          "values": [
+            10404728,
+            10240888,
+            10158992,
+            10257296,
+            10224504,
+            10372008,
+            10355600
+          ]
+        },
+        "sampler_before_summed_resident_bytes": {
+          "maximum": 30490624,
+          "median": 30326784,
+          "minimum": 30228480,
+          "values": [
+            30490624,
+            30326784,
+            30228480,
+            30326784,
+            30310400,
+            30425088,
+            30425088
+          ]
+        }
+      },
+      "post_close": {
+        "agreements": 7,
+        "findings": [],
+        "processes": {
+          "maximum": 1,
+          "median": 1,
+          "minimum": 1,
+          "values": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ]
+        },
+        "report_children_physical_footprint_bytes": {
+          "maximum": 0,
+          "median": 0,
+          "minimum": 0,
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        "report_host_physical_footprint_bytes": {
+          "maximum": 1720632,
+          "median": 1671480,
+          "minimum": 1655096,
+          "values": [
+            1655096,
+            1720632,
+            1655096,
+            1687864,
+            1655096,
+            1720632,
+            1671480
+          ]
+        },
+        "report_summed_physical_footprint_bytes": {
+          "maximum": 1720632,
+          "median": 1671480,
+          "minimum": 1655096,
+          "values": [
+            1655096,
+            1720632,
+            1655096,
+            1687864,
+            1655096,
+            1720632,
+            1671480
+          ]
+        },
+        "report_summed_resident_bytes": {
+          "maximum": 2588672,
+          "median": 2539520,
+          "minimum": 2523136,
+          "values": [
+            2523136,
+            2588672,
+            2523136,
+            2555904,
+            2523136,
+            2588672,
+            2539520
+          ]
+        },
+        "sampler_before_summed_physical_footprint_bytes": {
+          "maximum": 1720632,
+          "median": 1671480,
+          "minimum": 1655096,
+          "values": [
+            1655096,
+            1720632,
+            1655096,
+            1687864,
+            1655096,
+            1720632,
+            1671480
+          ]
+        },
+        "sampler_before_summed_resident_bytes": {
+          "maximum": 2588672,
+          "median": 2539520,
+          "minimum": 2523136,
+          "values": [
+            2523136,
+            2588672,
+            2523136,
+            2555904,
+            2523136,
+            2588672,
+            2539520
+          ]
+        }
+      }
+    }
+  },
+  "passed": true,
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.lightpanda-process-metrics-receipt/0.0.1",
+  "status": "observed",
+  "technology": "lightpanda",
+  "technology_version": "0.4.0"
+}

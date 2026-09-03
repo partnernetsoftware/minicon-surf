@@ -142,7 +142,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── backend adapters translate capabilities; they never redefine the product model
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
-│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB)
+│   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB); the host now attributes every engine process per target (ME3)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 37.7 MB footprint vs Chrome 597.6 MB · 8 concurrent 179 MB vs 868 MB (RSS 87.5/1,232 · 137/2,207); narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live; realm heap arena (macOS mmap, unmapped at close) repairs post-close without the live cost on the same court, kept opt-in; G1 open
 │   ├── compatibility route may evaluate a system engine without hiding its memory
@@ -167,6 +167,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── all three references bind page lifetime to a window and none measures retention after teardown
 │   ├── [x] ME1 typed capability envelope: optional per-request attenuation keyed on profile/session/target with scope · deadline · result budget · audit; surface-located or off-chain owners are typed refusals; synthetic court 33/33
 │   ├── [x] ME2 adapter teardown ordering: adapters hold weak handles only; teardown detaches adapters → releases surfaces → drops the target → releases the profile lock and reports any extended owner reference; CDP adapter calls are attenuated to their target; synthetic court 24/24
+│   ├── [x] ME3 attributable process metrics: the Lightpanda per-target Rust host reports host + children by opaque child/target, pid, role, lifecycle state and generation with resident and physical footprint, private declared unavailable; reconciled with the shared sampler at empty · 1 · 8 · post-close within a fixed bracket
 │   └── [-] no Node-in-page default, generic IPC, engine-specific public model or 0.0.x framework build
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
@@ -848,6 +849,24 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   tests cover the stored-reference violation, which is detected and counted
   while the ledger still drops the owner. Safe Rust only, no ecosystem
   dependency, one adapter kind; G1, G3, P6 and G6 stay open.
+- [~] ME3 is done on the Lightpanda process-per-target Rust host. Its
+  `memory.report` now returns the host and every engine child by opaque
+  ordinal and target, pid, role, lifecycle state (`running`, `zombie`,
+  `exited`, `pid_reused` by recorded start time, `unreadable`,
+  `exited_during_sample`) and spawn generation, with resident set and the
+  kernel's physical footprint per process, sums named as sums, private
+  bytes declared unavailable, unattributed descendants walked and listed,
+  and a completeness flag that turns false the moment any child cannot be
+  measured; the report is read-only and no operation consults it. Public
+  libproc interfaces only, no protocol change. A new court reconciles it
+  with the shared sampler at empty, one target, eight targets and post-close
+  inside a bracket fixed before the run: 28 of 28 reconciliations agreed with zero
+  findings, the report and sampler summed footprints were identical at
+  empty (1,048,888), one target (10,257,296) and post-close (1,671,480)
+  and 49,152 bytes apart at eight targets (74,470,440 against 74,454,056),
+  and the child closed first was absent from both sides afterwards. The 27-item journey
+  stays 27 of 27 and the shared retention court reruns within noise. G1, G3,
+  P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -918,9 +937,9 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    The first map (`labs/ecosystem-reference`, Electron 44.1.1, Wry 0.55.1
    source / 0.56.1 docs, Tauri 2.11.x, read 2026-09-03) names five
    micro-experiments; ME1 (a typed capability envelope on the synthetic
-   host) is done at 33/33 and ME2 (adapter teardown ordering) at 24/24;
-   ME3 (process-metric shape) and ME5 (visibility is not detachment) are
-   next. This is design
+   host) is done at 33/33, ME2 (adapter teardown ordering) at 24/24 and
+   ME3 (attributable process metrics on the Lightpanda per-target host)
+   reconciled at every stage; ME5 waits for a real native surface. This is design
    input only during 0.0.x: do not build a plugin framework, Node
    compatibility layer or application packager before G1/G3/P6/G6 and the
    native embedding boundary have earned them.

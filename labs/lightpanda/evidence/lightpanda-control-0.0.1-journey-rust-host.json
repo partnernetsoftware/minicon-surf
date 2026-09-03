@@ -251,17 +251,72 @@
     {
       "check": "memory.report answers with a report or a typed unsupported_capability",
       "detail": {
-        "error": {
-          "code": "unsupported_capability",
-          "details": {
-            "engine_processes": 1
-          },
-          "message": "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
-          "retryable": false
-        },
-        "ok": false,
+        "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_16",
+        "result": {
+          "children": [
+            {
+              "child": "child_1",
+              "identity_verified": true,
+              "metrics": {
+                "lifetime_max_physical_footprint_bytes": 9339480,
+                "physical_footprint_bytes": 9339480,
+                "resident_bytes": 30244864,
+                "virtual_bytes": 469602926592
+              },
+              "pid": 14656,
+              "role": "engine",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "counters": {
+            "children_reaped_total": 0,
+            "children_spawned_total": 1
+          },
+          "generation": 1,
+          "host": {
+            "metrics": {
+              "lifetime_max_physical_footprint_bytes": 1392952,
+              "physical_footprint_bytes": 1392952,
+              "resident_bytes": 2260992,
+              "virtual_bytes": 445747118080
+            },
+            "pid": 14655,
+            "role": "host",
+            "state": "running"
+          },
+          "kind": "memory_report",
+          "limitations": [
+            "resident_bytes is the task resident set as ps reports it; summing it over processes double counts shared pages, so summed_resident_bytes is not total memory",
+            "physical_footprint_bytes is the kernel's per-process phys_footprint (proc_pid_rusage RUSAGE_INFO_V4)",
+            "private and shared bytes are unavailable without a task port",
+            "the engine exposes no in-process owner attribution; children are attributed by the host's spawn, not by the engine",
+            "read-only: the report never terminates or signals a child"
+          ],
+          "owners": {
+            "engine_processes": 1,
+            "targets": {
+              "object_limit": 8,
+              "objects": 1
+            }
+          },
+          "private_bytes": {
+            "available": false,
+            "reason": "a private versus shared split needs the task port (task_for_pid), which this host does not request; resident sums double count shared pages"
+          },
+          "semantic": "process-tree-metrics-by-owner",
+          "tree": {
+            "complete": true,
+            "incomplete": [],
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10732432,
+            "summed_resident_bytes": 32505856
+          },
+          "unattributed_descendants": []
+        },
         "version": "0.0.1"
       },
       "passed": true
@@ -345,7 +400,7 @@
   ],
   "concurrent_targets_supported": true,
   "control_contract": "0.0.1",
-  "host_sha256": "f4fd6099aa41b1e90d4cc956dd8376f312707bb02dcf60ed208b39a46031d499",
+  "host_sha256": "28242c5c94ff92dac96e36cab5c4a798a26fab0f91aa0f0e66cc4aa7297a9de4",
   "limitations": [
     "native stdio only; no CDP edge shares this target yet",
     "click and revision_at_least are the only action and condition kinds",
@@ -353,7 +408,7 @@
     "one session per host process; profiles are ephemeral and not engine cookie jars",
     "rendering and process model belong to the named technology, not to this journey"
   ],
-  "memory_report_offered": false,
+  "memory_report_offered": true,
   "memory_trim_offered": false,
   "passed": true,
   "platform": {
@@ -370,7 +425,7 @@
         "name": "court",
         "persistence": "ephemeral"
       },
-      "elapsed_ms": 1.444,
+      "elapsed_ms": 1.31,
       "operation": "profile.create",
       "response": {
         "ok": true,
@@ -390,7 +445,7 @@
       "arguments": {
         "persistence": "persistent"
       },
-      "elapsed_ms": 0.027,
+      "elapsed_ms": 0.033,
       "operation": "profile.create",
       "response": {
         "error": {
@@ -408,7 +463,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.018,
+      "elapsed_ms": 0.022,
       "operation": "session.open",
       "response": {
         "ok": true,
@@ -426,7 +481,7 @@
       "arguments": {
         "profile": "profile_1"
       },
-      "elapsed_ms": 0.014,
+      "elapsed_ms": 0.016,
       "operation": "session.open",
       "response": {
         "error": {
@@ -445,7 +500,7 @@
         "fixture": "does-not-exist.html",
         "session": "session_1"
       },
-      "elapsed_ms": 0.017,
+      "elapsed_ms": 0.016,
       "operation": "target.open",
       "response": {
         "error": {
@@ -464,7 +519,7 @@
         "fixture": "semantic-interactive.html",
         "session": "session_1"
       },
-      "elapsed_ms": 58.894,
+      "elapsed_ms": 50.068,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -487,7 +542,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.518,
+      "elapsed_ms": 0.952,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -564,7 +619,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.296,
+      "elapsed_ms": 0.29,
       "operation": "target.act",
       "response": {
         "error": {
@@ -590,7 +645,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.383,
+      "elapsed_ms": 0.506,
       "operation": "target.act",
       "response": {
         "ok": true,
@@ -613,7 +668,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.095,
+      "elapsed_ms": 0.092,
       "operation": "target.wait",
       "response": {
         "ok": true,
@@ -636,7 +691,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 303.124,
+      "elapsed_ms": 303.446,
       "operation": "target.wait",
       "response": {
         "error": {
@@ -666,7 +721,7 @@
         },
         "target": "target_1"
       },
-      "elapsed_ms": 0.423,
+      "elapsed_ms": 0.306,
       "operation": "target.act",
       "response": {
         "error": {
@@ -695,7 +750,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.795,
+      "elapsed_ms": 0.578,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -777,7 +832,7 @@
         "max_nodes": 2,
         "target": "target_1"
       },
-      "elapsed_ms": 1.562,
+      "elapsed_ms": 0.671,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -816,7 +871,7 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.329,
+      "elapsed_ms": 0.172,
       "operation": "target.inspect",
       "response": {
         "ok": true,
@@ -837,20 +892,75 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.056,
+      "elapsed_ms": 0.425,
       "operation": "memory.report",
       "response": {
-        "error": {
-          "code": "unsupported_capability",
-          "details": {
-            "engine_processes": 1
-          },
-          "message": "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
-          "retryable": false
-        },
-        "ok": false,
+        "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_16",
+        "result": {
+          "children": [
+            {
+              "child": "child_1",
+              "identity_verified": true,
+              "metrics": {
+                "lifetime_max_physical_footprint_bytes": 9339480,
+                "physical_footprint_bytes": 9339480,
+                "resident_bytes": 30244864,
+                "virtual_bytes": 469602926592
+              },
+              "pid": 14656,
+              "role": "engine",
+              "spawned_generation": 1,
+              "state": "running",
+              "target": "target_1"
+            }
+          ],
+          "counters": {
+            "children_reaped_total": 0,
+            "children_spawned_total": 1
+          },
+          "generation": 1,
+          "host": {
+            "metrics": {
+              "lifetime_max_physical_footprint_bytes": 1392952,
+              "physical_footprint_bytes": 1392952,
+              "resident_bytes": 2260992,
+              "virtual_bytes": 445747118080
+            },
+            "pid": 14655,
+            "role": "host",
+            "state": "running"
+          },
+          "kind": "memory_report",
+          "limitations": [
+            "resident_bytes is the task resident set as ps reports it; summing it over processes double counts shared pages, so summed_resident_bytes is not total memory",
+            "physical_footprint_bytes is the kernel's per-process phys_footprint (proc_pid_rusage RUSAGE_INFO_V4)",
+            "private and shared bytes are unavailable without a task port",
+            "the engine exposes no in-process owner attribution; children are attributed by the host's spawn, not by the engine",
+            "read-only: the report never terminates or signals a child"
+          ],
+          "owners": {
+            "engine_processes": 1,
+            "targets": {
+              "object_limit": 8,
+              "objects": 1
+            }
+          },
+          "private_bytes": {
+            "available": false,
+            "reason": "a private versus shared split needs the task port (task_for_pid), which this host does not request; resident sums double count shared pages"
+          },
+          "semantic": "process-tree-metrics-by-owner",
+          "tree": {
+            "complete": true,
+            "incomplete": [],
+            "processes": 2,
+            "summed_physical_footprint_bytes": 10732432,
+            "summed_resident_bytes": 32505856
+          },
+          "unattributed_descendants": []
+        },
         "version": "0.0.1"
       }
     },
@@ -859,7 +969,7 @@
         "fixture": "semantic-static.html",
         "session": "session_1"
       },
-      "elapsed_ms": 82.278,
+      "elapsed_ms": 76.32,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -879,13 +989,18 @@
       "arguments": {
         "target": "target_2"
       },
-      "elapsed_ms": 1.174,
+      "elapsed_ms": 1.197,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_18",
         "result": {
+          "child": {
+            "child": "child_2",
+            "pid": 14660,
+            "spawned_generation": 2
+          },
           "kind": "target_closed",
           "target": "target_2"
         },
@@ -912,7 +1027,7 @@
     },
     {
       "arguments": {},
-      "elapsed_ms": 0.013,
+      "elapsed_ms": 0.018,
       "operation": "memory.trim",
       "response": {
         "error": {
@@ -935,7 +1050,7 @@
         "request_id": "req_bad",
         "version": "0.0.1"
       },
-      "elapsed_ms": 0.013,
+      "elapsed_ms": 0.015,
       "operation": "invalid",
       "response": {
         "error": {
@@ -953,13 +1068,18 @@
       "arguments": {
         "target": "target_1"
       },
-      "elapsed_ms": 0.869,
+      "elapsed_ms": 0.98,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_22",
         "result": {
+          "child": {
+            "child": "child_1",
+            "pid": 14656,
+            "spawned_generation": 1
+          },
           "kind": "target_closed",
           "target": "target_1"
         },
@@ -973,7 +1093,7 @@
         "max_nodes": 64,
         "target": "target_1"
       },
-      "elapsed_ms": 0.017,
+      "elapsed_ms": 0.028,
       "operation": "target.snapshot",
       "response": {
         "error": {
@@ -996,7 +1116,7 @@
         "fixture": "semantic-scripted.html",
         "session": "session_1"
       },
-      "elapsed_ms": 55.353,
+      "elapsed_ms": 51.474,
       "operation": "target.open",
       "response": {
         "ok": true,
@@ -1019,7 +1139,7 @@
         "max_nodes": 64,
         "target": "target_3"
       },
-      "elapsed_ms": 0.449,
+      "elapsed_ms": 0.381,
       "operation": "target.snapshot",
       "response": {
         "ok": true,
@@ -1058,13 +1178,18 @@
       "arguments": {
         "target": "target_3"
       },
-      "elapsed_ms": 1.145,
+      "elapsed_ms": 1.002,
       "operation": "target.close",
       "response": {
         "ok": true,
         "protocol": "minicon-surf.control",
         "request_id": "req_26",
         "result": {
+          "child": {
+            "child": "child_3",
+            "pid": 14661,
+            "spawned_generation": 5
+          },
           "kind": "target_closed",
           "target": "target_3"
         },
@@ -1075,7 +1200,7 @@
       "arguments": {
         "session": "session_1"
       },
-      "elapsed_ms": 0.024,
+      "elapsed_ms": 0.019,
       "operation": "session.close",
       "response": {
         "ok": true,

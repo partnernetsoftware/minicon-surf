@@ -22,6 +22,8 @@ use base64::engine::general_purpose::STANDARD;
 use percent_encoding::{NON_ALPHANUMERIC, percent_encode};
 use serde_json::{Map, Value, json};
 
+mod procinfo;
+
 const PROTOCOL: &str = "minicon-surf.control";
 const VERSION: &str = "0.0.1";
 const MAX_REQUEST_BYTES: usize = 65_536;
@@ -356,6 +358,13 @@ struct Engine {
     child: Child,
     stream: TcpStream,
     next_id: u64,
+    /// Opaque per-host ordinal; the report names children by it, never by
+    /// command line or path.
+    ordinal: u64,
+    /// Host generation at spawn; the report's generation is never below it.
+    spawned_generation: u64,
+    /// Identity read right after the spawn so a reused pid is detectable.
+    identity: Option<procinfo::ProcessIdentity>,
 }
 
 fn free_port() -> io::Result<u16> {
@@ -414,10 +423,17 @@ impl Engine {
                 return Err(engine_error("CDP WebSocket upgrade failed", error));
             }
         };
+        #[cfg(target_os = "macos")]
+        let identity = procinfo::identity(child.id()).map(|(identity, _)| identity);
+        #[cfg(not(target_os = "macos"))]
+        let identity = None;
         Ok(Engine {
             child,
             stream,
             next_id: 0,
+            ordinal: 0,
+            spawned_generation: 0,
+            identity,
         })
     }
 
@@ -642,6 +658,11 @@ struct Host {
     next_profile: u64,
     next_session: u64,
     next_target: u64,
+    /// Advances on every engine spawn and every reap; reports carry it.
+    generation: u64,
+    next_child: u64,
+    children_spawned_total: u64,
+    children_reaped_total: u64,
 }
 
 impl Host {
@@ -781,20 +802,150 @@ impl Host {
                     .targets
                     .remove(id)
                     .ok_or_else(|| not_found("target", id))?;
-                target.engine.stop();
-                Ok(json!({"kind":"target_closed","target":id}))
+                let child = self.stop_engine(target.engine);
+                Ok(json!({"kind":"target_closed","target":id,"child":child}))
             }
             "target.snapshot" => self.target_snapshot(a, deadline),
             "target.act" => self.target_act(a, deadline),
             "target.wait" => self.target_wait(a, deadline),
-            "memory.report" => Err(ControlError::new(
-                "unsupported_capability",
-                "Lightpanda 0.4.0 exposes no in-process memory reporter through CDP",
-                false,
-            )
-            .details(json!({"engine_processes":self.targets.len()}))),
+            "memory.report" => {
+                exact_object(a, &[])?;
+                self.memory_report()
+            }
             other => Err(unsupported_operation(other)),
         }
+    }
+
+    /// Stop an engine and reap it; the reap advances the generation.
+    fn stop_engine(&mut self, engine: Engine) -> Value {
+        let child = json!({"child":format!("child_{}", engine.ordinal),"pid":engine.child.id(),"spawned_generation":engine.spawned_generation});
+        engine.stop();
+        self.generation += 1;
+        self.children_reaped_total += 1;
+        child
+    }
+
+    #[cfg(target_os = "macos")]
+    fn memory_report(&mut self) -> Result<Value, ControlError> {
+        let host_pid = procinfo::host_pid();
+        let mut incomplete: Vec<Value> = Vec::new();
+        let mut children = Vec::new();
+        let mut owned_pids = std::collections::BTreeSet::new();
+        let mut summed_resident: u64 = 0;
+        let mut summed_footprint: u64 = 0;
+        let mut processes: u64 = 0;
+        for target in self.targets.values_mut() {
+            let engine = &mut target.engine;
+            let pid = engine.child.id();
+            let child_id = format!("child_{}", engine.ordinal);
+            // The report never terminates a child; `try_wait` only observes.
+            let state = match engine.child.try_wait() {
+                Ok(Some(_)) => procinfo::ChildState::Exited,
+                Ok(None) => procinfo::classify(pid, engine.identity, host_pid),
+                Err(_) => procinfo::ChildState::Unreadable,
+            };
+            let metrics = if state.is_complete() {
+                procinfo::metrics(pid)
+            } else {
+                None
+            };
+            let state = match (state, metrics) {
+                (state, None) if state.is_complete() => procinfo::ChildState::ExitedDuringSample,
+                (state, _) => state,
+            };
+            if let Some(metrics) = metrics {
+                summed_resident += metrics.resident_bytes;
+                summed_footprint += metrics.physical_footprint_bytes;
+                processes += 1;
+                owned_pids.insert(pid);
+            } else {
+                incomplete.push(json!({"child":child_id,"target":target.id,"state":state.name()}));
+            }
+            children.push(json!({
+                "child":child_id,
+                "target":target.id,
+                "role":"engine",
+                "state":state.name(),
+                "pid":pid,
+                "spawned_generation":engine.spawned_generation,
+                "identity_verified":engine.identity.is_some() && state == procinfo::ChildState::Running,
+                "metrics":metrics.map(procinfo::Metrics::to_json),
+            }));
+        }
+        // Descendants the host did not spawn as a target engine are listed
+        // and summed, but attributed to no owner.
+        let mut unattributed = Vec::new();
+        let mut frontier = vec![host_pid];
+        let mut seen = std::collections::BTreeSet::new();
+        while let Some(parent) = frontier.pop() {
+            for pid in procinfo::children(parent) {
+                if !seen.insert(pid) {
+                    continue;
+                }
+                frontier.push(pid);
+                if owned_pids.contains(&pid) {
+                    continue;
+                }
+                let state = match procinfo::identity(pid) {
+                    None => "unreadable",
+                    Some((_, true)) => "zombie",
+                    Some((_, false)) => "running",
+                };
+                let metrics = procinfo::metrics(pid);
+                if let Some(metrics) = metrics {
+                    summed_resident += metrics.resident_bytes;
+                    summed_footprint += metrics.physical_footprint_bytes;
+                    processes += 1;
+                } else {
+                    incomplete.push(json!({"pid":pid,"parent_pid":parent,"state":state}));
+                }
+                unattributed.push(json!({"pid":pid,"parent_pid":parent,"role":"unknown","state":state,"metrics":metrics.map(procinfo::Metrics::to_json)}));
+            }
+        }
+        let host = procinfo::metrics(host_pid).map(procinfo::Metrics::to_json);
+        match &host {
+            Some(metrics) => {
+                summed_resident += metrics["resident_bytes"].as_u64().unwrap_or(0);
+                summed_footprint += metrics["physical_footprint_bytes"].as_u64().unwrap_or(0);
+                processes += 1;
+            }
+            None => incomplete.push(json!({"host":true,"state":"unreadable"})),
+        }
+        Ok(json!({
+            "kind":"memory_report",
+            "semantic":"process-tree-metrics-by-owner",
+            "generation":self.generation,
+            "host":{"pid":host_pid,"role":"host","state":"running","metrics":host},
+            "children":children,
+            "unattributed_descendants":unattributed,
+            "tree":{
+                "processes":processes,
+                "summed_resident_bytes":summed_resident,
+                "summed_physical_footprint_bytes":summed_footprint,
+                "complete":incomplete.is_empty(),
+                "incomplete":incomplete,
+            },
+            "private_bytes":procinfo::private_bytes_statement(),
+            "owners":{"targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS},"engine_processes":children.len()},
+            "counters":{"children_spawned_total":self.children_spawned_total,"children_reaped_total":self.children_reaped_total},
+            "limitations":[
+                "resident_bytes is the task resident set as ps reports it; summing it over processes double counts shared pages, so summed_resident_bytes is not total memory",
+                "physical_footprint_bytes is the kernel's per-process phys_footprint (proc_pid_rusage RUSAGE_INFO_V4)",
+                "private and shared bytes are unavailable without a task port",
+                "the engine exposes no in-process owner attribution; children are attributed by the host's spawn, not by the engine",
+                "read-only: the report never terminates or signals a child",
+            ],
+        }))
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn memory_report(&mut self) -> Result<Value, ControlError> {
+        Err(ControlError::new(
+            "unsupported_capability",
+            "process metrics are qualified on macOS only",
+            false,
+        )
+        .details(json!({"engine_processes":self.targets.len()})))
     }
 
     fn profile_create(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -900,7 +1051,7 @@ impl Host {
         };
         let closed = self.targets.len();
         for (_, target) in std::mem::take(&mut self.targets) {
-            target.engine.stop();
+            self.stop_engine(target.engine);
         }
         Ok(
             json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed}),
@@ -939,6 +1090,11 @@ impl Host {
         self.next_target += 1;
         let id = format!("target_{}", self.next_target);
         let mut engine = Engine::start(&self.engine_binary)?;
+        self.generation += 1;
+        self.next_child += 1;
+        self.children_spawned_total += 1;
+        engine.ordinal = self.next_child;
+        engine.spawned_generation = self.generation;
         let attach = (|| -> Result<String, ControlError> {
             let created = engine.call("Target.createTarget", json!({"url":"about:blank"}), None)?;
             let cdp_target = created
@@ -994,7 +1150,7 @@ impl Host {
                 )
             }
             Err(error) => {
-                target.engine.stop();
+                self.stop_engine(target.engine);
                 Err(error)
             }
         }
@@ -1272,6 +1428,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_profile: 0,
         next_session: 0,
         next_target: 0,
+        generation: 0,
+        next_child: 0,
+        children_spawned_total: 0,
+        children_reaped_total: 0,
     };
     let stdin = io::stdin();
     let mut reader = stdin.lock();

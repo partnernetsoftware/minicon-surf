@@ -77,7 +77,9 @@ revisions in details; the post-click snapshot with the mutated button and new
 status text; `max_nodes` truncation; the W2 scripted fixture observed after
 the first target closes; and typed refusals. Two facts differ from Servo and
 are recorded rather than hidden: `memory.report` is `unsupported_capability`
-because Lightpanda 0.4.0 exposes no in-process reporter through CDP, and a
+on the Python host because Lightpanda 0.4.0 exposes no in-process reporter
+through CDP (the Rust host now answers with attributable process metrics,
+see below), and a
 second concurrent target is a typed `resource_limit` (`TargetAlreadyLoaded`).
 Target open took 2.035 ms and every other operation under 1 ms in the
 recorded transcript, against 50.803 ms for Servo's target open.
@@ -144,6 +146,106 @@ engines cost 76,043,448 bytes against Servo's 179,309,736 and Chrome's
 638,976 bytes remain after eight closes. The combination is therefore the
 lowest-footprint multi-target route measured, with zero engine retention and
 a process boundary per target.
+
+## Attributable process metrics (X9 micro-experiment ME3)
+
+Hypothesis: the process-per-target host can report an engine-neutral,
+attributable process metric shape (each child named by an opaque ordinal and
+its target, with pid, role, lifecycle state, resident set and physical
+footprint) that reconciles with the shared court's independent process-tree
+sampler at every stage, without a private API, without changing the
+protocol, and without the report ever touching a child.
+
+Scope: `host/src/procinfo.rs` reads public libproc interfaces only
+(`proc_pidinfo` `PROC_PIDTBSDINFO`/`PROC_PIDTASKINFO`, `proc_pid_rusage`
+`RUSAGE_INFO_V4`, `proc_listchildpids`). `memory.report`, previously
+`unsupported_capability` on this host, now returns:
+
+- `host` and `children[]`: `{child, target, role, state, pid,
+  spawned_generation, identity_verified, metrics}` where `metrics` is
+  `resident_bytes` (`pti_resident_size`, the value `ps` prints),
+  `virtual_bytes`, `physical_footprint_bytes` (`ri_phys_footprint`) and its
+  lifetime maximum; no command line, path, environment or process name is
+  emitted;
+- lifecycle state per child: `running`, `zombie`, `exited`, `pid_reused`
+  (the start time recorded at spawn or the parent pid no longer match),
+  `unreadable`, `exited_during_sample`; a child in any state other than
+  running or zombie has null metrics and is listed under
+  `tree.incomplete`, so `tree.complete` is false and the report cannot be
+  mistaken for a full tree;
+- `unattributed_descendants[]`: every process below the host that is not a
+  target engine, found by walking `proc_listchildpids`, summed but owned by
+  nothing (empty in every run);
+- `generation`, advanced on every spawn and every reap, with each child's
+  `spawned_generation`, so a report is a set at one generation and
+  `target.close` returns the reaped child's ordinal, pid and generation;
+- `tree.summed_resident_bytes` and `tree.summed_physical_footprint_bytes`
+  named as sums, with `private_bytes.available = false` and the reason (a
+  private versus shared split needs a task port the host does not request;
+  resident sums double count shared pages). Nothing here is Electron's
+  `ProcessMetric`; only the idea of a per-process row with a role is
+  borrowed, and no field is claimed equivalent.
+
+The report is read-only diagnostics: it never terminates, signals or waits
+for a child beyond a non-blocking `try_wait`, and no operation consults it.
+
+Reproduction:
+
+```sh
+python3 labs/lightpanda/process-metrics-court.py \
+  --binary labs/lightpanda/host/target/release/lightpanda-control \
+  --engine target/labs/lightpanda/0.4.0/lightpanda-aarch64-macos \
+  --engine-sha256 840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7 \
+  --receipt labs/lightpanda/evidence/lightpanda-control-0.0.1-process-metrics.json
+```
+
+The court fixes its rules before the run: at `empty`, `one_target`,
+`eight_targets` and `post_close` it takes the shared court's sampler
+(`ps` pid/ppid/rss plus `proc_pid_rusage` footprint) before and after
+`memory.report`; the report must name exactly the sampler's pid set in both
+samples, be complete, list as many running identity-verified children as
+open targets and no unattributed descendant, and every per-process and
+summed value must lie inside the bracket of the two samples widened by
+max(1 MiB, 5%); the child closed first must be absent from both the report
+and the sampler afterwards, the spawn/reap counters must read eight and
+eight, private bytes must be declared unavailable, and no string may look
+like a path, command line or environment value. Any violation is a recorded
+finding and the receipt's status becomes `disagreement-recorded`.
+
+Evidence (`lightpanda-control-0.0.1-process-metrics` receipt, one warm-up
+plus seven runs): every stage agreed in all seven runs (28 of 28
+reconciliations, zero findings). Medians, host report against the sampler's
+before-sample, in bytes:
+
+| stage | processes | report summed footprint | sampler summed footprint | report summed resident | sampler summed resident | host footprint | children footprint |
+|---|---|---|---|---|---|---|---|
+| empty | 1 | 1,048,888 | 1,048,888 | 1,867,776 | 1,867,776 | 1,048,888 | 0 |
+| one target | 2 | 10,257,296 | 10,257,296 | 30,326,784 | 30,326,784 | 1,163,576 | 9,126,488 |
+| eight targets | 9 | 74,470,440 | 74,454,056 | 228,917,248 | 228,900,864 | 1,622,328 | 72,831,728 |
+| post-close | 1 | 1,671,480 | 1,671,480 | 2,539,520 | 2,539,520 | 1,671,480 | 0 |
+
+The largest gap between the report and the sample taken just before it was
+49,152 bytes of footprint (three pages) at eight targets; pid sets matched
+in every sample, every child was `running` with its identity verified, no
+unattributed descendant appeared, the child closed first was absent from
+both the report and the sampler in all seven runs, and the counters read
+eight spawned and eight reaped. The shared retention court rerun on the
+same binary measured 1,065,272 bytes footprint empty, 10,437,544 with one
+target, 1,720,632 after eight closes (655,360 retained) and 76,109,008 with
+eight concurrent targets, within noise of the recorded receipt; the 27-item
+journey passes 27 of 27 with `memory.report` now answered.
+
+Gaps: one machine, one static fixture, eight targets; agreement is within a
+fixed bracket, not identity, because the samples are taken at different
+instants; private and shared bytes are unavailable to both sides; the engine
+has no in-process owner ledger, so attribution stops at the process; the
+`pid_reused`, `unreadable` and `exited_during_sample` states are defined and
+exercised by construction but were not observed on this court.
+
+Verdict: `keep` as the [X9] process-metric shape for process-per-target
+hosts. It changes no gate: the numbers are the same measurements the shared
+court already takes, now attributable per target from inside the host; G1,
+G3, P6 and G6 stay open.
 
 ## Per-cycle retention slope
 
