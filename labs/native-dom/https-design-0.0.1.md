@@ -192,6 +192,17 @@ private-address redirect through an https target; a 40 KB header fixture;
 the cross-profile check counts one full handshake among three fetches. The
 verdict is `keep` as opt-in; ring's C and perlasm stay visible.
 
+## 10. Persistent Secure cookies (recorded)
+
+`secure-cookie-court.py`, frozen first, 78 of 78: the sealed record stores
+cookies (name, value, host, path, `secure`, expiry), never send decisions;
+after a restart the keychain unseals it and the jar applies the current
+host, path, `Secure` and expiry rules at send time (an injected clock
+offset makes expiry observable without sleeps); volatile session cookies
+are never persisted; negatives leave jar counts and record hashes
+unchanged; a second profile is isolated; without a pinned root a persisted
+Secure cookie stays locked.
+
 ## 7. Out of scope of the slice
 
 System roots, revocation, CT, client certificates, HTTP/2 and QUIC, mixed

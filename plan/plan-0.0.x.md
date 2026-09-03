@@ -139,6 +139,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── [x] synthetic G4: two persistent + one ephemeral isolate storage/policy/locks
 │   ├── [~] native-dom slice: keychain-envelope sealed store · RFC 6265 subset jar · localStorage · write-through with fault court (80/82; total-live criterion unmet)
 │   ├── [x] native-dom opt-in HTTPS: pinned roots only · rustls + ring (C/perlasm inside) · Secure cookies over verified https · court 74/74
+│   ├── [x] persistent Secure cookies across restart: sealed record · volatile never persisted · expiry by current clock · court 78/78
 │   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
@@ -1094,6 +1095,18 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   TLS and verification with C and perlasm primitives inside `ring`: not
   pure Rust. Pinned loopback roots only, no public-web claim; G1, G3, P6
   and G6 stay open.
+- [x] Persistent Secure cookies across a restart, court frozen first and
+  passed 78 of 78 under both allocators: a verified https origin's
+  persistent Secure cookie survives the restart through the keychain-sealed
+  record and is sent again over https only, never over http nor to an http
+  document nor to the same server under another host name; the volatile
+  session cookie is never persisted, an expired cookie (injected clock
+  offset, no sleeps) and a past `Expires` are dropped, `Max-Age=0` deletes;
+  wrong-name, unpinned and failed-navigation negatives leave jar counts and
+  record hashes unchanged; a second profile at the same URLs is isolated;
+  no value, cookie name or storage marker appears at rest; without a pinned
+  root the persisted Secure cookie stays locked. G1, G3, P6 and G6 stay
+  open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

@@ -1216,6 +1216,64 @@ absence is not claimed.
 Verdict: `keep` as an opt-in, explicit-policy slice. The P6 v1 court and
 its verdict are unchanged; G1, G3, P6 and G6 stay open.
 
+### Persistent Secure cookies across a restart (P6 × HTTPS)
+
+Hypothesis: a `Secure` cookie set by a verified https origin into a
+persistent profile survives a host restart with every rule intact, while
+volatile session cookies and expired cookies do not, and nothing about a
+send decision is stored in the record. Court frozen before it ran:
+[`secure-cookie-court.py`](secure-cookie-court.py) (disposable fixtures,
+fake values, keychain items deleted per run, default allocator and arena).
+
+Mechanism added for the court: `MINICON_SURF_CLOCK_OFFSET_SECONDS`, a fixed
+clock offset in seconds read once at start (default 0), so expiry and
+deletion are observed under an injected clock instead of sleeps.
+
+Evidence (`native-dom-control-0.0.2-secure-cookie` receipt, 78 of 78): in
+host A persistent `alpha` sets over https a persistent Secure cookie, a
+persistent plain cookie, a volatile Secure session cookie, a 60-second
+Secure cookie and a `Path=/other` cookie; a cookie with `Expires` in the
+past is deleted on receipt and `Max-Age=0` deletes an existing one; the
+https echo carries the four matching cookies and never the path-scoped, the
+past-expired or the deleted one, the http echo of the same host carries only
+the plain one; `profile.inspect` counts four persistent and one volatile
+cookie and shows no value; the record's clear-text envelope holds only the
+eight sealed fields. A wrong-name origin and an unpinned origin are
+`permission_denied`, `Secure` over http is dropped on receipt and a link to
+a wrong-name origin fails typed: after all of them the jar counts, the
+record bytes and their hashes are unchanged and the https echo still sends
+the same cookies. `beta` sets its own cookies at the same URLs and neither
+profile ever carries the other's. At rest no file under the root contains
+any fixture value, any cookie name or the localStorage marker. Host B, the
+same root and pinned root at clock +120 s, unseals the record through the
+keychain again, lists both profiles, and alpha's https echo carries the
+persistent Secure and plain cookies only: the volatile cookie was never
+persisted, the 60-second cookie is expired and the `Path=/other` cookie
+does not match; the http echo carries only the plain one; an http document
+does not see the Secure cookie; the same server under its `localhost` name
+receives none of the `127.0.0.1` cookies, so host, path and `Secure` are
+matched by the current rules at send time; beta stays isolated; the
+restarted host's first https fetch is a full handshake. Host C, the same
+root without a pinned root, gets `unsupported_capability
+tls_no_pinned_roots` for https and sends only the plain cookie over http,
+so a persisted Secure cookie stays locked without TLS; it counts three
+persistent cookies because host B's http storage write committed the record
+after dropping the expired one, and zero volatile. Owners are zero after
+every close, no host spawns a descendant. Footprints as diagnostics
+(default / arena): host A live 5,521,864 / 4,948,448, host B live
+4,637,032 / 3,948,904.
+
+Court amendment after the freeze (a stale count): the host C expectation
+was written for two cookies before the persistent/volatile, short-lived and
+path-scoped cookies were added; the recorded semantics are the ones above.
+
+Gaps: pinned loopback roots only; the profile-court cell that refuses
+`Secure` over `http` (D3) is unchanged and is now a scheme rule rather
+than a cell limit; the same-site context across schemes stays a recorded
+loss; one platform and fixture set.
+
+Verdict: `keep`. G1, G3, P6 and G6 stay open.
+
 ### Receipt provenance
 
 Each receipt records the SHA-256 of the host binary that produced it. The
@@ -1230,7 +1288,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
-| `native-dom-control-0.0.2-https`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice and the exact header cap | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
+| `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
 
 ## Findings against product contracts
 

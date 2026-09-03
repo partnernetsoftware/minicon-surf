@@ -269,7 +269,12 @@ def main():
                     expect(tag + "without a pinned root https is unsupported_capability tls_no_pinned_roots", refused(locked_out, "unsupported_capability", "tls_no_pinned_roots"), locked_out.get("error"))
                     http_text = echo_text(third, sa3, http)
                     expect(tag + "without a pinned root the persisted Secure cookie stays locked: only the plain cookie is sent over http", "locked=" not in http_text and f"open={FAKE['alpha_plain']}" in http_text, http_text)
-                    expect(tag + "without a pinned root the Secure cookie is still counted in the profile", third.ok("profile.inspect", {"profile": alpha})["cookies"].get("persistent") == 2)
+                    # Court amendment (stale count): host B (clock +120) dropped the expired 60 s cookie at load
+                    # and its http storage write committed the record without it, so host C loads three
+                    # persistent cookies (Secure, plain, Path=/other) and no volatile one. Expiry is decided
+                    # by the current clock at load and send time; the record stores cookies, never decisions.
+                    counts_c = third.ok("profile.inspect", {"profile": alpha})["cookies"]
+                    expect(tag + "without a pinned root the persisted cookies are still counted (three persistent after B committed the expiry, zero volatile)", counts_c.get("persistent") == 3 and counts_c.get("volatile") == 0, counts_c)
                     third.ok("session.close", {"session": sa3})
                     expect(tag + "host C exits cleanly", third.finish() == 0)
                 finally:

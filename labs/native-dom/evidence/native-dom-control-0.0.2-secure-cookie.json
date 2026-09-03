@@ -1,0 +1,718 @@
+{
+ "checks": [
+  {
+   "check": "[system] alpha sets a persistent Secure cookie over https",
+   "passed": true
+  },
+  {
+   "check": "[system] alpha sets a persistent plain cookie over https",
+   "passed": true
+  },
+  {
+   "check": "[system] alpha sets a volatile Secure session cookie over https",
+   "passed": true
+  },
+  {
+   "check": "[system] alpha sets a short-lived persistent cookie (Max-Age=60)",
+   "passed": true
+  },
+  {
+   "check": "[system] alpha sets a Path=/other cookie",
+   "passed": true
+  },
+  {
+   "check": "[system] a cookie with Expires in the past is deleted on receipt",
+   "passed": true
+  },
+  {
+   "check": "[system] a cookie to be deleted is first set",
+   "passed": true
+  },
+  {
+   "check": "[system] Max-Age=0 deletes the existing cookie",
+   "passed": true
+  },
+  {
+   "check": "[system] the https echo carries the persistent Secure, plain, volatile and short-lived cookies and neither the path-scoped, the past-expired nor the deleted one",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c; courtshort=court-alpha-short-3c4d; courtvolatile=court-alpha-volatile-6a1f",
+   "passed": true
+  },
+  {
+   "check": "[system] the http echo of the same host carries only the plain cookie",
+   "detail": "sent=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[system] profile.inspect counts four persistent and one volatile cookie and shows no value",
+   "detail": {
+    "bytes": 303,
+    "objects": 5,
+    "persistent": 4,
+    "volatile": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the record's clear-text envelope holds only the sealed fields, no send decision",
+   "detail": [
+    "dek_nonce",
+    "dek_sealed",
+    "format",
+    "key_id",
+    "profile",
+    "protocol",
+    "record_nonce",
+    "record_sealed"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] a wrong-name origin cannot set a cookie: permission_denied",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not match the URL host",
+     "reason": "tls_hostname_mismatch"
+    },
+    "message": "network policy: tls_hostname_mismatch",
+    "retryable": false,
+    "scope": {
+     "id": "target_12",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unpinned origin cannot set a cookie: permission_denied",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not chain to a pinned root",
+     "reason": "tls_untrusted_root"
+    },
+    "message": "network policy: tls_untrusted_root",
+    "retryable": false,
+    "scope": {
+     "id": "target_13",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] Secure over http is refused on receipt (the page loads, the cookie is dropped)",
+   "passed": true
+  },
+  {
+   "check": "[system] a failed https navigation is a typed failure",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not match the URL host",
+     "generation": 1,
+     "href": "https://127.0.0.1:53445/cookie/set?name=neg3&value=court-neg3&attrs=Secure",
+     "navigation": "failed",
+     "realm": "realm_13",
+     "reason": "tls_hostname_mismatch"
+    },
+    "message": "network policy: tls_hostname_mismatch",
+    "retryable": false,
+    "scope": {
+     "id": "target_15",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] after the negatives the jar counts are unchanged",
+   "detail": {
+    "after": {
+     "bytes": 303,
+     "objects": 5,
+     "persistent": 4,
+     "volatile": 1
+    },
+    "before": {
+     "bytes": 303,
+     "objects": 5,
+     "persistent": 4,
+     "volatile": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] after the negatives the record bytes and hashes are unchanged",
+   "passed": true
+  },
+  {
+   "check": "[system] after the negatives the in-memory jar sends the same cookies and no negative value",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c; courtshort=court-alpha-short-3c4d; courtvolatile=court-alpha-volatile-6a1f",
+   "passed": true
+  },
+  {
+   "check": "[system] beta sets its own Secure and plain cookies at the same URLs",
+   "passed": true
+  },
+  {
+   "check": "[system] beta's https echo carries only beta's cookies",
+   "detail": "sent=courtlocked=court-beta-locked-2c9e; courtopen=court-beta-open-4d5e",
+   "passed": true
+  },
+  {
+   "check": "[system] alpha's https echo carries only alpha's cookies",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c; courtshort=court-alpha-short-3c4d; courtvolatile=court-alpha-volatile-6a1f",
+   "passed": true
+  },
+  {
+   "check": "[system] no fixture value, cookie name or localStorage marker appears in any file under the profile root",
+   "detail": {},
+   "passed": true
+  },
+  {
+   "check": "[system] host A: owners zero and no live TLS connection after the closes",
+   "passed": true
+  },
+  {
+   "check": "[system] host A exits cleanly with no descendant",
+   "passed": true
+  },
+  {
+   "check": "[system] after the restart alpha and beta are available",
+   "detail": {
+    "alpha": {
+     "available": true,
+     "name": "alpha",
+     "persistence": "persistent",
+     "profile": "profile_alpha"
+    },
+    "beta": {
+     "available": true,
+     "name": "beta",
+     "persistence": "persistent",
+     "profile": "profile_beta"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] restart: the restarted host's first https fetch is a full handshake (no persisted session cache)",
+   "detail": {
+    "after": {
+     "enabled": true,
+     "handshakes_total": 2,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 1,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 0,
+     "tls13_total": 2
+    },
+    "before": {
+     "enabled": true,
+     "handshakes_total": 0,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 0,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 0,
+     "tls13_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] restart: the record was unsealed through the keychain (store envelope-keychain, alpha available)",
+   "passed": true
+  },
+  {
+   "check": "[system] restart: alpha's https echo carries the persistent Secure and plain cookies only: the volatile, the expired short-lived and the path-scoped ones are absent",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[system] restart: alpha's http echo carries only the plain cookie",
+   "detail": "sent=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[system] restart: the expired short-lived cookie is gone and the volatile one was never persisted (three persistent, zero volatile)",
+   "detail": {
+    "bytes": 181,
+    "objects": 3,
+    "persistent": 3,
+    "volatile": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] restart: the same server under another host name receives none of the 127.0.0.1 cookies",
+   "detail": "sent=",
+   "passed": true
+  },
+  {
+   "check": "[system] restart: an http document does not see the Secure cookie",
+   "detail": "seen=none cookie=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[system] restart: beta stays isolated",
+   "detail": "sent=courtlocked=court-beta-locked-2c9e; courtopen=court-beta-open-4d5e",
+   "passed": true
+  },
+  {
+   "check": "[system] host B exits cleanly with no descendant",
+   "passed": true
+  },
+  {
+   "check": "[system] without a pinned root https is unsupported_capability tls_no_pinned_roots",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "detail": "https needs an explicitly pinned root; no system roots are consulted",
+     "reason": "tls_no_pinned_roots"
+    },
+    "message": "network policy: tls_no_pinned_roots",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] without a pinned root the persisted Secure cookie stays locked: only the plain cookie is sent over http",
+   "detail": "sent=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[system] without a pinned root the persisted cookies are still counted (three persistent after B committed the expiry, zero volatile)",
+   "detail": {
+    "bytes": 181,
+    "objects": 3,
+    "persistent": 3,
+    "volatile": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] host C exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[arena] alpha sets a persistent Secure cookie over https",
+   "passed": true
+  },
+  {
+   "check": "[arena] alpha sets a persistent plain cookie over https",
+   "passed": true
+  },
+  {
+   "check": "[arena] alpha sets a volatile Secure session cookie over https",
+   "passed": true
+  },
+  {
+   "check": "[arena] alpha sets a short-lived persistent cookie (Max-Age=60)",
+   "passed": true
+  },
+  {
+   "check": "[arena] alpha sets a Path=/other cookie",
+   "passed": true
+  },
+  {
+   "check": "[arena] a cookie with Expires in the past is deleted on receipt",
+   "passed": true
+  },
+  {
+   "check": "[arena] a cookie to be deleted is first set",
+   "passed": true
+  },
+  {
+   "check": "[arena] Max-Age=0 deletes the existing cookie",
+   "passed": true
+  },
+  {
+   "check": "[arena] the https echo carries the persistent Secure, plain, volatile and short-lived cookies and neither the path-scoped, the past-expired nor the deleted one",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c; courtshort=court-alpha-short-3c4d; courtvolatile=court-alpha-volatile-6a1f",
+   "passed": true
+  },
+  {
+   "check": "[arena] the http echo of the same host carries only the plain cookie",
+   "detail": "sent=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[arena] profile.inspect counts four persistent and one volatile cookie and shows no value",
+   "detail": {
+    "bytes": 303,
+    "objects": 5,
+    "persistent": 4,
+    "volatile": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the record's clear-text envelope holds only the sealed fields, no send decision",
+   "detail": [
+    "dek_nonce",
+    "dek_sealed",
+    "format",
+    "key_id",
+    "profile",
+    "protocol",
+    "record_nonce",
+    "record_sealed"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] a wrong-name origin cannot set a cookie: permission_denied",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not match the URL host",
+     "reason": "tls_hostname_mismatch"
+    },
+    "message": "network policy: tls_hostname_mismatch",
+    "retryable": false,
+    "scope": {
+     "id": "target_12",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unpinned origin cannot set a cookie: permission_denied",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not chain to a pinned root",
+     "reason": "tls_untrusted_root"
+    },
+    "message": "network policy: tls_untrusted_root",
+    "retryable": false,
+    "scope": {
+     "id": "target_13",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] Secure over http is refused on receipt (the page loads, the cookie is dropped)",
+   "passed": true
+  },
+  {
+   "check": "[arena] a failed https navigation is a typed failure",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not match the URL host",
+     "generation": 1,
+     "href": "https://127.0.0.1:53445/cookie/set?name=neg3&value=court-neg3&attrs=Secure",
+     "navigation": "failed",
+     "realm": "realm_13",
+     "reason": "tls_hostname_mismatch"
+    },
+    "message": "network policy: tls_hostname_mismatch",
+    "retryable": false,
+    "scope": {
+     "id": "target_15",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] after the negatives the jar counts are unchanged",
+   "detail": {
+    "after": {
+     "bytes": 303,
+     "objects": 5,
+     "persistent": 4,
+     "volatile": 1
+    },
+    "before": {
+     "bytes": 303,
+     "objects": 5,
+     "persistent": 4,
+     "volatile": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] after the negatives the record bytes and hashes are unchanged",
+   "passed": true
+  },
+  {
+   "check": "[arena] after the negatives the in-memory jar sends the same cookies and no negative value",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c; courtshort=court-alpha-short-3c4d; courtvolatile=court-alpha-volatile-6a1f",
+   "passed": true
+  },
+  {
+   "check": "[arena] beta sets its own Secure and plain cookies at the same URLs",
+   "passed": true
+  },
+  {
+   "check": "[arena] beta's https echo carries only beta's cookies",
+   "detail": "sent=courtlocked=court-beta-locked-2c9e; courtopen=court-beta-open-4d5e",
+   "passed": true
+  },
+  {
+   "check": "[arena] alpha's https echo carries only alpha's cookies",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c; courtshort=court-alpha-short-3c4d; courtvolatile=court-alpha-volatile-6a1f",
+   "passed": true
+  },
+  {
+   "check": "[arena] no fixture value, cookie name or localStorage marker appears in any file under the profile root",
+   "detail": {},
+   "passed": true
+  },
+  {
+   "check": "[arena] host A: owners zero and no live TLS connection after the closes",
+   "passed": true
+  },
+  {
+   "check": "[arena] host A exits cleanly with no descendant",
+   "passed": true
+  },
+  {
+   "check": "[arena] after the restart alpha and beta are available",
+   "detail": {
+    "alpha": {
+     "available": true,
+     "name": "alpha",
+     "persistence": "persistent",
+     "profile": "profile_alpha"
+    },
+    "beta": {
+     "available": true,
+     "name": "beta",
+     "persistence": "persistent",
+     "profile": "profile_beta"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: the restarted host's first https fetch is a full handshake (no persisted session cache)",
+   "detail": {
+    "after": {
+     "enabled": true,
+     "handshakes_total": 2,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 1,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 0,
+     "tls13_total": 2
+    },
+    "before": {
+     "enabled": true,
+     "handshakes_total": 0,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 0,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 0,
+     "tls13_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: the record was unsealed through the keychain (store envelope-keychain, alpha available)",
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: alpha's https echo carries the persistent Secure and plain cookies only: the volatile, the expired short-lived and the path-scoped ones are absent",
+   "detail": "sent=courtlocked=court-alpha-locked-7f3a; courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: alpha's http echo carries only the plain cookie",
+   "detail": "sent=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: the expired short-lived cookie is gone and the volatile one was never persisted (three persistent, zero volatile)",
+   "detail": {
+    "bytes": 181,
+    "objects": 3,
+    "persistent": 3,
+    "volatile": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: the same server under another host name receives none of the 127.0.0.1 cookies",
+   "detail": "sent=",
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: an http document does not see the Secure cookie",
+   "detail": "seen=none cookie=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[arena] restart: beta stays isolated",
+   "detail": "sent=courtlocked=court-beta-locked-2c9e; courtopen=court-beta-open-4d5e",
+   "passed": true
+  },
+  {
+   "check": "[arena] host B exits cleanly with no descendant",
+   "passed": true
+  },
+  {
+   "check": "[arena] without a pinned root https is unsupported_capability tls_no_pinned_roots",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "detail": "https needs an explicitly pinned root; no system roots are consulted",
+     "reason": "tls_no_pinned_roots"
+    },
+    "message": "network policy: tls_no_pinned_roots",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] without a pinned root the persisted Secure cookie stays locked: only the plain cookie is sent over http",
+   "detail": "sent=courtopen=court-alpha-open-1b2c",
+   "passed": true
+  },
+  {
+   "check": "[arena] without a pinned root the persisted cookies are still counted (three persistent after B committed the expiry, zero volatile)",
+   "detail": {
+    "bytes": 181,
+    "objects": 3,
+    "persistent": 3,
+    "volatile": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] host C exits cleanly",
+   "passed": true
+  }
+ ],
+ "checks_passed": 78,
+ "checks_total": 78,
+ "design": "labs/native-dom/https-design-0.0.1.md (section 2, cookies) and profile-design-0.0.1.md (D1-D5)",
+ "fixtures": {
+  "generation_seconds": 0.092,
+  "mode": "generated-disposable",
+  "public_certificates": {
+   "court-ca.pem": {
+    "not_after": "Oct  3 08:47:13 2026 GMT",
+    "not_before": "Sep  3 08:47:13 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "37:D2:49:60:B0:2A:9B:FD:EE:DD:3B:C6:E3:C7:6D:C0:C5:11:C9:CA:B4:5D:31:20:D8:F3:D8:EB:AF:B4:6D:9E",
+    "subject": "CN=MiniCon Surf disposable court CA",
+    "subject_alt_name": null
+   },
+   "loopback.pem": {
+    "not_after": "Oct  3 08:47:13 2026 GMT",
+    "not_before": "Sep  3 08:47:13 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "A4:CF:99:CB:54:39:0B:16:88:CC:FC:35:DD:24:19:D9:E1:D0:7C:CC:71:EB:1B:CF:6A:93:32:E5:87:E2:09:9D",
+    "subject": "CN=loopback",
+    "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
+   },
+   "other-ca-loopback.pem": {
+    "not_after": "Oct  3 08:47:14 2026 GMT",
+    "not_before": "Sep  3 08:47:14 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "03:57:D1:EC:DD:F3:F0:03:70:03:B3:F7:BC:A6:36:49:93:88:6A:06:50:35:4F:F6:69:8E:2C:B4:FA:1D:2C:DE",
+    "subject": "CN=other-ca-loopback",
+    "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
+   },
+   "other-ca.pem": {
+    "not_after": "Oct  3 08:47:13 2026 GMT",
+    "not_before": "Sep  3 08:47:13 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "C6:26:09:88:64:F6:0D:1A:C0:23:BC:BE:27:26:4D:D3:52:7D:80:C9:AE:B4:43:33:AF:58:C6:15:F3:59:DD:C4",
+    "subject": "CN=MiniCon Surf disposable OTHER CA (not pinned)",
+    "subject_alt_name": null
+   },
+   "wrong-name.pem": {
+    "not_after": "Oct  3 08:47:14 2026 GMT",
+    "not_before": "Sep  3 08:47:14 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "A3:F5:1F:CE:55:79:36:04:16:0C:21:AB:0B:FE:AF:F2:63:BC:B6:6F:4C:9F:9A:D6:43:D8:81:44:97:91:31:B7",
+    "subject": "CN=wrong-name",
+    "subject_alt_name": "DNS:wrong.invalid"
+   }
+  }
+ },
+ "footprint_bytes": {
+  "arena": {
+   "host_a_live": 4948424,
+   "host_b_live": 3899752
+  },
+  "system": {
+   "host_a_live": 5439944,
+   "host_b_live": 4653416
+  }
+ },
+ "host_sha256": "18d76555f526fba7ac5114d0b8151a07e9b38ff3d01d92d4ff57e655aff807b5",
+ "keychain_items_deleted": 2,
+ "limitations": [
+  "pinned test roots on loopback only; no system roots, no public web",
+  "fake cookie values only; no real profile is read or migrated",
+  "one platform, one fixture set; footprints are diagnostics, not gates"
+ ],
+ "passed": true,
+ "schema": "minicon-surf.native-dom-secure-cookie-receipt/0.0.1",
+ "technology": "native-dom",
+ "technology_version": "0.0.2"
+}
