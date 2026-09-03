@@ -1,0 +1,61 @@
+{
+ "builds": {
+  "build_1_cdhash": "0a03b7f3de0f612cba97ad078b01069d73354c28",
+  "build_2_cdhash": "c4a4d0a00834430c2584eda6c99375880a36a772",
+  "committed_host_sha256": "cd7292f6ed9288c6fc460947a4bfd7b9012e7e2c282640ac2bfe960e97127e3f"
+ },
+ "cleanup": {
+  "probe_item_deleted": true,
+  "stale_items_from_earlier_court_runs": "counted and deleted after this probe; see README"
+ },
+ "conclusions": [
+  "first creation and later reads by the same build are reproducible without UI on an unlocked login keychain",
+  "any rebuild (new cdhash) orphans unattended access to every existing sealed profile under that root: -25293 with interaction disabled, fail closed",
+  "the no-UI mode is therefore a fail-closed guarantee, not an unattended-deployment guarantee: a locked keychain, a different user session, or a rebuilt or re-signed binary all refuse",
+  "an unattended deployment would need a stable designated requirement (a signing identity whose requirement is not a per-build cdhash) or a one-time interactive grant outside the host; both are open P6 work and not claimed"
+ ],
+ "item_acl_after_create": {
+  "applications": [
+   "the creating binary (path recorded by the keychain), requirement: cdhash of build 1"
+  ],
+  "authorizations_entry_0": "decrypt derive export_clear export_wrapped mac sign; don't-require-password",
+  "change_acl": "no applications listed",
+  "class": "genp",
+  "note": "the ACL is the Security framework default for SecItemAdd by an ad-hoc signed binary: trust bound to the creating code's cdhash, no ACL edits by the host",
+  "partition_id": "cdhash:<build 1 cdhash>"
+ },
+ "method": "two builds of the committed host from the same source tree, differing only in one user-visible string (ad-hoc linker signatures, so different cdhash); one profile root; the item created by build 1; every probe runs with keychain user interaction disabled; a watchdog would have killed a prompting host after 240 s and never fired",
+ "probes": {
+  "original_binary_again": {
+   "echo": "cookie sent",
+   "profile_create_beta": "created",
+   "profile_list": "alpha available",
+   "session_open": "ok"
+  },
+  "rebuilt_binary_same_path": {
+   "acl_unchanged": true,
+   "note": "a build with a different cdhash cannot read the master key unattended; the host fails closed and never overwrites the item or the sealed record",
+   "profile_create_beta": "unsupported_capability, details.reason keychain read refused: -25293 (errSecAuthFailed)",
+   "profile_list": "alpha unavailable, reason keychain unavailable",
+   "prompt": "none",
+   "session_open": "not_found"
+  },
+  "same_binary_other_path": {
+   "echo": "cookie sent",
+   "note": "the requirement is the cdhash, not the path",
+   "profile_list": "alpha available",
+   "prompt": "none",
+   "session_open": "ok"
+  },
+  "same_binary_same_path": {
+   "echo": "cookie sent",
+   "profile_list": "alpha available",
+   "prompt": "none",
+   "session_open": "ok"
+  }
+ },
+ "purpose": "security review of the keychain master-key item: default ACL and the no-UI mode across first creation, same-binary reads, a rebuilt binary and a relocated copy",
+ "schema": "minicon-surf.native-dom-keychain-acl-probe/0.0.1",
+ "technology": "native-dom",
+ "technology_version": "0.0.2"
+}

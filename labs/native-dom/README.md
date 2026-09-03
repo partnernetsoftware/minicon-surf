@@ -888,6 +888,122 @@ gate):
 | `fs2` | 0.4.3 | MIT/Apache-2.0 | `flock` writer lock |
 | `security-framework` (+ `security-framework-sys`, `core-foundation`, `core-foundation-sys`) | 3.7.0 | MIT OR Apache-2.0 | macOS Keychain generic password (macOS target only) |
 
+Keychain ACL and the no-UI mode, reviewed after the verdict
+(`native-dom-control-0.0.2-keychain-acl-probe` receipt): the item the host
+creates carries the Security framework's default ACL for an ad-hoc,
+linker-signed binary: one application entry whose requirement is the
+creating build's `cdhash`, a `partition_id` of that same `cdhash`, and no
+ACL edits by the host. Probes with user interaction disabled, one profile
+root, two builds of the committed source that differ in one string (so in
+`cdhash`): the creating build reads the key again after a restart, and so
+does a copy of it at another path (the requirement is the code hash, not
+the path); the rebuilt binary at the same path gets `-25293`
+(`errSecAuthFailed`) with no prompt, lists the profile as unavailable with
+reason `keychain unavailable`, refuses `session.open` as `not_found` and
+refuses a new persistent profile as `unsupported_capability`, and leaves
+the item and the sealed record untouched; the original build then works
+again. The no-UI mode is therefore a fail-closed guarantee, not an
+unattended-deployment guarantee: a locked keychain, another user session,
+or any rebuilt or re-signed host refuses. Unattended use across rebuilds
+would need a signing identity with a stable designated requirement or a
+one-time interactive grant outside the host; neither is claimed. Court
+hygiene recorded at the same time: every court run created one keychain
+item per temporary profile root and never deleted it; the sixteen stale
+items on the recording machine were deleted by hand, the attribution court
+deletes its own, and the frozen v1 court is left as it is.
+
+Attribution of the churned footprint (verdict: keep v1 and its 80/82,
+attribute before any fix; `native-dom-control-0.0.2-profile-attribution`
+receipt, read-only, no gate). [`profile-attribution-court.py`](profile-attribution-court.py)
+replays the profile court's target sequence (28 opens, 28 closes, the fault
+injection left out) in a fresh process per run, one warm-up plus seven
+measured, under the default allocator and the arena, and samples physical
+footprint, RSS and `memory.report` (owners, libmalloc in-use and allocated)
+after every open and close. Four arms: `off-equal-churn` (no
+`--profile-root`, three ephemeral profiles, the same pages), `store-no-data`
+(the store on, the same number of opens but every page the cookie-free echo
+page, no control writes), `store-data` (the profile court's pages, cookies,
+storage and budget writes) and `restart-steady` (a fresh host opening the
+persisted `alpha` and one storage page). Medians in bytes, default
+allocator / arena:
+
+| stage | off-equal-churn | store-no-data | store-data | restart-steady |
+|---|---|---|---|---|
+| empty | 1,917,264 / 1,917,264 | 2,179,408 / 2,179,432 | 2,179,408 / 2,163,024 | 3,031,400 / 3,015,016 |
+| profiles created (first keychain call in the store arms) | 1,999,184 / 1,999,184 | 4,276,680 / 4,276,680 | 4,276,680 / 4,260,296 | – |
+| churned final | 4,489,552 / 3,572,096 | 5,980,616 / 5,210,616 | 6,226,376 / 5,718,520 | 3,998,056 / 3,555,712 |
+| after every close | 4,489,552 / 2,916,688 | 5,980,616 / 4,555,208 | 6,226,376 / 5,063,112 | 4,014,440 / 3,309,928 |
+| libmalloc in use, empty → after every close | 105,440 → 123,296 | 122,880 → 688,448 | 122,880 → 693,184 | 388,064 → 395,104 |
+| closes that released footprint, of 28 (restart: of 1) | 0 / 28 | 0 / 28 | 0 / 28 | 0 / 1 |
+
+Where the bytes are, default allocator, at the churned point:
+
+- The named owners at the churned point are 450,609 bytes (QuickJS
+  449,440 for the three live realms, host-accounted profile bytes 1,023,
+  document bytes 146); after the closes every owner is zero and stays zero
+  in all 64 runs.
+- Lifecycle retention without the store: the feature-off arm ends the
+  timeline at 4,489,552 and keeps it after every close while libmalloc's
+  in-use bytes return to within 17,856 of empty. The 2,572,288 retained
+  bytes are freed blocks the default zone keeps in its regions
+  (`size_allocated` 12,582,912 → 25,165,824, never shrinking; `memory.trim`
+  releases 0), the attribution already recorded above. Under the default
+  allocator no close in any arm or run ever lowered the footprint (the
+  first non-releasing close is close 1 in all seven runs of every arm),
+  so the floor is set at the first close and rises with each realm's
+  high-water. Under the arena every one of the 28 closes releases.
+- The store: enabling it costs 262,144 at empty. The first keychain call
+  (the first persistent `profile.create`, before any page) costs 2,097,272
+  of footprint in one step (2,277,496 over the feature-off arm at the same
+  stage), 542,560 of it libmalloc in-use that never
+  returns (688,448 after every close against 123,296 without the store)
+  and the rest non-heap pages (the Security and CoreFoundation frameworks'
+  data, securityd's XPC and caches); later keychain calls add about 5 KB
+  each. The records, jar and realm mirrors are the small part: the data
+  arm differs from the no-data arm by 245,760 (default) / 507,904
+  (arena) at the churned point, and the profile owner accounts 1,023.
+- Sum at the churned point, default allocator: store-data 6,226,376 =
+  feature-off equal churn 4,489,552 + store 1,491,064 (of which 262,144
+  enable and about 1.2 MB the one-time keychain first use as it overlaps
+  with churn reservation) + data 245,760. After every close the same
+  6,226,376 remains: 4,489,552 lifecycle reservation, 1,736,824 store and
+  data.
+- The restarted host pays the keychain first use at `--profile-root`
+  enable (empty 3,031,400 against 2,179,408) and then holds one realm; its
+  3,998,056 is a diagnostic, not the gate.
+
+Consequences for the unmet criterion (half of 8,356,392 = 4,178,196):
+under the default allocator the feature-off host with equal churn already
+measures 4,489,552, so no change to the store can bring v1's churned
+total-live point under the line; that part belongs to the allocator
+retention (G3). Under the arena the churn side is 3,572,096 and the store's
+one-time keychain cost is what crosses the line. The single fix candidate
+this attribution supports, not implemented here, is to take the Security
+framework out of the host process: wrap the data key once at create/open
+(the wrapped blob is stable, so committed mutations re-seal the record with
+the cached data key and never touch the master key), and fetch the master
+key at create/open through a short-lived helper process of the same binary
+that exits after handing the 32 bytes over a pipe. Pre-registered criteria
+for that candidate: the `profiles created` step must cost at most 524,288
+over the feature-off arm and libmalloc in-use after every close must
+return to within 65,536 of the feature-off arm; v1's churned total-live
+point must fall by at least 1 MB on both allocators; the profile court's
+other 80 checks, the at-rest scan, the write-through and fault-injection
+checks, the keychain ACL probe, 27/27, 35/35, 62/62 and 58/58 must stay
+green under both allocators; no allocator micro-benchmark counts as a
+reason. Even then the default-allocator cell stays above the line, so the
+candidate can only close the arena cell of the criterion; if the helper
+turns out to need more than a fork/exec of the existing binary and one
+pipe, the slice stays `narrow` and P6 work moves to another gap.
+
+Reproduction:
+
+```sh
+python3 labs/native-dom/profile-attribution-court.py \
+  --binary labs/native-dom/target/release/native-dom-control \
+  --receipt labs/native-dom/evidence/native-dom-control-0.0.2-profile-attribution.json
+```
+
 Gaps: macOS Keychain only (a second platform key source is a P6 gap); the
 `http` cell refuses `Secure` and `SameSite=None` as a cell limit, not a
 design limit; no public suffix list; no cache, history, downloads,
@@ -911,6 +1027,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-retention-attribution-arena` | the arena commit (`4c4b519`, measured in `468b8a9`) | the later tail-trim reporting fix (`12de192`) changes no value in this receipt: no realm is alive at its trim stage, so `arena_released_bytes` was already zero |
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
+| `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 
 ## Findings against product contracts
 
@@ -966,10 +1083,10 @@ target by footprint. Every later slice is measured against this row.
   cost on this court, but both are macOS opt-in experiments and the default
   is unchanged until the arena has been measured on more workloads and a
   second platform.
-- The profile store's next steps are a decision on the unmet total-live
-  criterion (narrow the measurement to the store's increment, or reduce
-  realm and churn cost), a second platform key source, and `https` with
-  pinned roots; each passes only if the 27-item journey and the 35-item
+- The profile store's next steps are the one attributed fix candidate
+  (keychain access outside the host process, criteria pre-registered
+  above), or else another P6 gap; a second platform key source; and
+  `https` with pinned roots; each passes only if the 27-item journey and the 35-item
   network court stay green and the footprint court row stays below
   Lightpanda's single server at one target. The arena's next steps are a second platform
   behind the same `Region` boundary, interior (not only tail) trimming, and

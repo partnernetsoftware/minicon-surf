@@ -1019,6 +1019,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   CDP courts (62/62, 58/58) stay green on the same binary. Second-platform
   key source, `https`, cache, history and permissions remain P6 work; G1,
   G3, P6 and G6 stay open.
+- [~] Verdict on the unmet criterion: the v1 court, its 80/82 and the
+  `failed`/`narrow` status stand, no v2 re-freeze. A read-only attribution
+  court (fresh process per run, one warm-up plus seven, the same 28-open
+  timeline, four arms, both allocators, samples after every open and close)
+  splits the churned footprint: without the store and with equal churn the
+  default-allocator host already ends at 4,489,552 bytes, above the half
+  line, because freed blocks stay in the default zone's regions and no close
+  in any run lowers the footprint (the arena releases at all 28); the store
+  costs 262,144 at enable and about 2.1 MB once, at the first keychain call,
+  542,560 of it heap that never returns, while records, jar and mirrors add
+  245,760 (default) / 507,904 (arena). So the default cell of the criterion
+  belongs to allocator retention (G3) and no store change can meet it; the
+  arena cell is crossed by the one-time keychain cost. One fix candidate is
+  recorded with pre-registered gain and regression criteria (keychain access
+  through a short-lived helper process, wrap once at create/open); it is not
+  implemented. Security review recorded: the master-key item's default ACL
+  binds decrypt to the creating build's `cdhash`; a rebuilt host is refused
+  unattended (`-25293`, no prompt, fail closed, item and record untouched),
+  so the no-UI mode is a fail-closed guarantee and not an unattended
+  deployment guarantee. G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

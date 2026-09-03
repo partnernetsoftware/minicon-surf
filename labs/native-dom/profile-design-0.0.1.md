@@ -233,6 +233,31 @@ Lightpanda" criterion, frozen as below half of the single-server empty
 footprint, is unmet on both allocators (6,111,688 / 5,849,592 bytes on the
 churned host), so the receipt is `failed` and the slice is not `observed`.
 
+Attribution after the verdict (`profile-attribution-court.py`, read-only,
+no gate): under the default allocator the feature-off host with equal
+churn already ends at 4,489,552 bytes, above the half line, from freed
+blocks the default zone keeps (no close ever lowers the footprint); the
+store adds 262,144 at enable and about 2.1 MB once at the first keychain
+call (542,560 of it heap that never returns), while records, jar and
+mirrors add 245,760 (default) / 507,904 (arena). The one fix candidate the
+attribution supports, with pre-registered criteria in the lab README, is
+keychain access outside the host process; it can only close the arena cell
+of the criterion. Verdict on the cap: unchanged.
+
+### 8b. Post-verdict security note: keychain ACL and the no-UI mode
+
+The master-key item carries the Security framework's default ACL for an
+ad-hoc, linker-signed binary: one application entry with a `cdhash`
+requirement and a `partition_id` of the same `cdhash`. With user interaction
+disabled, the creating build and any copy of it read the key again; a build
+with a different `cdhash` gets `-25293` with no prompt and the host fails
+closed (profile unavailable, `session.open` `not_found`, new persistent
+profile `unsupported_capability`), leaving item and record untouched. D1's
+no-UI mode is a fail-closed guarantee only; unattended use across rebuilds,
+locked keychains or other user sessions is not claimed and needs a stable
+designated requirement or an interactive grant outside the host
+(`native-dom-control-0.0.2-keychain-acl-probe` receipt).
+
 ## 9. Dependencies
 
 Every crate added for D1 is recorded in the lab README with version,
