@@ -123,7 +123,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:63222/about.html"
+        "url": "http://127.0.0.1:50798/about.html"
       },
       "passed": true
     },
@@ -187,7 +187,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:63222/notfound"
+          "url": "http://127.0.0.1:50798/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -365,7 +365,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:63222/about.html"
+        "url": "http://127.0.0.1:50798/about.html"
       },
       "passed": true
     },
@@ -429,7 +429,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:63222/notfound"
+          "url": "http://127.0.0.1:50798/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -490,16 +490,16 @@
   "footprint_bytes": {
     "arena": {
       "empty": 1982800,
-      "post_close": 2720080,
-      "two_fixture_targets_live": 2883968
+      "post_close": 2818384,
+      "two_fixture_targets_live": 2949504
     },
     "system": {
-      "empty": 1966416,
-      "post_close": 4424016,
-      "two_fixture_targets_live": 3588432
+      "empty": 1982800,
+      "post_close": 4620624,
+      "two_fixture_targets_live": 3719504
     }
   },
-  "host_sha256": "55fd1030531fa27de647990c0a5f2ac1e10aa638fcb2d7919ad7b3be3fcbfc39",
+  "host_sha256": "470c855fab6c1b7aede69152e472f515cc747dafccbc3aae2bbf8f16c6f68fe1",
   "losses": [
     "no child frames: every native-dom target is one main frame; frame_limit is 1",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",

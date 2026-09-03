@@ -25,6 +25,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 3490152,
+      "virtual_bytes": 445756850176
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 0,
+     "regions_unmapped_total": 0,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 0
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -71,7 +85,21 @@
    "check": "[system] round 1: owners.surfaces is one object with the frame's bytes",
    "detail": {
     "binary": true,
-    "bytes": 1024000,
+    "bytes": 1032192,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 4735336,
+      "virtual_bytes": 445758341120
+     },
+     "live_bytes": 1024000,
+     "regions": 1,
+     "regions_mapped_total": 1,
+     "regions_unmapped_total": 0,
+     "reserved_bytes": 1032192,
+     "touched_bytes": 1032192,
+     "unmapped_bytes_total": 0
+    },
     "object_limit": 8,
     "objects": 1,
     "painter": "bounded-semantic-painter",
@@ -113,7 +141,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 870,
+     "monotonic_ms": 864,
      "revision": 2,
      "scroll_y": 0,
      "surface": "surface_1",
@@ -130,7 +158,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 951,
+     "monotonic_ms": 906,
      "revision": 3,
      "scroll_y": 240,
      "surface": "surface_1",
@@ -163,7 +191,7 @@
    "check": "[system] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 16,
+    "ms": 7,
     "reaped": true
    },
    "passed": true
@@ -177,6 +205,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 3883368,
+      "virtual_bytes": 445756850176
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 1,
+     "regions_unmapped_total": 1,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 1032192
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -251,7 +293,21 @@
    "check": "[system] round 2: owners.surfaces is one object with the frame's bytes",
    "detail": {
     "binary": true,
-    "bytes": 1024000,
+    "bytes": 1032192,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 5013864,
+      "virtual_bytes": 445758341120
+     },
+     "live_bytes": 1024000,
+     "regions": 1,
+     "regions_mapped_total": 2,
+     "regions_unmapped_total": 1,
+     "reserved_bytes": 1032192,
+     "touched_bytes": 1032192,
+     "unmapped_bytes_total": 1032192
+    },
     "object_limit": 8,
     "objects": 1,
     "painter": "bounded-semantic-painter",
@@ -293,7 +349,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 1691,
+     "monotonic_ms": 1632,
      "revision": 6,
      "scroll_y": 0,
      "surface": "surface_2",
@@ -310,7 +366,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 1730,
+     "monotonic_ms": 1675,
      "revision": 7,
      "scroll_y": 240,
      "surface": "surface_2",
@@ -344,6 +400,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 3998056,
+      "virtual_bytes": 445756850176
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 2,
+     "regions_unmapped_total": 2,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 2064384
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -418,7 +488,21 @@
    "check": "[system] round 3: owners.surfaces is one object with the frame's bytes",
    "detail": {
     "binary": true,
-    "bytes": 1024000,
+    "bytes": 1032192,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 5079400,
+      "virtual_bytes": 445758341120
+     },
+     "live_bytes": 1024000,
+     "regions": 1,
+     "regions_mapped_total": 3,
+     "regions_unmapped_total": 2,
+     "reserved_bytes": 1032192,
+     "touched_bytes": 1032192,
+     "unmapped_bytes_total": 2064384
+    },
     "object_limit": 8,
     "objects": 1,
     "painter": "bounded-semantic-painter",
@@ -460,7 +544,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 2443,
+     "monotonic_ms": 2400,
      "revision": 10,
      "scroll_y": 0,
      "surface": "surface_3",
@@ -477,7 +561,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 2492,
+     "monotonic_ms": 2443,
      "revision": 11,
      "scroll_y": 240,
      "surface": "surface_3",
@@ -511,6 +595,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 4063592,
+      "virtual_bytes": 445756850176
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 3,
+     "regions_unmapped_total": 3,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 3096576
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -563,18 +661,18 @@
    "check": "[system] post-hide host footprint over headless, every round",
    "detail": {
     "per_round": [
-     1196032,
-     2424856,
-     2506800
+     344064,
+     458752,
+     524288
     ],
-    "worst": 2506800
+    "worst": 524288
    },
    "passed": false
   },
   {
    "check": "[system] no slope over the rounds",
    "detail": {
-    "slope": 1310768
+    "slope": 180224
    },
    "passed": false
   },
@@ -617,7 +715,7 @@
   {
    "check": "[system] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
    "detail": {
-    "forced_ms": 1007.2,
+    "forced_ms": 1004.3,
     "process": {
      "exits_clean_total": 3,
      "frames_acked_total": 13,
@@ -634,7 +732,7 @@
     },
     "teardown": {
      "exit": "killed",
-     "ms": 1006,
+     "ms": 1003,
      "reaped": true
     }
    },
@@ -680,6 +778,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 2883944,
+      "virtual_bytes": 445789732864
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 0,
+     "regions_unmapped_total": 0,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 0
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -726,7 +838,21 @@
    "check": "[arena] round 1: owners.surfaces is one object with the frame's bytes",
    "detail": {
     "binary": true,
-    "bytes": 1024000,
+    "bytes": 1032192,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 4211072,
+      "virtual_bytes": 445791223808
+     },
+     "live_bytes": 1024000,
+     "regions": 1,
+     "regions_mapped_total": 1,
+     "regions_unmapped_total": 0,
+     "reserved_bytes": 1032192,
+     "touched_bytes": 1032192,
+     "unmapped_bytes_total": 0
+    },
     "object_limit": 8,
     "objects": 1,
     "painter": "bounded-semantic-painter",
@@ -768,7 +894,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 640,
+     "monotonic_ms": 662,
      "revision": 2,
      "scroll_y": 0,
      "surface": "surface_1",
@@ -785,7 +911,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 686,
+     "monotonic_ms": 700,
      "revision": 3,
      "scroll_y": 240,
      "surface": "surface_1",
@@ -818,7 +944,7 @@
    "check": "[arena] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 7,
+    "ms": 9,
     "reaped": true
    },
    "passed": true
@@ -832,6 +958,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 3162472,
+      "virtual_bytes": 445789732864
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 1,
+     "regions_unmapped_total": 1,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 1032192
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -906,7 +1046,21 @@
    "check": "[arena] round 2: owners.surfaces is one object with the frame's bytes",
    "detail": {
     "binary": true,
-    "bytes": 1024000,
+    "bytes": 1032192,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 4325760,
+      "virtual_bytes": 445791223808
+     },
+     "live_bytes": 1024000,
+     "regions": 1,
+     "regions_mapped_total": 2,
+     "regions_unmapped_total": 1,
+     "reserved_bytes": 1032192,
+     "touched_bytes": 1032192,
+     "unmapped_bytes_total": 1032192
+    },
     "object_limit": 8,
     "objects": 1,
     "painter": "bounded-semantic-painter",
@@ -948,7 +1102,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 1400,
+     "monotonic_ms": 1431,
      "revision": 6,
      "scroll_y": 0,
      "surface": "surface_2",
@@ -965,7 +1119,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 1447,
+     "monotonic_ms": 1475,
      "revision": 7,
      "scroll_y": 240,
      "surface": "surface_2",
@@ -985,7 +1139,7 @@
    "check": "[arena] round 2: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 7,
+    "ms": 8,
     "reaped": true
    },
    "passed": true
@@ -999,6 +1153,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 3342696,
+      "virtual_bytes": 445789732864
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 2,
+     "regions_unmapped_total": 2,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 2064384
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -1073,7 +1241,21 @@
    "check": "[arena] round 3: owners.surfaces is one object with the frame's bytes",
    "detail": {
     "binary": true,
-    "bytes": 1024000,
+    "bytes": 1032192,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 4440448,
+      "virtual_bytes": 445791223808
+     },
+     "live_bytes": 1024000,
+     "regions": 1,
+     "regions_mapped_total": 3,
+     "regions_unmapped_total": 2,
+     "reserved_bytes": 1032192,
+     "touched_bytes": 1032192,
+     "unmapped_bytes_total": 2064384
+    },
     "object_limit": 8,
     "objects": 1,
     "painter": "bounded-semantic-painter",
@@ -1115,7 +1297,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "click",
-     "monotonic_ms": 2147,
+     "monotonic_ms": 2219,
      "revision": 10,
      "scroll_y": 0,
      "surface": "surface_3",
@@ -1132,7 +1314,7 @@
     "applied": {
      "event": "input_applied",
      "kind": "scroll",
-     "monotonic_ms": 2184,
+     "monotonic_ms": 2262,
      "revision": 11,
      "scroll_y": 240,
      "surface": "surface_3",
@@ -1152,7 +1334,7 @@
    "check": "[arena] round 3: surface.hide ends the child by protocol, reaps it and releases the frame",
    "detail": {
     "exit": "protocol",
-    "ms": 8,
+    "ms": 9,
     "reaped": true
    },
    "passed": true
@@ -1166,6 +1348,20 @@
    "detail": {
     "binary": true,
     "bytes": 0,
+    "frame": {
+     "backing": "anonymous_mmap",
+     "host": {
+      "physical_footprint_bytes": 3408232,
+      "virtual_bytes": 445789732864
+     },
+     "live_bytes": 0,
+     "regions": 0,
+     "regions_mapped_total": 3,
+     "regions_unmapped_total": 3,
+     "reserved_bytes": 0,
+     "touched_bytes": 0,
+     "unmapped_bytes_total": 3096576
+    },
     "object_limit": 8,
     "objects": 0,
     "painter": "bounded-semantic-painter",
@@ -1218,18 +1414,18 @@
    "check": "[arena] post-hide host footprint over headless, every round",
    "detail": {
     "per_round": [
-     1245184,
-     1425432,
-     2572312
+     196608,
+     360448,
+     425984
     ],
-    "worst": 2572312
+    "worst": 425984
    },
    "passed": false
   },
   {
    "check": "[arena] no slope over the rounds",
    "detail": {
-    "slope": 1327128
+    "slope": 229376
    },
    "passed": false
   },
@@ -1272,7 +1468,7 @@
   {
    "check": "[arena] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
    "detail": {
-    "forced_ms": 1007.6,
+    "forced_ms": 1003.8,
     "process": {
      "exits_clean_total": 3,
      "frames_acked_total": 13,
@@ -1289,7 +1485,7 @@
     },
     "teardown": {
      "exit": "killed",
-     "ms": 1006,
+     "ms": 1002,
      "reaped": true
     }
    },
@@ -1321,121 +1517,121 @@
  "design": "labs/native-dom/surface-ipc-0.0.1.md",
  "footprint_bytes": {
   "arena": {
-   "headless": 2916712,
-   "post_reap": 4522368,
-   "rounds": [
-    {
-     "first_frame_ms": 13,
-     "hide_ms": 9.6,
-     "input": {
-      "click_ms": 0.3,
-      "permitted": true,
-      "scroll_ms": 7.9,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 4161896,
-     "post_hide_in_use": 138736,
-     "ready_ms": 82,
-     "round": 1,
-     "show_ms": 100.0,
-     "shown_steady_host": 4145512,
-     "spawn_peak_tree": 27460640
-    },
-    {
-     "first_frame_ms": 13,
-     "hide_ms": 8.8,
-     "input": {
-      "click_ms": 0.4,
-      "permitted": true,
-      "scroll_ms": 7.2,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 4342144,
-     "post_hide_in_use": 138768,
-     "ready_ms": 85,
-     "round": 2,
-     "show_ms": 104.6,
-     "shown_steady_host": 4325760,
-     "spawn_peak_tree": 27493432
-    },
-    {
-     "first_frame_ms": 13,
-     "hide_ms": 9.4,
-     "input": {
-      "click_ms": 0.4,
-      "permitted": true,
-      "scroll_ms": 8.0,
-      "topmost_is_surface": true
-     },
-     "post_hide_host": 5489024,
-     "post_hide_in_use": 138768,
-     "ready_ms": 78,
-     "round": 3,
-     "show_ms": 96.3,
-     "shown_steady_host": 5472640,
-     "spawn_peak_tree": 28722232
-    }
-   ]
-  },
-  "system": {
-   "headless": 3342672,
-   "post_reap": 4850048,
+   "headless": 2982248,
+   "post_reap": 3473768,
    "rounds": [
     {
      "first_frame_ms": 15,
-     "hide_ms": 19.8,
+     "hide_ms": 10.7,
      "input": {
-      "click_ms": 3.5,
+      "click_ms": 0.3,
       "permitted": true,
-      "scroll_ms": 24.3,
+      "scroll_ms": 7.6,
       "topmost_is_surface": true
      },
-     "post_hide_host": 4538704,
-     "post_hide_in_use": 446832,
-     "ready_ms": 101,
+     "post_hide_host": 3178856,
+     "post_hide_in_use": 140288,
+     "ready_ms": 87,
      "round": 1,
-     "show_ms": 119.8,
-     "shown_steady_host": 4440400,
-     "spawn_peak_tree": 27870216
+     "show_ms": 106.8,
+     "shown_steady_host": 4211072,
+     "spawn_peak_tree": 27313208
     },
     {
-     "first_frame_ms": 13,
-     "hide_ms": 11.1,
+     "first_frame_ms": 12,
+     "hide_ms": 10.1,
      "input": {
-      "click_ms": 0.4,
+      "click_ms": 0.3,
+      "permitted": true,
+      "scroll_ms": 11.2,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3342696,
+     "post_hide_in_use": 140320,
+     "ready_ms": 92,
+     "round": 2,
+     "show_ms": 108.7,
+     "shown_steady_host": 4325760,
+     "spawn_peak_tree": 27313208
+    },
+    {
+     "first_frame_ms": 14,
+     "hide_ms": 11.0,
+     "input": {
+      "click_ms": 0.3,
       "permitted": true,
       "scroll_ms": 6.8,
       "topmost_is_surface": true
      },
-     "post_hide_host": 5767528,
-     "post_hide_in_use": 451600,
-     "ready_ms": 82,
-     "round": 2,
-     "show_ms": 100.1,
-     "shown_steady_host": 5685608,
-     "spawn_peak_tree": 29049888
+     "post_hide_host": 3408232,
+     "post_hide_in_use": 140320,
+     "ready_ms": 112,
+     "round": 3,
+     "show_ms": 131.3,
+     "shown_steady_host": 4440448,
+     "spawn_peak_tree": 27542584
+    }
+   ]
+  },
+  "system": {
+   "headless": 3539304,
+   "post_reap": 4096360,
+   "rounds": [
+    {
+     "first_frame_ms": 12,
+     "hide_ms": 9.6,
+     "input": {
+      "click_ms": 0.5,
+      "permitted": true,
+      "scroll_ms": 5.8,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3883368,
+     "post_hide_in_use": 448384,
+     "ready_ms": 104,
+     "round": 1,
+     "show_ms": 119.7,
+     "shown_steady_host": 4735336,
+     "spawn_peak_tree": 27771936
     },
     {
-     "first_frame_ms": 13,
-     "hide_ms": 10.0,
+     "first_frame_ms": 15,
+     "hide_ms": 10.6,
+     "input": {
+      "click_ms": 0.2,
+      "permitted": true,
+      "scroll_ms": 5.9,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 3998056,
+     "post_hide_in_use": 453152,
+     "ready_ms": 91,
+     "round": 2,
+     "show_ms": 110.1,
+     "shown_steady_host": 5013864,
+     "spawn_peak_tree": 28279840
+    },
+    {
+     "first_frame_ms": 17,
+     "hide_ms": 10.3,
      "input": {
       "click_ms": 0.4,
       "permitted": true,
-      "scroll_ms": 8.1,
+      "scroll_ms": 6.7,
       "topmost_is_surface": true
      },
-     "post_hide_host": 5849472,
-     "post_hide_in_use": 456336,
-     "ready_ms": 78,
+     "post_hide_host": 4063592,
+     "post_hide_in_use": 457888,
+     "ready_ms": 87,
      "round": 3,
-     "show_ms": 95.3,
-     "shown_steady_host": 5833088,
-     "spawn_peak_tree": 29246544
+     "show_ms": 107.8,
+     "shown_steady_host": 5079400,
+     "spawn_peak_tree": 28165152
     }
    ]
   }
  },
- "host_sha256": "55fd1030531fa27de647990c0a5f2ac1e10aa638fcb2d7919ad7b3be3fcbfc39",
+ "host_sha256": "470c855fab6c1b7aede69152e472f515cc747dafccbc3aae2bbf8f16c6f68fe1",
  "input_permitted": true,
  "limitations": [
   "the WindowServer, GPU and compositor memory live outside the process tree and are not attributed",
