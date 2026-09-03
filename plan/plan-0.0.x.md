@@ -31,7 +31,7 @@ surrendered; memory may not be hidden or waived because a route accelerates
 Agent automation. Conversely, low memory cannot excuse a pixel-only or
 sleep-driven Agent interface.
 
-Five contracts are fixed before implementation choices:
+Six contracts are fixed before implementation choices:
 
 1. **Memory optimization is measured product value.** Major live and retained
    bytes have an owner, budget, observable report, bounded failure, and
@@ -50,6 +50,15 @@ Five contracts are fixed before implementation choices:
 5. **Profiles are first-class objects.** Persistent, temporary, and later
    copy-on-write/readonly profiles have explicit identity, locking, budgets,
    policy, inspection, and lifecycle.
+6. **Many experimental backends, one product authority.** Independent native,
+   embedded, worker-process, and compatibility backends may advance in
+   parallel behind the same control and measurement contracts. Profile,
+   session, target, revision, budget, and failure semantics remain owned by
+   MiniCon Surf rather than any engine or CDP. The purpose of plurality is to
+   compare, combine, and learn: capabilities that earn their place migrate
+   toward a memory-bounded Rust browser core. It is not a commitment to ship a
+   permanent generic browser launcher or to expose backend differences as the
+   product model.
 
 The 0.0.x series is allowed to reject every initial engine route. It is not
 allowed to dilute either primary outcome to select a winner, hide total memory
@@ -120,12 +129,20 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
+│   ├── multiple backends advance concurrently behind ↳ [A3] and ↳ [M2]
+│   ├── MiniCon Surf owns identity, lifecycle, policy, budgets and failure semantics
+│   ├── backend adapters translate capabilities; they never redefine the product model
 │   ├── candidates declare total dependency/process cost and security-update owner
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 37.7 MB footprint vs Chrome 597.6 MB · 8 concurrent 179 MB vs 868 MB (RSS 87.5/1,232 · 137/2,207); narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
 │   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live; realm heap arena (macOS mmap, unmapped at close) repairs post-close without the live cost on the same court, kept opt-in; G1 open
 │   ├── compatibility route may evaluate a system engine without hiding its memory
+│   ├── native bounded route is the browser-core convergence path, not merely another adapter
+│   ├── Lightpanda may combine as a low-memory worker/reference while native capability grows
+│   ├── Servo remains a rendering/surface research source unless its measured memory gate recovers
+│   ├── Chrome remains a compatibility and memory baseline, never the product authority
+│   ├── earned mechanisms may migrate into the native core only with their limits and courts
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
 │   ├── a compatibility-only route is labelled and cannot set the product memory claim
@@ -151,8 +168,10 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 
 Read left to right. The Profile Cabinet owns durable identity; the Session Hall
 owns live pages; CLI and CDP enter through separate doors but meet at one
-control desk. The Window Dock attaches or detaches without owning the session.
-Every route passes through the Memory Court before an engine decision survives.
+control desk. Backends sit below that authority and may be investigated in
+parallel without exporting their object models upward. The Window Dock attaches
+or detaches without owning the session. Every route passes through the Memory
+Court; only earned mechanisms flow toward the native browser core.
 
 ```mermaid
 flowchart LR
@@ -195,7 +214,10 @@ flowchart LR
         NATIVE["bounded native route<br/>DOM + QuickJS realm + bounded http fetch<br/>2.4 MB one target · 4.7 MB eight (footprint)<br/>post-close = live: attributed to allocator reservation, bounded and reused<br/>zone and arena repairs opt-in only · arena returns it at close without the zone's live cost"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
+        LEARN["earned mechanisms<br/>limits · lifecycle · compatibility lessons"]
     end
+
+    CORE["native browser-core convergence<br/>Rust · bounded ownership<br/>capabilities absorbed incrementally"]
 
     SYN["synthetic control court<br/>shared authority · bounded surface<br/>persistent profile mechanics"]
 
@@ -215,13 +237,51 @@ flowchart LR
     OFF & ON -->|memory pressure| HIB
     PAGE --> BOOK --> RETAIN --> LIMIT --> PRESS
     BASE --> PRESS
+    CTRL -->|one authority; backend adapters| LP & SERVO & NATIVE & COMPAT
     LP & SERVO & NATIVE & COMPAT --> BOOK
     PRESS -->|yes| DECIDE
     PRESS -->|no| FAIL
-    DECIDE -->|Agent gate also green| CTRL
+    DECIDE -->|keep / combine evidence| LEARN
+    LEARN -->|adopt only with courts and budgets| CORE
+    CORE -->|implements the same authority| CTRL
     AT -. same protocol .-> CTRL
     MINI -. product family only .-> CLI
 ```
+
+### 3a. Parallel-backend research doctrine
+
+Backend plurality is a research and delivery strategy, not the product's
+identity. The control plane and profile system must be able to select or place
+a target on an eligible backend without changing what a profile, session,
+target, revision, wait, budget, or typed failure means. A capability absent on
+a backend is reported explicitly; the authority never silently emulates it by
+opening an unmeasured browser.
+
+The current roles are deliberately asymmetric:
+
+- **Native bounded Rust route — convergence path.** Grow a browser core through
+  measured vertical slices: parse/DOM, realm, network, storage, layout,
+  presentation and broader Web behavior. Preserve its memory advantage with a
+  budget and lifecycle court at every slice.
+- **Lightpanda worker route — combine path.** Supply a low-memory Web-capable
+  worker and comparison point while native coverage grows. Process-per-target
+  isolation is an earned deployment option, not permission to hide aggregate
+  memory or inherit CDP as the internal model.
+- **Servo route — selective research source.** Continue to study Rust layout,
+  rendering, embedding and native surfaces, but do not promote the measured
+  macOS route while its graphics lifecycle fails the memory gate.
+- **Chrome/system route — baseline and compatibility oracle.** Use it to define
+  named Web/CDP behavior and the same-machine memory comparison, never as the
+  MiniCon Surf core or an invisible fallback.
+
+Research may therefore proceed concurrently and may add new backends when they
+test a distinct hypothesis. Shipping convergence is stricter: every adopted
+mechanism must preserve the single authority, pass the Agent contract, expose
+its total resource cost, and either strengthen the native core or have an
+explicitly bounded `combine` role. Backend-specific shortcuts do not become
+public semantics. Over time, the native route should absorb the best proven
+mechanisms so that multi-backend research increases confidence in, rather than
+postpones, a MiniCon Surf browser core of our own.
 
 ## 4. 0.0.x evidence ledger
 
@@ -725,8 +785,10 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    small synthetic storage model; product/engine-backed profile breadth remains
    P6 work.
 6. [~] Run independent `labs/{techName}` spikes behind the established
-   contracts, publish comparable memory and Agent-control evidence, and issue
-   an explicit keep/narrow/combine/reject verdict for every route. The G5
+   contracts concurrently where their hypotheses are independent, publish
+   comparable memory and Agent-control evidence, and issue an explicit
+   keep/narrow/combine/reject verdict for every route. Parallel labs share
+   courts and product authority, not implementation dependencies. The G5
    ledger now holds Servo (narrow), Lightpanda (keep + combine), Chrome
    (baseline), synthetic (keep) and the native DOM slice (keep as floor);
    every route except Chrome runs the same control `0.0.1` journey and the
@@ -741,6 +803,12 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    work. Rerun Servo only when a driver-free rendering
    context exists. G1 closes only when one route is both materially below the
    baselines and low-slope on the shared court.
+8. [~] Treat the native bounded route as the convergence path. After each
+   backend experiment, record which mechanism or constraint was learned,
+   whether it belongs in the native core, and which existing court prevents a
+   memory, lifecycle or Agent-semantics regression. Keep a non-native backend
+   in a shipped `combine` role only when that role is explicit, bounded and
+   useful beyond what the current native slice can safely provide.
 
 The first code milestone is therefore not “render a website.” It is “one
 bounded target has one identity and state while CLI, CDP, and an optional
