@@ -22,6 +22,7 @@ use rquickjs::{Context, Runtime};
 use serde_json::{Map, Value, json};
 use url::Url;
 
+mod arena;
 mod net;
 
 const PROTOCOL: &str = "minicon-surf.control";
@@ -613,9 +614,39 @@ unsafe impl Allocator for ZoneAllocator {
     }
 }
 
+/// Which allocator serves a realm's QuickJS heap.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RealmAllocation {
+    /// rquickjs's default: QuickJS mallocs into the default libmalloc zone.
+    System,
+    /// One libmalloc zone per realm, destroyed after the runtime drops (macOS).
+    Zone,
+    /// One reserved mapping per realm with a boundary-tag heap over it,
+    /// unmapped once the runtime and its allocator are gone (macOS).
+    Arena,
+}
+
+impl RealmAllocation {
+    fn name(self) -> &'static str {
+        match self {
+            RealmAllocation::System => "system",
+            RealmAllocation::Zone => "zone",
+            RealmAllocation::Arena => "arena",
+        }
+    }
+}
+
+/// Address space reserved per arena realm. QuickJS's own 16 MiB limit binds
+/// first; the extra room lets a large reallocation hold old and new buffers
+/// at once, as the default allocator can, instead of failing early. Pages
+/// cost nothing until written.
+const REALM_ARENA_BYTES: usize = 32 * 1024 * 1024;
+
 /// One bounded QuickJS realm holding the mirrored document. Fields drop in
 /// declaration order: the context and runtime free every QuickJS block
-/// before the optional zone that served them is destroyed.
+/// before the optional zone that served them is destroyed. The optional
+/// arena is shared with the runtime's allocator through an `Rc`, so its
+/// mapping outlives every allocator call whatever the order.
 struct Realm {
     context: Context,
     runtime: Runtime,
@@ -623,12 +654,14 @@ struct Realm {
     zone_used: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
     #[cfg(target_os = "macos")]
     zone: Option<Zone>,
+    #[cfg(target_os = "macos")]
+    arena: Option<std::rc::Rc<arena::Arena>>,
 }
 
 impl Realm {
     #[cfg(target_os = "macos")]
-    fn new(dedicated_zone: bool) -> Result<Self, ControlError> {
-        let zone = if dedicated_zone {
+    fn new(allocation: RealmAllocation) -> Result<Self, ControlError> {
+        let zone = if allocation == RealmAllocation::Zone {
             Some(Zone::create()?)
         } else {
             None
@@ -636,17 +669,27 @@ impl Realm {
         let zone_used = zone
             .as_ref()
             .map(|_| std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)));
-        let runtime = match (&zone, &zone_used) {
-            (Some(zone), Some(used)) => Runtime::new_with_alloc(ZoneAllocator {
+        let arena = if allocation == RealmAllocation::Arena {
+            Some(arena::Arena::reserve(REALM_ARENA_BYTES).map_err(|e| {
+                ControlError::new("internal", format!("realm arena failed: {e}"), false)
+            })?)
+        } else {
+            None
+        };
+        let runtime = match (&zone, &zone_used, &arena) {
+            (Some(zone), Some(used), _) => Runtime::new_with_alloc(ZoneAllocator {
                 zone: zone.0,
                 limit: REALM_MEMORY_LIMIT,
                 used: used.clone(),
             }),
+            (_, _, Some(arena)) => Runtime::new_with_alloc(arena::ArenaAllocator(arena.clone())),
             _ => Runtime::new(),
         }
         .map_err(|e| ControlError::new("internal", format!("script runtime failed: {e}"), false))?;
-        // With the default allocator QuickJS enforces this itself; with the
-        // zone allocator the limit lives in ZoneAllocator and this is a no-op.
+        // quickjs-ng checks this limit in its own malloc wrappers before any
+        // allocator is called, so it binds under every allocator here (see
+        // `quickjs_enforces_its_limit_under_a_custom_allocator`); the zone
+        // allocator additionally enforces it on served sizes.
         runtime.set_memory_limit(REALM_MEMORY_LIMIT);
         runtime.set_max_stack_size(REALM_STACK_LIMIT);
         let context = Context::full(&runtime).map_err(|e| {
@@ -657,15 +700,16 @@ impl Realm {
             runtime,
             zone_used,
             zone,
+            arena,
         })
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn new(dedicated_zone: bool) -> Result<Self, ControlError> {
-        if dedicated_zone {
+    fn new(allocation: RealmAllocation) -> Result<Self, ControlError> {
+        if allocation != RealmAllocation::System {
             return Err(ControlError::new(
                 "unsupported_capability",
-                "dedicated realm zones exist only on macOS",
+                "dedicated realm zones and arenas exist only on macOS",
                 false,
             ));
         }
@@ -688,6 +732,28 @@ impl Realm {
     #[cfg(not(target_os = "macos"))]
     fn zone_statistics(&self) -> Option<Value> {
         None
+    }
+
+    #[cfg(target_os = "macos")]
+    fn arena_statistics(&self) -> Option<Value> {
+        self.arena.as_ref().map(|arena| {
+            let stats = arena.statistics();
+            json!({"reserved_bytes":stats.capacity,"used_bytes":stats.used,"blocks":stats.blocks,"high_water_bytes":stats.high_water,"decommitted_from":arena.decommitted_from()})
+        })
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    fn arena_statistics(&self) -> Option<Value> {
+        None
+    }
+
+    /// Mark the arena's free tail reusable; bytes advised, zero without one.
+    fn trim_arena(&self) -> usize {
+        #[cfg(target_os = "macos")]
+        if let Some(arena) = &self.arena {
+            return arena.trim();
+        }
+        0
     }
 
     /// Live QuickJS bytes: the zone allocator's own count when a zone serves
@@ -915,7 +981,7 @@ fn net_error(error: net::NetError, target_id: &str) -> ControlError {
 struct Host {
     fixture_root: PathBuf,
     policy: net::Policy,
-    realm_zone: bool,
+    realm_allocation: RealmAllocation,
     profiles: BTreeMap<String, Profile>,
     session: Option<Session>,
     targets: BTreeMap<String, Target>,
@@ -1039,11 +1105,14 @@ impl Host {
                     // SAFETY: a null zone requests pressure relief from every
                     // malloc zone; a zero goal asks for everything reclaimable.
                     let released = unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) };
+                    let arena_released: usize =
+                        self.targets.values().map(|t| t.realm.trim_arena()).sum();
                     Ok(json!({
                         "kind":"memory_trim",
-                        "strategy":"malloc_zone_pressure_relief",
+                        "strategy":"malloc_zone_pressure_relief+arena_tail_madvise",
                         "release_reporting":"bytes",
                         "released_bytes":released,
+                        "arena_released_bytes":arena_released,
                         "libmalloc":libmalloc_statistics(),
                     }))
                 }
@@ -1305,7 +1374,7 @@ impl Host {
         }
         drop(document);
 
-        let realm = Realm::new(self.realm_zone)?;
+        let realm = Realm::new(self.realm_allocation)?;
         realm.eval(DOM_SHIM_JS, deadline, &id)?;
         let seed = format!(
             "__mcsSeed({})",
@@ -1568,6 +1637,18 @@ impl Host {
             .values()
             .filter_map(|t| t.realm.zone_statistics())
             .collect();
+        let arenas: Vec<Value> = self
+            .targets
+            .values()
+            .filter_map(|t| t.realm.arena_statistics())
+            .collect();
+        #[cfg(target_os = "macos")]
+        let (arenas_unmapped, arena_leaked) = (
+            arena::ARENAS_UNMAPPED.load(std::sync::atomic::Ordering::Relaxed),
+            arena::ARENA_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed),
+        );
+        #[cfg(not(target_os = "macos"))]
+        let (arenas_unmapped, arena_leaked) = (0usize, 0usize);
         let fetches: usize = self.targets.values().map(|t| t.budget.fetches).sum();
         let network_bytes: usize = self.targets.values().map(|t| t.budget.bytes).sum();
         let denied: usize = self.targets.values().map(|t| t.budget.denied).sum();
@@ -1578,10 +1659,10 @@ impl Host {
                 "profiles":{"objects":self.profiles.len(),"object_limit":MAX_PROFILES},
                 "sessions":{"objects":self.session.iter().count(),"object_limit":1},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
-                "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones},
+                "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()}},
             },
-            "allocator":{"realm_zone":self.realm_zone,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed)},
+            "allocator":{"realm_allocation":self.realm_allocation.name(),"realm_zone":self.realm_allocation == RealmAllocation::Zone,"realm_arena":self.realm_allocation == RealmAllocation::Arena,"realm_arena_reserved_bytes":REALM_ARENA_BYTES,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed),"arenas_unmapped":arenas_unmapped,"arena_blocks_leaked_total":arena_leaked},
             "libmalloc":libmalloc_statistics(),
             "limitations":["logical owners are document sizes, QuickJS malloc bytes and fetched bytes, not process memory","no layout, image or storage owners exist in this slice","not process RSS/private/PSS"],
         })
@@ -1669,10 +1750,22 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
     let realm_zone = std::env::var("MINICON_SURF_NATIVE_REALM_ZONE").is_ok_and(|v| v == "1");
+    let realm_arena = std::env::var("MINICON_SURF_NATIVE_REALM_ARENA").is_ok_and(|v| v == "1");
+    let realm_allocation = match (realm_zone, realm_arena) {
+        (false, false) => RealmAllocation::System,
+        (true, false) => RealmAllocation::Zone,
+        (false, true) => RealmAllocation::Arena,
+        (true, true) => {
+            eprintln!(
+                "MINICON_SURF_NATIVE_REALM_ZONE and MINICON_SURF_NATIVE_REALM_ARENA exclude each other"
+            );
+            std::process::exit(64);
+        }
+    };
     let mut host = Host {
         fixture_root,
         policy,
-        realm_zone,
+        realm_allocation,
         profiles: BTreeMap::new(),
         session: None,
         targets: BTreeMap::new(),
@@ -1914,7 +2007,7 @@ mod zone_tests {
         let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
         let before = ZONE_BLOCKS_LEAKED.load(Ordering::Relaxed);
         let destroyed = ZONES_DESTROYED.load(Ordering::Relaxed);
-        let realm = Realm::new(true).unwrap();
+        let realm = Realm::new(RealmAllocation::Zone).unwrap();
         let deadline = Instant::now() + Duration::from_secs(5);
         realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
         realm
@@ -1949,5 +2042,111 @@ mod zone_tests {
             before,
             "no block may remain in use when the zone is destroyed"
         );
+    }
+}
+
+#[cfg(all(test, target_os = "macos"))]
+mod arena_realm_tests {
+    use super::*;
+    use std::sync::atomic::Ordering;
+
+    fn grow_until_throw(realm: &Realm) {
+        let deadline = Instant::now() + Duration::from_secs(20);
+        realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
+        let over = realm.eval(
+            "globalThis.big = []; while (true) big.push(new Array(4096).fill(1));",
+            deadline,
+            "target_test",
+        );
+        assert!(over.is_err(), "exceeding the realm limit must fail");
+    }
+
+    #[test]
+    fn quickjs_enforces_its_limit_under_a_custom_allocator() {
+        // The arena carries no byte limit of its own: the 16 MiB cap must
+        // come from quickjs-ng's malloc wrappers, which check malloc_limit
+        // before calling any allocator, so the arena (twice the cap) is never
+        // the binding constraint.
+        let realm = Realm::new(RealmAllocation::Arena).unwrap();
+        grow_until_throw(&realm);
+        let counted = realm.runtime.memory_usage().malloc_size.max(0) as usize;
+        assert!(
+            counted <= REALM_MEMORY_LIMIT,
+            "QuickJS's count stays under the cap"
+        );
+        assert!(
+            counted > REALM_MEMORY_LIMIT / 2,
+            "and the realm really filled up"
+        );
+        let stats = realm.arena.as_ref().unwrap().statistics();
+        assert!(
+            stats.used <= REALM_MEMORY_LIMIT + 1024 * 1024,
+            "the arena served about the cap"
+        );
+        assert!(
+            stats.high_water < REALM_ARENA_BYTES,
+            "and never needed the whole reservation"
+        );
+    }
+
+    #[test]
+    fn realm_frees_every_block_before_its_arena_is_unmapped() {
+        let before = arena::ARENA_BLOCKS_LEAKED.load(Ordering::Relaxed);
+        let realm = Realm::new(RealmAllocation::Arena).unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
+        realm
+            .eval(
+                "__mcsSeed([{e:'html',a:{},c:[{e:'body',a:{},c:[{e:'h1',a:{},c:[{x:'x'}]}]}]}]); \
+                 const p = []; for (let i = 0; i < 2000; i++) p.push({i, s: 'value' + i}); String(p.length)",
+                deadline,
+                "target_test",
+            )
+            .unwrap();
+        assert!(
+            realm.malloc_bytes() > 100_000,
+            "QuickJS accounting sees the heap"
+        );
+        let arena = realm.arena.clone().unwrap();
+        assert!(arena.statistics().blocks > 1000);
+        drop(realm);
+        assert_eq!(
+            arena.statistics().blocks,
+            0,
+            "JS_FreeRuntime returned every block before the realm handle went away"
+        );
+        assert_eq!(
+            std::rc::Rc::strong_count(&arena),
+            1,
+            "the runtime's allocator released its hold, so the runtime is gone"
+        );
+        drop(arena);
+        assert_eq!(
+            arena::ARENA_BLOCKS_LEAKED.load(Ordering::Relaxed),
+            before,
+            "nothing leaked"
+        );
+    }
+
+    #[test]
+    fn trim_on_a_live_arena_realm_reports_its_free_tail() {
+        let realm = Realm::new(RealmAllocation::Arena).unwrap();
+        grow_until_throw(&realm);
+        let deadline = Instant::now() + Duration::from_secs(5);
+        realm
+            .eval("globalThis.big = null;", deadline, "target_test")
+            .unwrap();
+        realm.runtime.run_gc();
+        let stats = realm.arena.as_ref().unwrap().statistics();
+        assert!(
+            stats.used < REALM_MEMORY_LIMIT / 4,
+            "the heap emptied after the collection"
+        );
+        let released = realm.trim_arena();
+        assert!(
+            released > 4 * 1024 * 1024,
+            "the free tail is returned page by page"
+        );
+        realm.eval("const again = []; for (let i = 0; i < 20000; i++) again.push({i}); String(again.length)", deadline, "target_test").unwrap();
     }
 }

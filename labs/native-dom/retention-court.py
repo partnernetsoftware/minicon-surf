@@ -12,10 +12,13 @@ retained memory into bytes still allocated and bytes freed but reserved.
 Cells are workload × allocator. Workloads: a static fixture, an interactive
 fixture, and the hermetic representative page over the bounded network.
 Allocators: the system allocator (default) and, on request, one dedicated
-libmalloc zone per QuickJS realm destroyed at close. The action stage runs
-`memory.trim` (malloc_zone_pressure_relief). One warm-up plus seven measured
-runs per cell; the receipt keeps every sample and an exact two-sided
-Mann-Whitney U test between allocators for retained footprint.
+libmalloc zone per QuickJS realm destroyed at close, or one reserved mapping
+per realm served by a boundary-tag heap and unmapped at close. The action
+stage runs `memory.trim` (malloc_zone_pressure_relief plus, for live arena
+realms, madvise of the free tail). One warm-up plus seven measured runs per
+cell; the receipt keeps every sample and exact two-sided Mann-Whitney U tests
+between every pair of allocators for retained footprint, first-open live
+footprint and post-close RSS.
 """
 
 import argparse
@@ -89,17 +92,22 @@ def load_network_module():
     return module
 
 
+ALLOCATOR_KNOBS = {"system": None, "zone": "MINICON_SURF_NATIVE_REALM_ZONE", "arena": "MINICON_SURF_NATIVE_REALM_ARENA"}
+
+
 class Host:
-    def __init__(self, binary, directory, origin, realm_zone):
+    def __init__(self, binary, directory, origin, allocator):
         command = [binary, "serve", "--stdio", "--fixture-root", str(FIXTURE_ROOT),
                    "--config-dir", str(Path(directory) / "config")]
         if origin:
             command += ["--allow-origin", origin]
         environment = dict(os.environ)
-        if realm_zone:
-            environment["MINICON_SURF_NATIVE_REALM_ZONE"] = "1"
-        else:
-            environment.pop("MINICON_SURF_NATIVE_REALM_ZONE", None)
+        for knob in ALLOCATOR_KNOBS.values():
+            if knob:
+                environment.pop(knob, None)
+        knob = ALLOCATOR_KNOBS[allocator]
+        if knob:
+            environment[knob] = "1"
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, text=True, env=environment)
         self.counter = 0
@@ -144,6 +152,10 @@ def stage_sample(host, settle_ms):
         "libmalloc_size_allocated": report["libmalloc"]["size_allocated"],
         "zones_destroyed": report["allocator"]["zones_destroyed"],
         "zone_blocks_leaked_total": report["allocator"]["zone_blocks_leaked_total"],
+        "arenas_unmapped": report["allocator"]["arenas_unmapped"],
+        "arena_blocks_leaked_total": report["allocator"]["arena_blocks_leaked_total"],
+        "arena_used_bytes": sum(a["used_bytes"] for a in owners["script_realms"]["dedicated_arenas"]),
+        "arena_high_water_bytes": sum(a["high_water_bytes"] for a in owners["script_realms"]["dedicated_arenas"]),
     }
 
 
@@ -162,9 +174,9 @@ def open_targets(host, session, workload, origin):
     return ids
 
 
-def run_once(binary, workload, realm_zone, origin, settle_ms):
+def run_once(binary, workload, allocator, origin, settle_ms):
     with tempfile.TemporaryDirectory(prefix="minicon-surf-retention-") as directory:
-        host = Host(binary, directory, origin if workload == "representative-url" else None, realm_zone)
+        host = Host(binary, directory, origin if workload == "representative-url" else None, allocator)
         try:
             profile = host.call("profile.create", {"persistence": "ephemeral"})["profile"]
             session = host.call("session.open", {"profile": profile})["session"]
@@ -177,6 +189,7 @@ def run_once(binary, workload, realm_zone, origin, settle_ms):
             trim = host.call("memory.trim", {})
             stages["post_action"] = stage_sample(host, settle_ms)
             stages["post_action"]["trim_released_bytes"] = trim["released_bytes"]
+            stages["post_action"]["trim_arena_released_bytes"] = trim.get("arena_released_bytes", 0)
             ids = open_targets(host, session, workload, origin)
             stages["reopen_live"] = stage_sample(host, settle_ms)
             for target in ids:
@@ -195,10 +208,10 @@ def run_once(binary, workload, realm_zone, origin, settle_ms):
 REALM_LIMIT_BYTES = 16 * 1024 * 1024
 
 
-def capacity_once(binary, realm_zone, settle_ms):
+def capacity_once(binary, allocator, settle_ms):
     """Open the growth fixture and read the realm's live bytes at first OOM."""
     with tempfile.TemporaryDirectory(prefix="minicon-surf-capacity-") as directory:
-        host = Host(binary, directory, None, realm_zone)
+        host = Host(binary, directory, None, allocator)
         try:
             profile = host.call("profile.create", {"persistence": "ephemeral"})["profile"]
             session = host.call("session.open", {"profile": profile})["session"]
@@ -208,11 +221,13 @@ def capacity_once(binary, realm_zone, settle_ms):
             snapshot = host.call("target.snapshot", {"target": target, "format": "semantic", "max_bytes": 65536, "max_nodes": 16})
             text = next((n["name"] for n in snapshot["nodes"] if n["role"] == "text"), "")
             live = report["owners"]["script_realms"]["malloc_bytes"]
+            arenas = report["owners"]["script_realms"]["dedicated_arenas"]
             host.call("target.close", {"target": target})
             host.call("session.close", {"session": session})
             host.finish()
             return {"realm_live_bytes_after_first_oom": live,
                     "ratio_of_hard_cap": live / REALM_LIMIT_BYTES,
+                    "arena_high_water_bytes": sum(a["high_water_bytes"] for a in arenas),
                     "page_report": text}
         finally:
             if host.process.poll() is None:
@@ -271,9 +286,14 @@ def aggregate(runs):
             "libmalloc_size_allocated": summarize([r["libmalloc_size_allocated"] for r in rows]),
             "owners": {key: summarize([r["owners"][key] for r in rows]) for key in rows[0]["owners"]},
             "zone_blocks_leaked_total": summarize([r["zone_blocks_leaked_total"] for r in rows]),
+            "arena_blocks_leaked_total": summarize([r["arena_blocks_leaked_total"] for r in rows]),
+            "arenas_unmapped": summarize([r["arenas_unmapped"] for r in rows]),
+            "arena_used_bytes": summarize([r["arena_used_bytes"] for r in rows]),
+            "arena_high_water_bytes": summarize([r["arena_high_water_bytes"] for r in rows]),
         }
         if stage == "post_action":
             stages[stage]["trim_released_bytes"] = summarize([r["trim_released_bytes"] for r in rows])
+            stages[stage]["trim_arena_released_bytes"] = summarize([r["trim_arena_released_bytes"] for r in rows])
 
     def delta(later, earlier, key):
         return summarize([run[later][key] - run[earlier][key] for run in runs])
@@ -288,6 +308,7 @@ def aggregate(runs):
         },
         "live_minus_empty": {
             "physical_footprint_bytes": delta("live", "empty", "physical_footprint_bytes"),
+            "resident_bytes": delta("live", "empty", "resident_bytes"),
             "libmalloc_size_in_use": delta("live", "empty", "libmalloc_size_in_use"),
         },
         "action_post_action_minus_post_close": {
@@ -309,7 +330,7 @@ def main():
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--settle-ms", type=int, default=500)
     parser.add_argument("--workloads", default="fixture-static,fixture-interactive,representative-url")
-    parser.add_argument("--allocators", default="system,zone")
+    parser.add_argument("--allocators", default="system,zone,arena")
     parser.add_argument("--receipt")
     args = parser.parse_args()
     binary = Path(args.binary)
@@ -324,9 +345,8 @@ def main():
     try:
         for allocator in allocators:
             for workload in workloads:
-                realm_zone = allocator == "zone"
-                run_once(str(binary), workload, realm_zone, origin, args.settle_ms)
-                runs = [run_once(str(binary), workload, realm_zone, origin, args.settle_ms)
+                run_once(str(binary), workload, allocator, origin, args.settle_ms)
+                runs = [run_once(str(binary), workload, allocator, origin, args.settle_ms)
                         for _ in range(args.repetitions)]
                 cells[f"{workload}/{allocator}"] = {"workload": workload, "allocator": allocator,
                                                     **aggregate(runs)}
@@ -338,24 +358,38 @@ def main():
 
     capacity = {}
     for allocator in allocators:
-        realm_zone = allocator == "zone"
-        capacity_once(str(binary), realm_zone, args.settle_ms)
-        runs = [capacity_once(str(binary), realm_zone, args.settle_ms) for _ in range(args.repetitions)]
+        capacity_once(str(binary), allocator, args.settle_ms)
+        runs = [capacity_once(str(binary), allocator, args.settle_ms) for _ in range(args.repetitions)]
         capacity[allocator] = {
             "realm_live_bytes_after_first_oom": summarize([r["realm_live_bytes_after_first_oom"] for r in runs]),
             "ratio_of_hard_cap": {"values": [round(r["ratio_of_hard_cap"], 4) for r in runs],
                                   "median": round(statistics.median(r["ratio_of_hard_cap"] for r in runs), 4)},
+            "arena_high_water_bytes": summarize([r["arena_high_water_bytes"] for r in runs]),
             "page_reports": [r["page_report"] for r in runs],
         }
+    measures = {
+        "retained_footprint": ("retained_post_close_minus_empty", "physical_footprint_bytes"),
+        "live_footprint_minus_empty": ("live_minus_empty", "physical_footprint_bytes"),
+        "post_close_resident": ("states", "post_close"),
+    }
+
+    def samples(cell, measure):
+        section, key = measures[measure]
+        if measure == "post_close_resident":
+            return cell["states"]["post_close"]["resident_bytes"]["values"]
+        return cell[section][key]["values"]
+
     tests = {}
-    if "system" in allocators and "zone" in allocators:
+    for first, second in itertools.combinations(allocators, 2):
         for workload in workloads:
-            system = cells[f"{workload}/system"]["retained_post_close_minus_empty"]["physical_footprint_bytes"]["values"]
-            zone = cells[f"{workload}/zone"]["retained_post_close_minus_empty"]["physical_footprint_bytes"]["values"]
-            tests[workload] = {"retained_footprint_system": system, "retained_footprint_zone": zone,
-                               **mann_whitney_exact(system, zone)}
+            entry = {}
+            for measure in measures:
+                a = samples(cells[f"{workload}/{first}"], measure)
+                b = samples(cells[f"{workload}/{second}"], measure)
+                entry[measure] = {first: a, second: b, **mann_whitney_exact(a, b)}
+            tests[f"{workload}/{first}-vs-{second}"] = entry
     receipt = {
-        "schema": "minicon-surf.native-dom-retention-attribution-receipt/0.0.1",
+        "schema": "minicon-surf.native-dom-retention-attribution-receipt/0.0.2",
         "status": "observed",
         "technology": "native-dom",
         "technology_version": "0.0.2",
@@ -365,10 +399,11 @@ def main():
             "stages": list(STAGES),
             "targets_per_stage": TARGETS,
             "fresh_process_control": "every run is a fresh host process; empty and live are the fresh-process control, later stages are same-instance",
-            "action": "memory.trim = malloc_zone_pressure_relief(NULL, 0)",
+            "action": "memory.trim = malloc_zone_pressure_relief(NULL, 0); for live arena realms also madvise(MADV_FREE_REUSABLE) on the free tail",
             "reuse": "reopen_live opens the same targets again after the action; post_reclose closes them again",
             "allocators": {"system": "Rust global system allocator; QuickJS via rquickjs default allocator into the default libmalloc zone",
-                           "zone": "MINICON_SURF_NATIVE_REALM_ZONE=1: one libmalloc zone per QuickJS realm, destroyed after the runtime drops; macOS only"},
+                           "zone": "MINICON_SURF_NATIVE_REALM_ZONE=1: one libmalloc zone per QuickJS realm, destroyed after the runtime drops; macOS only",
+                           "arena": "MINICON_SURF_NATIVE_REALM_ARENA=1: one 32 MiB private anonymous mapping per QuickJS realm served by a boundary-tag heap, unmapped when the runtime and its allocator are both dropped; QuickJS's own 16 MiB limit binds; macOS only"},
             "warmups_per_cell": 1,
             "measured_repetitions_per_cell": args.repetitions,
             "settle_ms": args.settle_ms,
@@ -381,14 +416,15 @@ def main():
             "capacity_at_first_oom": {
                 "semantic": "capacity-growth.html grows one dense array until the realm throws; the realm's live bytes are read afterwards and divided by the 16 MiB hard cap",
                 "hard_cap_bytes": REALM_LIMIT_BYTES,
-                "note": "the hard cap bounds the realm; it is not a guaranteed usable capacity. Under the zone allocator a reallocation is charged for the replacement before the old block is released, so large growth can fail below the cap",
+                "note": "the hard cap bounds the realm; it is not a guaranteed usable capacity. Under the zone allocator a reallocation is charged for the replacement before the old block is released, so large growth can fail below the cap; the arena grows in place when the free tail follows the block and otherwise holds old and new inside its reservation while QuickJS's own delta check decides",
                 "allocators": capacity,
             },
         },
         "limitations": [
             "single process on one macOS arm64 machine; footprint is the kernel's accounting, RSS counts shared pages",
             "libmalloc size_in_use covers the default zone plus dedicated zones; dedicated zones vanish at close, which is the point of the zone cell",
-            "the dedicated-zone cell is a macOS libmalloc mechanism and says nothing about other platforms",
+            "the dedicated-zone and arena cells are macOS mechanisms (libmalloc zones; mmap/madvise/munmap) and say nothing about other platforms",
+            "arena high-water is the heap's own touched extent, not a kernel page count",
             "settle windows are 500 ms; slower background reclamation is not measured",
         ],
     }
