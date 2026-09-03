@@ -1276,6 +1276,33 @@ Verdict: `keep`. G1, G3, P6 and G6 stay open.
 
 ### G3 surface process (macOS prototype, direct Cocoa child)
 
+**Headless by default.** Nothing in this lab creates a window unless a run
+opts in twice: the court flag `--visual` and the environment
+`MINICON_SURF_ALLOW_VISIBLE_COURT=1`. The host takes `--visual 1` and
+refuses to start when the environment is missing; without the opt-in
+`surface.show` is refused as `unsupported_capability`
+(`visible_surface_not_enabled`) unless a court-only no-AppKit child mode
+is set; the child in window mode exits 68 before touching AppKit when the
+environment is missing; an opted-in window is ordered front without
+becoming key (`orderFrontRegardless`, accessory policy) so it never steals
+focus. `surface-court.py` is entirely visual and does not run without the
+opt-in (exit 3, `unverified`, no receipt); `surface-attribution-court.py`
+and `surface-snapshot-attribution-court.py` run their no-AppKit cells by
+default and add or switch to the real-window child only under the opt-in.
+Run a visual court once by hand, never repeatedly in the background.
+[`surface-headless-court.py`](surface-headless-court.py) proves the rule
+(receipt `native-dom-control-0.0.2-surface-headless`, 17 of 17): the
+default snapshot court runs under a 50 ms window-list watch with no window
+owned by the child at any sample, the child maps neither AppKit nor
+CoreGraphics (`lsof`), the window list after equals the one before, the
+fail-closed paths above hold, a host killed while a headless surface is
+shown leaves no child within two seconds, and a court interrupted with
+SIGINT exits 130 with no residual process, window or receipt. The rule
+was added after the owner saw windows flashing from automated runs of the
+attribution courts (which spawned the real child by default and were
+rerun in the background); the receipts recorded before it are marked
+below as visual runs and are not rerun.
+
 Hypothesis (design and court frozen first, `surface-design-0.0.1.md` and
 `surface-ipc-0.0.1.md`): a separate minimal window process attached to one
 live target can make headed and headless runtime states of that target,
@@ -1557,6 +1584,62 @@ plus control-plane JSON. The next step is the ruling's read-only
 attribution of that snapshot and `serde_json` churn before a second
 candidate is proposed.
 
+Snapshot and serde attribution (read-only, ruling after the frame region;
+`native-dom-control-0.0.2-surface-snapshot-attribution` receipt, host
+`32343eb5…`; **a visual run recorded before the headless rule, kept as
+facts and not rerun**; [`surface-snapshot-attribution-court.py`](surface-snapshot-attribution-court.py)
+now runs headless by default). The host samples eleven more stages
+inside the path shared by the CDP snapshot, the Agent's `target.snapshot`
+and the surface (`snapshot_script` → realm eval → `String` crossing →
+`serde_json` parse → rows; `target.inspect` reads only the revision;
+surface input runs `act_script` through the same eval): before and after
+the realm eval, after the string crossing, after the realm value drop,
+after the queued jobs, after the network pump, before and after the parse,
+after the string drop, after the rows extraction, after the `Value` drop,
+optionally after an explicit realm GC; each with the realm's arena
+statistics. Twelve surface cells (three shapes × the product path,
+`evaluate_only`, `parse_drop`; the product path plus GC; two lab-only
+equal-byte microbench shapes, 16 KiB, not a browser result) and a
+seven-snapshot plateau cell, one warm-up plus seven runs, both
+allocators. Findings (medians): the host side after the realm costs 0
+footprint in every product cell and round (crossing, parse, string drop,
+rows, `Value` drop: in-use rises 4,736 at the parse and falls 4,736 at
+the drop, footprint unchanged); the realm eval is where the in-process
+growth is born under the default allocator (+49,152 / +32,768 / +32,768
+footprint in rounds 1 to 3 on the product cell, 0 under the arena, whose
+used bytes rise 4,544 and return); no drop stage and no explicit GC ever
+lowers the footprint (0 of 7 runs at every release stage; the GC cell is
+indistinguishable from the product cell); `evaluate_only` and
+`parse_drop` retain the same as the product path (so nothing the host
+holds after the realm matters); the in-process retention over
+`show_entry` is 98,304 / 65,536 / 32,768 per round (default) and 65,536
+/ 98,304 / 32,768 (arena) against outside post-hide readings of 180,224
+/ 278,528 / 311,296 and 163,840 / 278,528 / 344,064: the difference is
+the control plane between stages, which the plateau cell shows alone
+(seven snapshots with no surface: +147,456 → +360,448 default, +114,688
+→ +311,296 arena, converging, in-use flat at 3,104 / 0, realm malloc
+flat at 248,768 / 242,688: no plateau within seven, no reuse of pages);
+after `target.close` the default allocator keeps 344,064 over headless
+and the arena 16,360 (the realm's pages return with the target under the
+arena and stay cached in the default zone), recorded and never counted
+for the hide gate. The microbench (equal bytes) shows the realm string
+build at +245,760 (flat) and +180,224 (nested) with the host parse at 0
+(flat) and +81,920 (nested): for a 16 KiB nested result the host `Value`
+costs pages, for the product's snapshot (a few hundred bytes, five rows)
+it costs none. What this rules out: a reused `serde_json` buffer or a
+rows-without-`Value` extraction would change nothing measurable. What it
+leaves: (a) the realm's own allocations during the snapshot evaluation,
+freed but kept resident by the default zone (bounded and returned by the
+arena at target close), and (b) the control plane's per-request churn,
+which grows over seven calls without a surface. Candidate for ruling, at
+most one, not implemented: none proposed yet — (a) needs a host-native
+bounded semantic traversal that keeps the Agent snapshot's semantics
+without a second DOM authority (open design question: the realm holds the
+node references `act` relies on) and (b) is not surface-specific; the
+next step is a read-only measurement of (b) per control operation
+(`plateau-inspect` and `plateau-idle` cells are in the court for that
+and run headless) before any candidate is pre-registered.
+
 Gaps: post-hide host footprint and slope over the pre-registered caps
 (small-block churn of the snapshot evaluation and the control plane; the
 frame itself now returns exactly at hide, and the spawn costs nothing
@@ -1585,7 +1668,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 | `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
-| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` | the host with the G3 surface process, its court-only stage log and the surface-owned mmap frame region (`surface_sha256` names the child binary) | every regression was rerun on this build and all seven receipts carry its hash; the superseded `Vec`-frame receipts are described in the G3 section by their numbers | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build |
+| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, `native-dom-control-0.0.2-surface-snapshot-attribution` | the host with the G3 surface process, the surface-owned mmap frame region and the court-only stage log, host `32343eb5…` (`surface_sha256` names the child binary); these three are visual runs recorded before the headless rule and are not rerun | the headless rule build (host `6857ac38…`, child `29c2a009…`) carries `native-dom-control-0.0.2-surface-headless` (17/17) and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` receipts; the surface court is visual and waits for a by-hand opted-in run | the journeys (27/27, 35/35 under both allocators) were rerun on the headless rule build |
 
 ## Findings against product contracts
 

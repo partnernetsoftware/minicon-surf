@@ -75,6 +75,14 @@ receipts.
   hard limit alone are not optimization evidence.
 - Unsupported behavior is a valid result. Do not emulate support in the court
   or weaken a workload to manufacture a pass.
+- Automated courts, regressions, `cargo test` and every default command are
+  strictly headless: they never create or activate a desktop window. A real
+  window needs the double opt-in `--visual` plus
+  `MINICON_SURF_ALLOW_VISIBLE_COURT=1` in the same run, is documented as
+  showing windows, is run once by hand (never repeated in the background),
+  and must not steal focus. Missing either half fails closed and reports
+  `unverified`. `labs/native-dom/surface-headless-court.py` is the
+  falsifiable check.
 
 ## Change hygiene
 

@@ -225,6 +225,19 @@ Candidate for ruling: a dedicated `mmap` region for the frame, `munmap`
 at hide (section 8 of the lab README states the expected effect and the
 criteria). No cap moves; the surface court stays 106 of 110, narrow.
 
+## 10. Headless by default (owner rule, recorded)
+
+The owner saw the automated attribution courts flash real windows. Rule:
+every automated court, regression and default command is strictly
+headless; a real window needs `--visual` plus
+`MINICON_SURF_ALLOW_VISIBLE_COURT=1` in the same run (host flag `--visual
+1`, child environment gate, court flag), never steals focus
+(`orderFrontRegardless`, accessory policy), and is run once by hand. The
+frozen native court of §6 is visual and now runs only under that opt-in;
+its mechanics and criteria are unchanged. The attribution courts run their
+no-AppKit cells by default. `surface-headless-court.py` is the
+falsifiable acceptance (17 of 17 on the rule build).
+
 ## 9. The frame region (approved, implemented, measured)
 
 `surface-frame-region-0.0.1.md` froze the candidate and its criteria

@@ -24,3 +24,11 @@ child never runs.
 Build: `cargo build --release --locked --offline --features window`
 (544,176 bytes on the recording cell). The host is given the absolute path
 through `--surface-binary`.
+
+Headless by default: in window mode the child exits 68 before creating
+any AppKit object unless `MINICON_SURF_ALLOW_VISIBLE_COURT=1` is in its
+environment, which the host hands down only under its own `--visual 1`
+plus the same variable. The court-only modes `protocol`, `drain` and
+`exit` never touch AppKit (they map neither AppKit nor CoreGraphics). A
+window that is shown is ordered front without becoming key and never
+activates the process.

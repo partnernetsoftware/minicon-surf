@@ -1162,6 +1162,22 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [~] Headless by default (owner rule after windows flashed from automated
+  attribution runs): every court, regression and default command is
+  strictly headless; a real window needs `--visual` plus
+  `MINICON_SURF_ALLOW_VISIBLE_COURT=1` (host flag, child environment gate,
+  court flag), never steals focus, runs once by hand. Host refuses
+  `surface.show` without the opt-in, the child exits before AppKit, the
+  visual surface court reports `unverified` and writes nothing; the
+  attribution courts run no-AppKit cells by default.
+  `surface-headless-court.py` proves it (17/17: no window at any 50 ms
+  sample, no AppKit or CoreGraphics mapped in the child, window list
+  unchanged, kill and SIGINT leave nothing). The read-only snapshot and
+  serde attribution (a visual run recorded before the rule, kept, not
+  rerun) found the host side after the realm costs 0 footprint, drops and
+  GC release nothing, the realm eval and the control plane's per-request
+  churn are what remain; no candidate proposed yet. G1, G3, P6 and G6
+  stay open.
 - [~] The frame-region candidate was approved, frozen with its criteria
   before the code (`surface-frame-region-0.0.1.md`), implemented (one
   anonymous `mmap` region per surface record, painted in place, borrowed
