@@ -888,6 +888,8 @@ gate):
 | `fs2` | 0.4.3 | MIT/Apache-2.0 | `flock` writer lock |
 | `security-framework` (+ `security-framework-sys`, `core-foundation`, `core-foundation-sys`) | 3.7.0 | MIT OR Apache-2.0 | macOS Keychain generic password (macOS target only) |
 | `libc` (helper experiment only, commit `906884b`; not a dependency of the restored host) | 0.2.189 | MIT OR Apache-2.0 | `setrlimit(RLIMIT_CORE, 0)` and the helper's descriptor whitelist check |
+| `rustls` (+ `rustls-webpki`, `rustls-pki-types`, `untrusted`, `once_cell`) | 0.23.43 | Apache-2.0 OR ISC OR MIT (webpki, untrusted ISC) | TLS 1.3/1.2 client, certificate path and SAN verification in Rust (pinned-roots HTTPS slice) |
+| `ring` | 0.17.14 | Apache-2.0 AND ISC | cryptographic primitives for rustls: C and perlasm inside, not pure Rust |
 
 Keychain ACL and the no-UI mode, reviewed after the verdict
 (`native-dom-control-0.0.2-keychain-acl-probe` receipt): the item the host
@@ -1069,6 +1071,134 @@ Verdict: `narrow`. The store's own caps hold and every semantic check
 passes, but the frozen total-live criterion fails, so the slice is recorded
 as `failed` rather than `observed` and P6 stays open with G1, G3 and G6.
 
+### Pinned-roots HTTPS (rustls + ring, opt-in)
+
+Hypothesis: the native host can serve `https` origins under an explicit
+pinned-root policy with the TLS stack the candidate court selected
+(`labs/tls-court`, S1–S10: rustls 0.23.43 with the ring provider), without
+moving any existing cap, without a system root store, and without breaking
+the P6 v1 court. The stack is Rust for the TLS state machine, the
+certificate path and name verification (`rustls`, `rustls-webpki`,
+`rustls-pki-types`) and C plus perlasm for the primitives inside `ring`
+(31,209 C and 199,234 perlasm/assembly lines in the vendored source); it is
+not pure Rust and this README and the plan say so wherever the route is
+described.
+
+Scope (design section 2, cdx-k68's verdict boundaries 1–4): HTTPS exists only
+when `--pinned-root FILE` (public certificate PEM, repeatable) is given and
+the origin is on the explicit allowlist (`--allow-origin https://host:port`).
+Without a pinned root every `https` fetch is `unsupported_capability`
+`tls_no_pinned_roots`; no system or bundled roots are ever consulted and no
+public-web claim is made. Pinned-root input is bounded: at most 8 files, 16
+KiB per file, 64 KiB in total, 16 certificates; a file carrying a
+private-key block is refused, and errors name counts, never paths or
+contents. The ring provider is selected once, where the roots load, and
+nowhere else. TLS 1.3 preferred and 1.2 accepted, ALPN `http/1.1` only (a
+server that negotiates nothing or `h2` is refused `tls_alpn`), the
+certificate must match the URL host by DNS or IP SAN (`tls_hostname_mismatch`
+otherwise, `tls_untrusted_root` when the chain does not end in a pinned
+root, `tls_protocol` for TLS ≤ 1.1), SNI and the verified name are the
+original URL host, the exact address is authorized before the connect as on
+`http`, every redirect hop is authorized again and `https` → `http` is
+refused as `redirect_downgrade` before the plain target is even looked at.
+The handshake, reads and writes run under the same absolute deadline through
+the socket timeouts, and the framing, header, body, redirect, pending and
+per-target caps are the `http` ones. Each profile owns its session cache
+(`ClientSessionMemoryCache` with 16 entries: rustls rounds 8 or fewer to a
+single slot that its eviction empties at once, as the candidate court
+found), never shared across profiles, gone at exit. `Secure` cookies are
+accepted only from a verified `https` origin and sent only to one, hidden
+from `http` documents of the same host; `SameSite=None` still needs
+`Secure`; `Domain` stays exact-host; the broader same-site context stays a
+recorded loss. A failed https navigation is a typed failure that leaves
+frame, generation, realm, revision and jar untouched. Owners:
+`memory.report.owners.network.tls` (enabled, pinned roots, provider,
+cache bound, live connections, handshakes, resumed, refused, TLS 1.3 and
+1.2 counts, sums of live and retired targets) and `target.inspect
+network.tls` when the slice is enabled; the feature-off shapes are
+unchanged.
+
+Reproduction (disposable fixtures generated per run, nothing committed):
+
+```sh
+python3 labs/native-dom/https-court.py \
+  --binary labs/native-dom/target/release/native-dom-control \
+  --receipt labs/native-dom/evidence/native-dom-control-0.0.2-https.json
+```
+
+Evidence (`native-dom-control-0.0.2-https` receipt, 68 of 68, the same 34
+checks under the default allocator and the arena, feature off against
+enabled): the feature-off host reports TLS disabled and refuses an https
+target as `tls_no_pinned_roots`; the enabled host loads the representative
+page and its script over TLS 1.3 from the pinned origin and negotiates TLS
+1.2 with a 1.2-only origin; wrong name, unpinned issuer, ALPN h2-only,
+downgrade redirect, private-address redirect, redirect loop, body cap,
+header cap and deadline are typed refusals with no path, certificate or
+crypto internal in the error; TLS 1.1-only is refused `tls_protocol`
+(the local OpenSSL still serves it at security level 0); https redirects
+within the cap are followed; the second https fetch of a profile resumes
+and another profile's first fetch is a full handshake; a `Secure` cookie
+set over https returns over https, never reaches the http origin of the
+same host and is invisible to an http document; `SameSite=None; Secure` is
+accepted over https while `SameSite=None` alone, `Secure` over http and a
+foreign `Domain` are refused; a link click to a wrong-name origin fails
+typed and leaves frame, generation, realm, revision and jar unchanged;
+owners are zero after every close and the host stays one process. Host
+increments against the feature-off host (bytes, default / arena):
+
+| increment | measured | cap |
+|---|---|---|
+| H1 enabled empty over feature-off empty | −32,768 / −32,768 | ≤ 524,288 |
+| H2 first https target over first http target of the same page | 16,384 / 147,456 | ≤ 1,048,576 |
+| H3 eight https targets over eight http targets, per target | 28,672 / 71,680 | ≤ 131,072 |
+| H4 post-close libmalloc in-use, enabled over feature-off | 12,896 / 12,896 | ≤ 65,536 |
+
+Footprint (bytes, default / arena): feature-off empty 2,097,488 / 2,097,488
+and enabled empty 2,064,720 / 2,064,720; first http target 3,408,208 /
+2,769,256 and first https target 3,424,592 / 2,916,712; eight http targets
+5,964,112 / 5,866,000 and eight https targets 6,193,488 / 6,439,440; after
+every close 5,964,112 / 2,851,152 (off) and 6,193,488 / 3,424,592 (on),
+the default-allocator numbers being the zone reservation attributed earlier.
+Binary: 3,764,000 → 5,266,416 bytes (+1,502,416); lock 122 → 138 entries,
+six compiled here (`rustls` 0.23.43 Apache-2.0 OR ISC OR MIT, `ring` 0.17.14
+Apache-2.0 AND ISC, `rustls-webpki` 0.103.15 ISC, `rustls-pki-types` 1.15.1
+MIT OR Apache-2.0, `untrusted` 0.9.0 ISC, `once_cell` 1.21.4 MIT OR
+Apache-2.0) and ten Windows-only lock entries that do not compile on this
+cell; security updates of these crates are the lab owner's responsibility
+and no automated advisory check runs yet (gap). The candidate court's
+closure count applies: 94,338 Rust lines with 279 `unsafe` occurrences plus
+ring's C and perlasm.
+
+Regressions on the same binary: the P6 v1 profile court stays 80 of 82
+with the same two total-live failures, the journeys 27/27 and 35/35 under
+both allocators, the frame-realm court 62/62 and the CDP court 58/58. The
+network court carries one recorded amendment: the https negative keeps its
+code `unsupported_capability` and now expects the reason
+`tls_no_pinned_roots` instead of `scheme`.
+
+Court amendments after the freeze, mechanism only, recorded in the script:
+the empty sample follows the host's first request (a host still starting
+measured 81,992 bytes); both hosts use ephemeral profiles so the keychain's
+one-time first-use cost cannot enter the H deltas; the click carries the
+node reference as the contract requires; the redirect landing is read from
+any node role; the private-address redirect uses an https target because an
+https origin refuses the fixture's http target as a downgrade first; the
+header-cap fixture sends 40 KB because the cap is checked per 8 KiB chunk
+before the header end is seen (a 20 KB block passes: the http cell's cap is
+a chunk-granular bound, recorded, not changed here); the cross-profile check
+counts exactly one full handshake among a target's three fetches. One unit
+test (`arena_is_unmapped_only_when_the_last_holder_drops`) failed once under
+the parallel test run and passed on every rerun; it is outside this slice
+and recorded as a flake to watch.
+
+Gaps: pinned test roots on loopback only; no system roots, revocation, CT,
+client certificates, HTTP/2, HSTS or public-web statement; ring's C and
+perlasm remain inside the closure; one platform and fixture set; leak
+absence is not claimed.
+
+Verdict: `keep` as an opt-in, explicit-policy slice. The P6 v1 court and
+its verdict are unchanged; G1, G3, P6 and G6 stay open.
+
 ### Receipt provenance
 
 Each receipt records the SHA-256 of the host binary that produced it. The
@@ -1083,6 +1213,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
+| `native-dom-control-0.0.2-https`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
 
 ## Findings against product contracts
 
@@ -1119,10 +1250,12 @@ target by footprint. Every later slice is measured against this row.
 
 ## Exact limitations and next experiment
 
-- No layout, images, fonts, https or real timers; scripts run after parsing
+- No layout, images, fonts or real timers; scripts run after parsing
   rather than at parse position; only inline and same-origin external
   scripts run. Cookies and `localStorage` exist only as the bounded profile
-  store above (`http` cell, macOS Keychain, no cache or history).
+  store above (macOS Keychain, no cache or history); `https` exists only
+  under explicitly pinned roots (rustls + ring, opt-in), never against
+  system roots or the public web.
 - The DOM shim implements what the court fixtures and instrumentation use.
   It is not a Web-compatibility claim: unsupported selectors throw, and any
   page relying on layout, `XMLHttpRequest`, `localStorage` or timing fails
@@ -1140,8 +1273,9 @@ target by footprint. Every later slice is measured against this row.
   second platform.
 - The profile store's attributed fix candidate (keychain access outside
   the host process) was tried under frozen criteria and failed its
-  complete-tree peak criterion, so the next P6 steps are another gap: a
-  second platform key source, and `https` with pinned roots; each passes only if the 27-item journey and the 35-item
+  complete-tree peak criterion; `https` with pinned roots is now an opt-in
+  slice; the next P6 steps are a second platform key source and the
+  Secure-cookie court on a persisted profile; each passes only if the 27-item journey and the 35-item
   network court stay green and the footprint court row stays below
   Lightpanda's single server at one target. The arena's next steps are a second platform
   behind the same `Region` boundary, interior (not only tail) trimming, and

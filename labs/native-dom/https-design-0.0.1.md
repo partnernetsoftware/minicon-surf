@@ -1,8 +1,10 @@
 # HTTPS for the native route: design and measurement before any dependency
 
-Status: `measured` (candidate court and selection criteria pre-registered
-before any candidate was measured; results in `labs/tls-court/README.md`;
-nothing here is in the default native route, pending cdx-k68's ruling).
+Status: `implemented, opt-in` (candidate court and selection criteria
+pre-registered before any candidate was measured; results in
+`labs/tls-court/README.md`; cdx-k68 approved rustls + ring, and the slice
+lives in the native host only behind `--pinned-root` plus an explicit
+`https` allow-origin; section 9 records the native court).
 
 ## 1. Why now, and what this is not
 
@@ -165,6 +167,28 @@ entries" reads "16 entries, per process, finite" for that stack; the probe
 leaves SecureTransport's platform maximum in place. Recommendation: rustls
 + ring for the pinned-roots slice, subject to ruling; the slice's rules in
 section 2 are unchanged, and Network.framework stays unmeasured.
+
+## 9. The native slice and its court (recorded after the verdict)
+
+Implemented as approved (verdict boundaries 1–7): `--pinned-root` loads
+public certificates under fixed bounds and selects the ring provider once;
+`https` without a pinned root is `unsupported_capability`
+`tls_no_pinned_roots`; TLS 1.3/1.2, ALPN `http/1.1` only, names and IP SANs
+verified in process, exact-address authorization before the connect,
+re-authorization per redirect hop with `https` → `http` refused as
+`redirect_downgrade`, the http caps and deadline unchanged, a 16-entry
+session cache per profile (section 2's "at most 8 entries" reads "16
+entries, two server slots" for rustls), `Secure` and `SameSite=None` rules
+as in section 2, atomic failed navigation. `labs/native-dom/https-court.py`
+passes 68 of 68 under both allocators with H1–H4 at −32,768, 16,384 /
+147,456, 28,672 / 71,680 and 12,896 bytes against caps of 524,288,
+1,048,576, 131,072 and 65,536; the binary grows by 1,502,416 bytes; the P6
+v1 court and every regression hold. Recorded mechanism amendments: the
+empty sample follows the first request; ephemeral profiles on both sides;
+the click carries a node reference; redirect landing read from any role;
+private-address redirect through an https target; a 40 KB header fixture;
+the cross-profile check counts one full handshake among three fetches. The
+verdict is `keep` as opt-in; ring's C and perlasm stay visible.
 
 ## 7. Out of scope of the slice
 

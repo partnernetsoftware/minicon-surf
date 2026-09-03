@@ -138,6 +138,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── profile-specific budgets and diagnostics
 │   ├── [x] synthetic G4: two persistent + one ephemeral isolate storage/policy/locks
 │   ├── [~] native-dom slice: keychain-envelope sealed store · RFC 6265 subset jar · localStorage · write-through with fault court (80/82; total-live criterion unmet)
+│   ├── [x] native-dom opt-in HTTPS: pinned roots only · rustls + ring (C/perlasm inside) · Secure cookies over verified https · court 68/68
 │   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
@@ -1073,6 +1074,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   SecureTransport refuses an explicit 1.3 maximum). Recommendation rustls +
   ring, awaiting ruling; nothing merged into the native route; no public-web
   claim. G1, G3, P6 and G6 stay open.
+- [x] The ruling adopted rustls + ring, and the native route now carries
+  the pinned-roots HTTPS slice as an opt-in, explicit-policy capability:
+  `--pinned-root` public certificates under fixed bounds, `https` allowed
+  only for allowlisted origins and otherwise `unsupported_capability`, no
+  system roots, TLS 1.3/1.2 with ALPN `http/1.1` only, names and IP SANs
+  verified in process, exact-address authorization before the connect,
+  per-hop re-authorization with downgrade refused, the http caps and
+  deadline unchanged, a 16-entry per-profile session cache, `Secure` and
+  `SameSite=None` cookie rules against the http origin of the same host,
+  atomic failed navigation. The frozen native court passes 68 of 68 under
+  both allocators with the pre-registered host increments at most 147,456
+  bytes for the first https target and 71,680 per further target against
+  caps of 1,048,576 and 131,072; the binary grows by 1.5 MB; the P6 v1
+  court stays 80 of 82 and every regression holds. The stack is Rust for
+  TLS and verification with C and perlasm primitives inside `ring`: not
+  pure Rust. Pinned loopback roots only, no public-web claim; G1, G3, P6
+  and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
