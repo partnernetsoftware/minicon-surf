@@ -144,7 +144,10 @@ Rules every host follows:
   document generation have no projection, and child frames are limited to
   the one bounded synthetic child. These are recorded losses, not
   approximations. Hosts that do not implement the optional `frame`/`realm`
-  arguments fail closed with `invalid_request`, as with `capability`.
+  arguments fail closed with `invalid_request`, exactly as with
+  `capability`: a caller that requires frame or realm narrowing MUST NOT
+  drop the arguments and retry on that refusal, and there is no feature
+  negotiation yet to discover support beforehand.
 
 ## Capability attenuation (optional envelope field)
 
