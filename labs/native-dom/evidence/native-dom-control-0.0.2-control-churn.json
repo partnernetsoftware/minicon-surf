@@ -1,0 +1,6389 @@
+{
+ "arms": [
+  "memory.report",
+  "target.inspect",
+  "target.snapshot",
+  "profile.list",
+  "surface.pair",
+  "cdp.frame_tree"
+ ],
+ "calls": 128,
+ "first": 7,
+ "host_sha256": "d41d5be2fd71946fd0cee7646d067710501842282ee3d39191d39ff7438b0b76",
+ "hygiene": {
+  "after": {
+   "host_processes": 0,
+   "owner_windows": 0,
+   "surface_processes": 0
+  },
+  "before": {
+   "host_processes": 0,
+   "owner_windows": 0,
+   "surface_processes": 0
+  },
+  "headless": true
+ },
+ "limitations": [
+  "outside samples are proc_pid_rusage physical footprint with a 20 ms settle; in-process stage samples exist only in the +stages cells and perturb the host (the observer effect is reported as the difference of the outside readings at request 128)",
+  "memory.report at the end of a run is one more request; in-use, allocated and realm malloc are read once there, never between samples",
+  "the surface arm uses the drain child of the surface binary: a separate process that maps no AppKit; no window exists at any time",
+  "one fixture page, one operation per arm, one host per run; macOS only; no pid, path or command line is recorded"
+ ],
+ "notes": [],
+ "purpose": "headless read-only attribution of the control plane's per-request churn; nothing fixed, no cap moves",
+ "repetitions": 7,
+ "results": {
+  "arena": {
+   "cdp.frame_tree": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 136096,
+     "median": 136096,
+     "minimum": 136096
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 212992,
+     "median": 180224,
+     "minimum": 147456
+    },
+    "first_non_returning_call": {
+     "1": 4,
+     "2": 1,
+     "3": 2
+    },
+    "headless": {
+     "maximum": 2638184,
+     "median": 2589032,
+     "minimum": 2572648
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 98304,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 163840,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 180224,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     }
+    ],
+    "per_request_8_to_128": 682.6666666666666,
+    "per_request_first_seven": 10922.666666666666,
+    "response_bytes": {
+     "maximum": 576,
+     "median": 576,
+     "minimum": 576
+    },
+    "slope_8_to_128": 81920,
+    "slope_first_seven": 65536
+   },
+   "cdp.frame_tree+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 136416,
+     "median": 136416,
+     "minimum": 136416
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 212992,
+     "median": 196608,
+     "minimum": 147456
+    },
+    "first_non_returning_call": {
+     "1": 3,
+     "2": 3,
+     "3": 1
+    },
+    "headless": {
+     "maximum": 2654568,
+     "median": 2654568,
+     "minimum": 2621800
+    },
+    "observer_effect_at_128": 16384,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 98304,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 98304,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 163840,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 147456
+      }
+     }
+    ],
+    "per_request_8_to_128": 819.2,
+    "per_request_first_seven": 16384.0,
+    "response_bytes": {
+     "maximum": 576,
+     "median": 576,
+     "minimum": 576
+    },
+    "slope_8_to_128": 98304,
+    "slope_first_seven": 98304
+   },
+   "memory.report": {
+    "end_allocated": {
+     "maximum": 29360128,
+     "median": 20971520,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 143008,
+     "median": 142976,
+     "minimum": 142960
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 458752,
+     "median": 393216,
+     "minimum": 327680
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 2539880,
+     "median": 2523496,
+     "minimum": 2474344
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 294912,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 360448,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 376832,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 393216,
+       "minimum": 327680
+      }
+     }
+    ],
+    "per_request_8_to_128": 1228.8,
+    "per_request_first_seven": 21845.333333333332,
+    "response_bytes": {
+     "maximum": 2831,
+     "median": 2830,
+     "minimum": 2829
+    },
+    "slope_8_to_128": 147456,
+    "slope_first_seven": 131072
+   },
+   "memory.report+stages": {
+    "end_allocated": {
+     "maximum": 12582912,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 143312,
+     "median": 143296,
+     "minimum": 143280
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 376832,
+     "median": 327680,
+     "minimum": 311296
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 2572648,
+     "median": 2556264,
+     "minimum": 2539880
+    },
+    "observer_effect_at_128": -65536,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 98304,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 163840,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 180224,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 245760,
+       "median": 196608,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 311296,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 311296,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 311296,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 311296,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 311296,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 311296,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 311296,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 327680,
+       "minimum": 311296
+      }
+     }
+    ],
+    "per_request_8_to_128": 1092.2666666666667,
+    "per_request_first_seven": 21845.333333333332,
+    "response_bytes": {
+     "maximum": 2831,
+     "median": 2830,
+     "minimum": 2829
+    },
+    "slope_8_to_128": 131072,
+    "slope_first_seven": 131072,
+    "stages_by_operation": {
+     "memory.report": {
+      "footprint_growth_per_request_mean": 2560.0,
+      "requests_with_growth": 89,
+      "requests_with_release": 0,
+      "rounds": 903,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 51,
+        "footprint_median": 0,
+        "footprint_sum": 1081344,
+        "in_use_median": -16592,
+        "in_use_sum": -14562096
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 61,
+        "footprint_median": 0,
+        "footprint_sum": 1212416,
+        "in_use_median": 20688,
+        "in_use_sum": 18375472
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 48,
+        "in_use_sum": 43344
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -192,
+        "in_use_sum": -173376
+       }
+      }
+     }
+    }
+   },
+   "profile.list": {
+    "end_allocated": {
+     "maximum": 25165824,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 127472,
+     "median": 127472,
+     "minimum": 127472
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 114688,
+     "median": 81920,
+     "minimum": 49152
+    },
+    "first_non_returning_call": {
+     "1": 3,
+     "2": 1,
+     "4": 1,
+     "6": 2
+    },
+    "headless": {
+     "maximum": 2523520,
+     "median": 2507112,
+     "minimum": 2507112
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 16384,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 8192.0,
+    "response_bytes": {
+     "maximum": 218,
+     "median": 217,
+     "minimum": 216
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 49152
+   },
+   "profile.list+stages": {
+    "end_allocated": {
+     "maximum": 16777216,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 127792,
+     "median": 127792,
+     "minimum": 127792
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 81920,
+     "median": 65536,
+     "minimum": 32768
+    },
+    "first_non_returning_call": {
+     "1": 2,
+     "2": 1,
+     "3": 2,
+     "4": 1,
+     "5": 1
+    },
+    "headless": {
+     "maximum": 2589056,
+     "median": 2556264,
+     "minimum": 2539880
+    },
+    "observer_effect_at_128": -16384,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 5461.333333333333,
+    "response_bytes": {
+     "maximum": 218,
+     "median": 217,
+     "minimum": 216
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 32768,
+    "stages_by_operation": {
+     "profile.list": {
+      "footprint_growth_per_request_mean": 420.57142857142856,
+      "requests_with_growth": 21,
+      "requests_with_release": 0,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 11,
+        "footprint_median": 0,
+        "footprint_sum": 196608,
+        "in_use_median": -1200,
+        "in_use_sum": -1075200
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 8,
+        "footprint_median": 0,
+        "footprint_sum": 147456,
+        "in_use_median": 1456,
+        "in_use_sum": 1304576
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 48,
+        "in_use_sum": 43008
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 2,
+        "footprint_median": 0,
+        "footprint_sum": 32768,
+        "in_use_median": -192,
+        "in_use_sum": -172032
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -96,
+        "in_use_sum": -90272
+       }
+      }
+     }
+    }
+   },
+   "surface.pair": {
+    "end_allocated": {
+     "maximum": 16777216,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 131408,
+     "median": 131408,
+     "minimum": 131408
+    },
+    "end_realm_malloc": {
+     "maximum": 242672,
+     "median": 242672,
+     "minimum": 242672
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 638976,
+     "median": 606208,
+     "minimum": 524288
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 2523520,
+     "median": 2507112,
+     "minimum": 2490728
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 98304,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 311296,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 393216,
+       "median": 327680,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 425984,
+       "minimum": 360448
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 573440,
+       "median": 540672,
+       "minimum": 442368
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 606208,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 524288
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 589824,
+       "minimum": 524288
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 638976,
+       "median": 606208,
+       "minimum": 524288
+      }
+     }
+    ],
+    "per_request_8_to_128": 1501.8666666666666,
+    "per_request_first_seven": 54613.333333333336,
+    "response_bytes": {
+     "maximum": 281,
+     "median": 280,
+     "minimum": 277
+    },
+    "slope_8_to_128": 180224,
+    "slope_first_seven": 327680
+   },
+   "surface.pair+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 163280,
+     "median": 147232,
+     "minimum": 131728
+    },
+    "end_realm_malloc": {
+     "maximum": 242672,
+     "median": 242672,
+     "minimum": 242672
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 720896,
+     "median": 671744,
+     "minimum": 557056
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 2572648,
+     "median": 2556264,
+     "minimum": 2539880
+    },
+    "observer_effect_at_128": 65536,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 98304,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 245760,
+       "median": 212992,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 294912,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 409600,
+       "median": 360448,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 393216,
+       "minimum": 360448
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 458752,
+       "minimum": 360448
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 524288,
+       "median": 491520,
+       "minimum": 393216
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 622592,
+       "median": 540672,
+       "minimum": 458752
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 507904
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 671744,
+       "median": 622592,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 688128,
+       "median": 655360,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 688128,
+       "median": 655360,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 704512,
+       "median": 655360,
+       "minimum": 540672
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 704512,
+       "median": 655360,
+       "minimum": 557056
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 704512,
+       "median": 655360,
+       "minimum": 557056
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 720896,
+       "median": 671744,
+       "minimum": 557056
+      }
+     }
+    ],
+    "per_request_8_to_128": 1501.8666666666666,
+    "per_request_first_seven": 60074.666666666664,
+    "response_bytes": {
+     "maximum": 281,
+     "median": 280,
+     "minimum": 277
+    },
+    "slope_8_to_128": 180224,
+    "slope_first_seven": 360448,
+    "stages_by_operation": {
+     "surface.hide": {
+      "footprint_growth_per_request_mean": -1048411.4285714285,
+      "requests_with_growth": 0,
+      "requests_with_release": 896,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 5,
+        "footprint_median": 0,
+        "footprint_sum": 81920,
+        "in_use_median": -1008,
+        "in_use_sum": -880016
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 896,
+        "footprint_grew_requests": 0,
+        "footprint_median": -1048576,
+        "footprint_sum": -939507712,
+        "in_use_median": -2656,
+        "in_use_sum": -2385424
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 720,
+        "in_use_sum": 643360
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": -896,
+        "in_use_sum": -784672
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 2,
+        "footprint_median": 0,
+        "footprint_sum": 32768,
+        "in_use_median": -320,
+        "in_use_sum": -273536
+       }
+      }
+     },
+     "surface.show": {
+      "footprint_growth_per_request_mean": 1053403.4285714286,
+      "requests_with_growth": 896,
+      "requests_with_release": 0,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 7,
+        "footprint_median": 0,
+        "footprint_sum": 114688,
+        "in_use_median": -1760,
+        "in_use_sum": -1547824
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 896,
+        "footprint_median": 1048576,
+        "footprint_sum": 943587328,
+        "in_use_median": 6448,
+        "in_use_sum": 5823856
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 720,
+        "in_use_sum": 659776
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -896,
+        "in_use_sum": -801088
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 7,
+        "footprint_median": 0,
+        "footprint_sum": 131072,
+        "in_use_median": -320,
+        "in_use_sum": -259008
+       }
+      }
+     }
+    }
+   },
+   "target.inspect": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 127472,
+     "median": 127472,
+     "minimum": 127472
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 229376,
+     "median": 180224,
+     "minimum": 147456
+    },
+    "first_non_returning_call": {
+     "1": 3,
+     "2": 4
+    },
+    "headless": {
+     "maximum": 2523496,
+     "median": 2507136,
+     "minimum": 2490728
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 16384,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 81920,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 114688,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 163840,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 147456
+      }
+     }
+    ],
+    "per_request_8_to_128": 546.1333333333333,
+    "per_request_first_seven": 19114.666666666668,
+    "response_bytes": {
+     "maximum": 578,
+     "median": 577,
+     "minimum": 576
+    },
+    "slope_8_to_128": 65536,
+    "slope_first_seven": 114688
+   },
+   "target.inspect+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 143328,
+     "median": 143296,
+     "minimum": 127792
+    },
+    "end_realm_malloc": {
+     "maximum": 239440,
+     "median": 239440,
+     "minimum": 239440
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 229376,
+     "median": 196608,
+     "minimum": 163840
+    },
+    "first_non_returning_call": {
+     "1": 5,
+     "2": 2
+    },
+    "headless": {
+     "maximum": 2572648,
+     "median": 2556264,
+     "minimum": 2539880
+    },
+    "observer_effect_at_128": 16384,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 98304,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 131072,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 131072,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 163840,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     }
+    ],
+    "per_request_8_to_128": 546.1333333333333,
+    "per_request_first_seven": 19114.666666666668,
+    "response_bytes": {
+     "maximum": 578,
+     "median": 577,
+     "minimum": 576
+    },
+    "slope_8_to_128": 65536,
+    "slope_first_seven": 114688,
+    "stages_by_operation": {
+     "target.inspect": {
+      "footprint_growth_per_request_mean": 1378.9413067552603,
+      "requests_with_growth": 56,
+      "requests_with_release": 0,
+      "rounds": 903,
+      "stage_deltas_median": {
+       "after_commit_io->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -16,
+        "in_use_sum": -12288
+       },
+       "after_dispatch->after_commit_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 28,
+        "footprint_median": 0,
+        "footprint_sum": 557056,
+        "in_use_median": -3632,
+        "in_use_sum": -3249840
+       },
+       "after_sync_io->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 30,
+        "footprint_median": 0,
+        "footprint_sum": 540672,
+        "in_use_median": 4656,
+        "in_use_sum": 4240048
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 0,
+        "in_use_sum": 16384
+       },
+       "request_parsed->after_sync_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 16,
+        "in_use_sum": 12288
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 6,
+        "footprint_median": 0,
+        "footprint_sum": 98304,
+        "in_use_median": 720,
+        "in_use_sum": 650160
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": -896,
+        "in_use_sum": -809088
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": -832,
+        "in_use_sum": -747008
+       }
+      }
+     }
+    }
+   },
+   "target.snapshot": {
+    "end_allocated": {
+     "maximum": 25165824,
+     "median": 20971520,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 159088,
+     "median": 158944,
+     "minimum": 142976
+    },
+    "end_realm_malloc": {
+     "maximum": 242672,
+     "median": 242672,
+     "minimum": 242672
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 311296,
+     "median": 278528,
+     "minimum": 212992
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 2523496,
+     "median": 2507112,
+     "minimum": 2474344
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 32768,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 98304,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 131072,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 180224,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 229376,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 262144,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 262144,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 278528,
+       "minimum": 212992
+      }
+     }
+    ],
+    "per_request_8_to_128": 682.6666666666666,
+    "per_request_first_seven": 24576.0,
+    "response_bytes": {
+     "maximum": 814,
+     "median": 813,
+     "minimum": 812
+    },
+    "slope_8_to_128": 81920,
+    "slope_first_seven": 147456
+   },
+   "target.snapshot+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 175440,
+     "median": 159392,
+     "minimum": 159264
+    },
+    "end_realm_malloc": {
+     "maximum": 242672,
+     "median": 242672,
+     "minimum": 242672
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 278528,
+     "median": 262144,
+     "minimum": 229376
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 2572648,
+     "median": 2556264,
+     "minimum": 2556264
+    },
+    "observer_effect_at_128": -16384,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 49152,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 98304,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 147456,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 163840,
+       "minimum": 131072
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 180224,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 245760,
+       "median": 212992,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 245760,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 262144,
+       "minimum": 229376
+      }
+     }
+    ],
+    "per_request_8_to_128": 682.6666666666666,
+    "per_request_first_seven": 19114.666666666668,
+    "response_bytes": {
+     "maximum": 814,
+     "median": 813,
+     "minimum": 812
+    },
+    "slope_8_to_128": 81920,
+    "slope_first_seven": 114688,
+    "stages_by_operation": {
+     "target.snapshot": {
+      "footprint_growth_per_request_mean": 1792.0,
+      "requests_with_growth": 65,
+      "requests_with_release": 0,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_commit_io->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -16,
+        "in_use_sum": -8512
+       },
+       "after_dispatch->after_commit_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 0,
+        "in_use_sum": 16384
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 18,
+        "footprint_median": 0,
+        "footprint_sum": 409600,
+        "in_use_median": -7296,
+        "in_use_sum": -6138208
+       },
+       "after_sync_io->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 54,
+        "footprint_median": 0,
+        "footprint_sum": 1163264,
+        "in_use_median": 8320,
+        "in_use_sum": 7252320
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_sync_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 16,
+        "in_use_sum": 24896
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 784,
+        "in_use_sum": 692640
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -1024,
+        "in_use_sum": -907936
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -768,
+        "in_use_sum": -708352
+       }
+      }
+     }
+    }
+   }
+  },
+  "system": {
+   "cdp.frame_tree": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 379488,
+     "median": 379488,
+     "minimum": 379488
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 81920,
+     "median": 65536,
+     "minimum": 49152
+    },
+    "first_non_returning_call": {
+     "1": 3,
+     "2": 3,
+     "5": 1
+    },
+    "headless": {
+     "maximum": 3260776,
+     "median": 3178832,
+     "minimum": 3129680
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 32768,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 49152
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 5461.333333333333,
+    "response_bytes": {
+     "maximum": 576,
+     "median": 576,
+     "minimum": 576
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 32768
+   },
+   "cdp.frame_tree+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 379808,
+     "median": 379808,
+     "minimum": 379808
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 114688,
+     "median": 65536,
+     "minimum": 49152
+    },
+    "first_non_returning_call": {
+     "1": 6,
+     "2": 1
+    },
+    "headless": {
+     "maximum": 3293544,
+     "median": 3244392,
+     "minimum": 3211600
+    },
+    "observer_effect_at_128": 0,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 16384,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 16384,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 2730.6666666666665,
+    "response_bytes": {
+     "maximum": 576,
+     "median": 576,
+     "minimum": 576
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 16384
+   },
+   "memory.report": {
+    "end_allocated": {
+     "maximum": 25165824,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 386512,
+     "median": 386480,
+     "minimum": 386464
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 262144,
+     "median": 212992,
+     "minimum": 180224
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 3146064,
+     "median": 3129680,
+     "minimum": 3047760
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 98304,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 131072,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 147456,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 147456,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 180224,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 196608,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 196608,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 212992,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 212992,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 212992,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 262144,
+       "median": 212992,
+       "minimum": 180224
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 13653.333333333334,
+    "response_bytes": {
+     "maximum": 2722,
+     "median": 2721,
+     "minimum": 2720
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 81920
+   },
+   "memory.report+stages": {
+    "end_allocated": {
+     "maximum": 25165824,
+     "median": 20971520,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 386832,
+     "median": 386816,
+     "minimum": 386784
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 180224,
+     "median": 147456,
+     "minimum": 114688
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 3293520,
+     "median": 3211600,
+     "minimum": 3162448
+    },
+    "observer_effect_at_128": -65536,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 98304,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 114688,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 81920
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 147456,
+       "minimum": 114688
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 13653.333333333334,
+    "response_bytes": {
+     "maximum": 2722,
+     "median": 2721,
+     "minimum": 2720
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 81920,
+    "stages_by_operation": {
+     "memory.report": {
+      "footprint_growth_per_request_mean": 1115.4285714285713,
+      "requests_with_growth": 41,
+      "requests_with_release": 0,
+      "rounds": 903,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 26,
+        "footprint_median": 0,
+        "footprint_sum": 573440,
+        "in_use_median": -15840,
+        "in_use_sum": -13944160
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 21,
+        "footprint_median": 0,
+        "footprint_sum": 409600,
+        "in_use_median": 19936,
+        "in_use_sum": 17724768
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 48,
+        "in_use_sum": 43344
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -192,
+        "in_use_sum": -173376
+       }
+      }
+     }
+    }
+   },
+   "profile.list": {
+    "end_allocated": {
+     "maximum": 25165824,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 370864,
+     "median": 370864,
+     "minimum": 370864
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 16384,
+     "median": 0,
+     "minimum": 0
+    },
+    "first_non_returning_call": {
+     "32": 1,
+     "None": 6
+    },
+    "headless": {
+     "maximum": 3227984,
+     "median": 3146064,
+     "minimum": 3064144
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     }
+    ],
+    "per_request_8_to_128": 0.0,
+    "per_request_first_seven": 0.0,
+    "response_bytes": {
+     "maximum": 218,
+     "median": 217,
+     "minimum": 216
+    },
+    "slope_8_to_128": 0,
+    "slope_first_seven": 0
+   },
+   "profile.list+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 20971520,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 371184,
+     "median": 371184,
+     "minimum": 371184
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 16384,
+     "median": 0,
+     "minimum": 0
+    },
+    "first_non_returning_call": {
+     "16": 1,
+     "None": 6
+    },
+    "headless": {
+     "maximum": 3260752,
+     "median": 3195216,
+     "minimum": 3129680
+    },
+    "observer_effect_at_128": 0,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 0,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 16384,
+       "median": 0,
+       "minimum": 0
+      }
+     }
+    ],
+    "per_request_8_to_128": 0.0,
+    "per_request_first_seven": 0.0,
+    "response_bytes": {
+     "maximum": 218,
+     "median": 217,
+     "minimum": 216
+    },
+    "slope_8_to_128": 0,
+    "slope_first_seven": 0,
+    "stages_by_operation": {
+     "profile.list": {
+      "footprint_growth_per_request_mean": 18.285714285714285,
+      "requests_with_growth": 1,
+      "requests_with_release": 0,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -1200,
+        "in_use_sum": -1075200
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 800
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 1456,
+        "in_use_sum": 1304576
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 48,
+        "in_use_sum": 43008
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -192,
+        "in_use_sum": -172032
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -96,
+        "in_use_sum": -91232
+       }
+      }
+     }
+    }
+   },
+   "surface.pair": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 20971520,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 393536,
+     "median": 377904,
+     "minimum": 377904
+    },
+    "end_realm_malloc": {
+     "maximum": 248768,
+     "median": 248768,
+     "minimum": 248768
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 557056,
+     "median": 425984,
+     "minimum": 327680
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 3178832,
+     "median": 3146064,
+     "minimum": 3064144
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 147456,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 245760,
+       "median": 229376,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 229376,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 262144,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 294912,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 311296,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 409600,
+       "median": 327680,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 344064,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 458752,
+       "median": 376832,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 475136,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 393216,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 540672,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 557056,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 557056,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 557056,
+       "median": 425984,
+       "minimum": 327680
+      }
+     }
+    ],
+    "per_request_8_to_128": 682.6666666666666,
+    "per_request_first_seven": 30037.333333333332,
+    "response_bytes": {
+     "maximum": 281,
+     "median": 280,
+     "minimum": 277
+    },
+    "slope_8_to_128": 81920,
+    "slope_first_seven": 180224
+   },
+   "surface.pair+stages": {
+    "end_allocated": {
+     "maximum": 25165824,
+     "median": 20971520,
+     "minimum": 16777216
+    },
+    "end_in_use": {
+     "maximum": 394400,
+     "median": 393840,
+     "minimum": 378224
+    },
+    "end_realm_malloc": {
+     "maximum": 248768,
+     "median": 248768,
+     "minimum": 248768
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 507904,
+     "median": 458752,
+     "minimum": 344064
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 3211600,
+     "median": 3195216,
+     "minimum": 3113296
+    },
+    "observer_effect_at_128": 32768,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 180224,
+       "minimum": 147456
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 212992,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 294912,
+       "median": 245760,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 376832,
+       "median": 311296,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 409600,
+       "median": 327680,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 425984,
+       "median": 344064,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 360448,
+       "minimum": 294912
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 442368,
+       "median": 409600,
+       "minimum": 311296
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 475136,
+       "median": 425984,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 475136,
+       "median": 442368,
+       "minimum": 327680
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 491520,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 491520,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 491520,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 491520,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 491520,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 491520,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 442368,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 458752,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 458752,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 458752,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 458752,
+       "minimum": 344064
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 507904,
+       "median": 458752,
+       "minimum": 344064
+      }
+     }
+    ],
+    "per_request_8_to_128": 819.2,
+    "per_request_first_seven": 38229.333333333336,
+    "response_bytes": {
+     "maximum": 281,
+     "median": 280,
+     "minimum": 277
+    },
+    "slope_8_to_128": 98304,
+    "slope_first_seven": 229376,
+    "stages_by_operation": {
+     "surface.hide": {
+      "footprint_growth_per_request_mean": -1055589.7142857143,
+      "requests_with_growth": 0,
+      "requests_with_release": 896,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": -1008,
+        "in_use_sum": -883792
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 896,
+        "footprint_grew_requests": 0,
+        "footprint_median": -1048576,
+        "footprint_sum": -945824768,
+        "in_use_median": -2656,
+        "in_use_sum": -2398032
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 720,
+        "in_use_sum": 645120
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -896,
+        "in_use_sum": -802816
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -320,
+        "in_use_sum": -289344
+       }
+      }
+     },
+     "surface.show": {
+      "footprint_growth_per_request_mean": 1059009.142857143,
+      "requests_with_growth": 896,
+      "requests_with_release": 0,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_dispatch->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -1760,
+        "in_use_sum": -1556080
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 896,
+        "footprint_median": 1048576,
+        "footprint_sum": 948872192,
+        "in_use_median": 6448,
+        "in_use_sum": 5870224
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 720,
+        "in_use_sum": 645120
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -896,
+        "in_use_sum": -802816
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -320,
+        "in_use_sum": -259392
+       }
+      }
+     }
+    }
+   },
+   "target.inspect": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 370864,
+     "median": 370864,
+     "minimum": 370864
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 98304,
+     "median": 81920,
+     "minimum": 49152
+    },
+    "first_non_returning_call": {
+     "1": 5,
+     "2": 2
+    },
+    "headless": {
+     "maximum": 3162448,
+     "median": 3113296,
+     "minimum": 3064144
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 16384,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 32768,
+       "minimum": 16384
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 65536,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     }
+    ],
+    "per_request_8_to_128": 136.53333333333333,
+    "per_request_first_seven": 8192.0,
+    "response_bytes": {
+     "maximum": 578,
+     "median": 577,
+     "minimum": 576
+    },
+    "slope_8_to_128": 16384,
+    "slope_first_seven": 49152
+   },
+   "target.inspect+stages": {
+    "end_allocated": {
+     "maximum": 16777216,
+     "median": 16777216,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 386816,
+     "median": 386800,
+     "minimum": 371184
+    },
+    "end_realm_malloc": {
+     "maximum": 245664,
+     "median": 245664,
+     "minimum": 245664
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 114688,
+     "median": 81920,
+     "minimum": 49152
+    },
+    "first_non_returning_call": {
+     "1": 2,
+     "2": 5
+    },
+    "headless": {
+     "maximum": 3211600,
+     "median": 3162448,
+     "minimum": 3113296
+    },
+    "observer_effect_at_128": 0,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 32768,
+       "median": 0,
+       "minimum": 0
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 49152,
+       "median": 32768,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 65536,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 49152,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 81920,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 98304,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 114688,
+       "median": 81920,
+       "minimum": 49152
+      }
+     }
+    ],
+    "per_request_8_to_128": 273.06666666666666,
+    "per_request_first_seven": 8192.0,
+    "response_bytes": {
+     "maximum": 578,
+     "median": 577,
+     "minimum": 576
+    },
+    "slope_8_to_128": 32768,
+    "slope_first_seven": 49152,
+    "stages_by_operation": {
+     "target.inspect": {
+      "footprint_growth_per_request_mean": 689.4706533776301,
+      "requests_with_growth": 27,
+      "requests_with_release": 0,
+      "rounds": 903,
+      "stage_deltas_median": {
+       "after_commit_io->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -16,
+        "in_use_sum": -11936
+       },
+       "after_dispatch->after_commit_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 12,
+        "footprint_median": 0,
+        "footprint_sum": 212992,
+        "in_use_median": -3632,
+        "in_use_sum": -3207296
+       },
+       "after_sync_io->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 20,
+        "footprint_median": 0,
+        "footprint_sum": 393216,
+        "in_use_median": 4656,
+        "in_use_sum": 4213888
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_sync_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 16,
+        "in_use_sum": 28320
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 720,
+        "in_use_sum": 650160
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -896,
+        "in_use_sum": -809088
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -832,
+        "in_use_sum": -762816
+       }
+      }
+     }
+    }
+   },
+   "target.snapshot": {
+    "end_allocated": {
+     "maximum": 29360128,
+     "median": 25165824,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 422512,
+     "median": 405712,
+     "minimum": 389568
+    },
+    "end_realm_malloc": {
+     "maximum": 248768,
+     "median": 248768,
+     "minimum": 248768
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 393216,
+     "median": 344064,
+     "minimum": 278528
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 3146064,
+     "median": 3129680,
+     "minimum": 3047760
+    },
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 81920,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 114688,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 147456,
+       "median": 147456,
+       "minimum": 98304
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 196608,
+       "median": 180224,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 229376,
+       "median": 229376,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 245760,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 278528,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 311296,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 311296,
+       "minimum": 245760
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 311296,
+       "minimum": 262144
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 327680,
+       "minimum": 262144
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 327680,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 327680,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 327680,
+       "minimum": 278528
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 393216,
+       "median": 344064,
+       "minimum": 278528
+      }
+     }
+    ],
+    "per_request_8_to_128": 682.6666666666666,
+    "per_request_first_seven": 27306.666666666668,
+    "response_bytes": {
+     "maximum": 814,
+     "median": 813,
+     "minimum": 812
+    },
+    "slope_8_to_128": 81920,
+    "slope_first_seven": 163840
+   },
+   "target.snapshot+stages": {
+    "end_allocated": {
+     "maximum": 20971520,
+     "median": 12582912,
+     "minimum": 12582912
+    },
+    "end_in_use": {
+     "maximum": 438496,
+     "median": 422032,
+     "minimum": 421984
+    },
+    "end_realm_malloc": {
+     "maximum": 248768,
+     "median": 248768,
+     "minimum": 248768
+    },
+    "exit_codes": [
+     0
+    ],
+    "final_outside_over_headless": {
+     "maximum": 360448,
+     "median": 311296,
+     "minimum": 262144
+    },
+    "first_non_returning_call": {
+     "1": 7
+    },
+    "headless": {
+     "maximum": 3244368,
+     "median": 3146064,
+     "minimum": 3113296
+    },
+    "observer_effect_at_128": -32768,
+    "over_headless_by_call": [
+     {
+      "call": 1,
+      "over_headless": {
+       "maximum": 131072,
+       "median": 65536,
+       "minimum": 32768
+      }
+     },
+     {
+      "call": 2,
+      "over_headless": {
+       "maximum": 163840,
+       "median": 98304,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 3,
+      "over_headless": {
+       "maximum": 180224,
+       "median": 114688,
+       "minimum": 65536
+      }
+     },
+     {
+      "call": 4,
+      "over_headless": {
+       "maximum": 212992,
+       "median": 163840,
+       "minimum": 114688
+      }
+     },
+     {
+      "call": 5,
+      "over_headless": {
+       "maximum": 245760,
+       "median": 180224,
+       "minimum": 163840
+      }
+     },
+     {
+      "call": 6,
+      "over_headless": {
+       "maximum": 278528,
+       "median": 196608,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 7,
+      "over_headless": {
+       "maximum": 294912,
+       "median": 229376,
+       "minimum": 180224
+      }
+     },
+     {
+      "call": 8,
+      "over_headless": {
+       "maximum": 294912,
+       "median": 229376,
+       "minimum": 196608
+      }
+     },
+     {
+      "call": 16,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 24,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 32,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 40,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 48,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 56,
+      "over_headless": {
+       "maximum": 311296,
+       "median": 245760,
+       "minimum": 212992
+      }
+     },
+     {
+      "call": 64,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 72,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 80,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 88,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 262144,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 96,
+      "over_headless": {
+       "maximum": 327680,
+       "median": 294912,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 104,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 294912,
+       "minimum": 229376
+      }
+     },
+     {
+      "call": 112,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 294912,
+       "minimum": 262144
+      }
+     },
+     {
+      "call": 120,
+      "over_headless": {
+       "maximum": 344064,
+       "median": 294912,
+       "minimum": 262144
+      }
+     },
+     {
+      "call": 128,
+      "over_headless": {
+       "maximum": 360448,
+       "median": 311296,
+       "minimum": 262144
+      }
+     }
+    ],
+    "per_request_8_to_128": 682.6666666666666,
+    "per_request_first_seven": 27306.666666666668,
+    "response_bytes": {
+     "maximum": 814,
+     "median": 813,
+     "minimum": 812
+    },
+    "slope_8_to_128": 81920,
+    "slope_first_seven": 163840,
+    "stages_by_operation": {
+     "target.snapshot": {
+      "footprint_growth_per_request_mean": 2358.8571428571427,
+      "requests_with_growth": 74,
+      "requests_with_release": 0,
+      "rounds": 896,
+      "stage_deltas_median": {
+       "after_commit_io->after_execute": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -16,
+        "in_use_sum": -7792
+       },
+       "after_dispatch->after_commit_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "after_execute->response_serialized": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 10,
+        "footprint_median": 0,
+        "footprint_sum": 163840,
+        "in_use_median": -7296,
+        "in_use_sum": -6160112
+       },
+       "after_sync_io->after_dispatch": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 70,
+        "footprint_median": 0,
+        "footprint_sum": 1933312,
+        "in_use_median": 8320,
+        "in_use_sum": 7426640
+       },
+       "request_dropped->response_written": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 0,
+        "in_use_sum": 0
+       },
+       "request_parsed->after_sync_io": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": 16,
+        "in_use_sum": 7792
+       },
+       "request_read->request_parsed": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 1,
+        "footprint_median": 0,
+        "footprint_sum": 16384,
+        "in_use_median": 784,
+        "in_use_sum": 703136
+       },
+       "response_serialized->request_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -1024,
+        "in_use_sum": -903232
+       },
+       "response_written->response_dropped": {
+        "footprint_fell_requests": 0,
+        "footprint_grew_requests": 0,
+        "footprint_median": 0,
+        "footprint_sum": 0,
+        "in_use_median": -768,
+        "in_use_sum": -710912
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "schema": "minicon-surf/native-dom-control-churn/0.0.1",
+ "stages": [
+  "request_read",
+  "request_parsed",
+  "after_sync_io",
+  "after_dispatch",
+  "after_commit_io",
+  "after_execute",
+  "response_serialized",
+  "request_dropped",
+  "response_written",
+  "response_dropped"
+ ],
+ "surface_sha256": "29c2a009739133d11e773e6babdb1708f5880da46812b9f287eda26e47bd2f2e",
+ "technology": "native-dom host with court-only request stages; drain surface child (no AppKit) for the surface arm; external proc_pid_rusage footprint",
+ "warmup": 1
+}
