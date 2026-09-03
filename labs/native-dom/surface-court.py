@@ -9,11 +9,15 @@ session held through the pinned puppeteer-core driver of the CDP court.
 Stages:
   1. headless: open the page, click its button (revision +1), attach the CDP
      session, read Page.getFrameTree;
-  2. three rounds: surface.show → real window number, own-window capture
-     matches the painter's frame → real input posted through CoreGraphics at
-     the window's screen position (a click on the painter row of the page's
-     button and a scroll of 240), observed through target.inspect (revision,
-     scroll_y), target.wait and the CDP frame tree → surface.hide → the child
+  2. three rounds: surface.show → the court-only file (host started with
+     --surface-court-dir under this court's mktemp, 0600, removed at hide)
+     names a window number and an own-window capture verdict that matches
+     the painter's frame → real input posted through CoreGraphics at the
+     window's screen position (a click on the painter row of the page's
+     button and a scroll of 240); the court then sends no control request
+     and waits, with a deadline, for the host's input_applied event in the
+     court-only log, and only afterwards reads target.inspect (revision,
+     scroll_y) and the CDP frame tree → surface.hide → the child
      exits by protocol and is reaped, owners.surfaces is 0/0, no descendant →
      headless script, wait and network fetch still run → the next show finds
      target, frame, generation, realm, revision, scroll_y, profile and the CDP
@@ -179,7 +183,7 @@ def post_scroll(x, y, pixels):
 
 
 class Host(CDP.Host):
-    def __init__(self, binary, directory, allocator, origin, surface_binary):
+    def __init__(self, binary, directory, allocator, origin, surface_binary, court_dir=None):
         environment = dict(os.environ)
         for knob in ("MINICON_SURF_NATIVE_REALM_ZONE", "MINICON_SURF_NATIVE_REALM_ARENA", "MINICON_SURF_PROFILE_STORE"):
             environment.pop(knob, None)
@@ -190,6 +194,8 @@ class Host(CDP.Host):
                    "--allow-origin", origin, "--cdp-port", "0", "--ready-file", str(self.ready)]
         if surface_binary:
             command += ["--surface-binary", str(surface_binary)]
+        if court_dir:
+            command += ["--surface-court-dir", str(court_dir)]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, env=environment)
         self.counter = 0
         self.sampler = TreeSampler(self.process.pid, binary)
@@ -225,6 +231,31 @@ def tree_peak_since(host, since):
     return max((s[2] for s in host.sampler.samples if s[0] >= since), default=0)
 
 
+def court_file(court_dir, name):
+    path = Path(court_dir) / name
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+def wait_for_event(court_dir, predicate, deadline_seconds):
+    """Wait, without any control request, for a matching line in the court-only event log."""
+    path = Path(court_dir) / "events.ndjson"
+    started = time.monotonic()
+    seen = 0
+    while time.monotonic() - started < deadline_seconds:
+        if path.exists():
+            lines = path.read_text().splitlines()
+            for line in lines[seen:]:
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if predicate(event):
+                    return event, (time.monotonic() - started) * 1000
+            seen = len(lines)
+        time.sleep(0.005)
+    return None, (time.monotonic() - started) * 1000
+
+
 def child_pid(host):
     kids = descendants_of(host.process.pid)
     return kids[0][0] if kids else None
@@ -250,7 +281,9 @@ def main():
         for allocator in ("system", "arena"):
             tag = f"[{allocator}] "
             with tempfile.TemporaryDirectory(prefix="minicon-surf-surface-court-") as directory:
-                host = Host(args.binary, directory, allocator, origin, args.surface_binary)
+                court_dir = Path(directory) / "court-only"
+                court_dir.mkdir(mode=0o700)
+                host = Host(args.binary, directory, allocator, origin, args.surface_binary, court_dir)
                 client = None
                 try:
                     # 1. Headless target with a CDP session held.
@@ -287,43 +320,45 @@ def main():
                         show_ms = (time.monotonic() - started) * 1000
                         surface = shown["surface"]
                         pid = child_pid(host)
-                        expect(tag + f"round {index}: surface.show attaches a real window (window number, one child process)",
-                               shown.get("state") == "headed" and shown.get("window", {}).get("number") and pid is not None,
-                               {k: shown.get(k) for k in ("state", "presentation_bytes", "painter")} | {"window": shown.get("window")})
+                        expect(tag + f"round {index}: surface.show answers engine-neutral fields only",
+                               shown.get("state") == "headed" and shown.get("painter") == "bounded-semantic-painter" and shown.get("presentation_bytes", 0) > 0
+                               and not any(k in shown for k in ("window", "layout", "capture", "pid")), sorted(shown))
+                        side = court_file(court_dir, "surface.json") or {}
+                        window = side.get("window", {})
+                        expect(tag + f"round {index}: the court-only file names a real window number and one child process exists",
+                               bool(window.get("number")) and pid is not None, {"window_present": bool(window.get("number")), "child": pid is not None})
                         time.sleep(0.25)
                         shown_fp = footprint(host)
                         spawn_peak = tree_peak_since(host, since)
                         owner = surfaces_owner(host)
                         expect(tag + f"round {index}: owners.surfaces is one object with the frame's bytes", owner["objects"] == 1 and owner["bytes"] == shown.get("presentation_bytes"), owner)
-                        capture = shown.get("capture") or {}
+                        capture = side.get("capture") or {}
                         expect(tag + f"round {index}: the own-window capture matches the painter's frame (or the OS refused it: recorded)",
-                               capture.get("verified") is True or (capture.get("verified") is False and "reason" in capture), capture)
+                               capture.get("verified") is True or (capture.get("verified") is False and "reason" in capture), {k: capture.get(k) for k in ("verified", "matches", "of", "reason")})
                         verify = host.call("target.inspect", {"target": target})
                         expect(tag + f"round {index}: target.inspect names the surface", verify["ok"] and verify["result"].get("surface") == surface, verify.get("result", {}).get("surface"))
                         # Real input through the OS: click the button row, then scroll.
-                        window = shown.get("window", {})
-                        rows = shown.get("layout", {}).get("rows", [])
+                        rows = side.get("layout", {}).get("rows", [])
                         button_row = next((r for r in rows if r.get("role") == "button"), None)
                         input_detail = {"permitted": input_permitted}
                         if input_permitted and button_row and window:
-                            x = window["content_x"] + shown["layout"]["frame"]["width"] // 2
+                            x = window["content_x"] + side["layout"]["frame"]["width"] // 2
                             y = window["content_y"] + button_row["y"] + button_row["height"] // 2
                             owner_at = topmost_window_owner_at(x, y)
                             input_detail["topmost_is_surface"] = bool(owner_at and owner_at[0] == pid)
                             if owner_at and owner_at[0] == pid:
-                                t0 = time.monotonic()
                                 post_click(x, y)
-                                waited = host.call("target.wait", {"target": target, "condition": {"kind": "revision_at_least", "revision": expected_revision + 1}}, 5000)
-                                click_ms = (time.monotonic() - t0) * 1000
+                                # No control request: the host must apply the click while idle.
+                                applied, click_ms = wait_for_event(court_dir, lambda e: e.get("event") == "input_applied" and e.get("kind") == "click" and e.get("revision", 0) > expected_revision, 5.0)
                                 after_click = host.ok("target.inspect", {"target": target})
-                                expect(tag + f"round {index}: a real click on the painter's button row advances the revision through the host", waited["ok"] and after_click["revision"] == expected_revision + 1, {"waited": waited.get("ok"), "revision": after_click["revision"], "expected": expected_revision + 1})
+                                expect(tag + f"round {index}: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+                                       applied is not None and after_click["revision"] == applied["revision"] == expected_revision + 1, {"applied": applied, "revision": after_click["revision"], "expected": expected_revision + 1})
                                 expected_revision = after_click["revision"]
-                                t1 = time.monotonic()
                                 post_scroll(x, y, SCROLL)
-                                waited = host.call("target.wait", {"target": target, "condition": {"kind": "revision_at_least", "revision": expected_revision + 1}}, 5000)
-                                scroll_ms = (time.monotonic() - t1) * 1000
+                                applied, scroll_ms = wait_for_event(court_dir, lambda e: e.get("event") == "input_applied" and e.get("kind") == "scroll" and e.get("revision", 0) > expected_revision, 5.0)
                                 after_scroll = host.ok("target.inspect", {"target": target})
-                                expect(tag + f"round {index}: a real scroll moves scroll_y and advances the revision", waited["ok"] and after_scroll.get("scroll_y", 0) > expected_scroll and after_scroll["revision"] == expected_revision + 1, {"scroll_y": after_scroll.get("scroll_y"), "revision": after_scroll["revision"]})
+                                expect(tag + f"round {index}: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+                                       applied is not None and after_scroll.get("scroll_y", 0) > expected_scroll and after_scroll["revision"] == expected_revision + 1, {"applied": applied, "scroll_y": after_scroll.get("scroll_y"), "revision": after_scroll["revision"]})
                                 expected_revision, expected_scroll = after_scroll["revision"], after_scroll.get("scroll_y", 0)
                                 input_detail.update({"click_ms": round(click_ms, 1), "scroll_ms": round(scroll_ms, 1)})
                             else:
@@ -343,6 +378,7 @@ def main():
                         time.sleep(0.1)
                         expect(tag + f"round {index}: surface.hide ends the child by protocol, reaps it and releases the frame",
                                hidden.get("state") == "headless" and hidden.get("teardown", {}).get("exit") == "protocol" and child_pid(host) is None, hidden.get("teardown"))
+                        expect(tag + f"round {index}: the court-only file is gone after the hide", not (court_dir / "surface.json").exists())
                         owner = surfaces_owner(host)
                         expect(tag + f"round {index}: owners.surfaces returns to zero objects and zero bytes", owner["objects"] == 0 and owner["bytes"] == 0, owner)
                         post_hide_fp, post_hide_in_use = footprint(host), in_use(host)
@@ -360,7 +396,7 @@ def main():
                         tree_hidden = client.send("A", "Page.getFrameTree")
                         expect(tag + f"round {index}: the CDP session is unchanged after the hide", ((((tree_hidden.get("result") or {}).get("frameTree") or {}).get("frame") or {}).get("id")) == frame_id)
                         footprints[allocator]["rounds"].append({"round": index, "spawn_peak_tree": spawn_peak, "shown_steady_host": shown_fp, "post_hide_host": post_hide_fp, "post_hide_in_use": post_hide_in_use,
-                                                                "show_ms": round(show_ms, 1), "hide_ms": round(hide_ms, 1), "ready_ms": shown.get("latency", {}).get("ready_ms"), "first_frame_ms": shown.get("latency", {}).get("first_frame_ms"), "input": input_detail})
+                                                                "show_ms": round(show_ms, 1), "hide_ms": round(hide_ms, 1), "ready_ms": shown.get("latency", {}).get("ready_ms"), "first_frame_ms": shown.get("latency", {}).get("first_frame_ms"), "input": {k: v for k, v in input_detail.items() if k != "topmost"}})
                         latencies[allocator].append({"show_ms": round(show_ms, 1), "hide_ms": round(hide_ms, 1)})
 
                     rounds = footprints[allocator]["rounds"]

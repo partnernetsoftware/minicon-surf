@@ -1,7 +1,9 @@
 # G3 surface process for the native route: architecture, IPC and court (frozen)
 
-Status: `frozen` (architecture, message set, failure semantics, owners and
-the native G3 court pre-registered before the implementation; follows
+Status: `frozen, amended once before implementation` (architecture, message
+set, failure semantics, owners and the native G3 court pre-registered
+before the implementation; amendment A1 keeps platform details out of
+public results and A2 applies input at idle; follows
 cdx-k68's verdict on the candidate court: a separate surface process on the
 direct Cocoa path, the in-process candidates stay rejected at 34 of 42).
 macOS only. Nothing here changes control 0.0.1: `surface.show {target}`
@@ -101,10 +103,20 @@ in every receipt and is not a layout or CSS renderer. Frame: 640 × 400
 BGRA. Input mapping on the host: a click at (x, y) resolves through the hit
 map to a node and runs the existing click path (the same revision rule as
 `target.act`); a scroll delta moves `scroll_y` within 0 … 1,000,000 and
-advances the revision by one (the synthetic host's rule); keys are
-recorded and ignored in this slice. Input is applied at the host's next
-operation boundary or wait poll, like CDP bridge requests, and the court
-records that latency.
+advances the revision by one (the synthetic host's rule; node references
+taken before a scroll therefore go `stale_revision`, which the court
+records); keys are recorded and ignored in this slice.
+
+Input timing (A2): the surface reader thread delivers `INPUT` into the
+host's multiplex loop as a third source next to the stdio door and the
+CDP bridge. Every loop iteration handles, in this order, pending bridge
+requests, then pending surface input events (each applied atomically as a
+host-internal mutation of its target, FIFO per surface, dropped when its
+generation is not current), then one stdio request; while an operation
+runs nothing else is applied (operations stay serial and atomic), and
+`target.wait` drains the same input queue between its polls. An idle host
+therefore applies a click or scroll within its 1 ms loop period plus the
+work itself, and the CLI or CDP observe the new revision afterwards.
 
 ## 5. Owners and reporting
 
@@ -116,6 +128,29 @@ stale_events_dropped_total}`. No pid, path or command line reaches a
 receipt. `target.inspect` gains `surface` (id or null) and `scroll_y`.
 The surface choice is never written to the profile record.
 
+Public results (A1): `surface.show` answers only engine-neutral fields:
+`kind` `surface`, `surface`, `target`, `state` `headed`, `presentation_bytes`,
+`frame` `{width, height, format}`, `painter` `bounded-semantic-painter` and
+`latency` `{ready_ms, first_frame_ms}`; `surface.hide` answers `kind`
+`surface_hidden`, `surface`, `target`, `state` `headless`,
+`released_presentation_bytes` and `teardown` `{exit: protocol|killed|gone,
+reaped: bool, ms}`. No window number, screen coordinate, capture verdict,
+hit map, pid or platform handle ever appears in a control response.
+
+Court-only channel (A1): only when the host is started with
+`--surface-court-dir DIR` (a directory the court creates under mktemp,
+mode 0700) it writes there, mode 0600: `surface.json` after each show
+(window number, content rectangle in CoreGraphics screen coordinates,
+the painter's rows → node map, and the own-window capture verdict, taken
+by the host through CoreGraphics on its own window number only) and
+`events.ndjson`, one line per event (`shown`, `frame_acked`,
+`input_applied` with kind, revision and scroll, `hidden`, `child_exit`),
+each with a monotonic millisecond stamp. The files are removed at hide
+and at exit. The format is court-only, outside the protocol and its
+schema; the receipt keeps sanitized conclusions only (present or gone,
+pixels matched, latencies) and no path or handle. Without the flag no
+file, no thread and no allocation exist for it.
+
 ## 6. The native G3 court (frozen, unexecuted until implemented)
 
 `labs/native-dom/surface-court.py`, default allocator and the arena, the
@@ -124,13 +159,14 @@ puppeteer-core driver of the CDP court:
 
 1. headless: open the representative page, click its button (revision 2),
    attach the CDP session and read `Page.getFrameTree`;
-2. three rounds of: `surface.show` → the child's window has a window
-   number and the own-window capture matches the painter's frame → real
+2. three rounds of: `surface.show` → the court-only file names a window
+   number and a capture verdict that matches the painter's frame → real
    input posted by the court through CoreGraphics at the window's screen
-   position (a click on the row of the page's link-free button and a scroll
-   of 240) is observed through CLI (`target.inspect` revision and
-   `scroll_y`, `target.wait`) and through the CDP session (frame tree
-   unchanged, same frame id) → `surface.hide` → the child exits by protocol
+   position (a click on the row of the page's button and a scroll of 240),
+   after which the court sends no control request at all and waits, with a
+   deadline, for the host's `input_applied` event in the court-only log;
+   only then does it read `target.inspect` (revision and `scroll_y`) and
+   the CDP frame tree (unchanged, same frame id) → `surface.hide` → the child exits by protocol
    and is reaped within the deadline, `owners.surfaces` is 0 objects and 0
    bytes, no descendant remains → headless script, wait and network fetch
    still run → the next `show` finds target, frame, generation, realm,
