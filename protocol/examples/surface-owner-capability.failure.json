@@ -1,0 +1,19 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.1",
+  "request_id": "req_surface_owner_1",
+  "ok": false,
+  "error": {
+    "code": "permission_denied",
+    "message": "a surface is never an owner; name the target, its session or its profile",
+    "retryable": false,
+    "scope": {
+      "kind": "surface",
+      "id": "surface_court_1"
+    },
+    "details": {
+      "reason": "surface_is_not_an_owner",
+      "operation": "target.snapshot"
+    }
+  }
+}

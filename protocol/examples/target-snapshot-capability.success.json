@@ -1,0 +1,32 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.1",
+  "request_id": "req_snapshot_cap_1",
+  "ok": true,
+  "result": {
+    "kind": "semantic_snapshot",
+    "target": "target_court_1",
+    "revision": 7,
+    "truncated": false,
+    "nodes": [
+      {
+        "reference": {
+          "target": "target_court_1",
+          "revision": 7,
+          "node": "node_heading_1"
+        },
+        "role": "heading",
+        "name": "Memory and Agent Court"
+      },
+      {
+        "reference": {
+          "target": "target_court_1",
+          "revision": 7,
+          "node": "node_button_1"
+        },
+        "role": "button",
+        "name": "Continue"
+      }
+    ]
+  }
+}

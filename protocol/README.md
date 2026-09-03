@@ -60,9 +60,9 @@ implements `profile.create`, `profile.list`, `profile.inspect`,
 `profile.policy.set`, `session.open`, `session.list`, `session.close`,
 `target.open`, `target.list`, `target.inspect`, `target.close`,
 `target.snapshot`, `target.act`, `target.wait`, `surface.show`, `surface.hide`,
-`memory.report`, and `memory.trim`. It explicitly rejects the remaining
-reserved operations:
-`session.inspect` and `target.screenshot`. A name outside this version
+`session.inspect` (identity, owned targets and surfaces, and the capability
+audit ledger), `memory.report`, and `memory.trim`. It explicitly rejects the
+remaining reserved operation `target.screenshot`. A name outside this version
 is `invalid_request`; a listed operation unavailable on the selected backend is
 `unsupported_operation`. Neither falls through to engine-specific behavior.
 
@@ -101,6 +101,34 @@ The proposed one-shot projection is
 success or failure envelope. The command is illustrative and does not exist
 yet. Its operation names and object IDs cannot diverge from this schema.
 
+## Capability attenuation (optional envelope field)
+
+A request may carry one optional `capability` object beside its six fixed
+fields. It is an attenuation of the caller's existing authority for that one
+request and never a grant: a request with a capability may do at most what
+the same request without one may do, the host keeps no grant store, and the
+profile/session/target ownership above stays the only authority. Requests
+without the field are unchanged, so the extension is compatible within
+`0.0.1`. A host that does not implement it answers `invalid_request`
+(`request fields differ`), a typed refusal rather than silent acceptance.
+
+| Field | Meaning | Refusal when violated |
+|---|---|---|
+| `owner` | `{kind, id}` naming an object on the operation's ownership chain: the target, its session, or its profile (for session operations the session or its profile; for profile operations the profile) | `permission_denied` with `details.reason` `surface_is_not_an_owner`, `kind_is_not_an_owner` (frame, realm) or `owner_not_on_chain` (any object off the chain, including one that does not exist) |
+| `scope` | the operations this attenuation allows; the request's operation must be listed | `permission_denied`, `operation_outside_scope` |
+| `budget.deadline_ms` | the request's `deadline_ms` may not exceed it | `permission_denied`, `deadline_exceeds_budget` |
+| `budget.result_bytes` | a snapshot's `max_bytes` may not exceed it and no result may be larger | `permission_denied`, `result_budget_exceeded` before execution; `resource_limit` if the produced result is larger |
+| `audit` | `actor` (`[a-z0-9][a-z0-9_.-]{0,63}`) and a bounded `reason`, recorded with the decision in the host's bounded audit ledger | shape errors are `invalid_request` |
+
+Operations without an owned object (`profile.create`, `profile.list`,
+`session.list`, `target.list`, `memory.report`, `memory.trim`) cannot be
+attenuated: a capability on them is `permission_denied` with
+`operation_has_no_owner`. The synthetic host exposes the last 64 audit
+records of a session through `session.inspect`; a record is diagnostics, not
+authority. Examples: `target-snapshot-capability.*` (session-owned snapshot)
+and `surface-owner-capability.*` (a request that locates the page only by its
+surface and is refused).
+
 ## CDP projection and explicit losses
 
 The checked machine-readable form is
@@ -132,15 +160,17 @@ is deliberately unencrypted, so it accepts court values only—not credentials.
 ## Checked examples
 
 The examples demonstrate a snapshot request and its successful revision-scoped
-result, plus an action request and its stale-node failure. Run:
+result, an action request and its stale-node failure, a session-attenuated
+snapshot, and a surface-located request refused as `permission_denied`. Run:
 
 ```sh
 python3 protocol/check_contract.py
 ```
 
 The dependency-free checker validates byte/depth/collection bounds, envelope
-shape, typed IDs, exact success/failure exclusivity, echoed request identity,
-and node-reference revision consistency. It also executes negative self-tests.
+shape, typed IDs, the optional capability shape, exact success/failure
+exclusivity, echoed request identity, and node-reference revision
+consistency. It also executes negative self-tests.
 It complements the JSON Schema; it is not a general-purpose JSON Schema
 implementation.
 

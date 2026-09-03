@@ -95,16 +95,38 @@ def object_id(kind, value):
     require(isinstance(value, str) and OBJECT_ID[kind].fullmatch(value), f"invalid {kind} ID")
 
 
+ACTOR = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,63}$")
+OWNER_KINDS = {"profile", "session", "target"}
+
+
+def validate_capability(capability):
+    """The optional attenuation envelope: shape only; the host decides authority."""
+    require(isinstance(capability, dict), "capability is not an object")
+    require(set(capability) == {"owner", "scope", "budget", "audit"}, "capability fields differ")
+    validate_scope(capability["owner"])
+    scope = capability["scope"]
+    require(isinstance(scope, list) and 1 <= len(scope) <= len(OPERATIONS), "capability scope differs")
+    require(len(set(scope)) == len(scope) and set(scope) <= OPERATIONS, "capability scope lists unknown operations")
+    budget = capability["budget"]
+    require(isinstance(budget, dict) and set(budget) == {"result_bytes", "deadline_ms"}, "capability budget differs")
+    require(type(budget["result_bytes"]) is int and 1 <= budget["result_bytes"] <= MAX_RESPONSE_BYTES, "capability result budget differs")
+    require(type(budget["deadline_ms"]) is int and 1 <= budget["deadline_ms"] <= 120_000, "capability deadline budget differs")
+    audit = capability["audit"]
+    require(isinstance(audit, dict) and set(audit) == {"actor", "reason"}, "capability audit differs")
+    require(isinstance(audit["actor"], str) and ACTOR.fullmatch(audit["actor"]), "capability actor differs")
+    require(isinstance(audit["reason"], str) and 1 <= len(audit["reason"]) <= 128, "capability reason differs")
+
+
 def validate_request(document):
     common(document)
-    require(
-        set(document) == {"protocol", "version", "request_id", "deadline_ms", "operation", "arguments"},
-        "request fields differ",
-    )
+    fields = {"protocol", "version", "request_id", "deadline_ms", "operation", "arguments"}
+    require(fields <= set(document) <= fields | {"capability"}, "request fields differ")
     deadline = document["deadline_ms"]
     require(type(deadline) is int and 1 <= deadline <= 120_000, "deadline differs")
     require(document["operation"] in OPERATIONS, "operation differs")
     require(isinstance(document["arguments"], dict), "arguments is not an object")
+    if "capability" in document:
+        validate_capability(document["capability"])
     encoded = json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode()
     require(len(encoded) <= MAX_REQUEST_BYTES, "request exceeds byte bound")
     if document["operation"].startswith("target."):
@@ -237,6 +259,21 @@ def main():
     validate_response(failure)
     require(request["request_id"] == success["request_id"], "response does not echo request ID")
     require(stale_request["request_id"] == failure["request_id"], "failure does not echo request ID")
+    capability_request = load_bounded(examples / "target-snapshot-capability.request.json", MAX_REQUEST_BYTES)
+    capability_success = load_bounded(examples / "target-snapshot-capability.success.json", MAX_RESPONSE_BYTES)
+    surface_request = load_bounded(examples / "surface-owner-capability.request.json", MAX_REQUEST_BYTES)
+    surface_failure = load_bounded(examples / "surface-owner-capability.failure.json", MAX_RESPONSE_BYTES)
+    validate_request(capability_request)
+    validate_request(surface_request)
+    validate_response(capability_success)
+    validate_response(surface_failure)
+    require(capability_request["request_id"] == capability_success["request_id"], "capability success does not echo request ID")
+    require(surface_request["request_id"] == surface_failure["request_id"], "capability failure does not echo request ID")
+    require(capability_request["operation"] in capability_request["capability"]["scope"], "capability example is outside its own scope")
+    require(capability_request["deadline_ms"] <= capability_request["capability"]["budget"]["deadline_ms"], "capability example exceeds its deadline budget")
+    require(surface_request["capability"]["owner"]["kind"] not in OWNER_KINDS, "surface example must name a non-owner")
+    require(surface_failure["error"]["code"] == "permission_denied", "surface example must be a typed refusal")
+    require(surface_failure["error"]["details"]["reason"] == "surface_is_not_an_owner", "surface refusal reason differs")
 
     wrong_revision = json.loads(json.dumps(success))
     wrong_revision["result"]["nodes"][0]["reference"]["revision"] = 6
@@ -275,7 +312,22 @@ def main():
         "arguments": {"items": [None] * (MAX_COLLECTION + 1)},
     }
     expect_invalid(too_many, validate_request)
-    print("control 0.0.1: vocabulary mapping, 4 examples, and 7 negative cases passed")
+    missing_audit = json.loads(json.dumps(capability_request))
+    del missing_audit["capability"]["audit"]
+    expect_invalid(missing_audit, validate_request)
+    unknown_scope = json.loads(json.dumps(capability_request))
+    unknown_scope["capability"]["scope"].append("engine.do_anything")
+    expect_invalid(unknown_scope, validate_request)
+    zero_budget = json.loads(json.dumps(capability_request))
+    zero_budget["capability"]["budget"]["result_bytes"] = 0
+    expect_invalid(zero_budget, validate_request)
+    node_owner = json.loads(json.dumps(capability_request))
+    node_owner["capability"]["owner"] = {"kind": "node", "id": "node_button_1"}
+    expect_invalid(node_owner, validate_request)
+    extra_field = json.loads(json.dumps(capability_request))
+    extra_field["capability"]["grant"] = "everything"
+    expect_invalid(extra_field, validate_request)
+    print("control 0.0.1: vocabulary mapping, 8 examples, and 12 negative cases passed")
 
 
 if __name__ == "__main__":
