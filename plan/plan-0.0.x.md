@@ -137,6 +137,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── single-writer ownership; multiple clients attach through the owning process
 │   ├── profile-specific budgets and diagnostics
 │   ├── [x] synthetic G4: two persistent + one ephemeral isolate storage/policy/locks
+│   ├── [~] native-dom slice: keychain-envelope sealed store · RFC 6265 subset jar · localStorage · write-through with fault court (80/82; total-live criterion unmet)
 │   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
@@ -208,7 +209,7 @@ flowchart LR
     end
 
     subgraph ID["Profile Cabinet [P6]"]
-        PP["persistent profile [G4 synthetic]<br/>named · locked · bounded"]
+        PP["persistent profile [G4 synthetic · native-dom keychain slice]<br/>named · locked · sealed · bounded"]
         EP["ephemeral profile [G4 synthetic]<br/>isolated · discardable"]
         CP["later COW/readonly<br/>task branch"]
     end
@@ -994,6 +995,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   responses; adapter counts equal the client's sessions) are recorded in the
   matrix. `target.page()`, Playwright and any other engine or client remain
   outside the claim, so D4 stays open; G1, G3, P6 and G6 stay open.
+- [~] The native route carries the first engine-backed profile slice, designed
+  and decided (D1–D6) before the code: a persistent profile is one sealed
+  record (XChaCha20-Poly1305, per-profile data key, identity-bound additional
+  data) whose master key lives only in the macOS Keychain with user
+  interaction disabled, failing closed as `unsupported_capability` when the
+  keychain is unavailable; cookies follow an RFC 6265 subset with `Domain`
+  equal to the request host only, no `Secure`/`SameSite=None` on the `http`
+  cell, and a volatile session jar shared by a profile's sessions in sequence;
+  `localStorage` is origin-keyed and budgeted; every committed mutation is
+  written through (temp, fsync, rename, directory fsync) and a failed commit
+  reports `internal`/`storage_commit_failed` and leaves the profile read-only.
+  The frozen court, run with fake values only and a feature-off baseline,
+  passes 80 of 82 under the default allocator and the arena: the store's
+  empty-footprint and RSS deltas, the per-profile accounting, isolation,
+  matrix negatives, HttpOnly, session-cookie lifetime, fault injection,
+  budgets, at-rest absence of the value, permissions, restart, corrupt
+  sibling and locking all hold; the "well below Lightpanda" total-live
+  criterion (frozen as half of the single-server empty footprint) is unmet
+  at 6,111,688 / 5,849,592 bytes because realm and target-churn cost, not
+  the store, dominate the churned host. The cap does not move and the slice
+  is `narrow`, not `observed`; the journeys (27/27, 35/35) and the frame and
+  CDP courts (62/62, 58/58) stay green on the same binary. Second-platform
+  key source, `https`, cache, history and permissions remain P6 work; G1,
+  G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -1033,7 +1058,9 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    presentation resources remain open.
 5. [x] Prove persistent and ephemeral profile isolation with a deliberately
    small synthetic storage model; product/engine-backed profile breadth remains
-   P6 work.
+   P6 work. [~] The native route's first engine-backed slice (keychain
+   envelope, cookie jar, `localStorage`, write-through) passes its frozen
+   court except the total-live footprint criterion.
 6. [~] Run independent `labs/{techName}` spikes behind the established
    contracts concurrently where their hypotheses are independent, publish
    comparable memory and Agent-control evidence, and issue an explicit

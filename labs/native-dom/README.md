@@ -775,6 +775,130 @@ client through `Page.getFrameTree`" on this route only; it stays open for
 Playwright, for page-level APIs and for engine hosts other than this one.
 G1, G3, P6 and G6 stay open.
 
+### Engine-backed profiles (P6 slice: keychain envelope, cookie jar, localStorage)
+
+Hypothesis: the native host can own a bounded persistent profile store
+(cookies and `localStorage`) whose at-rest protection, cookie semantics and
+crash behaviour were decided before the code (D1–D6 in
+[`profile-design-0.0.1.md`](profile-design-0.0.1.md)), without moving the
+default allocator, the network policy or the pre-registered memory caps.
+
+Scope: `--profile-root DIR` enables the store. A persistent profile is a
+0700 directory holding one sealed record (`profile.v1.sealed`) and a
+`writer.lock`; the record is XChaCha20-Poly1305 with a per-profile random
+32-byte data key, a fresh 24-byte nonce per write, and additional data that
+binds the store format, the protocol tag and the canonical profile identity.
+The data key is wrapped by a master key that lives only in the macOS
+Keychain: generic password, service
+`minicon-surf.native-dom.profile-master-key`, account = the first 32 hex
+digits of SHA-256 of the canonical profile root, default keychain, no
+iCloud sync, user interaction disabled (`SecKeychainSetUserInteractionAllowed`
+false). A locked, denied or missing keychain makes persistent `profile.create`
+and `session.open` fail closed with `unsupported_capability`; ephemeral
+profiles keep working. Keys are zeroized on drop. Every committed mutation
+is written through: temp file, `fsync`, atomic rename, directory `fsync`; a
+failed commit rolls the working copy back, reports `internal` with
+`storage_commit_failed` to the caller, and leaves the profile read-only for
+the rest of the host lifetime. Cookies follow the RFC 6265 subset of the
+design's matrix: `Domain` only when it equals the request host (D2), no
+`Secure`/`SameSite=None` on this `http` cell (D3), session cookies in a
+volatile jar shared by the profile's sessions in sequence and never written
+(D4). Cookies are host-scoped, not port-scoped, as in RFC 6265. Each fetch
+carries the jar's matching cookies and stores every `Set-Cookie`;
+`document.cookie` and `localStorage` are mirrors seeded into the realm and
+drained after each script turn. `profile.storage.*` writes go to a control
+pseudo-host (`control`) and a control origin, never to a page's origin. One
+live session per profile (the 0.0.1 journey budget); eight sessions per
+host. `MINICON_SURF_PROFILE_STORE=envelope-keyfile-experiment` selects the
+B2 keyfile source for tests without a keychain; its receipts are labelled
+and never marked `observed`.
+
+Reproduction (the court starts its own hermetic server, uses only fake
+values such as `court-alpha-7f3a`, and never reads a real browser profile):
+
+```sh
+python3 labs/native-dom/profile-court.py \
+  --binary labs/native-dom/target/release/native-dom-control \
+  --receipt labs/native-dom/evidence/native-dom-control-0.0.2-profile.json
+```
+
+Evidence (`native-dom-control-0.0.2-profile` receipt, mode
+`envelope-keychain`, 80 of 82, the same 41 checks under the default
+allocator and the arena): the feature-off baseline is measured first; the
+store costs 294,912 / 278,528 bytes of empty footprint and 868,352 / 851,968
+bytes of empty RSS (caps 524,288 and 1,048,576); an empty persistent profile
+accounts 0 bytes (cap 65,536); each of `alpha`, `beta` and ephemeral
+`scratch` receives its own cookie and the echo endpoint sees only that
+cookie; `localStorage` is per profile and per origin; an `HttpOnly` cookie
+is sent and hidden from `document.cookie`; `Secure`, foreign `Domain`,
+`SameSite=None`, `__Host-` and `Partitioned` are refused on receipt and
+never sent (five rejections counted); `Max-Age=0` deletes; a session cookie
+set by session A is sent by session B after A closes; one page-driven
+persistent cookie is one record write of 910 bytes; with the profile
+directory made unwritable the page's write reports `internal` /
+`storage_commit_failed`, the record bytes are unchanged, the value is not
+readable and the profile stays read-only; a 4,097-byte cookie and the 33rd
+storage key are `resource_limit`; `profile.inspect` and `memory.report`
+expose counts and budgets and never a value; no file under the root
+contains the fake value; records and locks are 0600 in 0700 directories;
+after a restart with `beta`'s record overwritten, `alpha` keeps its cookie
+and storage, its session cookie is gone, `scratch` is gone, `beta` lists as
+unavailable and opens as `not_found`; a second host gets `profile_locked`
+until the owner closes. Footprint (bytes, default / arena): empty with the
+store 2,277,712 / 2,261,328; three profiles with three open targets
+5,521,864 / 5,538,296; with fixture data and budget negatives, after about
+twenty target open/close cycles, 6,111,688 / 5,849,592; after every close
+6,111,688 / 5,194,184; the restarted host holding the persisted `alpha` with
+one open target 4,211,048 / 3,604,864.
+
+The two failing checks are the frozen "live footprint stays well below the
+Lightpanda single-server empty footprint" criterion, which the court froze
+as "below half of 8,356,392": the churned host measures 6,111,688 (default)
+and 5,849,592 (arena). A separate probe attributes the number: a target
+costs about 1.0 MB for the first realm and about 0.43 MB for each further
+one on this fixture, with or without the store, and the default allocator
+keeps closed targets' memory (the retention already attributed above), so
+the excess is realm and churn cost rather than store cost. Per D6 the cap
+does not move; the slice is not marked `observed`.
+
+Court amendments after the freeze, all mechanism fixes recorded in the
+script: the cookie fixture decodes every percent-escape (the first version
+left `%3D` literal, so `Max-Age` and `Path` never reached the jar); the echo
+page's fetch settles during load, so the court reads the snapshot before
+waiting for a later revision; the write-amplification step uses a page whose
+response sets a cookie instead of a page that wrote nothing; the
+`profile.inspect` count follows the D4 step (four cookies, two persistent);
+the restarted host's footprint is recorded as a supplementary number, not a
+gate.
+
+Dependencies added for this slice (versions and registry checksums are
+pinned in `Cargo.lock`; security updates are the lab owner's responsibility
+and no automated advisory check runs in this repository yet, which is
+recorded as a gap; the release binary grows from 3,462,352 to
+3,764,000 bytes and the lock from 100 to 122 packages, four of which are
+Windows/WASI-only entries that do not compile here; recorded, not a memory
+gate):
+
+| crate | version | license | role |
+|---|---|---|---|
+| `chacha20poly1305` (+ `aead`, `chacha20`, `poly1305`, `cipher`, `universal-hash`, `inout`, `opaque-debug`, `subtle`) | 0.10.1 | Apache-2.0 OR MIT (`subtle` BSD-3-Clause) | XChaCha20-Poly1305 record and key wrapping |
+| `getrandom` (+ `rand_core`) | 0.2.17 | MIT OR Apache-2.0 | data keys, nonces, master key |
+| `sha2` | 0.10.9 | MIT OR Apache-2.0 | keychain account and identity binding |
+| `zeroize` | 1.9.0 | Apache-2.0 OR MIT | key material cleared on drop |
+| `fs2` | 0.4.3 | MIT/Apache-2.0 | `flock` writer lock |
+| `security-framework` (+ `security-framework-sys`, `core-foundation`, `core-foundation-sys`) | 3.7.0 | MIT OR Apache-2.0 | macOS Keychain generic password (macOS target only) |
+
+Gaps: macOS Keychain only (a second platform key source is a P6 gap); the
+`http` cell refuses `Secure` and `SameSite=None` as a cell limit, not a
+design limit; no public suffix list; no cache, history, downloads,
+permissions or readonly/COW profiles; the keychain item is created on first
+use by the current user with no access-control prompt and no ACL beyond the
+default; the D6 total-live criterion is unmet on the churned court host.
+
+Verdict: `narrow`. The store's own caps hold and every semantic check
+passes, but the frozen total-live criterion fails, so the slice is recorded
+as `failed` rather than `observed` and P6 stays open with G1, G3 and G6.
+
 ### Receipt provenance
 
 Each receipt records the SHA-256 of the host binary that produced it. The
@@ -786,7 +910,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-network-court` | the bounded-network slice (before the allocator experiments) | unchanged since; the arena knob did not exist |
 | `native-dom-control-0.0.2-retention-attribution-arena` | the arena commit (`4c4b519`, measured in `468b8a9`) | the later tail-trim reporting fix (`12de192`) changes no value in this receipt: no realm is alive at its trim stage, so `arena_released_bytes` was already zero |
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
-| `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree` | the host with the loopback CDP edge (frames, realms, link navigation, adapters) | the journeys were rerun on this build (27/27, 35/35 under both allocators) and both receipts carry its hash |
+| `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 
 ## Findings against product contracts
 
@@ -823,13 +947,15 @@ target by footprint. Every later slice is measured against this row.
 
 ## Exact limitations and next experiment
 
-- No layout, images, fonts, https, cookies, storage or real timers; scripts
-  run after parsing rather than at parse position; only inline and
-  same-origin external scripts run.
+- No layout, images, fonts, https or real timers; scripts run after parsing
+  rather than at parse position; only inline and same-origin external
+  scripts run. Cookies and `localStorage` exist only as the bounded profile
+  store above (`http` cell, macOS Keychain, no cache or history).
 - The DOM shim implements what the court fixtures and instrumentation use.
   It is not a Web-compatibility claim: unsupported selectors throw, and any
   page relying on layout, `XMLHttpRequest`, `localStorage` or timing fails
-  explicitly. Navigation is a link click on an `<a href>` only.
+  explicitly (`localStorage` exists only with `--profile-root`). Navigation
+  is a link click on an `<a href>` only.
 - One fixture set, one platform, summed RSS and physical footprint only.
 - Public-address negatives are refused before any connection, so they
   exercise policy rather than reachability; the `.invalid` negative depends
@@ -840,10 +966,11 @@ target by footprint. Every later slice is measured against this row.
   cost on this court, but both are macOS opt-in experiments and the default
   is unchanged until the arena has been measured on more workloads and a
   second platform.
-- The next slice must add a bounded persistent-profile store (cookies and
-  local storage) under the same journey and court, then `https` with pinned
-  roots; each passes only if the 27-item journey and the 35-item network
-  court stay green and the footprint court row stays below Lightpanda's
-  single server at one target. The arena's next steps are a second platform
+- The profile store's next steps are a decision on the unmet total-live
+  criterion (narrow the measurement to the store's increment, or reduce
+  realm and churn cost), a second platform key source, and `https` with
+  pinned roots; each passes only if the 27-item journey and the 35-item
+  network court stay green and the footprint court row stays below
+  Lightpanda's single server at one target. The arena's next steps are a second platform
   behind the same `Region` boundary, interior (not only tail) trimming, and
   a soak of many open/close cycles before it can be proposed as a default.

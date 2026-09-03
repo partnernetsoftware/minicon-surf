@@ -1,6 +1,6 @@
 # Native engine-backed profiles: design, threat model and frozen court (P6)
 
-Status: `decided` — the at-rest and semantics decisions D1–D6 below were
+Status: `implemented (court 80/82; D6 total-live criterion open)` — the at-rest and semantics decisions D1–D6 below were
 settled before the first line of storage code; this document and
 [`profile-court.py`](profile-court.py) are the pre-registered target, frozen
 in a commit before the implementation commit.
@@ -218,6 +218,20 @@ every file under the root; plaintext mode: recorded as experiment), and
 footprint at empty, live and post-close under the default allocator and the
 arena. Its receipt names the at-rest mode and cannot pass in plaintext mode
 with the status `observed`; it passes as `experiment-plaintext`.
+
+### 8a. Court amendments (post-freeze, mechanism only)
+
+Recorded in the script and in the lab README: the cookie fixture decodes
+every percent-escape (the frozen fixture URLs escape `=` as `%3D`); the
+echo page settles during load, so the court reads the snapshot before
+waiting for a later revision; the write-amplification step opens a page
+whose response sets a persistent cookie; the `profile.inspect` count
+follows step 4b (four cookies, two persistent); the restarted host's
+footprint is recorded as a supplementary number. No cap and no pass
+criterion changed. Outcome on the recorded run: 80 of 82; the "well below
+Lightpanda" criterion, frozen as below half of the single-server empty
+footprint, is unmet on both allocators (6,111,688 / 5,849,592 bytes on the
+churned host), so the receipt is `failed` and the slice is not `observed`.
 
 ## 9. Dependencies
 
