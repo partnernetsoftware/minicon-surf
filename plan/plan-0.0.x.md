@@ -129,6 +129,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── hide releases presentation resources while page execution continues
 │   ├── repeated hide/show preserves page · realm · profile · scroll · Agent target
 │   ├── [~] synthetic buffer court proves ownership/state mechanics, not a native surface
+│   ├── [~] macOS candidate court (direct Cocoa vs winit+softbuffer): real windows attach/detach with pixels read back, but AppKit keeps ~10 MB after hide plus a per-cycle residual; surface-process design recommended, pending ruling
 │   ├── hibernate is distinct: discard reconstructible state under memory pressure
 │   └── CLI, CDP and human input arbitrate focus and mutations deterministically
 ├── [P6] first-class profile system
@@ -1107,6 +1108,24 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   no value, cookie name or storage marker appears at rest; without a pinned
   root the persisted Secure cookie stays locked. G1, G3, P6 and G6 stay
   open.
+- [~] G3 native surface, design and measurement first (macOS only): the
+  probe criteria S1–S9, the candidate matrix and the court stages were
+  frozen before any probe; standalone probes for direct Cocoa (objc2) and
+  winit + softbuffer, with a plain-buffer control, ran one warm-up plus
+  seven runs of three show/hide rounds each over the complete process tree
+  (34 of 42). Both candidates show a real OS window with a window number,
+  read their own pixels back, keep the owner and backing at 0 → 1 → 0, stay
+  one process and hide within milliseconds, and both fail the post-hide
+  criteria: the first AppKit window costs about 10 MB of footprint and
+  13.6 MB of heap on the direct path (17 MB and 16.7 MB on winit) that
+  closing the window does not return, each further round leaves about
+  0.15 MB (Cocoa) or 1.3 MB (winit), and Metal and OpenGL are AppKit's own
+  link dependencies before any window exists. The direct Cocoa path is the
+  smaller one on every differing axis. Recommendation for ruling: a surface
+  process on the direct Cocoa path, spawned by show and ended by hide, so
+  the host's post-hide footprint is headless by construction; no surface is
+  merged into the native host. Wry/Tauri stay rejected on the X9 evidence.
+  G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready

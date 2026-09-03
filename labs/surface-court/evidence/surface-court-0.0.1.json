@@ -1,0 +1,3910 @@
+{
+ "amendments": [
+  "crate counts recomputed from the lock after the run where the run's cargo tree call returned nothing"
+ ],
+ "builds": {
+  "cocoa": {
+   "binary_bytes": 587680,
+   "binary_sha256": "2eba90d4adba9eef1d589beae2735f26d6b688330c45738f9d658f003ed05ce6",
+   "built": true,
+   "candidate": "cocoa",
+   "crate_list": [
+    "bitflags v2.13.1",
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "memchr v2.8.3",
+    "minicon-surf-surface-court v0.0.0",
+    "objc2 v0.6.4",
+    "objc2-app-kit v0.3.2",
+    "objc2-core-foundation v0.3.2",
+    "objc2-encode v4.1.0",
+    "objc2-foundation v0.3.2",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "zmij v1.0.23"
+   ],
+   "crates": 13,
+   "dynamic_libraries": [
+    "/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit",
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+    "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics",
+    "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib",
+    "/usr/lib/libobjc.A.dylib"
+   ],
+   "features": [
+    "cocoa"
+   ]
+  },
+  "plain": {
+   "binary_bytes": 554576,
+   "binary_sha256": "43b6953c419fdd69a60349840b382fa12a34873fa55c151571ae470ffcf64b77",
+   "built": true,
+   "candidate": "plain",
+   "crate_list": [
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "memchr v2.8.3",
+    "minicon-surf-surface-court v0.0.0",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "zmij v1.0.23"
+   ],
+   "crates": 7,
+   "dynamic_libraries": [
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib"
+   ],
+   "features": []
+  },
+  "winit-softbuffer": {
+   "binary_bytes": 1207952,
+   "binary_sha256": "53f2e1c2ab9252ad6a4985459a4e58cd776602d5aa2af4461a0834c58f455586",
+   "built": true,
+   "candidate": "winit-softbuffer",
+   "crate_list": [
+    "bitflags v1.3.2",
+    "bitflags v2.13.1",
+    "block2 v0.5.1",
+    "core-foundation v0.9.4",
+    "core-foundation-sys v0.8.7",
+    "core-graphics v0.23.2",
+    "core-graphics-types v0.1.3",
+    "cursor-icon v1.2.0",
+    "dispatch v0.2.0",
+    "dpi v0.1.2",
+    "foreign-types v0.5.0",
+    "foreign-types-macros v0.2.4",
+    "foreign-types-shared v0.3.1",
+    "itoa v1.0.18",
+    "libc v0.2.189",
+    "memchr v2.8.3",
+    "minicon-surf-surface-court v0.0.0",
+    "objc-sys v0.3.5",
+    "objc2 v0.5.2",
+    "objc2 v0.6.4",
+    "objc2-app-kit v0.2.2",
+    "objc2-app-kit v0.3.2",
+    "objc2-core-foundation v0.3.2",
+    "objc2-core-graphics v0.3.2",
+    "objc2-encode v4.1.0",
+    "objc2-foundation v0.2.2",
+    "objc2-foundation v0.3.2",
+    "objc2-quartz-core v0.3.2",
+    "pin-project-lite v0.2.17",
+    "proc-macro2 v1.0.107",
+    "quote v1.0.47",
+    "raw-window-handle v0.6.2",
+    "serde_core v1.0.229",
+    "serde_json v1.0.151",
+    "smol_str v0.2.2",
+    "softbuffer v0.4.8",
+    "syn v3.0.4",
+    "tracing v0.1.44",
+    "tracing-core v0.1.36",
+    "unicode-ident v1.0.24",
+    "winit v0.30.13",
+    "zmij v1.0.23"
+   ],
+   "crates": 42,
+   "dynamic_libraries": [
+    "/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit",
+    "/System/Library/Frameworks/ApplicationServices.framework/Versions/A/ApplicationServices",
+    "/System/Library/Frameworks/Carbon.framework/Versions/A/Carbon",
+    "/System/Library/Frameworks/ColorSync.framework/Versions/A/ColorSync",
+    "/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation",
+    "/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics",
+    "/System/Library/Frameworks/CoreServices.framework/Versions/A/CoreServices",
+    "/System/Library/Frameworks/CoreVideo.framework/Versions/A/CoreVideo",
+    "/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation",
+    "/System/Library/Frameworks/QuartzCore.framework/Versions/A/QuartzCore",
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libiconv.2.dylib",
+    "/usr/lib/libobjc.A.dylib"
+   ],
+   "features": [
+    "winit-softbuffer"
+   ]
+  }
+ },
+ "checks": [
+  {
+   "check": "[plain] run 0: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 1: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 2: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 3: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 4: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 5: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 6: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[plain] run 7: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 0: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 1: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 2: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 3: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 4: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 5: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 6: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] run 7: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 0: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 1: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 2: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 3: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 4: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 5: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 6: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] run 7: probe exits cleanly with no surface and no descendant",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] S1 surface owner and backing bytes go 0 \u2192 1 (256,000 bytes) \u2192 0 in every round",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] S2 post-hide footprint over headless, every round",
+   "detail": {
+    "per_run": [
+     [
+      9879648,
+      10158176,
+      10190944
+     ],
+     [
+      9781320,
+      10059848,
+      10076232
+     ],
+     [
+      10059848,
+      10616904,
+      10666056
+     ],
+     [
+      10010672,
+      10256432,
+      10289200
+     ],
+     [
+      10027056,
+      10305584,
+      10321968
+     ],
+     [
+      9715808,
+      9977952,
+      10010720
+     ],
+     [
+      9830496,
+      10092640,
+      10092640
+     ]
+    ],
+    "worst": 10666056
+   },
+   "passed": false
+  },
+  {
+   "check": "[cocoa] S3 no slope: post-hide round 3 minus round 1",
+   "detail": {
+    "per_run": [
+     311296,
+     294912,
+     606208,
+     278528,
+     294912,
+     294912,
+     262144
+    ],
+    "worst": 606208
+   },
+   "passed": false
+  },
+  {
+   "check": "[cocoa] S4 libmalloc in-use after hide over headless",
+   "detail": {
+    "worst": 13566048
+   },
+   "passed": false
+  },
+  {
+   "check": "[cocoa] S5 one process, no descendant at any stage",
+   "passed": true
+  },
+  {
+   "check": "[cocoa] S6 no Metal or OpenGL image loaded at any stage",
+   "detail": {
+    "headless": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "post_hide_1": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "post_hide_2": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "post_hide_3": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "shown_1": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "shown_2": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "shown_3": {
+     "Metal": true,
+     "OpenGL": true
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "[cocoa] S7 a real OS window with a window number is on screen while shown and gone after hide",
+   "detail": {
+    "on_screen": {
+     "headless": 0,
+     "post_hide_1": 0,
+     "post_hide_2": 0,
+     "post_hide_3": 0,
+     "shown_1": 1,
+     "shown_2": 1,
+     "shown_3": 1
+    },
+    "real_window": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[cocoa] S8 the own window's pixels match the pattern (or the OS refused the capture: recorded)",
+   "detail": {
+    "example": {
+     "captured": {
+      "height": 464,
+      "width": 640
+     },
+     "matches": 8,
+     "of": 8,
+     "ok": true,
+     "samples": [
+      {
+       "bar": 0,
+       "expected": [
+        235,
+        235,
+        235
+       ],
+       "got": [
+        237,
+        237,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 1,
+       "expected": [
+        235,
+        235,
+        16
+       ],
+       "got": [
+        237,
+        232,
+        12
+       ],
+       "ok": true
+      },
+      {
+       "bar": 2,
+       "expected": [
+        16,
+        235,
+        235
+       ],
+       "got": [
+        0,
+        234,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 3,
+       "expected": [
+        16,
+        235,
+        16
+       ],
+       "got": [
+        0,
+        230,
+        17
+       ],
+       "ok": true
+      },
+      {
+       "bar": 4,
+       "expected": [
+        235,
+        16,
+        235
+       ],
+       "got": [
+        239,
+        56,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 5,
+       "expected": [
+        235,
+        16,
+        16
+       ],
+       "got": [
+        239,
+        37,
+        17
+       ],
+       "ok": true
+      },
+      {
+       "bar": 6,
+       "expected": [
+        16,
+        16,
+        235
+       ],
+       "got": [
+        19,
+        47,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 7,
+       "expected": [
+        16,
+        16,
+        16
+       ],
+       "got": [
+        20,
+        20,
+        20
+       ],
+       "ok": true
+      }
+     ],
+     "verified": true
+    },
+    "of": 21,
+    "verified_rounds": 21
+   },
+   "passed": true
+  },
+  {
+   "check": "[cocoa] S9 show and hide within the 1,000 ms gate (200 ms target recorded)",
+   "detail": {
+    "hide_max": 1.36,
+    "hide_ms": 1,
+    "show_max": 52.27,
+    "show_ms": 9
+   },
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] S1 surface owner and backing bytes go 0 \u2192 1 (256,000 bytes) \u2192 0 in every round",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] S2 post-hide footprint over headless, every round",
+   "detail": {
+    "per_run": [
+     [
+      17350728,
+      21348424,
+      21364808
+     ],
+     [
+      16416840,
+      17186888,
+      19316808
+     ],
+     [
+      16334896,
+      16908336,
+      17858608
+     ],
+     [
+      16646240,
+      17530976,
+      21250144
+     ],
+     [
+      16924768,
+      17432672,
+      19546208
+     ],
+     [
+      18645064,
+      19136584,
+      19284040
+     ],
+     [
+      18743368,
+      21004360,
+      21348424
+     ]
+    ],
+    "worst": 21364808
+   },
+   "passed": false
+  },
+  {
+   "check": "[winit-softbuffer] S3 no slope: post-hide round 3 minus round 1",
+   "detail": {
+    "per_run": [
+     4014080,
+     2899968,
+     1523712,
+     4603904,
+     2621440,
+     638976,
+     2605056
+    ],
+    "worst": 4603904
+   },
+   "passed": false
+  },
+  {
+   "check": "[winit-softbuffer] S4 libmalloc in-use after hide over headless",
+   "detail": {
+    "worst": 16793824
+   },
+   "passed": false
+  },
+  {
+   "check": "[winit-softbuffer] S5 one process, no descendant at any stage",
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] S6 no Metal or OpenGL image loaded at any stage",
+   "detail": {
+    "headless": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "post_hide_1": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "post_hide_2": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "post_hide_3": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "shown_1": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "shown_2": {
+     "Metal": true,
+     "OpenGL": true
+    },
+    "shown_3": {
+     "Metal": true,
+     "OpenGL": true
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "[winit-softbuffer] S7 a real OS window with a window number is on screen while shown and gone after hide",
+   "detail": {
+    "on_screen": {
+     "headless": 0,
+     "post_hide_1": 0,
+     "post_hide_2": 0,
+     "post_hide_3": 0,
+     "shown_1": 1,
+     "shown_2": 1,
+     "shown_3": 1
+    },
+    "real_window": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] S8 the own window's pixels match the pattern (or the OS refused the capture: recorded)",
+   "detail": {
+    "example": {
+     "captured": {
+      "height": 464,
+      "width": 640
+     },
+     "matches": 8,
+     "of": 8,
+     "ok": true,
+     "samples": [
+      {
+       "bar": 0,
+       "expected": [
+        235,
+        235,
+        235
+       ],
+       "got": [
+        232,
+        232,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 1,
+       "expected": [
+        235,
+        235,
+        16
+       ],
+       "got": [
+        232,
+        232,
+        16
+       ],
+       "ok": true
+      },
+      {
+       "bar": 2,
+       "expected": [
+        16,
+        235,
+        235
+       ],
+       "got": [
+        22,
+        232,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 3,
+       "expected": [
+        16,
+        235,
+        16
+       ],
+       "got": [
+        24,
+        232,
+        16
+       ],
+       "ok": true
+      },
+      {
+       "bar": 4,
+       "expected": [
+        235,
+        16,
+        235
+       ],
+       "got": [
+        231,
+        19,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 5,
+       "expected": [
+        235,
+        16,
+        16
+       ],
+       "got": [
+        232,
+        16,
+        17
+       ],
+       "ok": true
+      },
+      {
+       "bar": 6,
+       "expected": [
+        16,
+        16,
+        235
+       ],
+       "got": [
+        14,
+        19,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 7,
+       "expected": [
+        16,
+        16,
+        16
+       ],
+       "got": [
+        17,
+        17,
+        17
+       ],
+       "ok": true
+      }
+     ],
+     "verified": true
+    },
+    "of": 21,
+    "verified_rounds": 21
+   },
+   "passed": true
+  },
+  {
+   "check": "[winit-softbuffer] S9 show and hide within the 1,000 ms gate (200 ms target recorded)",
+   "detail": {
+    "hide_max": 60.37,
+    "hide_ms": 52,
+    "show_max": 153.31,
+    "show_ms": 57
+   },
+   "passed": true
+  }
+ ],
+ "criteria": {
+  "s2_post_hide_over_headless_bytes": 262144,
+  "s3_slope_round3_minus_round1_bytes": 65536,
+  "s4_in_use_after_hide_over_headless_bytes": 65536,
+  "s9_show_hide_wall_ms_gate": 1000.0,
+  "s9_show_hide_wall_ms_target": 200.0
+ },
+ "design": "labs/native-dom/surface-design-0.0.1.md",
+ "limitations": [
+  "the window server, the GPU and any compositor memory live outside the probe's process tree and are not attributed; the WindowServer footprint delta is a system-wide diagnostic",
+  "the pattern is a colour-bar fixture read back from the own window only; no desktop content is captured",
+  "one platform, one window size, no input events"
+ ],
+ "passed": false,
+ "platform": "macOS only",
+ "repetitions": 7,
+ "results": {
+  "cocoa": {
+   "activation_policy": "accessory",
+   "candidate": "cocoa-objc2",
+   "capture": {
+    "example": {
+     "captured": {
+      "height": 464,
+      "width": 640
+     },
+     "matches": 8,
+     "of": 8,
+     "ok": true,
+     "samples": [
+      {
+       "bar": 0,
+       "expected": [
+        235,
+        235,
+        235
+       ],
+       "got": [
+        237,
+        237,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 1,
+       "expected": [
+        235,
+        235,
+        16
+       ],
+       "got": [
+        237,
+        232,
+        12
+       ],
+       "ok": true
+      },
+      {
+       "bar": 2,
+       "expected": [
+        16,
+        235,
+        235
+       ],
+       "got": [
+        0,
+        234,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 3,
+       "expected": [
+        16,
+        235,
+        16
+       ],
+       "got": [
+        0,
+        230,
+        17
+       ],
+       "ok": true
+      },
+      {
+       "bar": 4,
+       "expected": [
+        235,
+        16,
+        235
+       ],
+       "got": [
+        239,
+        56,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 5,
+       "expected": [
+        235,
+        16,
+        16
+       ],
+       "got": [
+        239,
+        37,
+        17
+       ],
+       "ok": true
+      },
+      {
+       "bar": 6,
+       "expected": [
+        16,
+        16,
+        235
+       ],
+       "got": [
+        19,
+        47,
+        237
+       ],
+       "ok": true
+      },
+      {
+       "bar": 7,
+       "expected": [
+        16,
+        16,
+        16
+       ],
+       "got": [
+        20,
+        20,
+        20
+       ],
+       "ok": true
+      }
+     ],
+     "verified": true
+    },
+    "of": 21,
+    "verified_rounds": 21
+   },
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "hide_ms": {
+    "maximum": 1.36,
+    "median": 1,
+    "minimum": 0.87,
+    "values": [
+     1.36,
+     1.05,
+     0.89,
+     1.33,
+     0.99,
+     0.91,
+     1.26,
+     1.02,
+     0.9,
+     1.21,
+     0.98,
+     0.9,
+     1.25,
+     1.01,
+     0.87,
+     1.21,
+     1.0,
+     0.93,
+     1.26,
+     1.0,
+     0.99
+    ]
+   },
+   "in_use_after_hide_over_headless": [
+    [
+     13361392,
+     13534800,
+     13553376
+    ],
+    [
+     13363760,
+     13540048,
+     13559440
+    ],
+    [
+     13375920,
+     13536592,
+     13566048
+    ],
+    [
+     13372640,
+     13522864,
+     13543280
+    ],
+    [
+     13370496,
+     13543920,
+     13562672
+    ],
+    [
+     13366784,
+     13524272,
+     13560240
+    ],
+    [
+     13378992,
+     13553200,
+     13565536
+    ]
+   ],
+   "owner_sequence_exact": true,
+   "post_hide_over_headless": [
+    [
+     9879648,
+     10158176,
+     10190944
+    ],
+    [
+     9781320,
+     10059848,
+     10076232
+    ],
+    [
+     10059848,
+     10616904,
+     10666056
+    ],
+    [
+     10010672,
+     10256432,
+     10289200
+    ],
+    [
+     10027056,
+     10305584,
+     10321968
+    ],
+    [
+     9715808,
+     9977952,
+     10010720
+    ],
+    [
+     9830496,
+     10092640,
+     10092640
+    ]
+   ],
+   "real_window": true,
+   "show_ms": {
+    "maximum": 52.27,
+    "median": 9,
+    "minimum": 7.48,
+    "values": [
+     47.3,
+     9.62,
+     10.84,
+     48.23,
+     9.57,
+     7.5,
+     52.27,
+     9.51,
+     7.48,
+     45.05,
+     9.99,
+     8.65,
+     47.4,
+     9.95,
+     8.25,
+     45.29,
+     12.74,
+     8.44,
+     49.7,
+     13.13,
+     7.7
+    ]
+   },
+   "slope_round3_minus_round1": [
+    311296,
+    294912,
+    606208,
+    278528,
+    294912,
+    294912,
+    262144
+   ],
+   "stages": {
+    "headless": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 601
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 50331648,
+      "median": 41943040,
+      "minimum": 33554432,
+      "values": [
+       37748736,
+       37748736,
+       41943040,
+       50331648,
+       50331648,
+       50331648,
+       33554432
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 1495200,
+      "median": 1485168,
+      "minimum": 1477536,
+      "values": [
+       1494768,
+       1495200,
+       1477744,
+       1482608,
+       1485168,
+       1495072,
+       1477536
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 6800008,
+      "median": 6652528,
+      "minimum": 6488664,
+      "values": [
+       6488664,
+       6652528,
+       6554224,
+       6668936,
+       6800008,
+       6718040,
+       6505048
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 28622848,
+      "median": 28491776,
+      "minimum": 28344320,
+      "values": [
+       28344320,
+       28491776,
+       28393472,
+       28491776,
+       28622848,
+       28573696,
+       28360704
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_1": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 636
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 54525952,
+      "values": [
+       58720256,
+       58720256,
+       71303168,
+       67108864,
+       67108864,
+       71303168,
+       54525952
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 14861856,
+      "median": 14856160,
+      "minimum": 14853664,
+      "values": [
+       14856160,
+       14858960,
+       14853664,
+       14855248,
+       14855664,
+       14861856,
+       14856528
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 16827064,
+      "median": 16433848,
+      "minimum": 16335544,
+      "values": [
+       16368312,
+       16433848,
+       16614072,
+       16679608,
+       16827064,
+       16433848,
+       16335544
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 53362688,
+      "median": 52969472,
+      "minimum": 52871168,
+      "values": [
+       52903936,
+       52969472,
+       53149696,
+       53215232,
+       53362688,
+       52969472,
+       52871168
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_2": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 636
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 54525952,
+      "values": [
+       58720256,
+       58720256,
+       71303168,
+       67108864,
+       67108864,
+       71303168,
+       54525952
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 15035248,
+      "median": 15029088,
+      "minimum": 15005472,
+      "values": [
+       15029568,
+       15035248,
+       15014336,
+       15005472,
+       15029088,
+       15019344,
+       15030736
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 17171128,
+      "median": 16712376,
+      "minimum": 16597688,
+      "values": [
+       16646840,
+       16712376,
+       17171128,
+       16925368,
+       17105592,
+       16695992,
+       16597688
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 53706752,
+      "median": 53248000,
+      "minimum": 53133312,
+      "values": [
+       53182464,
+       53248000,
+       53706752,
+       53460992,
+       53641216,
+       53231616,
+       53133312
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_3": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 636
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 54525952,
+      "values": [
+       58720256,
+       58720256,
+       71303168,
+       67108864,
+       67108864,
+       71303168,
+       54525952
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 15055312,
+      "median": 15047840,
+      "minimum": 15025888,
+      "values": [
+       15048144,
+       15054640,
+       15043792,
+       15025888,
+       15047840,
+       15055312,
+       15043072
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 17220280,
+      "median": 16728760,
+      "minimum": 16597688,
+      "values": [
+       16679608,
+       16728760,
+       17220280,
+       16958136,
+       17121976,
+       16728760,
+       16597688
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 53755904,
+      "median": 53264384,
+      "minimum": 53133312,
+      "values": [
+       53215232,
+       53264384,
+       53755904,
+       53493760,
+       53657600,
+       53264384,
+       53133312
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "shown_1": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 615
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 62914560,
+      "minimum": 54525952,
+      "values": [
+       58720256,
+       58720256,
+       67108864,
+       67108864,
+       62914560,
+       71303168,
+       54525952
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 15451088,
+      "median": 15445360,
+      "minimum": 15442592,
+      "values": [
+       15445360,
+       15448160,
+       15442592,
+       15444624,
+       15444592,
+       15451088,
+       15445520
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 16974520,
+      "median": 16859832,
+      "minimum": 16745144,
+      "values": [
+       16794296,
+       16859832,
+       16761528,
+       16876216,
+       16974520,
+       16859832,
+       16745144
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 52592640,
+      "median": 52477952,
+      "minimum": 52363264,
+      "values": [
+       52412416,
+       52477952,
+       52379648,
+       52494336,
+       52592640,
+       52477952,
+       52363264
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "shown_2": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 636
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 54525952,
+      "values": [
+       58720256,
+       58720256,
+       71303168,
+       67108864,
+       67108864,
+       71303168,
+       54525952
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 15603872,
+      "median": 15588032,
+      "minimum": 15587280,
+      "values": [
+       15588032,
+       15593440,
+       15587616,
+       15587360,
+       15587280,
+       15592992,
+       15603872
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 17760952,
+      "median": 17285816,
+      "minimum": 17187512,
+      "values": [
+       17203896,
+       17269432,
+       17760952,
+       17515192,
+       17679032,
+       17285816,
+       17187512
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 54263808,
+      "median": 53788672,
+      "minimum": 53690368,
+      "values": [
+       53706752,
+       53772288,
+       54263808,
+       54018048,
+       54181888,
+       53788672,
+       53690368
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "shown_3": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 636
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 54525952,
+      "values": [
+       58720256,
+       58720256,
+       71303168,
+       67108864,
+       67108864,
+       71303168,
+       54525952
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 15641296,
+      "median": 15633376,
+      "minimum": 15610992,
+      "values": [
+       15633376,
+       15639872,
+       15619472,
+       15610992,
+       15633456,
+       15641296,
+       15615104
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 17793720,
+      "median": 17318584,
+      "minimum": 17187512,
+      "values": [
+       17269432,
+       17318584,
+       17793720,
+       17547960,
+       17711800,
+       17302200,
+       17187512
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 54296576,
+      "median": 53821440,
+      "minimum": 53690368,
+      "values": [
+       53772288,
+       53821440,
+       54296576,
+       54050816,
+       54214656,
+       53805056,
+       53690368
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 311,
+     "median": 308,
+     "minimum": 297,
+     "values": [
+      306,
+      306,
+      308,
+      308,
+      308,
+      297,
+      311
+     ]
+    },
+    "tree_peak": {
+     "maximum": 17859256,
+     "median": 17384120,
+     "minimum": 17253048,
+     "values": [
+      17334968,
+      17384120,
+      17859256,
+      17613496,
+      17777336,
+      17367736,
+      17253048
+     ]
+    }
+   },
+   "windows_on_screen_exact": true
+  },
+  "plain": {
+   "activation_policy": null,
+   "candidate": "plain-buffer",
+   "capture": {
+    "example": {
+     "ok": true,
+     "reason": "no window in the plain control",
+     "verified": false
+    },
+    "of": 21,
+    "verified_rounds": 0
+   },
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "hide_ms": {
+    "maximum": 0.0,
+    "median": 0,
+    "minimum": 0.0,
+    "values": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   },
+   "in_use_after_hide_over_headless": [
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0
+    ]
+   ],
+   "owner_sequence_exact": true,
+   "post_hide_over_headless": [
+    [
+     360448,
+     393240,
+     393240
+    ],
+    [
+     344064,
+     622592,
+     655384
+    ],
+    [
+     344064,
+     622592,
+     688152
+    ],
+    [
+     360448,
+     393240,
+     409624
+    ],
+    [
+     344064,
+     376856,
+     393240
+    ],
+    [
+     360448,
+     393240,
+     409624
+    ],
+    [
+     360448,
+     638976,
+     704536
+    ]
+   ],
+   "real_window": false,
+   "show_ms": {
+    "maximum": 0.03,
+    "median": 0,
+    "minimum": 0.01,
+    "values": [
+     0.02,
+     0.01,
+     0.01,
+     0.02,
+     0.02,
+     0.01,
+     0.02,
+     0.03,
+     0.01,
+     0.02,
+     0.01,
+     0.01,
+     0.02,
+     0.01,
+     0.01,
+     0.02,
+     0.01,
+     0.01,
+     0.02,
+     0.03,
+     0.01
+    ]
+   },
+   "slope_round3_minus_round1": [
+    32792,
+    311320,
+    344088,
+    49176,
+    49176,
+    49176,
+    344088
+   ],
+   "stages": {
+    "headless": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 16777216,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 283856,
+      "median": 283856,
+      "minimum": 283856,
+      "values": [
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1343800,
+      "median": 1343800,
+      "minimum": 1343800,
+      "values": [
+       1343800,
+       1343800,
+       1343800,
+       1343800,
+       1343800,
+       1343800,
+       1343800
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2015232,
+      "median": 2015232,
+      "minimum": 2015232,
+      "values": [
+       2015232,
+       2015232,
+       2015232,
+       2015232,
+       2015232,
+       2015232,
+       2015232
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_1": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 20971520,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       20971520
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 283856,
+      "median": 283856,
+      "minimum": 283856,
+      "values": [
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1704248,
+      "median": 1704248,
+      "minimum": 1687864,
+      "values": [
+       1704248,
+       1687864,
+       1687864,
+       1704248,
+       1687864,
+       1704248,
+       1704248
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2392064,
+      "median": 2392064,
+      "minimum": 2375680,
+      "values": [
+       2392064,
+       2375680,
+       2375680,
+       2392064,
+       2375680,
+       2392064,
+       2392064
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_2": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 25165824,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       20971520,
+       20971520,
+       16777216,
+       16777216,
+       16777216,
+       25165824
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 283856,
+      "median": 283856,
+      "minimum": 283856,
+      "values": [
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1982776,
+      "median": 1737040,
+      "minimum": 1720656,
+      "values": [
+       1737040,
+       1966392,
+       1966392,
+       1737040,
+       1720656,
+       1737040,
+       1982776
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2670592,
+      "median": 2408448,
+      "minimum": 2392064,
+      "values": [
+       2408448,
+       2654208,
+       2654208,
+       2408448,
+       2392064,
+       2408448,
+       2670592
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_3": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       20971520,
+       25165824,
+       16777216,
+       16777216,
+       16777216,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 283856,
+      "median": 283856,
+      "minimum": 283856,
+      "values": [
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856,
+       283856
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 2048336,
+      "median": 1753424,
+      "minimum": 1737040,
+      "values": [
+       1737040,
+       1999184,
+       2031952,
+       1753424,
+       1737040,
+       1753424,
+       2048336
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2719744,
+      "median": 2424832,
+      "minimum": 2408448,
+      "values": [
+       2408448,
+       2670592,
+       2703360,
+       2424832,
+       2408448,
+       2424832,
+       2719744
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "shown_1": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 20971520,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       16777216,
+       20971520
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 546000,
+      "median": 546000,
+      "minimum": 546000,
+      "values": [
+       546000,
+       546000,
+       546000,
+       546000,
+       546000,
+       546000,
+       546000
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1704248,
+      "median": 1704248,
+      "minimum": 1687864,
+      "values": [
+       1704248,
+       1687864,
+       1687864,
+       1704248,
+       1687864,
+       1704248,
+       1704248
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2392064,
+      "median": 2392064,
+      "minimum": 2375680,
+      "values": [
+       2392064,
+       2375680,
+       2375680,
+       2392064,
+       2375680,
+       2392064,
+       2392064
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "shown_2": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 25165824,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       20971520,
+       20971520,
+       16777216,
+       16777216,
+       16777216,
+       25165824
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 546000,
+      "median": 546000,
+      "minimum": 546000,
+      "values": [
+       546000,
+       546000,
+       546000,
+       546000,
+       546000,
+       546000,
+       546000
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 1982776,
+      "median": 1737040,
+      "minimum": 1720656,
+      "values": [
+       1737040,
+       1966392,
+       1966392,
+       1737040,
+       1720656,
+       1737040,
+       1982776
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2670592,
+      "median": 2408448,
+      "minimum": 2392064,
+      "values": [
+       2408448,
+       2654208,
+       2654208,
+       2408448,
+       2392064,
+       2408448,
+       2670592
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "shown_3": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": false,
+      "CoreGraphics": false,
+      "Metal": false,
+      "OpenGL": false,
+      "QuartzCore": false,
+      "SkyLight": false,
+      "total": 47
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 29360128,
+      "median": 16777216,
+      "minimum": 16777216,
+      "values": [
+       16777216,
+       20971520,
+       20971520,
+       16777216,
+       16777216,
+       16777216,
+       29360128
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 546000,
+      "median": 546000,
+      "minimum": 546000,
+      "values": [
+       546000,
+       546000,
+       546000,
+       546000,
+       546000,
+       546000,
+       546000
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 2048336,
+      "median": 1737040,
+      "minimum": 1720656,
+      "values": [
+       1737040,
+       1999184,
+       1999184,
+       1737040,
+       1720656,
+       1737040,
+       2048336
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 2719744,
+      "median": 2408448,
+      "minimum": 2392064,
+      "values": [
+       2408448,
+       2670592,
+       2670592,
+       2408448,
+       2392064,
+       2408448,
+       2719744
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 287,
+     "median": 281,
+     "minimum": 258,
+     "values": [
+      279,
+      287,
+      281,
+      258,
+      277,
+      286,
+      286
+     ]
+    },
+    "tree_peak": {
+     "maximum": 2048336,
+     "median": 1753424,
+     "minimum": 1737040,
+     "values": [
+      1737040,
+      1999184,
+      2031952,
+      1753424,
+      1737040,
+      1753424,
+      2048336
+     ]
+    }
+   },
+   "windows_on_screen_exact": false
+  },
+  "winit-softbuffer": {
+   "activation_policy": "accessory",
+   "candidate": "winit-softbuffer",
+   "capture": {
+    "example": {
+     "captured": {
+      "height": 464,
+      "width": 640
+     },
+     "matches": 8,
+     "of": 8,
+     "ok": true,
+     "samples": [
+      {
+       "bar": 0,
+       "expected": [
+        235,
+        235,
+        235
+       ],
+       "got": [
+        232,
+        232,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 1,
+       "expected": [
+        235,
+        235,
+        16
+       ],
+       "got": [
+        232,
+        232,
+        16
+       ],
+       "ok": true
+      },
+      {
+       "bar": 2,
+       "expected": [
+        16,
+        235,
+        235
+       ],
+       "got": [
+        22,
+        232,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 3,
+       "expected": [
+        16,
+        235,
+        16
+       ],
+       "got": [
+        24,
+        232,
+        16
+       ],
+       "ok": true
+      },
+      {
+       "bar": 4,
+       "expected": [
+        235,
+        16,
+        235
+       ],
+       "got": [
+        231,
+        19,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 5,
+       "expected": [
+        235,
+        16,
+        16
+       ],
+       "got": [
+        232,
+        16,
+        17
+       ],
+       "ok": true
+      },
+      {
+       "bar": 6,
+       "expected": [
+        16,
+        16,
+        235
+       ],
+       "got": [
+        14,
+        19,
+        232
+       ],
+       "ok": true
+      },
+      {
+       "bar": 7,
+       "expected": [
+        16,
+        16,
+        16
+       ],
+       "got": [
+        17,
+        17,
+        17
+       ],
+       "ok": true
+      }
+     ],
+     "verified": true
+    },
+    "of": 21,
+    "verified_rounds": 21
+   },
+   "exit_codes": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "hide_ms": {
+    "maximum": 60.37,
+    "median": 52,
+    "minimum": 45.54,
+    "values": [
+     53.24,
+     50.35,
+     50.75,
+     53.28,
+     53.02,
+     51.48,
+     52.66,
+     53.52,
+     53.74,
+     46.39,
+     49.28,
+     49.99,
+     60.37,
+     52.53,
+     51.24,
+     60.17,
+     50.3,
+     53.09,
+     45.54,
+     51.24,
+     53.72
+    ]
+   },
+   "in_use_after_hide_over_headless": [
+    [
+     16639392,
+     16500688,
+     16793824
+    ],
+    [
+     16330464,
+     16690176,
+     16700624
+    ],
+    [
+     16342592,
+     16364320,
+     16246992
+    ],
+    [
+     16499104,
+     16597536,
+     16519184
+    ],
+    [
+     16720560,
+     16603104,
+     16566816
+    ],
+    [
+     16490224,
+     16473568,
+     16742672
+    ],
+    [
+     16604608,
+     16530528,
+     16664560
+    ]
+   ],
+   "owner_sequence_exact": true,
+   "post_hide_over_headless": [
+    [
+     17350728,
+     21348424,
+     21364808
+    ],
+    [
+     16416840,
+     17186888,
+     19316808
+    ],
+    [
+     16334896,
+     16908336,
+     17858608
+    ],
+    [
+     16646240,
+     17530976,
+     21250144
+    ],
+    [
+     16924768,
+     17432672,
+     19546208
+    ],
+    [
+     18645064,
+     19136584,
+     19284040
+    ],
+    [
+     18743368,
+     21004360,
+     21348424
+    ]
+   ],
+   "real_window": true,
+   "show_ms": {
+    "maximum": 153.31,
+    "median": 57,
+    "minimum": 53.37,
+    "values": [
+     77.95,
+     54.42,
+     56.47,
+     77.21,
+     55.06,
+     57.8,
+     78.77,
+     61.54,
+     55.19,
+     106.27,
+     56.34,
+     55.24,
+     153.31,
+     53.99,
+     53.38,
+     151.54,
+     53.37,
+     61.51,
+     77.84,
+     57.55,
+     57.14
+    ]
+   },
+   "slope_round3_minus_round1": [
+    4014080,
+    2899968,
+    1523712,
+    4603904,
+    2621440,
+    638976,
+    2605056
+   ],
+   "stages": {
+    "headless": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 612
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 41943040,
+      "median": 33554432,
+      "minimum": 29360128,
+      "values": [
+       29360128,
+       37748736,
+       41943040,
+       29360128,
+       33554432,
+       37748736,
+       33554432
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 1492896,
+      "median": 1458784,
+      "minimum": 1453872,
+      "values": [
+       1453872,
+       1458784,
+       1461216,
+       1456288,
+       1456288,
+       1492896,
+       1461280
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 6800008,
+      "median": 6619760,
+      "minimum": 6570608,
+      "values": [
+       6570608,
+       6652528,
+       6800008,
+       6586968,
+       6603352,
+       6652528,
+       6619760
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 28884992,
+      "median": 28721152,
+      "minimum": 28672000,
+      "values": [
+       28672000,
+       28753920,
+       28884992,
+       28704768,
+       28721152,
+       28753920,
+       28721152
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_1": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 648
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 67108864,
+      "median": 67108864,
+      "minimum": 62914560,
+      "values": [
+       67108864,
+       62914560,
+       67108864,
+       67108864,
+       62914560,
+       67108864,
+       67108864
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 18176848,
+      "median": 17983120,
+      "minimum": 17789248,
+      "values": [
+       18093264,
+       17789248,
+       17803808,
+       17955392,
+       18176848,
+       17983120,
+       18065888
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 25363128,
+      "median": 23528120,
+      "minimum": 23069368,
+      "values": [
+       23921336,
+       23069368,
+       23134904,
+       23233208,
+       23528120,
+       25297592,
+       25363128
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 62930944,
+      "median": 61095936,
+      "minimum": 60637184,
+      "values": [
+       61489152,
+       60637184,
+       60702720,
+       60801024,
+       61095936,
+       62865408,
+       62930944
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_2": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 648
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 62914560,
+      "values": [
+       71303168,
+       62914560,
+       67108864,
+       67108864,
+       62914560,
+       67108864,
+       71303168
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 18148960,
+      "median": 17991808,
+      "minimum": 17825536,
+      "values": [
+       17954560,
+       18148960,
+       17825536,
+       18053824,
+       18059392,
+       17966464,
+       17991808
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 27919032,
+      "median": 24117944,
+      "minimum": 23708344,
+      "values": [
+       27919032,
+       23839416,
+       23708344,
+       24117944,
+       24036024,
+       25789112,
+       27624120
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 65486848,
+      "median": 61685760,
+      "minimum": 61276160,
+      "values": [
+       65486848,
+       61407232,
+       61276160,
+       61685760,
+       61603840,
+       63356928,
+       65191936
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "post_hide_3": {
+     "backing_bytes": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 648
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 67108864,
+      "values": [
+       71303168,
+       67108864,
+       67108864,
+       67108864,
+       67108864,
+       67108864,
+       71303168
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 18247696,
+      "median": 18125840,
+      "minimum": 17708208,
+      "values": [
+       18247696,
+       18159408,
+       17708208,
+       17975472,
+       18023104,
+       18235568,
+       18125840
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 27968184,
+      "median": 26149560,
+      "minimum": 24658616,
+      "values": [
+       27935416,
+       25969336,
+       24658616,
+       27837112,
+       26149560,
+       25936568,
+       27968184
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 65536000,
+      "median": 63717376,
+      "minimum": 62226432,
+      "values": [
+       65503232,
+       63537152,
+       62226432,
+       65404928,
+       63717376,
+       63504384,
+       65536000
+      ]
+     },
+     "surfaces": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 0,
+      "median": 0,
+      "minimum": 0,
+      "values": [
+       0,
+       0,
+       0,
+       0,
+       0,
+       0,
+       0
+      ]
+     }
+    },
+    "shown_1": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 627
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 67108864,
+      "median": 67108864,
+      "minimum": 62914560,
+      "values": [
+       67108864,
+       62914560,
+       67108864,
+       67108864,
+       62914560,
+       67108864,
+       67108864
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 19163424,
+      "median": 18994560,
+      "minimum": 18823008,
+      "values": [
+       18879616,
+       18823008,
+       18994560,
+       18828208,
+       19163424,
+       19126704,
+       19120864
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 26034872,
+      "median": 24068792,
+      "minimum": 23806648,
+      "values": [
+       24363704,
+       24003256,
+       23806648,
+       24068792,
+       24068792,
+       26034872,
+       25985720
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 62652416,
+      "median": 60686336,
+      "minimum": 60424192,
+      "values": [
+       60981248,
+       60620800,
+       60424192,
+       60686336,
+       60686336,
+       62652416,
+       62603264
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "shown_2": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 648
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 62914560,
+      "values": [
+       71303168,
+       62914560,
+       67108864,
+       67108864,
+       62914560,
+       67108864,
+       71303168
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 19461680,
+      "median": 19285072,
+      "minimum": 19221744,
+      "values": [
+       19254496,
+       19259824,
+       19221744,
+       19461680,
+       19307312,
+       19285072,
+       19396352
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 29016760,
+      "median": 25150136,
+      "minimum": 24806072,
+      "values": [
+       29016760,
+       24953528,
+       24806072,
+       24986296,
+       25150136,
+       26903224,
+       28705464
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 66551808,
+      "median": 62685184,
+      "minimum": 62341120,
+      "values": [
+       66551808,
+       62488576,
+       62341120,
+       62521344,
+       62685184,
+       64438272,
+       66240512
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    },
+    "shown_3": {
+     "backing_bytes": {
+      "maximum": 256000,
+      "median": 256000,
+      "minimum": 256000,
+      "values": [
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000,
+       256000
+      ]
+     },
+     "images": {
+      "AppKit": true,
+      "CoreGraphics": true,
+      "Metal": true,
+      "OpenGL": true,
+      "QuartzCore": true,
+      "SkyLight": true,
+      "total": 648
+     },
+     "libmalloc_size_allocated": {
+      "maximum": 71303168,
+      "median": 67108864,
+      "minimum": 67108864,
+      "values": [
+       71303168,
+       67108864,
+       67108864,
+       67108864,
+       67108864,
+       67108864,
+       71303168
+      ]
+     },
+     "libmalloc_size_in_use": {
+      "maximum": 20099184,
+      "median": 19412960,
+      "minimum": 19296912,
+      "values": [
+       19412960,
+       19349680,
+       20099184,
+       19438720,
+       19296912,
+       19447728,
+       19400544
+      ]
+     },
+     "physical_footprint_bytes": {
+      "maximum": 29098680,
+      "median": 27280056,
+      "minimum": 25789112,
+      "values": [
+       29049528,
+       27083448,
+       25789112,
+       28967608,
+       27280056,
+       27067064,
+       29098680
+      ]
+     },
+     "resident_bytes": {
+      "maximum": 66633728,
+      "median": 64815104,
+      "minimum": 63324160,
+      "values": [
+       66584576,
+       64618496,
+       63324160,
+       66502656,
+       64815104,
+       64602112,
+       66633728
+      ]
+     },
+     "surfaces": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     "window_numbers_count": {
+      "maximum": 1,
+      "median": 1,
+      "minimum": 1,
+      "values": [
+       1,
+       1,
+       1,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    }
+   },
+   "tree": {
+    "descendants_seen_at_calls": 0,
+    "max_descendants": 0,
+    "samples": {
+     "maximum": 573,
+     "median": 557,
+     "minimum": 531,
+     "values": [
+      573,
+      557,
+      557,
+      531,
+      560,
+      561,
+      555
+     ]
+    },
+    "tree_peak": {
+     "maximum": 30081720,
+     "median": 28066488,
+     "minimum": 25952952,
+     "values": [
+      29082296,
+      27116216,
+      25952952,
+      30081720,
+      27296440,
+      28066488,
+      30048952
+     ]
+    }
+   },
+   "windows_on_screen_exact": true
+  }
+ },
+ "rounds": 3,
+ "schema": "minicon-surf.surface-court-receipt/0.0.1",
+ "warmup": 1,
+ "window_server_footprint_diagnostic": {
+  "after": null,
+  "before": null,
+  "note": "a system process outside the probe's tree; recorded, not attributed"
+ }
+}

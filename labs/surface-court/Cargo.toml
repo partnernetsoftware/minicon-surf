@@ -1,0 +1,26 @@
+[package]
+name = "minicon-surf-surface-court"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Standalone macOS native-surface candidate probes for the native route's G3 design; never linked into the host"
+
+[[bin]]
+name = "surface-probe"
+path = "src/main.rs"
+
+[features]
+default = []
+# Direct Cocoa: objc2 message sends, an NSWindow with an NSImageView over a CPU bitmap.
+cocoa = ["dep:objc2", "dep:objc2-foundation", "dep:objc2-app-kit"]
+# winit's event loop pumped from the outside, softbuffer painting a CPU buffer.
+winit-softbuffer = ["dep:winit", "dep:softbuffer", "dep:objc2", "dep:objc2-foundation", "dep:objc2-app-kit"]
+
+[dependencies]
+libc = "=0.2.189"
+serde_json = "=1.0.151"
+objc2 = { version = "=0.6.4", optional = true }
+objc2-foundation = { version = "=0.3.2", optional = true, default-features = false, features = ["std", "NSString", "NSDate", "NSGeometry", "NSArray", "NSObject", "NSRunLoop", "NSValue"] }
+objc2-app-kit = { version = "=0.3.2", optional = true, default-features = false, features = ["std", "NSApplication", "NSRunningApplication", "NSWindow", "NSView", "NSImageView", "NSImage", "NSImageRep", "NSBitmapImageRep", "NSEvent", "NSResponder", "NSGraphics", "NSScreen", "NSColor", "NSControl"] }
+winit = { version = "=0.30.13", optional = true, default-features = false, features = ["rwh_06"] }
+softbuffer = { version = "=0.4.8", optional = true, default-features = false }
