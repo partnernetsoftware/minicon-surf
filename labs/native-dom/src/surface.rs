@@ -13,6 +13,8 @@ use std::time::{Duration, Instant};
 use native_dom_surface::{Body, INPUT_CLICK, INPUT_SCROLL, Message, ProtocolError, Reader, Writer};
 use serde_json::{Value, json};
 
+use crate::frame_region::{FrameRegion, RegionError};
+
 pub const FRAME_WIDTH: u16 = 640;
 pub const FRAME_HEIGHT: u16 = 400;
 
@@ -30,10 +32,6 @@ impl FrameSize {
         height: FRAME_HEIGHT,
     };
 
-    pub fn bytes(self) -> usize {
-        usize::from(self.width) * usize::from(self.height) * 4
-    }
-
     pub fn parse(text: &str) -> Option<FrameSize> {
         let (w, h) = text.split_once('x')?;
         let (width, height) = (w.parse::<u16>().ok()?, h.parse::<u16>().ok()?);
@@ -43,9 +41,33 @@ impl FrameSize {
 }
 
 /// Where this process stands: physical footprint and RSS from the kernel,
-/// libmalloc's in-use and allocated bytes, and the thread count. Used by the
-/// court-only stage log only.
+/// libmalloc's in-use and allocated bytes, and the thread count.
+pub struct RawSample {
+    pub footprint: u64,
+    pub rss: u64,
+    pub virtual_size: u64,
+    pub in_use: usize,
+    pub allocated: usize,
+    pub blocks: u32,
+    pub threads: i32,
+}
+
+/// The court-only stage log's sample, as JSON.
 pub fn self_sample() -> Value {
+    let s = raw_sample();
+    json!({
+        "footprint":s.footprint,"rss":s.rss,"virtual":s.virtual_size,
+        "in_use":s.in_use,"allocated":s.allocated,"blocks":s.blocks,"threads":s.threads,
+    })
+}
+
+/// Physical footprint and virtual size only, for `owners.surfaces.frame`.
+pub fn vm_sample() -> (u64, u64) {
+    let s = raw_sample();
+    (s.footprint, s.virtual_size)
+}
+
+pub fn raw_sample() -> RawSample {
     #[repr(C)]
     struct RusageInfoV2 {
         uuid: [u8; 16],
@@ -168,10 +190,15 @@ pub fn self_sample() -> Value {
         );
         malloc_zone_statistics(std::ptr::null_mut(), &mut malloc);
     }
-    json!({
-        "footprint":usage.phys_footprint,"rss":usage.resident_size,"virtual":task.virtual_size,
-        "in_use":malloc.size_in_use,"allocated":malloc.size_allocated,"blocks":malloc.blocks_in_use,"threads":task.threadnum,
-    })
+    RawSample {
+        footprint: usage.phys_footprint,
+        rss: usage.resident_size,
+        virtual_size: task.virtual_size,
+        in_use: malloc.size_in_use,
+        allocated: malloc.size_allocated,
+        blocks: malloc.blocks_in_use,
+        threads: task.threadnum,
+    }
 }
 pub const ROW_HEIGHT: usize = 20;
 pub const MAX_SCROLL: u64 = 1_000_000;
@@ -192,10 +219,12 @@ pub struct Row {
     pub height: usize,
 }
 
-/// A painted frame with its hit map and the revision it depicts.
-#[derive(Debug, Clone)]
+/// A painted frame with its hit map and the revision it depicts. The
+/// pixels live in the surface's own mapping (`frame_region`), never in a
+/// zone.
+#[derive(Debug)]
 pub struct Painting {
-    pub pixels: Vec<u8>,
+    pub pixels: FrameRegion,
     pub rows: Vec<Row>,
     pub revision: u64,
     pub scroll_y: u64,
@@ -323,25 +352,27 @@ fn draw_text(pixels: &mut [u8], size: FrameSize, x0: usize, y0: usize, text: &st
 /// Paint the semantic snapshot as rows: role bar, name text, indented by
 /// the row index modulo nothing (the snapshot is flat); `scroll_y` shifts
 /// the rows up. Not a layout or CSS renderer.
+/// Map a fresh frame region and paint into it. A refused or failed mapping
+/// is the caller's typed error; no buffer exists in that case.
 pub fn paint(
     nodes: &[(String, String, String)],
     scroll_y: u64,
     revision: u64,
     size: FrameSize,
-) -> Painting {
+) -> Result<Painting, RegionError> {
     let mut painting = Painting {
-        pixels: vec![0u8; size.bytes()],
+        pixels: FrameRegion::map(size)?,
         rows: Vec::new(),
         revision,
         scroll_y,
         size,
     };
     paint_into(&mut painting, nodes, scroll_y, revision);
-    painting
+    Ok(painting)
 }
 
-/// Repaint into an existing frame so a live surface allocates no new buffer
-/// per input.
+/// Repaint into the frame the surface already owns: the painter writes the
+/// mapping in place and allocates no pixel buffer.
 pub fn paint_into(
     painting: &mut Painting,
     nodes: &[(String, String, String)],
@@ -349,8 +380,7 @@ pub fn paint_into(
     revision: u64,
 ) {
     let size = painting.size;
-    painting.pixels.resize(size.bytes(), 0);
-    let pixels = &mut painting.pixels;
+    let pixels = painting.pixels.as_mut_slice();
     for px in pixels.chunks_exact_mut(4) {
         px.copy_from_slice(&[24, 24, 28, 255]);
     }
@@ -491,7 +521,9 @@ pub struct Process {
     pub ready: ReadyInfo,
     next_frame: u32,
     in_flight: Option<u32>,
-    queued: Option<Vec<u8>>,
+    /// A repaint happened while a frame was in flight: after the
+    /// acknowledgement the current mapping is written again. No copy.
+    resend: bool,
     gone: bool,
     protocol_failure: bool,
     last_error: Option<String>,
@@ -571,7 +603,7 @@ impl Process {
             },
             next_frame: 1,
             in_flight: None,
-            queued: None,
+            resend: false,
             gone: false,
             protocol_failure: false,
             last_error: None,
@@ -665,13 +697,15 @@ impl Process {
         }
     }
 
-    /// Send a frame, or queue it while one is in flight (the newest wins).
+    /// Write the frame to the pipe (a synchronous `write_all` that borrows
+    /// the mapping; nothing keeps a pointer to it), or mark a resend while
+    /// one is in flight: the newest painting wins and is never copied.
     pub fn send_frame(&mut self, pixels: &[u8], stats: &mut Stats) -> Result<(), String> {
         if self.gone {
             return Err("surface is gone".into());
         }
         if self.in_flight.is_some() {
-            self.queued = Some(pixels.to_vec());
+            self.resend = true;
             return Ok(());
         }
         let frame = self.next_frame;
@@ -685,8 +719,10 @@ impl Process {
     }
 
     /// Drain the child's messages: acknowledge frames, collect input, notice
-    /// failures. Returns the inputs in arrival order.
-    pub fn poll(&mut self, stats: &mut Stats) -> Vec<Input> {
+    /// failures. `pixels` is the surface's current mapping, written again
+    /// after an acknowledgement when a repaint was pending. Returns the
+    /// inputs in arrival order.
+    pub fn poll(&mut self, stats: &mut Stats, pixels: &[u8]) -> Vec<Input> {
         let mut inputs = Vec::new();
         loop {
             match self.events.try_recv() {
@@ -695,8 +731,8 @@ impl Process {
                         if self.in_flight == Some(frame) {
                             self.in_flight = None;
                             stats.frames_acked_total += 1;
-                            if let Some(next) = self.queued.take() {
-                                let _ = self.send_frame(&next, stats);
+                            if std::mem::take(&mut self.resend) {
+                                let _ = self.send_frame(pixels, stats);
                             }
                         }
                     }
@@ -755,6 +791,9 @@ impl Process {
     /// deadline, else kill and reap as failure cleanup.
     pub fn hide(mut self, stats: &mut Stats) -> Teardown {
         let started = Instant::now();
+        // Nothing of the frame is pending in host memory: the write was
+        // synchronous and no resend follows a hide.
+        self.resend = false;
         if self.is_gone() {
             let reaped = self.reap(Duration::from_millis(200));
             stats.gone_total += 1;
@@ -882,6 +921,7 @@ mod tests {
 
     #[test]
     fn painter_rows_follow_scroll_and_hit_map() {
+        let _guard = crate::frame_region::test_lock();
         let nodes = vec![
             (
                 "node_1".to_owned(),
@@ -895,18 +935,35 @@ mod tests {
             ),
             ("node_3".to_owned(), "link".to_owned(), "About".to_owned()),
         ];
-        let painting = paint(&nodes, 0, 7, FrameSize::DEFAULT);
-        assert_eq!(painting.pixels.len(), FrameSize::DEFAULT.bytes());
+        let painting = paint(&nodes, 0, 7, FrameSize::DEFAULT).unwrap();
+        assert_eq!(painting.pixels.frame_len(), 640 * 400 * 4);
+        assert!(painting.pixels.mapped_len() >= painting.pixels.frame_len());
         assert_eq!(painting.rows.len(), 3);
         let button = painting.rows.iter().find(|r| r.role == "button").unwrap();
         assert_eq!(painting.row_at(button.y + 5).unwrap().node, "node_2");
-        let scrolled = paint(&nodes, ROW_HEIGHT as u64, 8, FrameSize::DEFAULT);
+        let scrolled = paint(&nodes, ROW_HEIGHT as u64, 8, FrameSize::DEFAULT).unwrap();
         assert_eq!(scrolled.rows.len(), 2, "the first row scrolled out");
         assert_eq!(scrolled.rows[0].node, "node_2");
         assert_eq!(scrolled.rows[0].y, painting.rows[0].y);
-        let far = paint(&nodes, MAX_SCROLL, 9, FrameSize::DEFAULT);
-        let small = paint(&nodes, 0, 1, FrameSize::parse("128x128").unwrap());
-        assert_eq!(small.pixels.len(), 128 * 128 * 4);
+        let far = paint(&nodes, MAX_SCROLL, 9, FrameSize::DEFAULT).unwrap();
+        let mut small = paint(&nodes, 0, 1, FrameSize::parse("128x128").unwrap()).unwrap();
+        assert_eq!(small.pixels.frame_len(), 128 * 128 * 4);
+        // A repaint writes the same mapping in place.
+        paint_into(&mut small, &nodes, 0, 2);
+        assert_eq!(small.revision, 2);
+        assert!(
+            paint(
+                &nodes,
+                0,
+                1,
+                FrameSize {
+                    width: 2048,
+                    height: 768
+                }
+            )
+            .is_err(),
+            "over the protocol bound: refused before any mapping"
+        );
         assert!(FrameSize::parse("32x32").is_none() && FrameSize::parse("2000x10").is_none());
         assert!(far.rows.is_empty());
     }
@@ -930,5 +987,59 @@ mod tests {
             assert!(text.contains("\"event\":\"shown\"") && text.contains("monotonic_ms"));
         }
         assert!(!path.exists(), "removed on drop");
+    }
+
+    /// Every failed show ends with the child reaped and the frame's mapping
+    /// unmapped exactly once: a child that exits at once, one that answers
+    /// with garbage (protocol error), and one that never answers (timeout).
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn failed_shows_unmap_the_frame_and_reap_the_child() {
+        let _guard = crate::frame_region::test_lock();
+        let nodes = vec![("node_1".to_owned(), "text".to_owned(), "x".to_owned())];
+        let size = FrameSize::parse("128x128").unwrap();
+        // `sleep` gets the generation as its argument: 5 seconds, longer than READY.
+        // An exited child refuses the hello (EPIPE) or never answers.
+        for (binary, generation) in [("/usr/bin/true", 1u32), ("/bin/cat", 2), ("/bin/sleep", 5)] {
+            let before = crate::frame_region::counters();
+            let mut stats = Stats::default();
+            let painting = paint(&nodes, 0, 1, size).unwrap();
+            assert_eq!(
+                crate::frame_region::counters().regions_mapped_total,
+                before.regions_mapped_total + 1
+            );
+            let started = Instant::now();
+            let result = Process::spawn(
+                Path::new(binary),
+                generation,
+                "test",
+                painting.pixels.as_slice(),
+                size,
+                None,
+                &mut stats,
+                &mut |_| {},
+            );
+            let error = match result {
+                Ok(_) => panic!("{binary} must not become a surface"),
+                Err(error) => error,
+            };
+            assert!(
+                error.contains("did not become ready") || error.contains("refused the hello"),
+                "{binary}: {error}"
+            );
+            assert!(started.elapsed() < READY_DEADLINE + Duration::from_millis(500));
+            assert_eq!(stats.spawns_total, 1);
+            assert_eq!(
+                stats.kills_total, 1,
+                "{binary}: failure cleanup kills and reaps"
+            );
+            drop(painting);
+            let after = crate::frame_region::counters();
+            assert_eq!(
+                after.regions_unmapped_total,
+                before.regions_unmapped_total + 1
+            );
+            assert_eq!(after.regions_mapped_total, before.regions_mapped_total + 1);
+        }
     }
 }

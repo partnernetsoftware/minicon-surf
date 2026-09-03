@@ -24,6 +24,7 @@ use url::Url;
 
 mod arena;
 mod cdp;
+mod frame_region;
 mod net;
 mod profile;
 mod surface;
@@ -1411,7 +1412,25 @@ impl Host {
         let scroll_y = target.scroll_y;
         let (nodes, revision) = Self::surface_rows(target, deadline, &policy)?;
         self.surface_stage("after_snapshot");
-        let painting = surface::paint(&nodes, scroll_y, revision, frame_size);
+        let painting = surface::paint(&nodes, scroll_y, revision, frame_size).map_err(|error| {
+            self.surface_stage("show_failed");
+            let (code, text, retryable) = match error {
+                frame_region::RegionError::TooLarge => {
+                    ("resource_limit", "frame exceeds the protocol bound", false)
+                }
+                frame_region::RegionError::Unsupported => (
+                    "unsupported_capability",
+                    "frame regions are not supported on this platform",
+                    false,
+                ),
+                frame_region::RegionError::Os(_) => {
+                    ("internal", "frame region could not be mapped", true)
+                }
+            };
+            ControlError::new(code, text, retryable)
+                .scoped("target", &target_id)
+                .details(json!({"reason":"frame_region","detail":error.to_string()}))
+        })?;
         self.surface_stage("after_painter");
         self.next_surface += 1;
         self.surface_generation = self.surface_generation.wrapping_add(1);
@@ -1434,7 +1453,7 @@ impl Host {
             &binary,
             self.surface_generation,
             &id,
-            &painting.pixels,
+            painting.pixels.as_slice(),
             frame_size,
             child_mode.as_deref(),
             &mut self.surface_stats,
@@ -1457,7 +1476,8 @@ impl Host {
                 "layout":painting.layout_json(),"revision":revision,
             }));
         }
-        let presentation_bytes = painting.pixels.len();
+        // The whole mapping counts while it exists, 0 after hide.
+        let presentation_bytes = painting.pixels.mapped_len();
         self.surfaces.insert(
             id.clone(),
             SurfaceRecord {
@@ -1484,7 +1504,7 @@ impl Host {
             .surfaces
             .remove(surface_id)
             .ok_or_else(|| not_found("surface", surface_id))?;
-        let released = record.painting.pixels.len();
+        let released = record.painting.pixels.mapped_len();
         self.surface_stage("hide_entry");
         let SurfaceRecord {
             id: record_id,
@@ -1492,6 +1512,9 @@ impl Host {
             process,
             painting,
         } = record;
+        // Order: the record already left the map (no new paint or input), no
+        // frame is pending in host memory, then CLOSE/reap (or kill), then
+        // the mapping is unmapped with the painting.
         let teardown = process.hide(&mut self.surface_stats);
         self.surface_stage("after_close_reap_join");
         drop(painting);
@@ -1536,7 +1559,9 @@ impl Host {
                 let Some(record) = self.surfaces.get_mut(&id) else {
                     continue;
                 };
-                let inputs = record.process.poll(&mut self.surface_stats);
+                let inputs = record
+                    .process
+                    .poll(&mut self.surface_stats, record.painting.pixels.as_slice());
                 (
                     inputs,
                     record.process.is_gone(),
@@ -1649,12 +1674,31 @@ impl Host {
                 surface::paint_into(&mut record.painting, &nodes, scroll_y, rev);
                 let _ = record
                     .process
-                    .send_frame(&record.painting.pixels, &mut self.surface_stats);
+                    .send_frame(record.painting.pixels.as_slice(), &mut self.surface_stats);
                 if let Some(log) = &self.surface_court {
                     log.append(json!({"event":"repainted","surface":surface_id,"layout":record.painting.layout_json()}));
                 }
             }
         }
+    }
+
+    /// `owners.surfaces.frame`: the live mappings (reserved, touched, live),
+    /// the lifetime unmap counters and the process's virtual size and
+    /// physical footprint. No address, no length of a single mapping.
+    fn surface_frame_owner(&self) -> Value {
+        let counters = frame_region::counters();
+        let (footprint, virtual_size) = surface::vm_sample();
+        json!({
+            "backing":"anonymous_mmap",
+            "regions":self.surfaces.len(),
+            "reserved_bytes":self.surfaces.values().map(|s| s.painting.pixels.mapped_len()).sum::<usize>(),
+            "touched_bytes":self.surfaces.values().map(|s| s.painting.pixels.touched_bytes()).sum::<usize>(),
+            "live_bytes":self.surfaces.values().map(|s| s.painting.pixels.frame_len()).sum::<usize>(),
+            "regions_mapped_total":counters.regions_mapped_total,
+            "regions_unmapped_total":counters.regions_unmapped_total,
+            "unmapped_bytes_total":counters.unmapped_bytes_total,
+            "host":{"virtual_bytes":virtual_size,"physical_footprint_bytes":footprint},
+        })
     }
 
     fn tls_owner(&self) -> Value {
@@ -3279,8 +3323,9 @@ impl Host {
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
                 "surfaces":{"objects":self.surfaces.len(),"object_limit":surface::MAX_SURFACES,
-                    "bytes":self.surfaces.values().map(|s| s.painting.pixels.len()).sum::<usize>(),
+                    "bytes":self.surfaces.values().map(|s| s.painting.pixels.mapped_len()).sum::<usize>(),
                     "painter":surface::PAINTER,"binary":self.surface_binary.is_some(),
+                    "frame":self.surface_frame_owner(),
                     "process":self.surface_stats.to_json(self.surface_generation, self.surfaces.len())},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
