@@ -577,6 +577,7 @@ fn native_call(
             deadline: Duration::from_millis(100),
             operation: operation.to_owned(),
             arguments,
+            capability: None,
         });
     response
         .into_outcome()

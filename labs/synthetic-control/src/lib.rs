@@ -1,13 +1,16 @@
 use fs2::FileExt;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, VecDeque};
 use std::fs::{self, File, OpenOptions};
 use std::io;
 use std::mem::size_of;
 use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
+
+pub mod capability;
+pub use capability::{AuditRecord, Capability, Chain};
 
 #[cfg(feature = "mimalloc-lab")]
 #[global_allocator]
@@ -62,6 +65,8 @@ pub struct Request {
     pub deadline: Duration,
     pub operation: String,
     pub arguments: Value,
+    /// Optional attenuation of the caller's authority (see `capability`).
+    pub capability: Option<Capability>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -93,13 +98,13 @@ impl From<Response> for ParseError {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ControlError {
-    code: &'static str,
+    pub(crate) code: &'static str,
     message: String,
     retryable: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     scope: Option<Scope>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    details: Option<Value>,
+    pub(crate) details: Option<Value>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -182,6 +187,20 @@ impl ControlError {
         self.details = Some(details);
         self
     }
+
+    /// Scope by a kind that arrived as data; unknown kinds are impossible
+    /// here because the capability parser only admits schema kinds.
+    fn scoped_owned(self, kind: String, id: String) -> Self {
+        let kind = match kind.as_str() {
+            "profile" => "profile",
+            "session" => "session",
+            "target" => "target",
+            "frame" => "frame",
+            "realm" => "realm",
+            _ => "surface",
+        };
+        self.scoped(kind, id)
+    }
 }
 
 fn truncate_chars(mut value: String, maximum: usize) -> String {
@@ -210,7 +229,10 @@ pub fn parse_request(bytes: &[u8]) -> Result<Request, ParseError> {
         "operation",
         "arguments",
     ];
-    if object.len() != allowed.len() || !allowed.iter().all(|key| object.contains_key(*key)) {
+    let has_capability = object.contains_key("capability");
+    if object.len() != allowed.len() + usize::from(has_capability)
+        || !allowed.iter().all(|key| object.contains_key(*key))
+    {
         return Err(
             Response::invalid(request_id_or_fallback(&document), "request fields differ").into(),
         );
@@ -242,11 +264,19 @@ pub fn parse_request(bytes: &[u8]) -> Result<Request, ParseError> {
         .filter(|value| value.is_object())
         .ok_or_else(|| Response::invalid(request_id.clone(), "arguments is not an object"))?
         .clone();
+    let capability = match object.get("capability") {
+        Some(value) => Some(
+            Capability::parse(value)
+                .map_err(|message| Response::invalid(request_id.clone(), message))?,
+        ),
+        None => None,
+    };
     Ok(Request {
         request_id,
         deadline: Duration::from_millis(deadline_ms),
         operation,
         arguments,
+        capability,
     })
 }
 
@@ -377,6 +407,8 @@ pub struct ControlState {
     next_session: u64,
     next_target: u64,
     next_surface: u64,
+    /// Bounded capability audit ledger: diagnostics, never authority.
+    audit: VecDeque<AuditRecord>,
 }
 
 impl ControlState {
@@ -421,7 +453,70 @@ impl ControlState {
 
     pub fn execute(&mut self, request: Request) -> Response {
         let request_id = request.request_id.clone();
-        let outcome = match request.operation.as_str() {
+        // Attenuation first: the same request without a capability is the
+        // upper bound of what this request may do.
+        let attenuation = match &request.capability {
+            Some(capability) => {
+                let deadline_ms = request.deadline.as_millis() as u64;
+                let decision = self.authorize(
+                    capability,
+                    &request.operation,
+                    &request.arguments,
+                    deadline_ms,
+                );
+                let (chain, refusal) = match decision {
+                    Ok(chain) => (chain, None),
+                    Err(error) => (
+                        self.ownership_chain(&request.operation, &request.arguments)
+                            .ok()
+                            .flatten()
+                            .unwrap_or_default(),
+                        Some(error),
+                    ),
+                };
+                let record = AuditRecord {
+                    request_id: request_id.clone(),
+                    actor: capability.actor.clone(),
+                    reason: capability.reason.clone(),
+                    operation: request.operation.clone(),
+                    owner: capability.owner.clone(),
+                    chain,
+                    decision: refusal
+                        .as_ref()
+                        .map_or_else(|| "allowed".to_owned(), |e| format!("refused:{}", e.code)),
+                };
+                self.record_audit(record);
+                if let Some(error) = refusal {
+                    return Response::failure(request_id, error);
+                }
+                Some(capability.result_bytes)
+            }
+            None => None,
+        };
+        let outcome = self.dispatch(&request);
+        let outcome = match (outcome, attenuation) {
+            (Ok(result), Some(result_bytes))
+                if serde_json::to_vec(&result)
+                    .map_or(true, |encoded| encoded.len() > result_bytes) =>
+            {
+                let error = limit("result exceeds the capability result budget").details(
+                    json!({"reason":"result_budget_exceeded","result_bytes":result_bytes}),
+                );
+                if let Some(last) = self.audit.back_mut() {
+                    last.decision = "refused:resource_limit".into();
+                }
+                Err(error)
+            }
+            (outcome, _) => outcome,
+        };
+        match outcome {
+            Ok(result) => Response::success(request_id, result),
+            Err(error) => Response::failure(request_id, error),
+        }
+    }
+
+    fn dispatch(&mut self, request: &Request) -> Result<Value, ControlError> {
+        match request.operation.as_str() {
             "profile.create" => self.profile_create(&request.arguments),
             "profile.list" => self.profile_list(&request.arguments),
             "profile.inspect" => self.profile_inspect(&request.arguments),
@@ -432,6 +527,7 @@ impl ControlState {
             "session.open" => self.session_open(&request.arguments),
             "session.list" => self.session_list(&request.arguments),
             "session.close" => self.session_close(&request.arguments),
+            "session.inspect" => self.session_inspect(&request.arguments),
             "target.open" => self.target_open(&request.arguments),
             "target.list" => self.target_list(&request.arguments),
             "target.inspect" => self.target_inspect(&request.arguments),
@@ -448,11 +544,37 @@ impl ControlState {
                 "operation is reserved but not implemented by synthetic-control",
                 false,
             )),
-        };
-        match outcome {
-            Ok(result) => Response::success(request_id, result),
-            Err(error) => Response::failure(request_id, error),
         }
+    }
+
+    fn session_inspect(&self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session"])?;
+        let session_id = typed_field(object, "session", "session")?;
+        let session = self
+            .sessions
+            .get(session_id)
+            .ok_or_else(|| not_found("session", session_id))?;
+        let targets = self
+            .targets
+            .values()
+            .filter(|target| target.session_id == session_id)
+            .map(|target| target.id.clone())
+            .collect::<Vec<_>>();
+        let surfaces = self
+            .surfaces
+            .values()
+            .filter(|surface| targets.contains(&surface.target_id))
+            .map(|surface| surface.id.clone())
+            .collect::<Vec<_>>();
+        Ok(json!({
+            "kind":"session",
+            "session":session.id,
+            "profile":session.profile_id,
+            "targets":targets,
+            "surfaces":surfaces,
+            "capability_audit":self.audit_for_session(session_id),
+            "audit_limit":capability::MAX_AUDIT_RECORDS,
+        }))
     }
 
     fn profile_create(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -1485,16 +1607,17 @@ fn not_found(kind: &'static str, id: &str) -> ControlError {
 mod tests {
     use super::*;
 
-    fn request(id: &str, operation: &str, arguments: Value) -> Request {
+    pub(crate) fn request(id: &str, operation: &str, arguments: Value) -> Request {
         Request {
             request_id: id.into(),
             deadline: Duration::from_millis(5),
             operation: operation.into(),
             arguments,
+            capability: None,
         }
     }
 
-    fn result(response: Response) -> Value {
+    pub(crate) fn result(response: Response) -> Value {
         assert!(response.ok, "expected success: {:?}", response.error);
         response.result.unwrap()
     }

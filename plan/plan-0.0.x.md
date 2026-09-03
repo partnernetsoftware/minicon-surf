@@ -165,6 +165,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── unloaded ecosystem features have near-zero resident/process/dependency cost
 │   ├── [x] first research artifact is a concept/capability mapping, not API compatibility: labs/ecosystem-reference
 │   ├── all three references bind page lifetime to a window and none measures retention after teardown
+│   ├── [x] ME1 typed capability envelope: optional per-request attenuation keyed on profile/session/target with scope · deadline · result budget · audit; surface-located or off-chain owners are typed refusals; synthetic court 33/33
 │   └── [-] no Node-in-page default, generic IPC, engine-specific public model or 0.0.x framework build
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
@@ -239,7 +240,7 @@ flowchart LR
     CORE["native browser-core convergence<br/>Rust · bounded ownership<br/>capabilities absorbed incrementally"]
 
     subgraph ECO["Optional ecosystem [X9]"]
-        EMBED["SurfView embedding<br/>Rust API · later C ABI / SDK"]
+        EMBED["SurfView embedding<br/>Rust API · later C ABI / SDK<br/>typed capability envelope: attenuation only (ME1 synthetic)"]
         APP["Surf App layer<br/>manifest · scoped commands · plugins"]
         MIGRATE["concept migration<br/>Electron · Wry · Tauri"]
     end
@@ -811,6 +812,21 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   adapter teardown ordering, process-metric shape, no ambient capability for
   workers, visibility is not detachment). No gate moves: G1, G3, P6 and G6
   stay open.
+- [~] ME1 is done on the synthetic court. Control 0.0.1 gains one optional
+  `capability` field on the request envelope (schema, checker, four examples
+  and five negative self-tests first; requests without it are unchanged, so
+  the extension is compatible within the version). It is attenuation only:
+  the host resolves the operation's ownership chain from its own state,
+  requires the named owner to be the target, its session or its profile,
+  the operation to be in scope, the deadline and result inside the budget,
+  and records every decision with actor and reason in a 64-record ledger
+  readable through `session.inspect`; a surface, frame or realm is never an
+  owner, host-wide operations cannot be attenuated, and a capability cannot
+  make a reserved operation work. The synthetic capability court passes 33
+  of 33 and the G2, G4 and native-dom network courts pass unchanged. This is
+  the [X9] capability channel shape, not a plugin system, not a grant store
+  and not a second authority; no engine host carries it yet. G1, G3, P6 and
+  G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -880,8 +896,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    Tauri, including lifecycle, capability and resource-ownership mappings.
    The first map (`labs/ecosystem-reference`, Electron 44.1.1, Wry 0.55.1
    source / 0.56.1 docs, Tauri 2.11.x, read 2026-09-03) names five
-   micro-experiments; the next step is ME1 (a typed capability envelope on
-   the synthetic host) and ME2 (adapter teardown ordering). This is design
+   micro-experiments; ME1 (a typed capability envelope on the synthetic
+   host) is done at 33/33 and ME2 (adapter teardown ordering) is next. This is design
    input only during 0.0.x: do not build a plugin framework, Node
    compatibility layer or application packager before G1/G3/P6/G6 and the
    native embedding boundary have earned them.

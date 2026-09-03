@@ -22,8 +22,9 @@ same `Arc<Mutex<ControlState>>`; the ready record is kept off stdout.
 The first slice implements profile create/list/inspect/delete, bounded profile
 storage and policy, session open/list/close, target open/list/inspect/close,
 semantic snapshot, revision-scoped button click, bounded scroll, revision wait,
-surface show/hide, memory report, and macOS allocator trim. Other reserved
-0.0.1 operations return
+surface show/hide, session inspect (identity, owned targets and surfaces, and
+the capability audit ledger), memory report, and macOS allocator trim. The
+remaining reserved 0.0.1 operation (`target.screenshot`) returns
 `unsupported_operation`. With `--profile-root PATH`, named persistent profiles
 use bounded versioned JSON records and advisory single-writer locks; without an
 explicit root, persistent creation fails. The target is a deliberately tiny
@@ -53,6 +54,9 @@ python3 labs/synthetic-control/cdp-native-journey.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
 python3 labs/synthetic-control/profile-isolation-journey.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control
+python3 labs/synthetic-control/capability-court.py \
+  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
+  --receipt labs/synthetic-control/evidence/synthetic-control-0.0.1-capability.json
 labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
 python3 labs/synthetic-control/staged-capacity-memory-macos-arm64.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
@@ -154,6 +158,56 @@ but its empty and maximum-capacity totals are worse than the system allocator
 for this workload. Secure mode, browser-engine allocations, portability and
 dependency/security maintenance are untested. The feature therefore cannot
 support a product allocator decision or a G1 pass.
+
+### Capability attenuation court (X9 micro-experiment ME1)
+
+Hypothesis: the control 0.0.1 authority (profile → session → target) can
+carry a per-request capability that names an owner, a scope, a deadline and
+result budget, and an audit record, without becoming a second authority: a
+request with a capability may do at most what the same request without one
+may do, and a request that locates its object only by a surface or window, or
+names an owner off the ownership chain, is a typed refusal.
+
+Scope: one optional `capability` field on the request envelope
+(`protocol/README.md`, "Capability attenuation"), parsed by the host as
+strictly as the schema; `src/capability.rs` resolves the operation's
+ownership chain from the host's own maps and refuses with `permission_denied`
+plus a `details.reason` of `surface_is_not_an_owner`, `kind_is_not_an_owner`,
+`owner_not_on_chain`, `operation_outside_scope`, `deadline_exceeds_budget`,
+`result_budget_exceeded` or `operation_has_no_owner`; a produced result larger
+than the budget is `resource_limit`. Every decision is appended to a 64-record
+in-memory audit ledger that `session.inspect` exposes per session and that
+nothing consults for authority. No plugin system, no grant store, no
+Electron/Wry/Tauri dependency.
+
+Reproduction: `capability-court.py` above; it validates every request with
+`protocol/check_contract.py` before sending it, so the court cannot pass with
+a request the paper contract rejects.
+
+Evidence (`synthetic-control-0.0.1-capability` receipt, 33 of 33): requests
+without a capability are unchanged and the three on-chain owners return the
+identical snapshot; a surface-located snapshot and a surface-owned hide are
+refused while the surface's target may hide it; a realm is not an owner;
+another target, another session, another profile and a nonexistent object
+are all `owner_not_on_chain` (existence is not leaked), and a session cannot
+close another profile's session; scope, deadline and both result budgets
+bind; `memory.report`, `profile.list` and `target.list` cannot be attenuated;
+a full-scope capability cannot make `target.screenshot` work and a missing
+principal fails with the same code as the plain request; a capability without
+`audit` or with an extra field is `invalid_request`; the ledger lists actor,
+reason, operation, owner and decision per session and stays at 64 records
+after 70 attenuated requests; after `target.close` the attenuated request is
+`not_found` and the memory owners are unchanged. Three unit tests cover the
+parser, every refusal reason and the ledger bound, and the G2, G4 and the
+native-dom 35-item network court pass unchanged with the extended checker.
+
+Gaps: the target is synthetic; no engine host, CDP edge or embedder carries
+a capability yet; budgets are per request, not cumulative; the ledger is
+in-memory and per host; hosts that do not implement the field answer
+`invalid_request`, which is typed but coarser than `unsupported_capability`.
+
+Verdict: `keep` as the [X9] typed-capability mechanism on the synthetic
+court. It moves no gate: G1, G3, P6 and G6 stay open.
 
 All memory receipts remain `incomplete`. The lifecycle modes are separate
 fresh processes, while the staged companion supplies same-process capacity and

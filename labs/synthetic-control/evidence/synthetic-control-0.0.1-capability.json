@@ -1,0 +1,170 @@
+{
+  "checks": [
+    {
+      "check": "request without capability still succeeds",
+      "passed": true
+    },
+    {
+      "check": "target owner on the chain is allowed",
+      "passed": true
+    },
+    {
+      "check": "session owner on the chain is allowed",
+      "passed": true
+    },
+    {
+      "check": "profile owner on the chain is allowed",
+      "passed": true
+    },
+    {
+      "check": "surface-located request is permission_denied",
+      "detail": {
+        "code": "permission_denied",
+        "details": {
+          "operation": "target.snapshot",
+          "reason": "surface_is_not_an_owner"
+        },
+        "message": "a surface is never an owner; name the target, its session or its profile",
+        "retryable": false,
+        "scope": {
+          "id": "surface_1",
+          "kind": "surface"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "surface cannot own its own hide",
+      "passed": true
+    },
+    {
+      "check": "the surface's target owns the hide",
+      "passed": true
+    },
+    {
+      "check": "realm is not an owner",
+      "passed": true
+    },
+    {
+      "check": "another target cannot own this target",
+      "passed": true
+    },
+    {
+      "check": "another session cannot own this target",
+      "passed": true
+    },
+    {
+      "check": "another profile cannot own this target",
+      "passed": true
+    },
+    {
+      "check": "a nonexistent owner is refused without leaking existence",
+      "passed": true
+    },
+    {
+      "check": "a session cannot close another profile's session",
+      "passed": true
+    },
+    {
+      "check": "the other session is still open",
+      "passed": true
+    },
+    {
+      "check": "operation outside scope is refused",
+      "passed": true
+    },
+    {
+      "check": "deadline over budget is refused",
+      "passed": true
+    },
+    {
+      "check": "snapshot max_bytes over budget is refused before execution",
+      "passed": true
+    },
+    {
+      "check": "a produced result over budget is resource_limit",
+      "passed": true
+    },
+    {
+      "check": "memory.report cannot be attenuated",
+      "passed": true
+    },
+    {
+      "check": "profile.list cannot be attenuated",
+      "passed": true
+    },
+    {
+      "check": "target.list cannot be attenuated",
+      "passed": true
+    },
+    {
+      "check": "a full-scope capability cannot make a reserved operation work",
+      "passed": true
+    },
+    {
+      "check": "a missing principal fails as not_found exactly like a plain request",
+      "passed": true
+    },
+    {
+      "check": "plain and attenuated missing-principal errors share a code",
+      "passed": true
+    },
+    {
+      "check": "capability without audit is invalid_request",
+      "passed": true
+    },
+    {
+      "check": "capability with an unknown field is invalid_request",
+      "passed": true
+    },
+    {
+      "check": "session.inspect lists this session's audit records",
+      "detail": {
+        "records": 16
+      },
+      "passed": true
+    },
+    {
+      "check": "audit records name actor, reason, operation and owner",
+      "passed": true
+    },
+    {
+      "check": "audit records are scoped to their session",
+      "passed": true
+    },
+    {
+      "check": "audit ledger is bounded",
+      "detail": {
+        "records": 64
+      },
+      "passed": true
+    },
+    {
+      "check": "closed target: attenuated request is not_found",
+      "passed": true
+    },
+    {
+      "check": "memory owners are unchanged by the ledger",
+      "passed": true
+    },
+    {
+      "check": "host exits cleanly",
+      "passed": true
+    }
+  ],
+  "checks_passed": 33,
+  "checks_total": 33,
+  "host_sha256": "a46a21fada47359e4ca41ee661f39eadcbe16bd9d7fd4f9c0afeda9dab2fd012",
+  "limitations": [
+    "synthetic host with a fixed two-node target; no engine, HTML or CDP path carries a capability yet",
+    "the audit ledger is in-memory, bounded to 64 records per host and readable only through session.inspect",
+    "deadline and result budgets are per request; no cumulative operation budget exists"
+  ],
+  "passed": true,
+  "protocol": "minicon-surf.control 0.0.1 with the optional capability field",
+  "schema": "minicon-surf.synthetic-capability-receipt/0.0.1",
+  "semantic": "every request is validated by protocol/check_contract.py before it is sent; a capability attenuates and never amplifies",
+  "status": "observed",
+  "technology": "synthetic-control",
+  "technology_version": "0.0.1"
+}
