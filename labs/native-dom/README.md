@@ -1731,7 +1731,20 @@ rounds change the revision by real input, so its show-time snapshots
 would still miss, and the control plane's serialization churn stays.
 Honest expectation: a partial reduction of the per-round growth, not a
 pass of S2 or S3; proposed for a decision on whether a partial reduction
-is worth a change to the snapshot script at all.
+is worth a change to the snapshot script at all. Ruling: rejected (the
+real surface changes the revision by input every round, so the memo
+misses where it matters, and it would keep a JSON string resident in the
+realm with invalidation to maintain); it stays a rejected idea.
+
+Next, design only (no run, no receipt):
+[`surface-paired-causal-court-0.0.1.md`](surface-paired-causal-court-0.0.1.md)
+pre-registers a paired causal court whose two arms, a real surface child
+and a headless replaying counterfactual, run an identical operation and
+input sequence on the same live target, so the presentation's own
+retention is the per-stage differential between the arms while the
+absolute S2 and S3 of the frozen court stay in force by reference. Its
+visual arm runs only under the three-part opt-in and the owner's
+permission for that run; the counterfactual mode is not implemented.
 
 Gaps: post-hide host footprint and slope over the pre-registered caps
 (page churn of the whole control plane, see the attribution above; the

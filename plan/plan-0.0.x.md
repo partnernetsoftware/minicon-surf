@@ -1162,6 +1162,17 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Suggestion for the root's review, not a gate change: read G3 as
+  "can the same live target be attached to a real presentation and
+  detached again with its state kept", with the presentation-specific
+  reclamation shown by paired causal evidence (a real surface arm against
+  a headless replaying counterfactual with an identical operation and
+  input sequence, `surface-paired-causal-court-0.0.1.md`, design only),
+  while the generic per-request control-plane churn measured by the
+  churn court stays under G1 / M2 and is not called a surface leak. The
+  frozen court's absolute S2 and S3 keep failing and stay quoted; whether
+  this reading is adopted is the root's decision. The realm-side snapshot
+  memo is a rejected idea.
 - [~] Control-plane churn attribution (headless, read-only, 128 requests
   per arm, fresh host, one warm-up plus seven, both allocators): every
   operation grows the host by 0.1 to 1.5 KB per request with no plateau
