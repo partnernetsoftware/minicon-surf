@@ -1,6 +1,9 @@
 //! Bounded network fetch for the native route.
 //!
-//! Every fetch is limited by scheme (`http` only), by address policy (fail
+//! Every fetch is limited by scheme (`http`, and `https` only against
+//! explicitly pinned roots: rustls with the ring provider, TLS 1.3 or 1.2,
+//! ALPN `http/1.1`, names and IP SANs verified in process, a bounded
+//! per-profile session cache, no system roots), by address policy (fail
 //! closed: only addresses outside every IANA special-purpose range are
 //! reachable unless the exact origin is on the host's explicit allowlist), by
 //! redirect count with re-authorization at every hop, by header and body
@@ -14,6 +17,8 @@
 
 use std::io::{self, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, TcpStream, ToSocketAddrs};
+use std::path::Path;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use url::{Host, Url};
@@ -28,6 +33,16 @@ pub const MAX_FETCHES_PER_TARGET: usize = 32;
 pub const MAX_BYTES_PER_TARGET: usize = 4 * 1024 * 1024;
 pub const MAX_EXTERNAL_SCRIPTS: usize = 8;
 const USER_AGENT: &str = "MiniCon-Surf-native-dom/0.0.2";
+/// Pinned-root input bounds: files, bytes per file, bytes in total, certificates.
+pub const MAX_PINNED_ROOT_FILES: usize = 8;
+pub const MAX_PINNED_ROOT_FILE_BYTES: usize = 16 * 1024;
+pub const MAX_PINNED_ROOT_TOTAL_BYTES: usize = 64 * 1024;
+pub const MAX_PINNED_ROOTS: usize = 16;
+/// rustls's in-memory client cache below 16 entries rounds to a single
+/// server slot that its eviction empties at once (measured in the TLS
+/// court), so the per-profile bound is 16 entries: two server slots.
+pub const TLS_SESSION_CACHE_ENTRIES: usize = 16;
+pub const TLS_PROVIDER: &str = "ring";
 
 /// Why a fetch was refused or failed, mapped onto control 0.0.1 error codes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,8 +75,8 @@ pub struct AllowedOrigin {
 impl AllowedOrigin {
     pub fn parse(text: &str) -> Result<Self, String> {
         let url = Url::parse(text).map_err(|e| format!("origin is not a URL: {e}"))?;
-        if url.scheme() != "http" {
-            return Err("only http origins can be allowed".into());
+        if url.scheme() != "http" && url.scheme() != "https" {
+            return Err("only http and https origins can be allowed".into());
         }
         if url.path() != "/" || url.query().is_some() || url.fragment().is_some() {
             return Err("origin must not carry a path, query or fragment".into());
@@ -74,7 +89,7 @@ impl AllowedOrigin {
             .port_or_known_default()
             .ok_or_else(|| "origin lacks a port".to_string())?;
         Ok(AllowedOrigin {
-            scheme: "http".into(),
+            scheme: url.scheme().to_owned(),
             host,
             port,
         })
@@ -92,6 +107,9 @@ impl AllowedOrigin {
 #[derive(Debug, Clone, Default)]
 pub struct Policy {
     pub allowed_origins: Vec<AllowedOrigin>,
+    /// True only when pinned roots were loaded; `https` is otherwise
+    /// `unsupported_capability`.
+    pub https: bool,
 }
 
 /// Per-target budget shared by navigation, external scripts and `fetch()`.
@@ -100,7 +118,225 @@ pub struct Budget {
     pub fetches: usize,
     pub bytes: usize,
     pub denied: usize,
+    pub tls_handshakes: u64,
+    pub tls_resumed: u64,
+    pub tls_refused: u64,
+    pub tls13: u64,
+    pub tls12: u64,
 }
+
+impl Budget {
+    pub fn tls_json(&self) -> serde_json::Value {
+        serde_json::json!({
+            "handshakes_total":self.tls_handshakes,"resumed_total":self.tls_resumed,
+            "refused_total":self.tls_refused,"tls13_total":self.tls13,"tls12_total":self.tls12,
+        })
+    }
+
+    pub fn absorb_tls(&mut self, other: &Budget) {
+        self.tls_handshakes += other.tls_handshakes;
+        self.tls_resumed += other.tls_resumed;
+        self.tls_refused += other.tls_refused;
+        self.tls13 += other.tls13;
+        self.tls12 += other.tls12;
+    }
+}
+
+// ------------------------------------------------------------------ TLS
+
+/// The host's pinned roots: the only trust anchors of the https slice.
+/// Loaded once from public-certificate PEM files under fixed bounds; the
+/// ring provider is selected explicitly here and nowhere else.
+pub struct TlsRoots {
+    store: Arc<rustls::RootCertStore>,
+    provider: Arc<rustls::crypto::CryptoProvider>,
+    pub certificates: usize,
+    pub bytes: usize,
+    pub files: usize,
+}
+
+/// One profile's TLS client: the shared roots plus that profile's own
+/// bounded session cache, never shared across profiles.
+pub struct TlsClient {
+    config: Arc<rustls::ClientConfig>,
+}
+
+impl std::fmt::Debug for TlsRoots {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "TlsRoots({} certificates)", self.certificates)
+    }
+}
+
+impl std::fmt::Debug for TlsClient {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("TlsClient")
+    }
+}
+
+/// Load pinned roots. Errors name counts and limits only, never a path or
+/// file content; a file carrying a private-key block is refused outright.
+pub fn load_pinned_roots(paths: &[impl AsRef<Path>]) -> Result<TlsRoots, String> {
+    use base64::Engine as _;
+    if paths.is_empty() {
+        return Err("no pinned root given".into());
+    }
+    if paths.len() > MAX_PINNED_ROOT_FILES {
+        return Err(format!(
+            "more than {MAX_PINNED_ROOT_FILES} pinned root files"
+        ));
+    }
+    let mut store = rustls::RootCertStore::empty();
+    let mut total = 0usize;
+    let mut certificates = 0usize;
+    for (index, path) in paths.iter().enumerate() {
+        let text = std::fs::read_to_string(path.as_ref())
+            .map_err(|e| format!("pinned root file {index} unreadable: {}", e.kind()))?;
+        if text.len() > MAX_PINNED_ROOT_FILE_BYTES {
+            return Err(format!(
+                "pinned root file {index} exceeds {MAX_PINNED_ROOT_FILE_BYTES} bytes"
+            ));
+        }
+        total += text.len();
+        if total > MAX_PINNED_ROOT_TOTAL_BYTES {
+            return Err(format!(
+                "pinned roots exceed {MAX_PINNED_ROOT_TOTAL_BYTES} bytes in total"
+            ));
+        }
+        if text.contains("PRIVATE KEY") {
+            return Err(format!(
+                "pinned root file {index} carries a private-key block; refused"
+            ));
+        }
+        let mut body = String::new();
+        let mut inside = false;
+        let mut found = 0usize;
+        for line in text.lines() {
+            let line = line.trim();
+            if line == "-----BEGIN CERTIFICATE-----" {
+                inside = true;
+                body.clear();
+            } else if line == "-----END CERTIFICATE-----" {
+                inside = false;
+                let der = base64::engine::general_purpose::STANDARD
+                    .decode(&body)
+                    .map_err(|_| format!("pinned root file {index} is not valid PEM"))?;
+                certificates += 1;
+                found += 1;
+                if certificates > MAX_PINNED_ROOTS {
+                    return Err(format!(
+                        "more than {MAX_PINNED_ROOTS} pinned root certificates"
+                    ));
+                }
+                store
+                    .add(rustls_pki_types::CertificateDer::from(der))
+                    .map_err(|_| format!("pinned root file {index} holds a certificate that cannot be a trust anchor"))?;
+            } else if inside {
+                body.push_str(line);
+            }
+        }
+        if found == 0 {
+            return Err(format!("pinned root file {index} holds no certificate"));
+        }
+    }
+    Ok(TlsRoots {
+        store: Arc::new(store),
+        provider: Arc::new(rustls::crypto::ring::default_provider()),
+        certificates,
+        bytes: total,
+        files: paths.len(),
+    })
+}
+
+impl TlsRoots {
+    /// A client for one profile: TLS 1.3 preferred, 1.2 accepted, ALPN
+    /// `http/1.1` only, this profile's own bounded session cache.
+    pub fn client(&self) -> TlsClient {
+        let mut config = rustls::ClientConfig::builder_with_provider(self.provider.clone())
+            .with_protocol_versions(&[&rustls::version::TLS13, &rustls::version::TLS12])
+            .expect("the ring provider supports TLS 1.2 and 1.3")
+            .with_root_certificates(self.store.clone())
+            .with_no_client_auth();
+        config.alpn_protocols = vec![b"http/1.1".to_vec()];
+        config.resumption = rustls::client::Resumption::store(Arc::new(
+            rustls::client::ClientSessionMemoryCache::new(TLS_SESSION_CACHE_ENTRIES),
+        ));
+        TlsClient {
+            config: Arc::new(config),
+        }
+    }
+}
+
+/// Facts of one TLS connection, never certificate contents.
+#[derive(Debug, Clone, Copy)]
+struct TlsFacts {
+    tls13: bool,
+    resumed: bool,
+}
+
+/// Map a rustls failure onto a typed, non-revealing refusal.
+fn tls_error(error: &rustls::Error) -> NetError {
+    use rustls::{AlertDescription, CertificateError, Error};
+    match error {
+        Error::InvalidCertificate(
+            CertificateError::NotValidForName | CertificateError::NotValidForNameContext { .. },
+        ) => NetError::new(
+            "permission_denied",
+            "tls_hostname_mismatch",
+            "server certificate does not match the URL host",
+        ),
+        Error::InvalidCertificate(_) => NetError::new(
+            "permission_denied",
+            "tls_untrusted_root",
+            "server certificate does not chain to a pinned root",
+        ),
+        Error::NoApplicationProtocol => NetError::new(
+            "permission_denied",
+            "tls_alpn",
+            "server did not negotiate http/1.1",
+        ),
+        Error::AlertReceived(AlertDescription::ProtocolVersion)
+        | Error::AlertReceived(AlertDescription::HandshakeFailure)
+        | Error::PeerIncompatible(_) => NetError::new(
+            "permission_denied",
+            "tls_protocol",
+            "server offers no acceptable TLS version or parameters",
+        ),
+        _ => NetError::new("not_found", "tls_handshake", "TLS handshake failed"),
+    }
+}
+
+fn tls_io_error(stage: &'static str, error: io::Error) -> NetError {
+    if let Some(inner) = error
+        .get_ref()
+        .and_then(|inner| inner.downcast_ref::<rustls::Error>())
+    {
+        return tls_error(inner);
+    }
+    io_error(stage, error)
+}
+
+fn server_name(url: &Url) -> Result<rustls_pki_types::ServerName<'static>, NetError> {
+    match url.host() {
+        Some(Host::Ipv4(ip)) => Ok(rustls_pki_types::ServerName::IpAddress(
+            IpAddr::V4(ip).into(),
+        )),
+        Some(Host::Ipv6(ip)) => Ok(rustls_pki_types::ServerName::IpAddress(
+            IpAddr::V6(ip).into(),
+        )),
+        Some(Host::Domain(name)) => rustls_pki_types::ServerName::try_from(name.to_owned())
+            .map_err(|_| {
+                NetError::new(
+                    "invalid_request",
+                    "host",
+                    "URL host is not a valid server name",
+                )
+            }),
+        None => Err(NetError::new("invalid_request", "host", "URL lacks a host")),
+    }
+}
+
+trait ReadWrite: Read + Write {}
+impl<T: Read + Write> ReadWrite for T {}
 
 /// How the body length was established.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -203,12 +439,23 @@ pub fn is_public_ip(ip: IpAddr) -> bool {
 /// addresses a connection may use. Allowlisted origins skip address
 /// classification; every other host must resolve only to public addresses.
 pub fn authorize(url: &Url, policy: &Policy) -> Result<Vec<SocketAddr>, NetError> {
-    if url.scheme() != "http" {
-        return Err(NetError::new(
-            "unsupported_capability",
-            "scheme",
-            format!("scheme {} is not offered; only http is", url.scheme()),
-        ));
+    match url.scheme() {
+        "http" => {}
+        "https" if policy.https => {}
+        "https" => {
+            return Err(NetError::new(
+                "unsupported_capability",
+                "tls_no_pinned_roots",
+                "https needs an explicitly pinned root; no system roots are consulted",
+            ));
+        }
+        other => {
+            return Err(NetError::new(
+                "unsupported_capability",
+                "scheme",
+                format!("scheme {other} is not offered; only http and pinned https are"),
+            ));
+        }
     }
     if url.username() != "" || url.password().is_some() {
         return Err(NetError::new(
@@ -297,7 +544,7 @@ pub fn fetch(
     budget: &mut Budget,
     deadline: Instant,
 ) -> Result<Response, NetError> {
-    fetch_with(url, policy, budget, deadline, None)
+    fetch_with(url, policy, budget, deadline, None, None)
 }
 
 /// `fetch` with a cookie jar: the request of every hop carries the jar's
@@ -309,6 +556,7 @@ pub fn fetch_with(
     budget: &mut Budget,
     deadline: Instant,
     mut cookies: Option<&mut dyn CookieHooks>,
+    tls: Option<&TlsClient>,
 ) -> Result<Response, NetError> {
     let mut current = Url::parse(url)
         .map_err(|e| NetError::new("invalid_request", "url", format!("URL is malformed: {e}")))?;
@@ -330,13 +578,34 @@ pub fn fetch_with(
         let cookie_header = cookies
             .as_deref_mut()
             .and_then(|jar| jar.cookie_header(&current));
-        let hop = get_once(
+        let hop = match get_once(
             &current,
             &addresses,
             cap,
             hop_deadline,
             cookie_header.as_deref(),
-        )?;
+            tls,
+        ) {
+            Ok(hop) => hop,
+            Err(error) => {
+                if error.reason.starts_with("tls_") {
+                    budget.tls_refused += 1;
+                    budget.denied += 1;
+                }
+                return Err(error);
+            }
+        };
+        if let Some(facts) = hop.tls {
+            budget.tls_handshakes += 1;
+            if facts.resumed {
+                budget.tls_resumed += 1;
+            }
+            if facts.tls13 {
+                budget.tls13 += 1;
+            } else {
+                budget.tls12 += 1;
+            }
+        }
         budget.bytes += hop.body.len();
         if let Some(jar) = cookies.as_deref_mut() {
             for line in &hop.set_cookie {
@@ -360,13 +629,24 @@ pub fn fetch_with(
                 ));
             }
             redirects += 1;
-            current = current.join(location).map_err(|e| {
+            let next = current.join(location).map_err(|e| {
                 NetError::new(
                     "invalid_request",
                     "redirect",
                     format!("Location is not a valid URL: {e}"),
                 )
             })?;
+            // A verified origin never downgrades: https → http is refused as
+            // a hop, before any authorization of the plain target.
+            if current.scheme() == "https" && next.scheme() != "https" {
+                budget.denied += 1;
+                return Err(NetError::new(
+                    "permission_denied",
+                    "redirect_downgrade",
+                    "redirect from https to http is refused",
+                ));
+            }
+            current = next;
             continue;
         }
         return Ok(Response {
@@ -388,6 +668,7 @@ struct Hop {
     set_cookie: Vec<String>,
     body: Vec<u8>,
     framing: Framing,
+    tls: Option<TlsFacts>,
 }
 
 /// Connect to one of the vetted addresses only. This function never resolves
@@ -424,15 +705,57 @@ fn get_once(
     body_cap: usize,
     deadline: Instant,
     cookie_header: Option<&str>,
+    tls: Option<&TlsClient>,
 ) -> Result<Hop, NetError> {
-    let mut stream = connect(addresses, deadline)?;
+    let tcp = connect(addresses, deadline)?;
     let remaining = deadline.saturating_duration_since(Instant::now());
-    stream
-        .set_read_timeout(Some(std::cmp::max(remaining, Duration::from_millis(10))))
+    tcp.set_read_timeout(Some(std::cmp::max(remaining, Duration::from_millis(10))))
         .map_err(|e| NetError::new("internal", "socket", e.to_string()))?;
-    stream
-        .set_write_timeout(Some(std::cmp::max(remaining, Duration::from_millis(10))))
+    tcp.set_write_timeout(Some(std::cmp::max(remaining, Duration::from_millis(10))))
         .map_err(|e| NetError::new("internal", "socket", e.to_string()))?;
+    // The handshake runs under the same absolute deadline through the socket
+    // timeouts; SNI and the verified name are the original URL host.
+    let (mut stream, tls_facts): (Box<dyn ReadWrite>, Option<TlsFacts>) = if url.scheme() == "https"
+    {
+        let client = tls.ok_or_else(|| {
+            NetError::new(
+                "unsupported_capability",
+                "tls_no_pinned_roots",
+                "https needs an explicitly pinned root; no system roots are consulted",
+            )
+        })?;
+        let name = server_name(url)?;
+        let connection = rustls::ClientConnection::new(client.config.clone(), name)
+            .map_err(|e| tls_error(&e))?;
+        let mut tls_stream = rustls::StreamOwned::new(connection, tcp);
+        while tls_stream.conn.is_handshaking() {
+            if Instant::now() >= deadline {
+                return Err(NetError::new(
+                    "deadline_exceeded",
+                    "tls_handshake",
+                    "TLS handshake did not finish before deadline",
+                ));
+            }
+            tls_stream
+                .conn
+                .complete_io(&mut tls_stream.sock)
+                .map_err(|e| tls_io_error("tls_handshake", e))?;
+        }
+        if tls_stream.conn.alpn_protocol() != Some(b"http/1.1".as_slice()) {
+            return Err(NetError::new(
+                "permission_denied",
+                "tls_alpn",
+                "server did not negotiate http/1.1",
+            ));
+        }
+        let facts = TlsFacts {
+            tls13: tls_stream.conn.protocol_version() == Some(rustls::ProtocolVersion::TLSv1_3),
+            resumed: tls_stream.conn.handshake_kind() == Some(rustls::HandshakeKind::Resumed),
+        };
+        (Box::new(tls_stream), Some(facts))
+    } else {
+        (Box::new(tcp), None)
+    };
     let host_header = match (url.host_str(), url.port()) {
         (Some(host), Some(port)) => format!("{host}:{port}"),
         (Some(host), None) => host.to_owned(),
@@ -451,7 +774,7 @@ fn get_once(
     );
     stream
         .write_all(request.as_bytes())
-        .map_err(|e| io_error("write", e))?;
+        .map_err(|e| tls_io_error("write", e))?;
 
     let mut buffer = Vec::new();
     let mut chunk = [0u8; 8192];
@@ -464,7 +787,9 @@ fn get_once(
                 "response headers did not arrive before deadline",
             ));
         }
-        let read = stream.read(&mut chunk).map_err(|e| io_error("read", e))?;
+        let read = stream
+            .read(&mut chunk)
+            .map_err(|e| tls_io_error("read", e))?;
         if read == 0 {
             return Err(NetError::new(
                 "not_found",
@@ -503,6 +828,7 @@ fn get_once(
             set_cookie,
             body: Vec::new(),
             framing,
+            tls: tls_facts,
         });
     }
     if body.len() > body_cap || head.content_length.is_some_and(|len| len > body_cap) {
@@ -526,7 +852,9 @@ fn get_once(
                 "response body did not arrive before deadline",
             ));
         }
-        let read = stream.read(&mut chunk).map_err(|e| io_error("read", e))?;
+        let read = stream
+            .read(&mut chunk)
+            .map_err(|e| tls_io_error("read", e))?;
         if read == 0 {
             if let Some(len) = head.content_length {
                 return Err(NetError::new(
@@ -556,6 +884,7 @@ fn get_once(
         set_cookie,
         body,
         framing,
+        tls: tls_facts,
     })
 }
 
@@ -692,6 +1021,7 @@ mod tests {
 
     fn policy_with(origin: &str) -> Policy {
         Policy {
+            https: false,
             allowed_origins: vec![AllowedOrigin::parse(origin).unwrap()],
         }
     }
@@ -857,7 +1187,8 @@ mod tests {
         assert_eq!(other_port.unwrap_err().code, "permission_denied");
         let other_host = authorize(&Url::parse("http://localhost:4321/").unwrap(), &policy);
         assert_eq!(other_host.unwrap_err().code, "permission_denied");
-        assert!(AllowedOrigin::parse("https://127.0.0.1:4321").is_err());
+        assert!(AllowedOrigin::parse("https://127.0.0.1:4321").is_ok());
+        assert!(AllowedOrigin::parse("ftp://127.0.0.1:4321").is_err());
         assert!(AllowedOrigin::parse("http://127.0.0.1:4321/path").is_err());
     }
 
@@ -934,7 +1265,7 @@ mod tests {
             b"HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 2\r\n\r\nok",
         );
         let url = Url::parse("http://example.com/vetted").unwrap();
-        let hop = get_once(&url, &[address], 1024, soon(), None).unwrap();
+        let hop = get_once(&url, &[address], 1024, soon(), None, None).unwrap();
         assert_eq!(
             (hop.status, hop.body.as_slice(), hop.framing),
             (200, &b"ok"[..], Framing::ContentLength)
@@ -990,6 +1321,7 @@ mod tests {
             1024,
             soon(),
             None,
+            None,
         )
         .unwrap_err();
         assert_eq!((err.code, err.reason), ("not_found", "response"));
@@ -1001,6 +1333,7 @@ mod tests {
             &[until_close],
             1024,
             soon(),
+            None,
             None,
         )
         .unwrap();
@@ -1016,6 +1349,7 @@ mod tests {
             1024,
             soon(),
             None,
+            None,
         )
         .unwrap_err();
         assert_eq!((err.code, err.reason), ("resource_limit", "response-bytes"));
@@ -1029,6 +1363,7 @@ mod tests {
             1024,
             soon(),
             None,
+            None,
         )
         .unwrap_err();
         assert_eq!((err.code, err.reason), ("not_found", "response"));
@@ -1040,8 +1375,64 @@ mod tests {
             1024,
             soon(),
             None,
+            None,
         )
         .unwrap();
         assert_eq!((hop.framing, hop.body.len()), (Framing::NoBody, 0));
+    }
+
+    #[test]
+    fn pinned_roots_are_bounded_and_never_private() {
+        let directory =
+            std::env::temp_dir().join(format!("minicon-surf-pinned-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        let with_key = directory.join("leak.pem");
+        // The marker is assembled at run time so the repository never carries the literal.
+        let marker = format!("-----BEGIN EC {} KEY-----", "PRIVATE");
+        std::fs::write(
+            &with_key,
+            format!(
+                "{marker}
+not-a-real-key
+-----END EC KEY-----
+"
+            ),
+        )
+        .unwrap();
+        let error = load_pinned_roots(&[&with_key]).unwrap_err();
+        assert!(error.contains("private-key block"), "{error}");
+        assert!(!error.contains("leak.pem"), "no path in the error: {error}");
+        let empty = directory.join("empty.pem");
+        std::fs::write(&empty, "nothing here\n").unwrap();
+        assert!(
+            load_pinned_roots(&[&empty])
+                .unwrap_err()
+                .contains("no certificate")
+        );
+        let many: Vec<_> = (0..MAX_PINNED_ROOT_FILES + 1)
+            .map(|_| empty.clone())
+            .collect();
+        assert!(load_pinned_roots(&many).unwrap_err().contains("more than"));
+        let big = directory.join("big.pem");
+        std::fs::write(&big, "x".repeat(MAX_PINNED_ROOT_FILE_BYTES + 1)).unwrap();
+        assert!(load_pinned_roots(&[&big]).unwrap_err().contains("exceeds"));
+        let none: [&std::path::Path; 0] = [];
+        assert!(load_pinned_roots(&none).is_err());
+        let _ = std::fs::remove_dir_all(&directory);
+    }
+
+    #[test]
+    fn https_is_unsupported_without_pinned_roots_and_downgrade_is_typed() {
+        let policy = Policy::default();
+        let err = authorize(&Url::parse("https://127.0.0.1:8443/").unwrap(), &policy).unwrap_err();
+        assert_eq!(
+            (err.code, err.reason),
+            ("unsupported_capability", "tls_no_pinned_roots")
+        );
+        let mut budget = Budget::default();
+        let err = fetch("https://127.0.0.1:8443/", &policy, &mut budget, soon()).unwrap_err();
+        assert_eq!(err.reason, "tls_no_pinned_roots");
+        assert_eq!(budget.denied, 1);
     }
 }

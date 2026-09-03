@@ -60,6 +60,8 @@ pub fn valid_profile_name(name: &str) -> bool {
 pub enum SameSite {
     Lax,
     Strict,
+    /// Only with `Secure`, only from a verified `https` origin.
+    None,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -70,6 +72,8 @@ pub struct Cookie {
     pub path: String,
     pub http_only: bool,
     pub same_site: SameSite,
+    /// Set only from a verified `https` origin; sent only to one.
+    pub secure: bool,
     /// Unix seconds; `None` is a session cookie (volatile jar).
     pub expires: Option<u64>,
 }
@@ -82,8 +86,8 @@ impl Cookie {
     fn to_json(&self) -> Value {
         json!({
             "name":self.name,"value":self.value,"host":self.host,"path":self.path,
-            "http_only":self.http_only,"same_site":match self.same_site { SameSite::Lax => "lax", SameSite::Strict => "strict" },
-            "expires":self.expires,
+            "http_only":self.http_only,"same_site":match self.same_site { SameSite::Lax => "lax", SameSite::Strict => "strict", SameSite::None => "none" },
+            "secure":self.secure,"expires":self.expires,
         })
     }
 
@@ -97,8 +101,10 @@ impl Cookie {
             same_site: match value["same_site"].as_str()? {
                 "lax" => SameSite::Lax,
                 "strict" => SameSite::Strict,
+                "none" => SameSite::None,
                 _ => return None,
             },
+            secure: value["secure"].as_bool().unwrap_or(false),
             expires: value["expires"].as_u64(),
         })
     }
@@ -203,13 +209,19 @@ impl Jar {
             .host_str()
             .map(|h| h.to_ascii_lowercase())
             .ok_or(CookieRejection::Malformed)?;
-        self.store_for_host(&host, url.path(), &default_path(url), line, now)
+        self.store_for_host(
+            &host,
+            url.scheme() == "https",
+            &default_path(url),
+            line,
+            now,
+        )
     }
 
     fn store_for_host(
         &mut self,
         host: &str,
-        _request_path: &str,
+        secure_origin: bool,
         default_path: &str,
         line: &str,
         now: u64,
@@ -234,6 +246,7 @@ impl Jar {
         }
         let mut path = default_path.to_owned();
         let mut http_only = false;
+        let mut secure = false;
         let mut same_site = SameSite::Lax;
         let mut expires: Option<u64> = None;
         let mut max_age: Option<i64> = None;
@@ -255,13 +268,19 @@ impl Jar {
                         path = attribute_value.to_owned();
                     }
                 }
-                "secure" => return Err(CookieRejection::Secure),
+                // D3 on the https cell: `Secure` needs a verified https origin.
+                "secure" => {
+                    if !secure_origin {
+                        return Err(CookieRejection::Secure);
+                    }
+                    secure = true;
+                }
                 "httponly" => http_only = true,
                 "samesite" => {
                     same_site = match attribute_value.to_ascii_lowercase().as_str() {
                         "strict" => SameSite::Strict,
                         "lax" => SameSite::Lax,
-                        "none" => return Err(CookieRejection::SameSiteNone),
+                        "none" => SameSite::None,
                         _ => SameSite::Lax,
                     }
                 }
@@ -282,6 +301,9 @@ impl Jar {
                 }
                 _ => {}
             }
+        }
+        if same_site == SameSite::None && !secure {
+            return Err(CookieRejection::SameSiteNone);
         }
         if let Some(max_age) = max_age {
             expires = Some(if max_age <= 0 {
@@ -316,6 +338,7 @@ impl Jar {
             path,
             http_only,
             same_site,
+            secure,
             expires,
         };
         if cookie.expires.is_some() {
@@ -330,12 +353,14 @@ impl Jar {
     /// `document_host` (`None`: a document fetch, which is same-site).
     pub fn header_for(&self, url: &Url, document_host: Option<&str>, now: u64) -> Option<String> {
         let host = url.host_str()?.to_ascii_lowercase();
+        let secure_origin = url.scheme() == "https";
         let same_site = document_host.is_none_or(|d| d.eq_ignore_ascii_case(&host));
         let pairs = self
             .persistent
             .iter()
             .chain(&self.volatile)
             .filter(|c| c.host == host && c.host != CONTROL_HOST)
+            .filter(|c| !c.secure || secure_origin)
             .filter(|c| path_matches(&c.path, url.path()))
             .filter(|c| c.expires.is_none_or(|expiry| expiry > now))
             .filter(|c| same_site || !matches!(c.same_site, SameSite::Strict | SameSite::Lax))
@@ -349,10 +374,12 @@ impl Jar {
         let Some(host) = url.host_str().map(|h| h.to_ascii_lowercase()) else {
             return String::new();
         };
+        let secure_origin = url.scheme() == "https";
         self.persistent
             .iter()
             .chain(&self.volatile)
             .filter(|c| c.host == host && !c.http_only)
+            .filter(|c| !c.secure || secure_origin)
             .filter(|c| path_matches(&c.path, url.path()))
             .filter(|c| c.expires.is_none_or(|expiry| expiry > now))
             .map(|c| format!("{}={}", c.name, c.value))
@@ -363,7 +390,7 @@ impl Jar {
     /// A control-plane cookie: budgeted and persisted, never sent.
     pub fn put_control(&mut self, key: &str, value: &str, now: u64) -> Result<(), CookieRejection> {
         let line = format!("{key}={value}; Max-Age=31536000");
-        self.store_for_host(CONTROL_HOST, "/", "/", &line, now)
+        self.store_for_host(CONTROL_HOST, false, "/", &line, now)
     }
 
     pub fn get_control(&self, key: &str) -> Option<&str> {
@@ -1170,6 +1197,7 @@ mod tests {
             path: "/".into(),
             http_only: false,
             same_site: SameSite::Lax,
+            secure: false,
             expires: Some(2_000_000_000),
         });
         data.storage
@@ -1211,5 +1239,39 @@ mod tests {
                 && !directory.join(format!("{RECORD_FILE}.tmp")).exists()
         );
         let _ = fs::remove_dir_all(&directory);
+    }
+
+    #[test]
+    fn secure_cookies_belong_to_https_origins_only() {
+        let mut jar = Jar::default();
+        let now = 1_000_000;
+        let https = url("https://127.0.0.1:8443/cookie/set");
+        let http = url("http://127.0.0.1:8080/cookie/set");
+        assert!(matches!(
+            jar.store(&http, "a=1; Secure; Path=/", now),
+            Err(CookieRejection::Secure)
+        ));
+        jar.store(&https, "a=1; Secure; Path=/; Max-Age=60", now)
+            .unwrap();
+        jar.store(&https, "b=2; Path=/; Max-Age=60", now).unwrap();
+        jar.store(&https, "c=3; SameSite=None; Secure; Path=/", now)
+            .unwrap();
+        assert!(matches!(
+            jar.store(&https, "d=4; SameSite=None; Path=/", now),
+            Err(CookieRejection::SameSiteNone)
+        ));
+        let over_https = jar.header_for(&https, Some("127.0.0.1"), now).unwrap();
+        assert!(
+            over_https.contains("a=1") && over_https.contains("b=2") && over_https.contains("c=3")
+        );
+        let over_http = jar.header_for(&http, Some("127.0.0.1"), now).unwrap();
+        assert!(
+            !over_http.contains("a=1") && over_http.contains("b=2") && !over_http.contains("c=3")
+        );
+        assert!(!jar.document_cookie(&http, now).contains("a=1"));
+        assert!(jar.document_cookie(&https, now).contains("a=1"));
+        let json = jar.persistent[0].to_json();
+        assert_eq!(json["secure"], json!(true));
+        assert!(Cookie::from_json(&json).unwrap().secure);
     }
 }

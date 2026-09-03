@@ -322,7 +322,9 @@ def main():
                    and memory["result"]["owners"]["network"]["limits"]["allowed_origins"] == 1, memory)
 
             negatives = [
-                ("https scheme is unsupported_capability", f"https://127.0.0.1:{port}/index.html", "unsupported_capability", "scheme"),
+                # Court amendment (recorded): https is a pinned-roots capability since the HTTPS slice;
+                # without a pinned root the refusal keeps the code and names the missing pin.
+                ("https scheme is unsupported_capability", f"https://127.0.0.1:{port}/index.html", "unsupported_capability", "tls_no_pinned_roots"),
                 ("file scheme is unsupported_capability", "file:///etc/hosts", "unsupported_capability", "scheme"),
                 ("ftp scheme is unsupported_capability", "ftp://example.com/", "unsupported_capability", "scheme"),
                 ("private 10/8 is permission_denied", "http://10.0.0.1/", "permission_denied", "address"),

@@ -1,0 +1,1041 @@
+{
+ "caps": {
+  "h1_enabled_empty_over_off_bytes": 524288,
+  "h2_first_https_over_first_http_bytes": 1048576,
+  "h3_eight_https_over_eight_http_per_target_bytes": 131072,
+  "h4_post_close_in_use_enabled_over_off_bytes": 65536
+ },
+ "checks": [
+  {
+   "check": "[system] feature off: the network owner reports TLS disabled with zero pinned roots",
+   "detail": {
+    "enabled": false,
+    "handshakes_total": 0,
+    "limits": {
+     "root_file_bytes": 16384,
+     "root_files": 8,
+     "root_total_bytes": 65536,
+     "roots": 16
+    },
+    "live_connections": 0,
+    "pinned_root_bytes": 0,
+    "pinned_root_files": 0,
+    "pinned_roots": 0,
+    "provider": null,
+    "refused_total": 0,
+    "resumed_total": 0,
+    "session_cache_entries_per_profile": 16,
+    "tls12_total": 0,
+    "tls13_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] feature off: an https target is unsupported_capability tls_no_pinned_roots",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "detail": "https needs an explicitly pinned root; no system roots are consulted",
+     "reason": "tls_no_pinned_roots"
+    },
+    "message": "network policy: tls_no_pinned_roots",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] feature off: owners are zero after the closes",
+   "passed": true
+  },
+  {
+   "check": "[system] feature off: host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[system] enabled: the network owner reports TLS enabled with one pinned root and a bounded per-profile cache of 16",
+   "detail": {
+    "enabled": true,
+    "handshakes_total": 0,
+    "limits": {
+     "root_file_bytes": 16384,
+     "root_files": 8,
+     "root_total_bytes": 65536,
+     "roots": 16
+    },
+    "live_connections": 0,
+    "pinned_root_bytes": 660,
+    "pinned_root_files": 1,
+    "pinned_roots": 1,
+    "provider": "ring",
+    "refused_total": 0,
+    "resumed_total": 0,
+    "session_cache_entries_per_profile": 16,
+    "tls12_total": 0,
+    "tls13_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] H1 enabled empty over feature-off empty",
+   "detail": {
+    "delta": -32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an https document and its same-origin script load over TLS 1.3",
+   "detail": {
+    "network": {
+     "bytes": 2754,
+     "denied": 0,
+     "fetches": 3,
+     "tls": {
+      "handshakes_total": 3,
+      "refused_total": 0,
+      "resumed_total": 2,
+      "tls12_total": 0,
+      "tls13_total": 3
+     }
+    },
+    "tls": {
+     "handshakes_total": 3,
+     "refused_total": 0,
+     "resumed_total": 2,
+     "tls12_total": 0,
+     "tls13_total": 3
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the https document renders the same representative page as http",
+   "detail": "8 results Alpha result Beta result Gamma result Delta result Epsilon result Zeta result Eta result Theta result",
+   "passed": true
+  },
+  {
+   "check": "[system] a TLS 1.2-only origin negotiates TLS 1.2",
+   "detail": {
+    "handshakes_total": 3,
+    "refused_total": 0,
+    "resumed_total": 1,
+    "tls12_total": 3,
+    "tls13_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] wrong name is refused as permission_denied tls_hostname_mismatch",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not match the URL host",
+     "reason": "tls_hostname_mismatch"
+    },
+    "message": "network policy: tls_hostname_mismatch",
+    "retryable": false,
+    "scope": {
+     "id": "target_3",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] unpinned issuer is refused as permission_denied tls_untrusted_root",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not chain to a pinned root",
+     "reason": "tls_untrusted_root"
+    },
+    "message": "network policy: tls_untrusted_root",
+    "retryable": false,
+    "scope": {
+     "id": "target_4",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] ALPN h2-only is refused as permission_denied tls_alpn",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server did not negotiate http/1.1",
+     "reason": "tls_alpn"
+    },
+    "message": "network policy: tls_alpn",
+    "retryable": false,
+    "scope": {
+     "id": "target_5",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] redirect https to http is refused as permission_denied redirect_downgrade",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "redirect from https to http is refused",
+     "reason": "redirect_downgrade"
+    },
+    "message": "network policy: redirect_downgrade",
+    "retryable": false,
+    "scope": {
+     "id": "target_6",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] redirect to a private address is refused as permission_denied address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "address class refused: private",
+     "reason": "address"
+    },
+    "message": "network policy: address",
+    "retryable": false,
+    "scope": {
+     "id": "target_7",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] redirect loop is refused as resource_limit redirect-count",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "more than 3 redirects",
+     "reason": "redirect-count"
+    },
+    "message": "network policy: redirect-count",
+    "retryable": false,
+    "scope": {
+     "id": "target_8",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] body cap is refused as resource_limit response-bytes",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "response body exceeds the 1048576-byte cap",
+     "reason": "response-bytes"
+    },
+    "message": "network policy: response-bytes",
+    "retryable": false,
+    "scope": {
+     "id": "target_9",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] header cap is refused as resource_limit header-bytes",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "response headers exceed 16384 bytes",
+     "reason": "header-bytes"
+    },
+    "message": "network policy: header-bytes",
+    "retryable": false,
+    "scope": {
+     "id": "target_10",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] deadline is refused as deadline_exceeded",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "detail": "socket operation timed out",
+     "reason": "read"
+    },
+    "message": "network policy: read",
+    "retryable": true,
+    "scope": {
+     "id": "target_11",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] TLS 1.1-only is refused as permission_denied tls_protocol",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server offers no acceptable TLS version or parameters",
+     "reason": "tls_protocol"
+    },
+    "message": "network policy: tls_protocol",
+    "retryable": false,
+    "scope": {
+     "id": "target_12",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a refused TLS fetch never reveals a path, a certificate or a crypto internal",
+   "passed": true
+  },
+  {
+   "check": "[system] https redirects within the cap are followed with each hop re-authorized",
+   "detail": [
+    "Redirect landed"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] the second https fetch of the same profile resumes its session",
+   "detail": {
+    "after": {
+     "enabled": true,
+     "handshakes_total": 12,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 9,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 3,
+     "tls13_total": 9
+    },
+    "before": {
+     "enabled": true,
+     "handshakes_total": 9,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 6,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 3,
+     "tls13_total": 6
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] another profile's first https fetch is a full handshake (no cross-profile cache)",
+   "detail": {
+    "handshakes_total": 3,
+    "refused_total": 0,
+    "resumed_total": 2,
+    "tls12_total": 0,
+    "tls13_total": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a Secure cookie set over https is sent back over https",
+   "detail": "sent=locked=court-alpha-7f3a; open=court-open",
+   "passed": true
+  },
+  {
+   "check": "[system] the Secure cookie is never sent to the http origin of the same host, the plain one still is",
+   "detail": "sent=open=court-open",
+   "passed": true
+  },
+  {
+   "check": "[system] an http document does not see the Secure cookie in document.cookie",
+   "detail": "seen=none cookie=open=court-open",
+   "passed": true
+  },
+  {
+   "check": "[system] SameSite=None; Secure is accepted over https; SameSite=None without Secure, Secure over http and a foreign Domain are refused",
+   "detail": "sent=locked=court-alpha-7f3a; open=court-open; third=court-third",
+   "passed": true
+  },
+  {
+   "check": "[system] a link to a wrong-name https origin fails typed and leaves frame, generation, realm, revision and jar unchanged",
+   "detail": {
+    "after": [
+     {
+      "frame": "frame_26",
+      "generation": 1,
+      "parent": null,
+      "realm": "realm_16"
+     }
+    ],
+    "before": [
+     {
+      "frame": "frame_26",
+      "generation": 1,
+      "parent": null,
+      "realm": "realm_16"
+     }
+    ],
+    "clicked": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "server certificate does not match the URL host",
+      "generation": 1,
+      "href": "https://127.0.0.1:54435/index.html",
+      "navigation": "failed",
+      "realm": "realm_16",
+      "reason": "tls_hostname_mismatch"
+     },
+     "message": "network policy: tls_hostname_mismatch",
+     "retryable": false,
+     "scope": {
+      "id": "target_26",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] H2 first https target over first http target",
+   "detail": {
+    "delta": 16384
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] H3 eight https targets over eight http targets, per target",
+   "detail": {
+    "per_target": 28672
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] H4 post-close libmalloc in-use enabled over feature-off",
+   "detail": {
+    "delta": 12896
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] owners are zero after every close and no TLS connection is live",
+   "detail": {
+    "enabled": true,
+    "handshakes_total": 49,
+    "limits": {
+     "root_file_bytes": 16384,
+     "root_files": 8,
+     "root_total_bytes": 65536,
+     "roots": 16
+    },
+    "live_connections": 0,
+    "pinned_root_bytes": 660,
+    "pinned_root_files": 1,
+    "pinned_roots": 1,
+    "provider": "ring",
+    "refused_total": 0,
+    "resumed_total": 44,
+    "session_cache_entries_per_profile": 16,
+    "tls12_total": 3,
+    "tls13_total": 46
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the host stayed one process with no descendant",
+   "passed": true
+  },
+  {
+   "check": "[system] enabled host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[arena] feature off: the network owner reports TLS disabled with zero pinned roots",
+   "detail": {
+    "enabled": false,
+    "handshakes_total": 0,
+    "limits": {
+     "root_file_bytes": 16384,
+     "root_files": 8,
+     "root_total_bytes": 65536,
+     "roots": 16
+    },
+    "live_connections": 0,
+    "pinned_root_bytes": 0,
+    "pinned_root_files": 0,
+    "pinned_roots": 0,
+    "provider": null,
+    "refused_total": 0,
+    "resumed_total": 0,
+    "session_cache_entries_per_profile": 16,
+    "tls12_total": 0,
+    "tls13_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] feature off: an https target is unsupported_capability tls_no_pinned_roots",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "detail": "https needs an explicitly pinned root; no system roots are consulted",
+     "reason": "tls_no_pinned_roots"
+    },
+    "message": "network policy: tls_no_pinned_roots",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] feature off: owners are zero after the closes",
+   "passed": true
+  },
+  {
+   "check": "[arena] feature off: host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[arena] enabled: the network owner reports TLS enabled with one pinned root and a bounded per-profile cache of 16",
+   "detail": {
+    "enabled": true,
+    "handshakes_total": 0,
+    "limits": {
+     "root_file_bytes": 16384,
+     "root_files": 8,
+     "root_total_bytes": 65536,
+     "roots": 16
+    },
+    "live_connections": 0,
+    "pinned_root_bytes": 660,
+    "pinned_root_files": 1,
+    "pinned_roots": 1,
+    "provider": "ring",
+    "refused_total": 0,
+    "resumed_total": 0,
+    "session_cache_entries_per_profile": 16,
+    "tls12_total": 0,
+    "tls13_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] H1 enabled empty over feature-off empty",
+   "detail": {
+    "delta": -32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an https document and its same-origin script load over TLS 1.3",
+   "detail": {
+    "network": {
+     "bytes": 2754,
+     "denied": 0,
+     "fetches": 3,
+     "tls": {
+      "handshakes_total": 3,
+      "refused_total": 0,
+      "resumed_total": 2,
+      "tls12_total": 0,
+      "tls13_total": 3
+     }
+    },
+    "tls": {
+     "handshakes_total": 3,
+     "refused_total": 0,
+     "resumed_total": 2,
+     "tls12_total": 0,
+     "tls13_total": 3
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the https document renders the same representative page as http",
+   "detail": "8 results Alpha result Beta result Gamma result Delta result Epsilon result Zeta result Eta result Theta result",
+   "passed": true
+  },
+  {
+   "check": "[arena] a TLS 1.2-only origin negotiates TLS 1.2",
+   "detail": {
+    "handshakes_total": 3,
+    "refused_total": 0,
+    "resumed_total": 1,
+    "tls12_total": 3,
+    "tls13_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] wrong name is refused as permission_denied tls_hostname_mismatch",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not match the URL host",
+     "reason": "tls_hostname_mismatch"
+    },
+    "message": "network policy: tls_hostname_mismatch",
+    "retryable": false,
+    "scope": {
+     "id": "target_3",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] unpinned issuer is refused as permission_denied tls_untrusted_root",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server certificate does not chain to a pinned root",
+     "reason": "tls_untrusted_root"
+    },
+    "message": "network policy: tls_untrusted_root",
+    "retryable": false,
+    "scope": {
+     "id": "target_4",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] ALPN h2-only is refused as permission_denied tls_alpn",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server did not negotiate http/1.1",
+     "reason": "tls_alpn"
+    },
+    "message": "network policy: tls_alpn",
+    "retryable": false,
+    "scope": {
+     "id": "target_5",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] redirect https to http is refused as permission_denied redirect_downgrade",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "redirect from https to http is refused",
+     "reason": "redirect_downgrade"
+    },
+    "message": "network policy: redirect_downgrade",
+    "retryable": false,
+    "scope": {
+     "id": "target_6",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] redirect to a private address is refused as permission_denied address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "address class refused: private",
+     "reason": "address"
+    },
+    "message": "network policy: address",
+    "retryable": false,
+    "scope": {
+     "id": "target_7",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] redirect loop is refused as resource_limit redirect-count",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "more than 3 redirects",
+     "reason": "redirect-count"
+    },
+    "message": "network policy: redirect-count",
+    "retryable": false,
+    "scope": {
+     "id": "target_8",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] body cap is refused as resource_limit response-bytes",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "response body exceeds the 1048576-byte cap",
+     "reason": "response-bytes"
+    },
+    "message": "network policy: response-bytes",
+    "retryable": false,
+    "scope": {
+     "id": "target_9",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] header cap is refused as resource_limit header-bytes",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "response headers exceed 16384 bytes",
+     "reason": "header-bytes"
+    },
+    "message": "network policy: header-bytes",
+    "retryable": false,
+    "scope": {
+     "id": "target_10",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] deadline is refused as deadline_exceeded",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "detail": "socket operation timed out",
+     "reason": "read"
+    },
+    "message": "network policy: read",
+    "retryable": true,
+    "scope": {
+     "id": "target_11",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] TLS 1.1-only is refused as permission_denied tls_protocol",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "server offers no acceptable TLS version or parameters",
+     "reason": "tls_protocol"
+    },
+    "message": "network policy: tls_protocol",
+    "retryable": false,
+    "scope": {
+     "id": "target_12",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a refused TLS fetch never reveals a path, a certificate or a crypto internal",
+   "passed": true
+  },
+  {
+   "check": "[arena] https redirects within the cap are followed with each hop re-authorized",
+   "detail": [
+    "Redirect landed"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] the second https fetch of the same profile resumes its session",
+   "detail": {
+    "after": {
+     "enabled": true,
+     "handshakes_total": 12,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 9,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 3,
+     "tls13_total": 9
+    },
+    "before": {
+     "enabled": true,
+     "handshakes_total": 9,
+     "limits": {
+      "root_file_bytes": 16384,
+      "root_files": 8,
+      "root_total_bytes": 65536,
+      "roots": 16
+     },
+     "live_connections": 0,
+     "pinned_root_bytes": 660,
+     "pinned_root_files": 1,
+     "pinned_roots": 1,
+     "provider": "ring",
+     "refused_total": 0,
+     "resumed_total": 6,
+     "session_cache_entries_per_profile": 16,
+     "tls12_total": 3,
+     "tls13_total": 6
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] another profile's first https fetch is a full handshake (no cross-profile cache)",
+   "detail": {
+    "handshakes_total": 3,
+    "refused_total": 0,
+    "resumed_total": 2,
+    "tls12_total": 0,
+    "tls13_total": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a Secure cookie set over https is sent back over https",
+   "detail": "sent=locked=court-alpha-7f3a; open=court-open",
+   "passed": true
+  },
+  {
+   "check": "[arena] the Secure cookie is never sent to the http origin of the same host, the plain one still is",
+   "detail": "sent=open=court-open",
+   "passed": true
+  },
+  {
+   "check": "[arena] an http document does not see the Secure cookie in document.cookie",
+   "detail": "seen=none cookie=open=court-open",
+   "passed": true
+  },
+  {
+   "check": "[arena] SameSite=None; Secure is accepted over https; SameSite=None without Secure, Secure over http and a foreign Domain are refused",
+   "detail": "sent=locked=court-alpha-7f3a; open=court-open; third=court-third",
+   "passed": true
+  },
+  {
+   "check": "[arena] a link to a wrong-name https origin fails typed and leaves frame, generation, realm, revision and jar unchanged",
+   "detail": {
+    "after": [
+     {
+      "frame": "frame_26",
+      "generation": 1,
+      "parent": null,
+      "realm": "realm_16"
+     }
+    ],
+    "before": [
+     {
+      "frame": "frame_26",
+      "generation": 1,
+      "parent": null,
+      "realm": "realm_16"
+     }
+    ],
+    "clicked": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "server certificate does not match the URL host",
+      "generation": 1,
+      "href": "https://127.0.0.1:54435/index.html",
+      "navigation": "failed",
+      "realm": "realm_16",
+      "reason": "tls_hostname_mismatch"
+     },
+     "message": "network policy: tls_hostname_mismatch",
+     "retryable": false,
+     "scope": {
+      "id": "target_26",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] H2 first https target over first http target",
+   "detail": {
+    "delta": 147456
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] H3 eight https targets over eight http targets, per target",
+   "detail": {
+    "per_target": 71680
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] H4 post-close libmalloc in-use enabled over feature-off",
+   "detail": {
+    "delta": 12896
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] owners are zero after every close and no TLS connection is live",
+   "detail": {
+    "enabled": true,
+    "handshakes_total": 49,
+    "limits": {
+     "root_file_bytes": 16384,
+     "root_files": 8,
+     "root_total_bytes": 65536,
+     "roots": 16
+    },
+    "live_connections": 0,
+    "pinned_root_bytes": 660,
+    "pinned_root_files": 1,
+    "pinned_roots": 1,
+    "provider": "ring",
+    "refused_total": 0,
+    "resumed_total": 44,
+    "session_cache_entries_per_profile": 16,
+    "tls12_total": 3,
+    "tls13_total": 46
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the host stayed one process with no descendant",
+   "passed": true
+  },
+  {
+   "check": "[arena] enabled host exits cleanly",
+   "passed": true
+  }
+ ],
+ "checks_passed": 68,
+ "checks_total": 68,
+ "design": "labs/native-dom/https-design-0.0.1.md",
+ "fixtures": {
+  "generation_seconds": 0.093,
+  "mode": "generated-disposable",
+  "public_certificates": {
+   "court-ca.pem": {
+    "not_after": "Oct  3 08:23:39 2026 GMT",
+    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "64:7E:5F:29:70:74:22:5D:9D:02:28:0E:7A:A9:1A:CF:BC:EE:99:67:C8:EA:63:78:C6:81:79:05:80:F2:52:F8",
+    "subject": "CN=MiniCon Surf disposable court CA",
+    "subject_alt_name": null
+   },
+   "loopback.pem": {
+    "not_after": "Oct  3 08:23:39 2026 GMT",
+    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "D3:5D:B2:6F:A5:27:EA:14:AC:19:43:AE:D9:D3:D9:7A:05:F7:5F:A9:04:81:19:03:89:0C:57:50:DD:97:18:C4",
+    "subject": "CN=loopback",
+    "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
+   },
+   "other-ca-loopback.pem": {
+    "not_after": "Oct  3 08:23:39 2026 GMT",
+    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "97:24:94:AC:15:42:36:A7:4D:81:4E:22:52:7A:11:10:D0:56:67:87:0D:56:F0:F1:0F:B9:7F:C5:BE:47:93:4A",
+    "subject": "CN=other-ca-loopback",
+    "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
+   },
+   "other-ca.pem": {
+    "not_after": "Oct  3 08:23:39 2026 GMT",
+    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "76:68:DB:F2:AA:7E:C7:7C:1F:A2:27:37:F9:FC:14:9C:1E:C2:C2:BB:81:BD:18:F3:04:08:A0:28:D2:67:39:32",
+    "subject": "CN=MiniCon Surf disposable OTHER CA (not pinned)",
+    "subject_alt_name": null
+   },
+   "wrong-name.pem": {
+    "not_after": "Oct  3 08:23:39 2026 GMT",
+    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "public_key": "id-ecPublicKey",
+    "sha256_fingerprint": "1D:CF:F5:E1:B2:F6:68:57:81:8A:F1:BD:AB:B7:8C:99:67:FF:85:AF:89:43:83:F5:C6:6A:AC:59:4D:F6:00:D1",
+    "subject": "CN=wrong-name",
+    "subject_alt_name": "DNS:wrong.invalid"
+   }
+  }
+ },
+ "footprint_bytes": {
+  "arena": {
+   "off_eight_http": 5866000,
+   "off_empty": 2097488,
+   "off_first_http": 2769256,
+   "off_post_close": 2851152,
+   "off_post_close_in_use": 120960,
+   "on_eight_https": 6439440,
+   "on_empty": 2064720,
+   "on_first_https": 2916712,
+   "on_post_close": 3424592,
+   "on_post_close_in_use": 133856,
+   "tree_peak_enabled": 6439440
+  },
+  "system": {
+   "off_eight_http": 5964112,
+   "off_empty": 2097488,
+   "off_first_http": 3408208,
+   "off_post_close": 5964112,
+   "off_post_close_in_use": 137280,
+   "on_eight_https": 6193488,
+   "on_empty": 2064720,
+   "on_first_https": 3424592,
+   "on_post_close": 6193488,
+   "on_post_close_in_use": 150176,
+   "tree_peak_enabled": 6193488
+  }
+ },
+ "host_sha256": "a0b7667d58fdca6e44f855b26ce6026bcae5f587c2a68d442f91f416a022aae0",
+ "limitations": [
+  "pinned test roots on loopback only: no system roots, no public web, no root-store breadth claim",
+  "the TLS server is Python's ssl (OpenSSL): court infrastructure outside the host's process tree, never sampled",
+  "ring carries C and perlasm crypto inside an otherwise Rust closure; the stack is not pure Rust",
+  "one platform, one fixture set, fake values only; no leak-absence claim"
+ ],
+ "passed": true,
+ "release_binary_bytes": 5266416,
+ "schema": "minicon-surf.native-dom-https-receipt/0.0.1",
+ "technology": "native-dom",
+ "technology_version": "0.0.2"
+}

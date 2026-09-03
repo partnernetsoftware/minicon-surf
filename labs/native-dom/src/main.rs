@@ -936,6 +936,9 @@ struct Profile {
     read_only: bool,
     /// Held while a session is open on a persistent profile.
     lock: Option<std::fs::File>,
+    /// This profile's TLS client over the host's pinned roots; `None`
+    /// without pinned roots.
+    tls: Option<std::sync::Arc<net::TlsClient>>,
 }
 
 /// A target's working copy of its profile's jar and storage, synced from the
@@ -947,6 +950,9 @@ struct TargetIo {
     origin: String,
     document_host: Option<String>,
     cookie_rejections: u64,
+    /// The profile's TLS client (its own bounded session cache); `None`
+    /// keeps https `unsupported_capability` for this target.
+    tls: Option<std::sync::Arc<net::TlsClient>>,
 }
 
 struct JarHooks<'a> {
@@ -1160,6 +1166,7 @@ impl Target {
                                 &mut self.budget,
                                 deadline,
                                 Some(&mut hooks),
+                                self.io.tls.as_deref(),
                             )
                         }
                         Err(error) => Err(error),
@@ -1246,6 +1253,10 @@ struct Host {
     store_writes_total: u64,
     store_bytes_written_total: u64,
     cookie_rejections_total: u64,
+    /// Pinned roots for the https slice; `None` keeps https unsupported.
+    tls_roots: Option<net::TlsRoots>,
+    /// TLS counters of targets that no longer exist.
+    tls_retired: net::Budget,
 }
 
 const MAX_ADAPTERS: usize = 16;
@@ -1260,6 +1271,35 @@ struct AdapterRecord {
 }
 
 impl Host {
+    fn tls_client(&self) -> Option<std::sync::Arc<net::TlsClient>> {
+        self.tls_roots
+            .as_ref()
+            .map(|roots| std::sync::Arc::new(roots.client()))
+    }
+
+    /// Keep a closing target's TLS counters in the host totals.
+    fn retire_target(&mut self, target: &Target) {
+        self.tls_retired.absorb_tls(&target.budget);
+    }
+
+    fn tls_owner(&self) -> Value {
+        let mut totals = self.tls_retired.clone();
+        for target in self.targets.values() {
+            totals.absorb_tls(&target.budget);
+        }
+        let mut owner = totals.tls_json();
+        let roots = self.tls_roots.as_ref();
+        owner["enabled"] = json!(roots.is_some());
+        owner["pinned_roots"] = json!(roots.map_or(0, |r| r.certificates));
+        owner["pinned_root_files"] = json!(roots.map_or(0, |r| r.files));
+        owner["pinned_root_bytes"] = json!(roots.map_or(0, |r| r.bytes));
+        owner["provider"] = json!(roots.map(|_| net::TLS_PROVIDER));
+        owner["session_cache_entries_per_profile"] = json!(net::TLS_SESSION_CACHE_ENTRIES);
+        owner["live_connections"] = json!(0);
+        owner["limits"] = json!({"root_files":net::MAX_PINNED_ROOT_FILES,"root_file_bytes":net::MAX_PINNED_ROOT_FILE_BYTES,"root_total_bytes":net::MAX_PINNED_ROOT_TOTAL_BYTES,"roots":net::MAX_PINNED_ROOTS});
+        owner
+    }
+
     /// Operations only the in-process CDP edge may request: adapter
     /// bookkeeping is not part of control 0.0.1 and never reaches stdio,
     /// whose parser refuses unknown operation names.
@@ -1373,6 +1413,7 @@ impl Host {
             ),
             document_host: url.and_then(|u| u.host_str().map(|h| h.to_ascii_lowercase())),
             cookie_rejections: 0,
+            tls: profile.tls.clone(),
         })
     }
 
@@ -1578,6 +1619,7 @@ impl Host {
                             directory: Some(directory),
                             read_only: false,
                             lock: None,
+                            tls: self.tls_client(),
                         },
                     );
                 }
@@ -1750,6 +1792,7 @@ impl Host {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?.to_owned();
                 let policy = self.policy.clone();
+                let https = self.tls_roots.is_some();
                 let target = self.target_mut(&id)?;
                 let revision = Self::revision(target, deadline, &policy)?;
                 Ok(json!({
@@ -1759,15 +1802,17 @@ impl Host {
                     "frames":[{"frame":target.frame_id,"parent":null,"generation":target.generation,"realm":target.realm_id}],
                     "realms":[{"realm":target.realm_id,"frame":target.frame_id,"world":"main"}],
                     "frame_limit":1,
-                    "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
+                    "network":target_network(&target.budget, https)
                 }))
             }
             "target.close" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?;
-                self.targets
+                let closed = self
+                    .targets
                     .remove(id)
                     .ok_or_else(|| not_found("target", id))?;
+                self.retire_target(&closed);
                 let detached = self.detach_adapters_of(id);
                 Ok(
                     json!({"kind":"target_closed","target":id,"teardown":{"adapters_detached":detached,"order":["adapters","target"]}}),
@@ -1874,6 +1919,7 @@ impl Host {
                 directory: None,
                 read_only: false,
                 lock: None,
+                tls: self.tls_client(),
             },
         );
         Ok(
@@ -1945,6 +1991,7 @@ impl Host {
                 directory: Some(directory),
                 read_only: false,
                 lock: None,
+                tls: self.tls_client(),
             },
         );
         Ok(
@@ -2022,7 +2069,9 @@ impl Host {
         let closed = ids.len();
         let mut detached = 0;
         for id in ids {
-            self.targets.remove(&id);
+            if let Some(closed) = self.targets.remove(&id) {
+                self.retire_target(&closed);
+            }
             detached += self.detach_adapters_of(&id);
         }
         // The writer lock goes last and only when no session of this profile
@@ -2166,7 +2215,7 @@ impl Host {
             "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"scripts_run":target.script_count,
             "scripts_skipped":target.skipped_scripts.len(),
             "frame":target.frame_id,"generation":target.generation,"realm":target.realm_id,
-            "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
+            "network":target_network(&target.budget, self.tls_roots.is_some())
         });
         self.targets.insert(id.clone(), target);
         // The page's writes during load reach the profile now; a failed
@@ -2221,8 +2270,15 @@ impl Host {
                         now,
                         rejections: &mut io.cookie_rejections,
                     };
-                    net::fetch_with(&raw, &policy, &mut budget, deadline, Some(&mut hooks))
-                        .map_err(|error| net_error(error, id))?
+                    net::fetch_with(
+                        &raw,
+                        &policy,
+                        &mut budget,
+                        deadline,
+                        Some(&mut hooks),
+                        io.tls.as_deref(),
+                    )
+                    .map_err(|error| net_error(error, id))?
                 };
                 if response.status >= 400 {
                     return Err(ControlError::new(
@@ -2304,6 +2360,7 @@ impl Host {
                         &mut budget,
                         deadline,
                         Some(&mut hooks),
+                        io.tls.as_deref(),
                     ) {
                         Ok(response) if response.status < 400 => scripts
                             .push((src, String::from_utf8_lossy(&response.body).into_owned())),
@@ -2832,7 +2889,7 @@ impl Host {
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
-                "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()}},
+                "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
             },
             "allocator":{"realm_allocation":self.realm_allocation.name(),"realm_zone":self.realm_allocation == RealmAllocation::Zone,"realm_arena":self.realm_allocation == RealmAllocation::Arena,"realm_arena_reserved_bytes":REALM_ARENA_BYTES,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed),"arenas_unmapped":arenas_unmapped,"arena_blocks_leaked_total":arena_leaked},
             "libmalloc":libmalloc_statistics(),
@@ -2886,9 +2943,19 @@ fn read_bounded_line(reader: &mut impl BufRead) -> io::Result<Line> {
     }
 }
 
+/// A target's network facts; the TLS counters appear only when the https
+/// slice is enabled, so the feature-off shape is unchanged.
+fn target_network(budget: &net::Budget, https: bool) -> Value {
+    let mut network = json!({"fetches":budget.fetches,"bytes":budget.bytes,"denied":budget.denied});
+    if https {
+        network["tls"] = budget.tls_json();
+    }
+    network
+}
+
 fn usage() -> ! {
     eprintln!(
-        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR]"
+        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]..."
     );
     std::process::exit(64);
 }
@@ -2912,6 +2979,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut cdp_port = None;
     let mut ready_file = None;
     let mut profile_root: Option<PathBuf> = None;
+    let mut pinned_roots: Vec<PathBuf> = Vec::new();
     for pair in arguments[6..].chunks_exact(2) {
         match pair[0].as_str() {
             "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
@@ -2928,12 +2996,29 @@ fn main() -> Result<(), Box<dyn Error>> {
             "--profile-root" if profile_root.is_none() => {
                 profile_root = Some(PathBuf::from(&pair[1]))
             }
+            "--pinned-root" => pinned_roots.push(PathBuf::from(&pair[1])),
             _ => usage(),
         }
     }
     if cdp_port.is_some() != ready_file.is_some() {
         usage();
     }
+    // The https slice exists only with explicitly pinned public roots; the
+    // ring provider is selected inside `load_pinned_roots` and nowhere else.
+    let tls_roots = if pinned_roots.is_empty() {
+        None
+    } else {
+        match net::load_pinned_roots(&pinned_roots) {
+            Ok(roots) => {
+                policy.https = true;
+                Some(roots)
+            }
+            Err(message) => {
+                eprintln!("--pinned-root: {message}");
+                std::process::exit(64);
+            }
+        }
+    };
     let realm_zone = std::env::var("MINICON_SURF_NATIVE_REALM_ZONE").is_ok_and(|v| v == "1");
     let realm_arena = std::env::var("MINICON_SURF_NATIVE_REALM_ARENA").is_ok_and(|v| v == "1");
     let realm_allocation = match (realm_zone, realm_arena) {
@@ -2971,6 +3056,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         store_writes_total: 0,
         store_bytes_written_total: 0,
         cookie_rejections_total: 0,
+        tls_roots,
+        tls_retired: net::Budget::default(),
     };
     if let Some(root) = profile_root {
         host.enable_profile_store(root, PathBuf::from(&arguments[5]))?;

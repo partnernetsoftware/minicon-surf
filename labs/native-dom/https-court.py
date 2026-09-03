@@ -114,12 +114,21 @@ class HttpsHandler(PROFILE.ProfileHandler):
                     b"<a id=\"go\" href=\"" + target.encode() + b"\">go</a></main></body></html>")
             return self.reply(200, body)
         if path == "/bigheaders":
-            return self.reply(200, b"<!doctype html><h1>headers</h1>", extra=[(f"X-Pad-{i}", "y" * 1000) for i in range(20)])
+            # Court amendment (mechanism): the header cap is checked per 8 KiB chunk while the
+            # header end is not yet seen, so the block must exceed the cap by more than a chunk.
+            return self.reply(200, b"<!doctype html><h1>headers</h1>", extra=[(f"X-Pad-{i}", "y" * 1000) for i in range(40)])
         return super().do_GET()
 
 
+class QuietServer(http.server.ThreadingHTTPServer):
+    """Refused TLS handshakes and byte-capped clients reset connections by design; keep the log clean."""
+
+    def handle_error(self, request, client_address):
+        pass
+
+
 def start_server(fixtures, cert=None, key=None, alpn=("http/1.1",), minimum=ssl.TLSVersion.TLSv1_2, maximum=None, seclevel0=False):
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), HttpsHandler)
+    server = QuietServer(("127.0.0.1", 0), HttpsHandler)
     server.daemon_threads = True
     if cert is not None:
         context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
@@ -225,11 +234,12 @@ def main():
         for allocator in ("system", "arena"):
             tag = f"[{allocator}] "
             with tempfile.TemporaryDirectory(prefix="minicon-surf-https-court-") as directory:
-                root = Path(directory) / "profiles"
                 # Feature off: the same origins, no pinned root.
                 off = Host(args.binary, directory, allocator, origins, None)
-                off_empty = footprint(off)
+                # Court amendment (mechanism): the empty sample follows the first request, so a host
+                # still starting up is not measured against one that has answered already.
                 owner = tls_owner(off)
+                off_empty = footprint(off)
                 expect(tag + "feature off: the network owner reports TLS disabled with zero pinned roots",
                        owner is not None and owner.get("enabled") is False and owner.get("pinned_roots") == 0, owner)
                 profile = off.ok("profile.create", {"persistence": "ephemeral"})["profile"]
@@ -251,17 +261,19 @@ def main():
                 expect(tag + "feature off: host exits cleanly", off.finish() == 0 and off.sampler.max_descendants == 0)
 
                 # Enabled: pinned root and explicit https origins.
-                host = Host(args.binary, directory, allocator, origins, root, pinned_roots=[fixtures.path("court-ca.pem")])
-                on_empty = footprint(host)
+                # Court amendment (mechanism): both hosts use ephemeral profiles, so the keychain's
+                # one-time first-use cost of a persistent profile cannot enter the H deltas.
+                host = Host(args.binary, directory, allocator, origins, None, pinned_roots=[fixtures.path("court-ca.pem")])
                 owner = tls_owner(host)
+                on_empty = footprint(host)
                 expect(tag + "enabled: the network owner reports TLS enabled with one pinned root and a bounded per-profile cache of 16",
                        owner is not None and owner.get("enabled") is True and owner.get("pinned_roots") == 1
                        and owner.get("session_cache_entries_per_profile") == 16 and owner.get("provider") == "ring", owner)
                 h1 = on_empty - off_empty
                 expect(tag + "H1 enabled empty over feature-off empty", h1 <= CAPS["h1_enabled_empty_over_off_bytes"], {"delta": h1})
 
-                alpha = host.ok("profile.create", {"persistence": "persistent", "name": "alpha"})["profile"]
-                beta = host.ok("profile.create", {"persistence": "persistent", "name": "beta"})["profile"]
+                alpha = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                beta = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 sessions = {"alpha": host.ok("session.open", {"profile": alpha})["session"], "beta": host.ok("session.open", {"profile": beta})["session"]}
 
                 # 1. Document and script over https, versions.
@@ -285,7 +297,9 @@ def main():
                         ("unpinned issuer", f"https://127.0.0.1:{other_port}/index.html", "permission_denied", "tls_untrusted_root"),
                         ("ALPN h2-only", f"https://127.0.0.1:{h2_port}/index.html", "permission_denied", "tls_alpn"),
                         ("redirect https to http", f"{https}/redirect-to?url={urllib.parse.quote(http + '/index.html', safe='')}", "permission_denied", "redirect_downgrade"),
-                        ("redirect to a private address", f"{https}/redirect-private", "permission_denied", "address"),
+                        # Court amendment (mechanism): the fixture's /redirect-private points at http, which an https
+                        # origin refuses as a downgrade first; the private-address rule is exercised with an https target.
+                        ("redirect to a private address", f"{https}/redirect-to?url={urllib.parse.quote('https://10.0.0.1/', safe='')}", "permission_denied", "address"),
                         ("redirect loop", f"{https}/redirect-loop", "resource_limit", "redirect-count"),
                         ("body cap", f"{https}/big", "resource_limit", "response-bytes"),
                         ("header cap", f"{https}/bigheaders", "resource_limit", "header-bytes"),
@@ -300,7 +314,9 @@ def main():
                 expect(tag + "a refused TLS fetch never reveals a path, a certificate or a crypto internal",
                        not any(s in json.dumps(checks[-12:]) for s in ("BEGIN", fixtures.directory, "/var/folders", "webpki", "ring::")))
                 redirect = host.ok("target.open", {"session": sessions["alpha"], "url": f"{https}/redirect/2"})
-                expect(tag + "https redirects within the cap are followed with each hop re-authorized", redirect["network"]["fetches"] >= 1 and "Redirect landed" in text_of(host, redirect["target"]))
+                landed = host.ok("target.snapshot", {"target": redirect["target"], "format": "semantic", "max_bytes": 65536, "max_nodes": 48})
+                expect(tag + "https redirects within the cap are followed with each hop re-authorized",
+                       redirect["network"]["fetches"] >= 1 and any("Redirect landed" in n.get("name", "") for n in landed["nodes"]), [n.get("name") for n in landed["nodes"]])
                 host.ok("target.close", {"target": redirect["target"]})
 
                 # 3. Session reuse per profile.
@@ -313,7 +329,10 @@ def main():
                 beta_page = host.ok("target.open", {"session": sessions["beta"], "url": f"{https}/index.html"})
                 after = host.ok("memory.report", {})["owners"]["network"]["tls"]
                 beta_tls = host.ok("target.inspect", {"target": beta_page["target"]})["network"]["tls"]
-                expect(tag + "another profile's first https fetch is a full handshake (no cross-profile cache)", beta_tls["resumed_total"] == 0 and beta_tls["handshakes_total"] >= 1, beta_tls)
+                # A target performs three https fetches (document, script, data): exactly one full
+                # handshake means the profile started cold and did not reuse alpha's cache.
+                expect(tag + "another profile's first https fetch is a full handshake (no cross-profile cache)",
+                       beta_tls["handshakes_total"] >= 1 and beta_tls["handshakes_total"] - beta_tls["resumed_total"] == 1, beta_tls)
                 host.ok("target.close", {"target": beta_page["target"]})
 
                 # 4. Secure cookies.
@@ -356,7 +375,8 @@ def main():
                 before_cookies = host.ok("profile.inspect", {"profile": alpha})["cookies"]
                 snapshot = host.ok("target.snapshot", {"target": link["target"], "format": "semantic", "max_bytes": 65536, "max_nodes": 48})
                 anchor = next((n for n in snapshot["nodes"] if n.get("dom_id") == "go" or n.get("role") == "link"), None)
-                clicked = host.call("target.act", {"target": link["target"], "action": {"kind": "click", "node": anchor["reference"]["node"], "revision": anchor["reference"]["revision"]}}, 8000) if anchor else {"ok": False, "error": {"code": "internal", "message": "no link found"}}
+                # Court amendment (mechanism): the click carries the node reference as the contract requires.
+                clicked = host.call("target.act", {"target": link["target"], "reference": anchor["reference"], "action": {"kind": "click"}}, 8000) if anchor else {"ok": False, "error": {"code": "internal", "message": "no link found"}}
                 after_inspect = host.ok("target.inspect", {"target": link["target"]})
                 after_cookies = host.ok("profile.inspect", {"profile": alpha})["cookies"]
                 expect(tag + "a link to a wrong-name https origin fails typed and leaves frame, generation, realm, revision and jar unchanged",
