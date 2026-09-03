@@ -1,6 +1,6 @@
 //! Minimal loopback CDP edge for proving shared synthetic target authority.
 
-use crate::{ControlState, Request};
+use crate::{AdapterHandle, Capability, ControlState, Request};
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use serde_json::{Value, json};
@@ -213,12 +213,25 @@ struct ConnectionState {
     sessions: BTreeMap<String, SessionState>,
 }
 
-#[derive(Default)]
 struct SessionState {
-    target: String,
+    /// The adapter's only hold on the target: a weak handle the host may
+    /// invalidate at any teardown. Commands upgrade it for one call only.
+    adapter: AdapterHandle,
     root_node: Option<u64>,
     nodes: BTreeMap<u64, Value>,
     objects: BTreeMap<String, Value>,
+}
+
+/// The attenuation every adapter-driven native call carries: owner is the
+/// adapter's target, scope is the four target operations the CDP subset
+/// projects, budgets match the subset's fixed limits.
+fn adapter_capability(target: &str, method: &str) -> Value {
+    json!({
+        "owner":{"kind":"target","id":target},
+        "scope":["target.snapshot","target.act","target.wait","target.inspect"],
+        "budget":{"result_bytes":65536,"deadline_ms":100},
+        "audit":{"actor":"cdp.adapter","reason":method},
+    })
 }
 
 fn websocket_loop(mut stream: TcpStream, state: &Arc<Mutex<ControlState>>) -> io::Result<()> {
@@ -323,7 +336,7 @@ fn dispatch(
     let result = match method {
         "Target.getTargets" => target_get_targets(state, connection),
         "Target.attachToTarget" => target_attach(&params, state, connection),
-        "Target.detachFromTarget" => target_detach(&params, connection),
+        "Target.detachFromTarget" => target_detach(&params, state, connection),
         "DOM.getDocument" => dom_get_document(session_id, state, connection),
         "DOM.querySelector" => dom_query_selector(session_id, &params, state, connection),
         "DOM.resolveNode" => dom_resolve_node(session_id, &params, connection),
@@ -356,7 +369,7 @@ fn target_get_targets(
                 "type":"page",
                 "title":"Synthetic Agent Court",
                 "url":"minicon-surf://synthetic/semantic-court",
-                "attached":connection.sessions.values().any(|session| session.target == id),
+                "attached":connection.sessions.values().any(|session| session.adapter.target_id().as_deref() == Some(id)),
                 "canAccessOpener":false,
             })
         })
@@ -376,36 +389,98 @@ fn target_attach(
         .get("targetId")
         .and_then(Value::as_str)
         .ok_or((-32602, "targetId is required"))?;
-    let targets = native(state, connection, "target.list", json!({}))?;
-    if !targets["targets"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .any(|entry| entry["target"].as_str() == Some(target))
-    {
-        return Err((-32000, "target does not exist"));
-    }
+    let adapter = state
+        .lock()
+        .map_err(|_| (-32603, "control state lock failed"))?
+        .attach_adapter(target, "cdp")
+        .map_err(|error| match error.code {
+            "not_found" => (-32000, "target does not exist"),
+            "resource_limit" => (-32000, "adapter capacity reached"),
+            _ => (-32000, "native control operation failed"),
+        })?;
     connection.next_session += 1;
     let session_id = format!("cdp_session_{}", connection.next_session);
     connection.sessions.insert(
         session_id.clone(),
         SessionState {
-            target: target.to_owned(),
-            ..SessionState::default()
+            adapter,
+            root_node: None,
+            nodes: BTreeMap::new(),
+            objects: BTreeMap::new(),
         },
     );
     Ok(json!({"sessionId":session_id}))
 }
 
-fn target_detach(params: &Value, connection: &mut ConnectionState) -> CdpResult {
+fn target_detach(
+    params: &Value,
+    state: &Arc<Mutex<ControlState>>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
     let session_id = params
         .get("sessionId")
         .and_then(Value::as_str)
         .ok_or((-32602, "sessionId is required"))?;
-    if connection.sessions.remove(session_id).is_none() {
+    let Some(session) = connection.sessions.remove(session_id) else {
         return Err((-32000, "session does not exist"));
-    }
+    };
+    // The host may already have detached it at a teardown; both are fine.
+    let _ = state
+        .lock()
+        .map_err(|_| (-32603, "control state lock failed"))?
+        .detach_adapter(&session.adapter.id);
     Ok(json!({}))
+}
+
+/// The adapter's target for one command, or a typed detachment when the
+/// host tore the target down while the CDP session was still attached.
+fn live_target(
+    session_id: Option<&str>,
+    connection: &mut ConnectionState,
+) -> Result<String, (i64, &'static str)> {
+    let id = session_id.ok_or((-32602, "sessionId is required"))?;
+    let live = connection
+        .sessions
+        .get(id)
+        .ok_or((-32000, "session does not exist"))?
+        .adapter
+        .target_id();
+    match live {
+        Some(target) => Ok(target),
+        None => {
+            connection.sessions.remove(id);
+            Err((-32000, "target closed; adapter detached"))
+        }
+    }
+}
+
+/// A native call made on behalf of an adapter: always attenuated to the
+/// adapter's target, so the adapter never holds more authority than the
+/// target it is attached to.
+fn native_as_adapter(
+    state: &Arc<Mutex<ControlState>>,
+    connection: &mut ConnectionState,
+    target: &str,
+    method: &str,
+    operation: &str,
+    arguments: Value,
+) -> CdpResult {
+    let capability = Capability::parse(&adapter_capability(target, method))
+        .map_err(|_| (-32603, "adapter capability is malformed"))?;
+    connection.next_native_request += 1;
+    let response = state
+        .lock()
+        .map_err(|_| (-32603, "control state lock failed"))?
+        .execute(Request {
+            request_id: format!("req_cdp_{}", connection.next_native_request),
+            deadline: Duration::from_millis(100),
+            operation: operation.to_owned(),
+            arguments,
+            capability: Some(capability),
+        });
+    response
+        .into_outcome()
+        .map_err(|_| (-32000, "native control operation failed"))
 }
 
 fn dom_get_document(
@@ -413,10 +488,12 @@ fn dom_get_document(
     state: &Arc<Mutex<ControlState>>,
     connection: &mut ConnectionState,
 ) -> CdpResult {
-    let target = session(session_id, connection)?.target.clone();
-    let snapshot = native(
+    let target = live_target(session_id, connection)?;
+    let snapshot = native_as_adapter(
         state,
         connection,
+        &target,
+        "DOM.getDocument",
         "target.snapshot",
         json!({
             "target":target,"format":"semantic","max_bytes":65536,"max_nodes":128
@@ -447,15 +524,17 @@ fn dom_query_selector(
     state: &Arc<Mutex<ControlState>>,
     connection: &mut ConnectionState,
 ) -> CdpResult {
-    let target = session(session_id, connection)?.target.clone();
+    let target = live_target(session_id, connection)?;
     if params.get("nodeId").and_then(Value::as_u64) != Some(1)
         || params.get("selector").and_then(Value::as_str) != Some("button")
     {
         return Err((-32602, "only document button query is qualified"));
     }
-    let snapshot = native(
+    let snapshot = native_as_adapter(
         state,
         connection,
+        &target,
+        "DOM.querySelector",
         "target.snapshot",
         json!({
             "target":target,"format":"semantic","max_bytes":65536,"max_nodes":128
@@ -482,6 +561,7 @@ fn dom_resolve_node(
         .get("nodeId")
         .and_then(Value::as_u64)
         .ok_or((-32602, "nodeId is required"))?;
+    live_target(session_id, connection)?;
     let session = session_mut(session_id, connection)?;
     let reference = session
         .nodes
@@ -510,16 +590,17 @@ fn runtime_call_function_on(
     {
         return Err((-32602, "only the qualified click function is supported"));
     }
-    let session = session(session_id, connection)?;
-    let target = session.target.clone();
-    let reference = session
+    let target = live_target(session_id, connection)?;
+    let reference = session(session_id, connection)?
         .objects
         .get(object_id)
         .cloned()
         .ok_or((-32000, "remote object does not exist"))?;
-    native(
+    native_as_adapter(
         state,
         connection,
+        &target,
+        "Runtime.callFunctionOn",
         "target.act",
         json!({"target":target,"reference":reference,"action":{"kind":"click"}}),
     )?;

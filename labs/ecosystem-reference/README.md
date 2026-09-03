@@ -107,7 +107,7 @@ window-handle boundary and custom protocol hook, and Tauri's isolation pattern
 | Id | Experiment | Where | Gate touched |
 |---|---|---|---|
 | ME1 | typed capability envelope: add owner, scope, deadline, budget and audit fields to one reserved control 0.0.1 operation on the synthetic host; a request keyed only by a surface or window is a typed refusal. **Done**: implemented as one optional request-envelope field rather than a new operation; `labs/synthetic-control` capability court 33/33 | `labs/synthetic-control` | G2 mechanism |
-| ME2 | adapter teardown ordering: an adapter holding a target reference must drop before `session.close`; reuse the arena's reference-count proof pattern | `labs/native-dom` pattern | [X9] teardown evidence |
+| ME2 | adapter teardown ordering: an adapter holding a target reference must drop before `session.close`; reuse the arena's reference-count proof pattern. **Done**: weak adapter handles, fixed teardown order with an extended-owner detector, CDP adapter attenuated to its target; `labs/synthetic-control` adapter court 24/24 | `labs/synthetic-control` | [X9] teardown evidence |
 | ME3 | process-metric shape: report `{pid, type, name}` per child in the process-per-target host and check the sum equals the court's descendants-only RSS | `labs/lightpanda` host | M2 vocabulary; G1 open |
 | ME4 | no ambient capability for workers: any future worker path runs the 35-item network negatives unchanged | not yet planned | P6 policy |
 | ME5 | visibility is not detachment: record realm, DOM, scroll and footprint across hide → show on the surface court; a route whose hide is only `set_visible(false)` fails the G3 shape | `labs/synthetic-control` | G3 open |

@@ -154,7 +154,7 @@
   ],
   "checks_passed": 33,
   "checks_total": 33,
-  "host_sha256": "a46a21fada47359e4ca41ee661f39eadcbe16bd9d7fd4f9c0afeda9dab2fd012",
+  "host_sha256": "87ca6f359615f15978bc829d751088a8edff868c82e616c0db93c54e4d555eb0",
   "limitations": [
     "synthetic host with a fixed two-node target; no engine, HTML or CDP path carries a capability yet",
     "the audit ledger is in-memory, bounded to 64 records per host and readable only through session.inspect",

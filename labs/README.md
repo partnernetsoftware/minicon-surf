@@ -20,7 +20,7 @@ Planned first landscape:
 | `lightpanda` | low-memory/Agent reference and process-per-target combine candidate | active — W1/W2/W3/W7; Rust control host with one engine process per target observed |
 | `chrome` | named contemporary comparison baseline | active — same-CDP-live-target W1 observed |
 | `servo` | Rust embeddable full-engine candidate | active — API + software W1 runtime observed |
-| `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + loopback CDP on one target; profile isolation; lifecycle RSS; capability attenuation court 33/33 (X9 ME1) |
+| `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + loopback CDP on one target; profile isolation; lifecycle RSS; capability attenuation court 33/33 (X9 ME1); adapter teardown court 24/24 (X9 ME2) |
 | `native-dom` | native bounded route: html5ever DOM, bounded QuickJS realm, bounded `http` fetch | active — control 0.0.1 journey 27/27; network court 35/35 on a hermetic representative page; footprint lower than Lightpanda at every live stage; post-close retention attributed to allocator reservation and returned by an opt-in macOS arena per realm, default unchanged |
 | `ecosystem-reference` | engine-neutral concept/capability/resource-ownership map of Electron, Wry and Tauri for [X9] | design-reference — no runtime dependency; six objections to plan 3b recorded; five micro-experiments named |
 | `blitz` | modular Rust HTML/CSS/native-component candidate | planned |

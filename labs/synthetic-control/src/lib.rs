@@ -9,7 +9,9 @@ use std::path::{Path, PathBuf};
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub mod adapter;
 pub mod capability;
+pub use adapter::{AdapterHandle, TargetAnchor, Teardown};
 pub use capability::{AuditRecord, Capability, Chain};
 
 #[cfg(feature = "mimalloc-lab")]
@@ -378,6 +380,9 @@ struct Target {
     revision: u64,
     scroll_y: u64,
     nodes: Vec<Node>,
+    /// The only strong reference to this target's identity; adapters hold
+    /// `Weak` copies and the teardown checks that none was upgraded and kept.
+    anchor: std::sync::Arc<TargetAnchor>,
 }
 
 #[derive(Debug)]
@@ -409,6 +414,11 @@ pub struct ControlState {
     next_surface: u64,
     /// Bounded capability audit ledger: diagnostics, never authority.
     audit: VecDeque<AuditRecord>,
+    adapters: BTreeMap<String, adapter::Adapter>,
+    next_adapter: u64,
+    targets_closed_total: usize,
+    adapters_detached_total: usize,
+    owner_references_extended_total: usize,
 }
 
 impl ControlState {
@@ -920,14 +930,18 @@ impl ControlState {
             .filter(|target| target.session_id == session_id)
             .map(|target| target.id.clone())
             .collect::<Vec<_>>();
+        let mut teardown = Teardown::default();
         for target_id in &target_ids {
-            self.targets.remove(target_id);
-            self.surfaces
-                .retain(|_, surface| surface.target_id != *target_id);
+            let report = self.teardown_target(target_id)?;
+            teardown.adapters_detached += report.adapters_detached;
+            teardown.surfaces_released += report.surfaces_released;
+            teardown.released_presentation_bytes += report.released_presentation_bytes;
+            teardown.owner_reference_extended |= report.owner_reference_extended;
         }
+        // The profile writer lock is released only after every target is gone.
         self.release_profile_lock(&session.profile_id);
         Ok(
-            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":target_ids.len()}),
+            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":target_ids.len(),"teardown":teardown.to_json()}),
         )
     }
 
@@ -955,15 +969,21 @@ impl ControlState {
             },
         ];
         debug_assert!(nodes.len() <= MAX_NODES_PER_TARGET);
+        let realm_id = format!("realm_{}", self.next_target);
         self.targets.insert(
             id.clone(),
             Target {
                 id: id.clone(),
                 session_id: session.to_owned(),
-                realm_id: format!("realm_{}", self.next_target),
+                realm_id: realm_id.clone(),
                 revision: 0,
                 scroll_y: 0,
                 nodes,
+                anchor: std::sync::Arc::new(TargetAnchor {
+                    target_id: id.clone(),
+                    session_id: session.to_owned(),
+                    realm_id,
+                }),
             },
         );
         Ok(json!({"kind":"target","target":id,"session":session,"revision":0}))
@@ -990,12 +1010,8 @@ impl ControlState {
     fn target_close(&mut self, arguments: &Value) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target"])?;
         let target_id = typed_field(object, "target", "target")?;
-        self.targets
-            .remove(target_id)
-            .ok_or_else(|| not_found("target", target_id))?;
-        self.surfaces
-            .retain(|_, surface| surface.target_id != target_id);
-        Ok(json!({"kind":"target_closed","target":target_id}))
+        let teardown = self.teardown_target(target_id)?;
+        Ok(json!({"kind":"target_closed","target":target_id,"teardown":teardown.to_json()}))
     }
 
     fn target_snapshot(&self, arguments: &Value) -> Result<Value, ControlError> {
@@ -1248,6 +1264,7 @@ impl ControlState {
                     + item.presentation.len()
             })
             .sum::<usize>();
+        let adapter_bytes = self.adapter_bytes();
         Ok(json!({
             "kind":"memory_report",
             "semantic":"logical-owned-capacity-lower-bound",
@@ -1256,8 +1273,10 @@ impl ControlState {
                 "sessions":{"objects":self.sessions.len(),"bytes":session_bytes,"object_limit":MAX_SESSIONS},
                 "targets":{"objects":self.targets.len(),"bytes":target_bytes,"object_limit":MAX_TARGETS},
                 "surfaces":{"objects":self.surfaces.len(),"bytes":surface_bytes,"object_limit":MAX_SURFACES},
+                "adapters":{"objects":self.adapters.len(),"bytes":adapter_bytes,"object_limit":adapter::MAX_ADAPTERS},
             },
-            "total_accounted_bytes":profile_bytes + session_bytes + target_bytes + surface_bytes,
+            "teardown":self.teardown_counters(),
+            "total_accounted_bytes":profile_bytes + session_bytes + target_bytes + surface_bytes + adapter_bytes,
             "limitations":["excludes allocator and map overhead","not RSS/private/PSS/live heap"],
         }))
     }
@@ -1591,15 +1610,15 @@ fn delete_persistent_profile(root: &Path, profile: &Profile) -> io::Result<()> {
     fs::remove_dir(directory)
 }
 
-fn invalid(message: impl Into<String>) -> ControlError {
+pub(crate) fn invalid(message: impl Into<String>) -> ControlError {
     ControlError::new("invalid_request", message, false)
 }
 
-fn limit(message: impl Into<String>) -> ControlError {
+pub(crate) fn limit(message: impl Into<String>) -> ControlError {
     ControlError::new("resource_limit", message, true)
 }
 
-fn not_found(kind: &'static str, id: &str) -> ControlError {
+pub(crate) fn not_found(kind: &'static str, id: &str) -> ControlError {
     ControlError::new("not_found", format!("{kind} does not exist"), false).scoped(kind, id)
 }
 

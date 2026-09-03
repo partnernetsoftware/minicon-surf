@@ -57,6 +57,9 @@ python3 labs/synthetic-control/profile-isolation-journey.py \
 python3 labs/synthetic-control/capability-court.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
   --receipt labs/synthetic-control/evidence/synthetic-control-0.0.1-capability.json
+python3 labs/synthetic-control/adapter-teardown-court.py \
+  --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
+  --receipt labs/synthetic-control/evidence/synthetic-control-0.0.1-adapter-teardown.json
 labs/synthetic-control/run-lifecycle-memory-macos-arm64.sh
 python3 labs/synthetic-control/staged-capacity-memory-macos-arm64.py \
   --binary labs/synthetic-control/target/release/minicon-surf-synthetic-control \
@@ -210,6 +213,64 @@ retry, and there is no feature negotiation to discover support beforehand.
 
 Verdict: `keep` as the [X9] typed-capability mechanism on the synthetic
 court. It moves no gate: G1, G3, P6 and G6 stay open.
+
+### Adapter teardown ordering court (X9 micro-experiment ME2)
+
+Hypothesis: an adapter, anything outside the control desk that keeps a
+reference to a target between operations, can be given a reference that
+cannot extend the target, its realm, its session or its profile, and the
+host can tear a target down in a fixed, reported order (adapters, surfaces,
+target, then the profile writer lock at `session.close`) while proving that
+no adapter reference survived.
+
+Scope: `src/adapter.rs`, safe Rust only. Each target owns the single strong
+`Arc<TargetAnchor>` (names only: target, session and realm ids); an adapter
+receives an `AdapterHandle` holding a `Weak`, upgrades it for one operation
+and never stores the upgrade. `teardown_target` detaches every adapter that
+points at the target, releases its surfaces, then checks
+`Arc::strong_count == 1` before dropping the anchor; a surviving strong
+reference is reported as `owner_reference_extended` and counted, while the
+target leaves the ledger regardless, so a leak holds names, never an owner.
+`target.close` and `session.close` return the teardown report;
+`memory.report` gains an `adapters` owner (16 at most, accounted bytes) and
+host-lifetime teardown counters. The loopback CDP edge is the first
+adapter: each attached CDP session holds a weak handle, every native call
+it makes is attenuated with a capability owned by that target (actor
+`cdp.adapter`), and a command after the host tore the target down is a
+typed `-32000` detachment. No adapter gains authority, no unsafe code, no
+ecosystem dependency.
+
+Reproduction: `adapter-teardown-court.py` above (native requests validated
+by `protocol/check_contract.py`).
+
+Evidence (`synthetic-control-0.0.1-adapter-teardown` receipt, 24 of 24):
+attaching adds one adapter and exactly its accounted bytes, no target or
+session owner; the adapter's calls are audited as attenuated to its target;
+a native `target.close` while attached reports one adapter detached before
+the drop with no owner reference extended, returns the ledger to the
+session baseline, and turns the stale CDP session into a typed detachment,
+after which it no longer exists; explicit detach releases the adapter and
+keeps the target; `session.close` with an adapter and a surface attached
+reports one adapter detached, one surface released (65,536 bytes) and no
+extension, leaves every owner below the profile at zero, and the profile
+lock is proven released because `profile.delete` succeeds; attaching to a
+closed target is refused; the seventeenth adapter hits the capacity bound;
+closing a target with sixteen adapters detaches all sixteen and every stale
+session fails typed; the counters end at 3 targets closed, 18 adapters
+detached, 0 owner references extended. Four unit tests add the paths the
+CDP edge cannot reach: a handle that stored its upgraded reference is
+detected at teardown (`owner_reference_extended` true, counter 1) while the
+ledger still drops the target and its name does not resurrect it; the
+session close order releases the lock only after the targets; the capacity
+and `not_found` failures.
+
+Gaps: one adapter kind; the leak detector observes a strong count at
+teardown and cannot force a rogue adapter to release; logical bytes are the
+host's accounted lower bound, not process memory; no embedder or plugin
+adapter exists.
+
+Verdict: `keep` as the [X9] adapter reference and teardown-order shape on
+the synthetic court. No gate moves: G1, G3, P6 and G6 stay open.
 
 All memory receipts remain `incomplete`. The lifecycle modes are separate
 fresh processes, while the staged companion supplies same-process capacity and

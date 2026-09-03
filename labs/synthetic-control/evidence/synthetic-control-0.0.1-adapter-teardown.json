@@ -1,0 +1,148 @@
+{
+  "adapter": "loopback CDP edge; each attached CDP session holds a weak handle to its target and every native call it makes is attenuated to that target",
+  "checks": [
+    {
+      "check": "ledger starts with no adapters",
+      "passed": true
+    },
+    {
+      "check": "attach registers one adapter with accounted bytes",
+      "detail": {
+        "adapter_bytes": 68
+      },
+      "passed": true
+    },
+    {
+      "check": "adapter does not add a target or session owner",
+      "passed": true
+    },
+    {
+      "check": "adapter operates through the target while it lives",
+      "passed": true
+    },
+    {
+      "check": "adapter calls are attenuated to their target and audited",
+      "detail": {
+        "records": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "target.close reports one adapter detached before the target dropped",
+      "detail": {
+        "adapters_detached": 1,
+        "owner_reference_extended": false,
+        "released_presentation_bytes": 0,
+        "surfaces_released": 0
+      },
+      "passed": true
+    },
+    {
+      "check": "owner ledger returns to the session baseline after the close",
+      "passed": true
+    },
+    {
+      "check": "no owner reference was extended",
+      "passed": true
+    },
+    {
+      "check": "adapter command after the close is a typed detachment",
+      "detail": {
+        "code": -32000,
+        "message": "target closed; adapter detached"
+      },
+      "passed": true
+    },
+    {
+      "check": "the detached CDP session no longer exists",
+      "passed": true
+    },
+    {
+      "check": "no target remains listed",
+      "passed": true
+    },
+    {
+      "check": "second adapter attached",
+      "passed": true
+    },
+    {
+      "check": "explicit detach removes the adapter and keeps the target",
+      "passed": true
+    },
+    {
+      "check": "session.close detaches adapters, releases surfaces, closes targets",
+      "detail": {
+        "adapters_detached": 1,
+        "owner_reference_extended": false,
+        "released_presentation_bytes": 65536,
+        "surfaces_released": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "every owner below the profile is zero after session.close",
+      "passed": true
+    },
+    {
+      "check": "profile lock was released after the targets: delete succeeds",
+      "passed": true
+    },
+    {
+      "check": "adapter attached at session.close is a typed detachment",
+      "passed": true
+    },
+    {
+      "check": "the released surface is gone",
+      "passed": true
+    },
+    {
+      "check": "attach to a closed target is refused",
+      "passed": true
+    },
+    {
+      "check": "the seventeenth adapter is refused at the capacity bound",
+      "passed": true
+    },
+    {
+      "check": "closing the target detaches all sixteen adapters at once",
+      "passed": true
+    },
+    {
+      "check": "every stale CDP session fails typed",
+      "passed": true
+    },
+    {
+      "check": "teardown counters are complete",
+      "detail": {
+        "adapters_detached_total": 18,
+        "order": [
+          "adapters",
+          "surfaces",
+          "target",
+          "profile_lock"
+        ],
+        "owner_references_extended_total": 0,
+        "targets_closed_total": 3
+      },
+      "passed": true
+    },
+    {
+      "check": "host exits cleanly",
+      "passed": true
+    }
+  ],
+  "checks_passed": 24,
+  "checks_total": 24,
+  "host_sha256": "87ca6f359615f15978bc829d751088a8edff868c82e616c0db93c54e4d555eb0",
+  "limitations": [
+    "the stored-strong-reference failure path cannot be reached through CDP; it is covered by a unit test that keeps an upgraded reference and observes owner_reference_extended",
+    "logical bytes are the host's accounted lower bound, not process memory",
+    "one adapter kind (CDP); embedder and plugin adapters do not exist yet"
+  ],
+  "passed": true,
+  "schema": "minicon-surf.synthetic-adapter-teardown-receipt/0.0.1",
+  "semantic": "owner counts and logical bytes from memory.report; teardown reports from target.close and session.close; typed CDP failures after teardown",
+  "status": "observed",
+  "technology": "synthetic-control",
+  "technology_version": "0.0.1"
+}

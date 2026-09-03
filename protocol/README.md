@@ -75,7 +75,7 @@ The qualified synthetic profile slice uses exact bounded arguments:
 | `profile.storage.put` | `session`, `kind`, `key`, `value` | `kind` is `cookie` or `local_storage`; 32 entries/bucket, 64-byte keys, 1,024-byte values. |
 | `profile.storage.get` | `session`, `kind`, `key` | Returns `found` plus a bounded value; the session proves writer ownership. |
 | `profile.policy.set` | `session`, `network`, `permissions` | Network is online/offline; permissions are allow/deny by default. |
-| `session.close` | `session` | Closes owned targets/surfaces and releases the persistent writer lock when its last session closes. |
+| `session.close` | `session` | Closes owned targets/surfaces and releases the persistent writer lock when its last session closes; the synthetic host tears each target down in the order adapters → surfaces → target and reports it. |
 | `memory.trim` | none | On macOS, requests maximal malloc-zone pressure relief and reports released bytes; other platforms are unqualified. |
 
 Persistent records have format version 1 and use write-sync-rename replacement.
