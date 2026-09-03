@@ -1,0 +1,1452 @@
+{
+ "caps": {
+  "in_use_over_headless_bytes": 65536,
+  "post_hide_over_headless_bytes": 262144,
+  "slope_round3_minus_round1_bytes": 65536
+ },
+ "checks": [
+  {
+   "check": "[system] headless: the page is live and the button click advanced the revision",
+   "detail": {
+    "generation": null,
+    "revision": 1,
+    "scroll_y": 0,
+    "surface": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] headless: a CDP session is attached and reads the frame tree",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[system] headless: owners.surfaces is zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 0,
+     "frames_acked_total": 0,
+     "frames_sent_total": 0,
+     "generation": 0,
+     "gone_total": 0,
+     "input_events_total": 0,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 0,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: surface.show answers engine-neutral fields only",
+   "detail": [
+    "frame",
+    "kind",
+    "latency",
+    "painter",
+    "presentation_bytes",
+    "state",
+    "surface",
+    "target"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: the court-only file names a real window number and one child process exists",
+   "detail": {
+    "child": true,
+    "window_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: owners.surfaces is one object with the frame's bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 1024000,
+    "object_limit": 8,
+    "objects": 1,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 0,
+     "frames_acked_total": 1,
+     "frames_sent_total": 1,
+     "generation": 1,
+     "gone_total": 0,
+     "input_events_total": 0,
+     "kills_total": 0,
+     "live": 1,
+     "protocol_failures_total": 0,
+     "spawns_total": 1,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
+   "detail": {
+    "matches": 19,
+    "of": 19,
+    "reason": null,
+    "verified": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: target.inspect names the surface",
+   "detail": "surface_1",
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "click",
+     "monotonic_ms": 836,
+     "revision": 2,
+     "scroll_y": 0,
+     "surface": "surface_1",
+     "target": "target_1"
+    },
+    "expected": 2,
+    "revision": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "scroll",
+     "monotonic_ms": 881,
+     "revision": 3,
+     "scroll_y": 240,
+     "surface": "surface_1",
+     "target": "target_1"
+    },
+    "revision": 3,
+    "scroll_y": 240
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: the CDP session still answers with the same frame id while shown",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[system] a second show on the same target is conflict",
+   "detail": {
+    "code": "conflict",
+    "message": "target already has an attached surface",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
+   "detail": {
+    "exit": "protocol",
+    "ms": 8,
+    "reaped": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: the court-only log records the hide",
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: owners.surfaces returns to zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 1,
+     "frames_acked_total": 3,
+     "frames_sent_total": 3,
+     "generation": 1,
+     "gone_total": 0,
+     "input_events_total": 2,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 1,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: target, frame, generation, realm and scroll survive the hide; revision advanced only by the explicit actions",
+   "detail": {
+    "after": {
+     "generation": null,
+     "revision": 3,
+     "scroll_y": 240
+    },
+    "before": {
+     "generation": null,
+     "revision": 1,
+     "scroll_y": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: headless script, wait and network still run after the hide",
+   "detail": {
+    "fetches": 6,
+    "revision": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 1: the CDP session is unchanged after the hide",
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: surface.show answers engine-neutral fields only",
+   "detail": [
+    "frame",
+    "kind",
+    "latency",
+    "painter",
+    "presentation_bytes",
+    "state",
+    "surface",
+    "target"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: the court-only file names a real window number and one child process exists",
+   "detail": {
+    "child": true,
+    "window_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: owners.surfaces is one object with the frame's bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 1024000,
+    "object_limit": 8,
+    "objects": 1,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 1,
+     "frames_acked_total": 4,
+     "frames_sent_total": 4,
+     "generation": 2,
+     "gone_total": 0,
+     "input_events_total": 2,
+     "kills_total": 0,
+     "live": 1,
+     "protocol_failures_total": 0,
+     "spawns_total": 2,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
+   "detail": {
+    "matches": 16,
+    "of": 16,
+    "reason": null,
+    "verified": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: target.inspect names the surface",
+   "detail": "surface_2",
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "click",
+     "monotonic_ms": 1602,
+     "revision": 6,
+     "scroll_y": 0,
+     "surface": "surface_2",
+     "target": "target_1"
+    },
+    "expected": 6,
+    "revision": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "scroll",
+     "monotonic_ms": 1639,
+     "revision": 7,
+     "scroll_y": 240,
+     "surface": "surface_2",
+     "target": "target_1"
+    },
+    "revision": 7,
+    "scroll_y": 240
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: the CDP session still answers with the same frame id while shown",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: surface.hide ends the child by protocol, reaps it and releases the frame",
+   "detail": {
+    "exit": "protocol",
+    "ms": 8,
+    "reaped": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: the court-only log records the hide",
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: owners.surfaces returns to zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 2,
+     "frames_acked_total": 7,
+     "frames_sent_total": 7,
+     "generation": 2,
+     "gone_total": 0,
+     "input_events_total": 5,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 2,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: target, frame, generation, realm and scroll survive the hide; revision advanced only by the explicit actions",
+   "detail": {
+    "after": {
+     "generation": null,
+     "revision": 7,
+     "scroll_y": 240
+    },
+    "before": {
+     "generation": null,
+     "revision": 4,
+     "scroll_y": 240
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: headless script, wait and network still run after the hide",
+   "detail": {
+    "fetches": 8,
+    "revision": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 2: the CDP session is unchanged after the hide",
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: surface.show answers engine-neutral fields only",
+   "detail": [
+    "frame",
+    "kind",
+    "latency",
+    "painter",
+    "presentation_bytes",
+    "state",
+    "surface",
+    "target"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: the court-only file names a real window number and one child process exists",
+   "detail": {
+    "child": true,
+    "window_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: owners.surfaces is one object with the frame's bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 1024000,
+    "object_limit": 8,
+    "objects": 1,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 2,
+     "frames_acked_total": 8,
+     "frames_sent_total": 8,
+     "generation": 3,
+     "gone_total": 0,
+     "input_events_total": 5,
+     "kills_total": 0,
+     "live": 1,
+     "protocol_failures_total": 0,
+     "spawns_total": 3,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
+   "detail": {
+    "matches": 18,
+    "of": 18,
+    "reason": null,
+    "verified": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: target.inspect names the surface",
+   "detail": "surface_3",
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "click",
+     "monotonic_ms": 2352,
+     "revision": 10,
+     "scroll_y": 0,
+     "surface": "surface_3",
+     "target": "target_1"
+    },
+    "expected": 10,
+    "revision": 10
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "scroll",
+     "monotonic_ms": 2401,
+     "revision": 11,
+     "scroll_y": 240,
+     "surface": "surface_3",
+     "target": "target_1"
+    },
+    "revision": 11,
+    "scroll_y": 240
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: the CDP session still answers with the same frame id while shown",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: surface.hide ends the child by protocol, reaps it and releases the frame",
+   "detail": {
+    "exit": "protocol",
+    "ms": 9,
+    "reaped": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: the court-only log records the hide",
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: owners.surfaces returns to zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 3,
+     "frames_acked_total": 11,
+     "frames_sent_total": 11,
+     "generation": 3,
+     "gone_total": 0,
+     "input_events_total": 8,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 3,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: target, frame, generation, realm and scroll survive the hide; revision advanced only by the explicit actions",
+   "detail": {
+    "after": {
+     "generation": null,
+     "revision": 11,
+     "scroll_y": 240
+    },
+    "before": {
+     "generation": null,
+     "revision": 8,
+     "scroll_y": 240
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: headless script, wait and network still run after the hide",
+   "detail": {
+    "fetches": 10,
+    "revision": 12
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] round 3: the CDP session is unchanged after the hide",
+   "passed": true
+  },
+  {
+   "check": "[system] post-hide host footprint over headless, every round",
+   "detail": {
+    "per_round": [
+     1310720,
+     1409048,
+     1458200
+    ],
+    "worst": 1458200
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] no slope over the rounds",
+   "detail": {
+    "slope": 147480
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] libmalloc in-use over headless after every hide",
+   "detail": {
+    "worst": 16128
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a killed child is noticed: the surface is gone, owners are zero and the target is untouched",
+   "detail": {
+    "hide": {
+     "code": "not_found",
+     "message": "surface does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "surface_4",
+      "kind": "surface"
+     }
+    },
+    "process": {
+     "exits_clean_total": 3,
+     "frames_acked_total": 12,
+     "frames_sent_total": 12,
+     "generation": 4,
+     "gone_total": 1,
+     "input_events_total": 8,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 4,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
+   "detail": {
+    "forced_ms": 1002.9,
+    "process": {
+     "exits_clean_total": 3,
+     "frames_acked_total": 13,
+     "frames_sent_total": 13,
+     "generation": 5,
+     "gone_total": 1,
+     "input_events_total": 8,
+     "kills_total": 1,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 5,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 1
+    },
+    "teardown": {
+     "exit": "killed",
+     "ms": 1002,
+     "reaped": true
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] after both failures the target still acts",
+   "passed": true
+  },
+  {
+   "check": "[system] no stale input was applied after any hide",
+   "detail": {
+    "input_events_total": 8,
+    "stale_events_dropped_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] owners are zero after the closes and the host stayed one process except for its surface children",
+   "passed": true
+  },
+  {
+   "check": "[system] host exits cleanly and removes the court-only file",
+   "passed": true
+  },
+  {
+   "check": "[arena] headless: the page is live and the button click advanced the revision",
+   "detail": {
+    "generation": null,
+    "revision": 1,
+    "scroll_y": 0,
+    "surface": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] headless: a CDP session is attached and reads the frame tree",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[arena] headless: owners.surfaces is zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 0,
+     "frames_acked_total": 0,
+     "frames_sent_total": 0,
+     "generation": 0,
+     "gone_total": 0,
+     "input_events_total": 0,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 0,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: surface.show answers engine-neutral fields only",
+   "detail": [
+    "frame",
+    "kind",
+    "latency",
+    "painter",
+    "presentation_bytes",
+    "state",
+    "surface",
+    "target"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: the court-only file names a real window number and one child process exists",
+   "detail": {
+    "child": true,
+    "window_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: owners.surfaces is one object with the frame's bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 1024000,
+    "object_limit": 8,
+    "objects": 1,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 0,
+     "frames_acked_total": 1,
+     "frames_sent_total": 1,
+     "generation": 1,
+     "gone_total": 0,
+     "input_events_total": 0,
+     "kills_total": 0,
+     "live": 1,
+     "protocol_failures_total": 0,
+     "spawns_total": 1,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
+   "detail": {
+    "matches": 19,
+    "of": 19,
+    "reason": null,
+    "verified": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: target.inspect names the surface",
+   "detail": "surface_1",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "click",
+     "monotonic_ms": 656,
+     "revision": 2,
+     "scroll_y": 0,
+     "surface": "surface_1",
+     "target": "target_1"
+    },
+    "expected": 2,
+    "revision": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "scroll",
+     "monotonic_ms": 702,
+     "revision": 3,
+     "scroll_y": 240,
+     "surface": "surface_1",
+     "target": "target_1"
+    },
+    "revision": 3,
+    "scroll_y": 240
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: the CDP session still answers with the same frame id while shown",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[arena] a second show on the same target is conflict",
+   "detail": {
+    "code": "conflict",
+    "message": "target already has an attached surface",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: surface.hide ends the child by protocol, reaps it and releases the frame",
+   "detail": {
+    "exit": "protocol",
+    "ms": 9,
+    "reaped": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: the court-only log records the hide",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: owners.surfaces returns to zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 1,
+     "frames_acked_total": 3,
+     "frames_sent_total": 3,
+     "generation": 1,
+     "gone_total": 0,
+     "input_events_total": 2,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 1,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: target, frame, generation, realm and scroll survive the hide; revision advanced only by the explicit actions",
+   "detail": {
+    "after": {
+     "generation": null,
+     "revision": 3,
+     "scroll_y": 240
+    },
+    "before": {
+     "generation": null,
+     "revision": 1,
+     "scroll_y": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: headless script, wait and network still run after the hide",
+   "detail": {
+    "fetches": 6,
+    "revision": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 1: the CDP session is unchanged after the hide",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: surface.show answers engine-neutral fields only",
+   "detail": [
+    "frame",
+    "kind",
+    "latency",
+    "painter",
+    "presentation_bytes",
+    "state",
+    "surface",
+    "target"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: the court-only file names a real window number and one child process exists",
+   "detail": {
+    "child": true,
+    "window_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: owners.surfaces is one object with the frame's bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 1024000,
+    "object_limit": 8,
+    "objects": 1,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 1,
+     "frames_acked_total": 4,
+     "frames_sent_total": 4,
+     "generation": 2,
+     "gone_total": 0,
+     "input_events_total": 2,
+     "kills_total": 0,
+     "live": 1,
+     "protocol_failures_total": 0,
+     "spawns_total": 2,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
+   "detail": {
+    "matches": 16,
+    "of": 16,
+    "reason": null,
+    "verified": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: target.inspect names the surface",
+   "detail": "surface_2",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "click",
+     "monotonic_ms": 1422,
+     "revision": 6,
+     "scroll_y": 0,
+     "surface": "surface_2",
+     "target": "target_1"
+    },
+    "expected": 6,
+    "revision": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "scroll",
+     "monotonic_ms": 1458,
+     "revision": 7,
+     "scroll_y": 240,
+     "surface": "surface_2",
+     "target": "target_1"
+    },
+    "revision": 7,
+    "scroll_y": 240
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: the CDP session still answers with the same frame id while shown",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: surface.hide ends the child by protocol, reaps it and releases the frame",
+   "detail": {
+    "exit": "protocol",
+    "ms": 9,
+    "reaped": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: the court-only log records the hide",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: owners.surfaces returns to zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 2,
+     "frames_acked_total": 7,
+     "frames_sent_total": 7,
+     "generation": 2,
+     "gone_total": 0,
+     "input_events_total": 5,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 2,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: target, frame, generation, realm and scroll survive the hide; revision advanced only by the explicit actions",
+   "detail": {
+    "after": {
+     "generation": null,
+     "revision": 7,
+     "scroll_y": 240
+    },
+    "before": {
+     "generation": null,
+     "revision": 4,
+     "scroll_y": 240
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: headless script, wait and network still run after the hide",
+   "detail": {
+    "fetches": 8,
+    "revision": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 2: the CDP session is unchanged after the hide",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: surface.show answers engine-neutral fields only",
+   "detail": [
+    "frame",
+    "kind",
+    "latency",
+    "painter",
+    "presentation_bytes",
+    "state",
+    "surface",
+    "target"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: the court-only file names a real window number and one child process exists",
+   "detail": {
+    "child": true,
+    "window_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: owners.surfaces is one object with the frame's bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 1024000,
+    "object_limit": 8,
+    "objects": 1,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 2,
+     "frames_acked_total": 8,
+     "frames_sent_total": 8,
+     "generation": 3,
+     "gone_total": 0,
+     "input_events_total": 5,
+     "kills_total": 0,
+     "live": 1,
+     "protocol_failures_total": 0,
+     "spawns_total": 3,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
+   "detail": {
+    "matches": 18,
+    "of": 18,
+    "reason": null,
+    "verified": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: target.inspect names the surface",
+   "detail": "surface_3",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "click",
+     "monotonic_ms": 2175,
+     "revision": 10,
+     "scroll_y": 0,
+     "surface": "surface_3",
+     "target": "target_1"
+    },
+    "expected": 10,
+    "revision": 10
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
+   "detail": {
+    "applied": {
+     "event": "input_applied",
+     "kind": "scroll",
+     "monotonic_ms": 2221,
+     "revision": 11,
+     "scroll_y": 240,
+     "surface": "surface_3",
+     "target": "target_1"
+    },
+    "revision": 11,
+    "scroll_y": 240
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: the CDP session still answers with the same frame id while shown",
+   "detail": "cdp_frame_1",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: surface.hide ends the child by protocol, reaps it and releases the frame",
+   "detail": {
+    "exit": "protocol",
+    "ms": 9,
+    "reaped": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: the court-only log records the hide",
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: owners.surfaces returns to zero objects and zero bytes",
+   "detail": {
+    "binary": true,
+    "bytes": 0,
+    "object_limit": 8,
+    "objects": 0,
+    "painter": "bounded-semantic-painter",
+    "process": {
+     "exits_clean_total": 3,
+     "frames_acked_total": 11,
+     "frames_sent_total": 11,
+     "generation": 3,
+     "gone_total": 0,
+     "input_events_total": 8,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 3,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: target, frame, generation, realm and scroll survive the hide; revision advanced only by the explicit actions",
+   "detail": {
+    "after": {
+     "generation": null,
+     "revision": 11,
+     "scroll_y": 240
+    },
+    "before": {
+     "generation": null,
+     "revision": 8,
+     "scroll_y": 240
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: headless script, wait and network still run after the hide",
+   "detail": {
+    "fetches": 10,
+    "revision": 12
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] round 3: the CDP session is unchanged after the hide",
+   "passed": true
+  },
+  {
+   "check": "[arena] post-hide host footprint over headless, every round",
+   "detail": {
+    "per_round": [
+     1261568,
+     1474584,
+     1523736
+    ],
+    "worst": 1523736
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] no slope over the rounds",
+   "detail": {
+    "slope": 262168
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] libmalloc in-use over headless after every hide",
+   "detail": {
+    "worst": 3936
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a killed child is noticed: the surface is gone, owners are zero and the target is untouched",
+   "detail": {
+    "hide": {
+     "code": "not_found",
+     "message": "surface does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "surface_4",
+      "kind": "surface"
+     }
+    },
+    "process": {
+     "exits_clean_total": 3,
+     "frames_acked_total": 12,
+     "frames_sent_total": 12,
+     "generation": 4,
+     "gone_total": 1,
+     "input_events_total": 8,
+     "kills_total": 0,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 4,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a stopped child makes hide time out, kill and reap as failure cleanup, counted",
+   "detail": {
+    "forced_ms": 1005.5,
+    "process": {
+     "exits_clean_total": 3,
+     "frames_acked_total": 13,
+     "frames_sent_total": 13,
+     "generation": 5,
+     "gone_total": 1,
+     "input_events_total": 8,
+     "kills_total": 1,
+     "live": 0,
+     "protocol_failures_total": 0,
+     "spawns_total": 5,
+     "stale_events_dropped_total": 0,
+     "timeouts_total": 1
+    },
+    "teardown": {
+     "exit": "killed",
+     "ms": 1003,
+     "reaped": true
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] after both failures the target still acts",
+   "passed": true
+  },
+  {
+   "check": "[arena] no stale input was applied after any hide",
+   "detail": {
+    "input_events_total": 8,
+    "stale_events_dropped_total": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] owners are zero after the closes and the host stayed one process except for its surface children",
+   "passed": true
+  },
+  {
+   "check": "[arena] host exits cleanly and removes the court-only file",
+   "passed": true
+  }
+ ],
+ "checks_passed": 106,
+ "checks_total": 110,
+ "design": "labs/native-dom/surface-ipc-0.0.1.md",
+ "footprint_bytes": {
+  "arena": {
+   "headless": 2949504,
+   "post_reap": 5587352,
+   "rounds": [
+    {
+     "first_frame_ms": 17,
+     "hide_ms": 12.3,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 12.7,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4211072,
+     "post_hide_in_use": 138736,
+     "ready_ms": 90,
+     "round": 1,
+     "show_ms": 110.5,
+     "shown_steady_host": 4194688,
+     "spawn_peak_tree": 27444280
+    },
+    {
+     "first_frame_ms": 17,
+     "hide_ms": 12.2,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 6.6,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4424088,
+     "post_hide_in_use": 138768,
+     "ready_ms": 91,
+     "round": 2,
+     "show_ms": 112.5,
+     "shown_steady_host": 4358552,
+     "spawn_peak_tree": 27395152
+    },
+    {
+     "first_frame_ms": 17,
+     "hide_ms": 10.4,
+     "input": {
+      "click_ms": 0.3,
+      "permitted": true,
+      "scroll_ms": 6.7,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4473240,
+     "post_hide_in_use": 138768,
+     "ready_ms": 85,
+     "round": 3,
+     "show_ms": 105.9,
+     "shown_steady_host": 4456856,
+     "spawn_peak_tree": 27771984
+    }
+   ]
+  },
+  "system": {
+   "headless": 3457384,
+   "post_reap": 5996928,
+   "rounds": [
+    {
+     "first_frame_ms": 13,
+     "hide_ms": 9.9,
+     "input": {
+      "click_ms": 0.3,
+      "permitted": true,
+      "scroll_ms": 7.3,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4768104,
+     "post_hide_in_use": 446832,
+     "ready_ms": 101,
+     "round": 1,
+     "show_ms": 119.4,
+     "shown_steady_host": 4604264,
+     "spawn_peak_tree": 27624480
+    },
+    {
+     "first_frame_ms": 14,
+     "hide_ms": 10.6,
+     "input": {
+      "click_ms": 1.6,
+      "permitted": true,
+      "scroll_ms": 7.3,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4866432,
+     "post_hide_in_use": 451600,
+     "ready_ms": 93,
+     "round": 2,
+     "show_ms": 111.4,
+     "shown_steady_host": 4866432,
+     "spawn_peak_tree": 27952208
+    },
+    {
+     "first_frame_ms": 17,
+     "hide_ms": 10.8,
+     "input": {
+      "click_ms": 0.4,
+      "permitted": true,
+      "scroll_ms": 6.4,
+      "topmost_is_surface": true
+     },
+     "post_hide_host": 4915584,
+     "post_hide_in_use": 456336,
+     "ready_ms": 84,
+     "round": 3,
+     "show_ms": 103.9,
+     "shown_steady_host": 4931968,
+     "spawn_peak_tree": 27935800
+    }
+   ]
+  }
+ },
+ "host_sha256": "46f0b9f8c1a6a1d0e9de5f355dc3f0ac2cbcd3ba08574a60aca95e9d474bd8f6",
+ "input_permitted": true,
+ "limitations": [
+  "the WindowServer, GPU and compositor memory live outside the process tree and are not attributed",
+  "the painter is a bounded semantic painter, not a layout or CSS renderer",
+  "input is posted through CoreGraphics only after the topmost window at the point is confirmed to be the surface child; without Accessibility trust the input checks are recorded as not verifiable",
+  "macOS only, one page, one window size; no pid, path or command line is recorded"
+ ],
+ "passed": false,
+ "schema": "minicon-surf.native-dom-surface-receipt/0.0.1",
+ "surface_binary_bytes": 544176,
+ "surface_sha256": "8c79305da60305b129334b0252985443a73f0cf4d93777b9749bd559a31deaed",
+ "technology": "native-dom",
+ "technology_version": "0.0.2"
+}

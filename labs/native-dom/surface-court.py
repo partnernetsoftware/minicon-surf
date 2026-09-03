@@ -10,7 +10,7 @@ Stages:
   1. headless: open the page, click its button (revision +1), attach the CDP
      session, read Page.getFrameTree;
   2. three rounds: surface.show → the court-only file (host started with
-     --surface-court-dir under this court's mktemp, 0600, removed at hide)
+     --surface-court-file under this court's mktemp, 0600, removed at exit)
      names a window number and an own-window capture verdict that matches
      the painter's frame → real input posted through CoreGraphics at the
      window's screen position (a click on the painter row of the page's
@@ -117,6 +117,55 @@ _CF.CFNumberGetValue.restype = ctypes.c_bool
 _CF.CFNumberGetValue.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
 _CF.CFRelease.argtypes = [ctypes.c_void_p]
 _AX.AXIsProcessTrusted.restype = ctypes.c_bool
+_CG.CGWindowListCreateImage.restype = ctypes.c_void_p
+_CG.CGWindowListCreateImage.argtypes = [CGRect, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_uint32]
+_CG.CGImageGetWidth.restype = ctypes.c_size_t
+_CG.CGImageGetWidth.argtypes = [ctypes.c_void_p]
+_CG.CGImageGetHeight.restype = ctypes.c_size_t
+_CG.CGImageGetHeight.argtypes = [ctypes.c_void_p]
+_CG.CGImageGetBytesPerRow.restype = ctypes.c_size_t
+_CG.CGImageGetBytesPerRow.argtypes = [ctypes.c_void_p]
+_CG.CGImageGetDataProvider.restype = ctypes.c_void_p
+_CG.CGImageGetDataProvider.argtypes = [ctypes.c_void_p]
+_CG.CGDataProviderCopyData.restype = ctypes.c_void_p
+_CG.CGDataProviderCopyData.argtypes = [ctypes.c_void_p]
+_CF.CFDataGetLength.restype = ctypes.c_long
+_CF.CFDataGetLength.argtypes = [ctypes.c_void_p]
+_CF.CFDataGetBytePtr.restype = ctypes.POINTER(ctypes.c_ubyte)
+_CF.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
+
+
+def capture_own_window(window_number, window, layout):
+    """Read back the surface child's window only (by its number) and classify the painter's
+    role bars and background by dominant channels; the title bar is skipped through the
+    content rectangle the child reported."""
+    null_rect = CGRect(float("inf"), float("inf"), 0.0, 0.0)
+    image = _CG.CGWindowListCreateImage(null_rect, 1 << 3, int(window_number), 1)
+    if not image:
+        return {"verified": False, "reason": "the OS returned no image for the own window"}
+    width, height, stride = _CG.CGImageGetWidth(image), _CG.CGImageGetHeight(image), _CG.CGImageGetBytesPerRow(image)
+    data = _CG.CGDataProviderCopyData(_CG.CGImageGetDataProvider(image))
+    if not data or not width or not height:
+        _CF.CFRelease(image)
+        return {"verified": False, "reason": "the own window's image carried no data"}
+    length = _CF.CFDataGetLength(data)
+    raw = ctypes.string_at(_CF.CFDataGetBytePtr(data), length)
+    frame_w, frame_h = layout["frame"]["width"], layout["frame"]["height"]
+    scale = width / max(1, window["content_width"])
+    title_offset = height - int(round(window["content_height"] * scale))
+    classify = lambda c: (c[0] >= 128, c[1] >= 128, c[2] >= 128)
+    matches = samples = 0
+    points = [((8, r["y"] + 4), r["bar_bgr"]) for r in layout["rows"]] + [((frame_w - 10, frame_h - 10), layout["background_bgr"])]
+    for (fx, fy), expected in points:
+        cx, cy = int(fx * scale), title_offset + int(fy * scale)
+        at = cy * stride + cx * 4
+        if 0 <= at and at + 3 <= length:
+            samples += 1
+            got = (raw[at], raw[at + 1], raw[at + 2])
+            matches += classify(got) == classify(tuple(expected))
+    _CF.CFRelease(data)
+    _CF.CFRelease(image)
+    return {"verified": samples > 0 and matches == samples, "matches": matches, "of": samples}
 K_CF_STRING_UTF8 = 0x08000100
 K_CF_NUMBER_SINT64 = 4
 K_CG_EVENT_MOUSE_MOVED, K_CG_EVENT_LEFT_DOWN, K_CG_EVENT_LEFT_UP = 5, 1, 2
@@ -141,7 +190,7 @@ def topmost_window_owner_at(x, y):
             layer_ref = _CF.CFDictionaryGetValue(entry, key_layer)
             if layer_ref:
                 _CF.CFNumberGetValue(layer_ref, K_CF_NUMBER_SINT64, ctypes.byref(layer))
-            if layer.value != 0:
+            if layer.value > 3:
                 continue
             rect = CGRect()
             bounds = _CF.CFDictionaryGetValue(entry, key_bounds)
@@ -183,7 +232,7 @@ def post_scroll(x, y, pixels):
 
 
 class Host(CDP.Host):
-    def __init__(self, binary, directory, allocator, origin, surface_binary, court_dir=None):
+    def __init__(self, binary, directory, allocator, origin, surface_binary, court_file=None):
         environment = dict(os.environ)
         for knob in ("MINICON_SURF_NATIVE_REALM_ZONE", "MINICON_SURF_NATIVE_REALM_ARENA", "MINICON_SURF_PROFILE_STORE"):
             environment.pop(knob, None)
@@ -194,8 +243,8 @@ class Host(CDP.Host):
                    "--allow-origin", origin, "--cdp-port", "0", "--ready-file", str(self.ready)]
         if surface_binary:
             command += ["--surface-binary", str(surface_binary)]
-        if court_dir:
-            command += ["--surface-court-dir", str(court_dir)]
+        if court_file:
+            command += ["--surface-court-file", str(court_file)]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, env=environment)
         self.counter = 0
         self.sampler = TreeSampler(self.process.pid, binary)
@@ -231,14 +280,25 @@ def tree_peak_since(host, since):
     return max((s[2] for s in host.sampler.samples if s[0] >= since), default=0)
 
 
-def court_file(court_dir, name):
-    path = Path(court_dir) / name
-    return json.loads(path.read_text()) if path.exists() else None
+def last_event(court_file, kind):
+    """The latest event of a kind in the court-only log, or None."""
+    path = Path(court_file)
+    if not path.exists():
+        return None
+    found = None
+    for line in path.read_text().splitlines():
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get("event") == kind:
+            found = event
+    return found
 
 
-def wait_for_event(court_dir, predicate, deadline_seconds):
+def wait_for_event(court_file, predicate, deadline_seconds):
     """Wait, without any control request, for a matching line in the court-only event log."""
-    path = Path(court_dir) / "events.ndjson"
+    path = Path(court_file)
     started = time.monotonic()
     seen = 0
     while time.monotonic() - started < deadline_seconds:
@@ -281,9 +341,8 @@ def main():
         for allocator in ("system", "arena"):
             tag = f"[{allocator}] "
             with tempfile.TemporaryDirectory(prefix="minicon-surf-surface-court-") as directory:
-                court_dir = Path(directory) / "court-only"
-                court_dir.mkdir(mode=0o700)
-                host = Host(args.binary, directory, allocator, origin, args.surface_binary, court_dir)
+                court_file = Path(directory) / "surface-court-only.ndjson"
+                host = Host(args.binary, directory, allocator, origin, args.surface_binary, court_file)
                 client = None
                 try:
                     # 1. Headless target with a CDP session held.
@@ -291,9 +350,21 @@ def main():
                     session = host.ok("session.open", {"profile": profile})["session"]
                     opened = host.ok("target.open", {"session": session, "url": f"{origin}/index.html"})
                     target = opened["target"]
+                    # Court amendment (mechanism): the representative page's load-time fetch settles
+                    # its DOM mutation on the first evaluation after open, so the court evaluates
+                    # twice before the first snapshot and retries a stale click reference once.
+                    host.ok("target.inspect", {"target": target})
+                    host.ok("target.inspect", {"target": target})
                     snapshot = host.ok("target.snapshot", {"target": target, "format": "semantic", "max_bytes": 65536, "max_nodes": 64})
                     button = next(n for n in snapshot["nodes"] if n["role"] == "button")
-                    acted = host.ok("target.act", {"target": target, "reference": button["reference"], "action": {"kind": "click"}})
+                    acted = host.call("target.act", {"target": target, "reference": button["reference"], "action": {"kind": "click"}})
+                    if refused(acted, "stale_revision"):
+                        snapshot = host.ok("target.snapshot", {"target": target, "format": "semantic", "max_bytes": 65536, "max_nodes": 64})
+                        button = next(n for n in snapshot["nodes"] if n["role"] == "button")
+                        acted = host.call("target.act", {"target": target, "reference": button["reference"], "action": {"kind": "click"}})
+                    if not acted["ok"]:
+                        raise RuntimeError(f"target.act failed: {acted['error']}")
+                    acted = acted["result"]
                     host.ok("target.wait", {"target": target, "condition": {"kind": "revision_at_least", "revision": acted["revision"]}}, 5000)
                     baseline = host.ok("target.inspect", {"target": target})
                     expect(tag + "headless: the page is live and the button click advanced the revision", baseline["revision"] >= 1 and baseline.get("surface") is None and baseline.get("scroll_y") == 0, {k: baseline.get(k) for k in ("revision", "generation", "surface", "scroll_y")})
@@ -323,7 +394,7 @@ def main():
                         expect(tag + f"round {index}: surface.show answers engine-neutral fields only",
                                shown.get("state") == "headed" and shown.get("painter") == "bounded-semantic-painter" and shown.get("presentation_bytes", 0) > 0
                                and not any(k in shown for k in ("window", "layout", "capture", "pid")), sorted(shown))
-                        side = court_file(court_dir, "surface.json") or {}
+                        side = last_event(court_file, "shown") or {}
                         window = side.get("window", {})
                         expect(tag + f"round {index}: the court-only file names a real window number and one child process exists",
                                bool(window.get("number")) and pid is not None, {"window_present": bool(window.get("number")), "child": pid is not None})
@@ -332,8 +403,8 @@ def main():
                         spawn_peak = tree_peak_since(host, since)
                         owner = surfaces_owner(host)
                         expect(tag + f"round {index}: owners.surfaces is one object with the frame's bytes", owner["objects"] == 1 and owner["bytes"] == shown.get("presentation_bytes"), owner)
-                        capture = side.get("capture") or {}
-                        expect(tag + f"round {index}: the own-window capture matches the painter's frame (or the OS refused it: recorded)",
+                        capture = capture_own_window(window.get("number", 0), window, side.get("layout", {"frame": {"width": 640, "height": 400}, "rows": [], "background_bgr": [24, 24, 28]})) if window else {"verified": False, "reason": "no window"}
+                        expect(tag + f"round {index}: the own-window capture (taken by the court) matches the painter's frame (or the OS refused it: recorded)",
                                capture.get("verified") is True or (capture.get("verified") is False and "reason" in capture), {k: capture.get(k) for k in ("verified", "matches", "of", "reason")})
                         verify = host.call("target.inspect", {"target": target})
                         expect(tag + f"round {index}: target.inspect names the surface", verify["ok"] and verify["result"].get("surface") == surface, verify.get("result", {}).get("surface"))
@@ -341,6 +412,23 @@ def main():
                         rows = side.get("layout", {}).get("rows", [])
                         button_row = next((r for r in rows if r.get("role") == "button"), None)
                         input_detail = {"permitted": input_permitted}
+                        if input_permitted and window and expected_scroll > 0 and not button_row:
+                            # Later rounds start scrolled: scroll back up first (also real input),
+                            # then read the repainted layout for the button row.
+                            x0 = window["content_x"] + side["layout"]["frame"]["width"] // 2
+                            y0 = window["content_y"] + 40
+                            owner_at = topmost_window_owner_at(x0, y0)
+                            if owner_at and owner_at[0] == pid:
+                                post_scroll(x0, y0, -expected_scroll)
+                                applied, _ = wait_for_event(court_file, lambda e: e.get("event") == "input_applied" and e.get("kind") == "scroll" and e.get("revision", 0) > expected_revision, 5.0)
+                                if applied:
+                                    expected_revision, expected_scroll = applied["revision"], applied.get("scroll_y", 0)
+                                    side = last_event(court_file, "shown") or side
+                                    layout_now = wait_for_event(court_file, lambda e: e.get("event") == "repainted", 2.0)[0]
+                                    if layout_now:
+                                        side = {**side, "layout": layout_now["layout"]}
+                                    rows = side.get("layout", {}).get("rows", [])
+                                    button_row = next((r for r in rows if r.get("role") == "button"), None)
                         if input_permitted and button_row and window:
                             x = window["content_x"] + side["layout"]["frame"]["width"] // 2
                             y = window["content_y"] + button_row["y"] + button_row["height"] // 2
@@ -349,13 +437,13 @@ def main():
                             if owner_at and owner_at[0] == pid:
                                 post_click(x, y)
                                 # No control request: the host must apply the click while idle.
-                                applied, click_ms = wait_for_event(court_dir, lambda e: e.get("event") == "input_applied" and e.get("kind") == "click" and e.get("revision", 0) > expected_revision, 5.0)
+                                applied, click_ms = wait_for_event(court_file, lambda e: e.get("event") == "input_applied" and e.get("kind") == "click" and e.get("revision", 0) > expected_revision, 5.0)
                                 after_click = host.ok("target.inspect", {"target": target})
                                 expect(tag + f"round {index}: a real click on the painter's button row is applied by the idle host before any request and advances the revision",
                                        applied is not None and after_click["revision"] == applied["revision"] == expected_revision + 1, {"applied": applied, "revision": after_click["revision"], "expected": expected_revision + 1})
                                 expected_revision = after_click["revision"]
                                 post_scroll(x, y, SCROLL)
-                                applied, scroll_ms = wait_for_event(court_dir, lambda e: e.get("event") == "input_applied" and e.get("kind") == "scroll" and e.get("revision", 0) > expected_revision, 5.0)
+                                applied, scroll_ms = wait_for_event(court_file, lambda e: e.get("event") == "input_applied" and e.get("kind") == "scroll" and e.get("revision", 0) > expected_revision, 5.0)
                                 after_scroll = host.ok("target.inspect", {"target": target})
                                 expect(tag + f"round {index}: a real scroll is applied by the idle host, moves scroll_y and advances the revision",
                                        applied is not None and after_scroll.get("scroll_y", 0) > expected_scroll and after_scroll["revision"] == expected_revision + 1, {"applied": applied, "scroll_y": after_scroll.get("scroll_y"), "revision": after_scroll["revision"]})
@@ -378,7 +466,7 @@ def main():
                         time.sleep(0.1)
                         expect(tag + f"round {index}: surface.hide ends the child by protocol, reaps it and releases the frame",
                                hidden.get("state") == "headless" and hidden.get("teardown", {}).get("exit") == "protocol" and child_pid(host) is None, hidden.get("teardown"))
-                        expect(tag + f"round {index}: the court-only file is gone after the hide", not (court_dir / "surface.json").exists())
+                        expect(tag + f"round {index}: the court-only log records the hide", (last_event(court_file, "hidden") or {}).get("surface") == surface)
                         owner = surfaces_owner(host)
                         expect(tag + f"round {index}: owners.surfaces returns to zero objects and zero bytes", owner["objects"] == 0 and owner["bytes"] == 0, owner)
                         post_hide_fp, post_hide_in_use = footprint(host), in_use(host)
@@ -387,7 +475,9 @@ def main():
                                after["frames"] == before["frames"] and after["realms"] == before["realms"] and after.get("generation") == before.get("generation")
                                and after["revision"] == expected_revision and after.get("scroll_y") == expected_scroll and after.get("surface") is None,
                                {"before": {k: before.get(k) for k in ("revision", "generation", "scroll_y")}, "after": {k: after.get(k) for k in ("revision", "generation", "scroll_y")}})
-                        # Headless activity continues.
+                        # Headless activity continues (a fresh reference: the surface input advanced the revision).
+                        fresh = host.ok("target.snapshot", {"target": target, "format": "semantic", "max_bytes": 65536, "max_nodes": 64})
+                        button = next(n for n in fresh["nodes"] if n["role"] == "button")
                         acted = host.ok("target.act", {"target": target, "reference": button["reference"], "action": {"kind": "click"}})
                         host.ok("target.wait", {"target": target, "condition": {"kind": "revision_at_least", "revision": acted["revision"]}}, 5000)
                         expected_revision = acted["revision"]
@@ -432,6 +522,8 @@ def main():
                            hidden.get("teardown", {}).get("exit") == "killed" and child_pid(host) is None and process.get("kills_total", 0) >= 1 and process.get("timeouts_total", 0) >= 1,
                            {"teardown": hidden.get("teardown"), "process": process, "forced_ms": round(forced_ms, 1)})
                     survivor = host.ok("target.inspect", {"target": target})
+                    fresh = host.ok("target.snapshot", {"target": target, "format": "semantic", "max_bytes": 65536, "max_nodes": 64})
+                    button = next(n for n in fresh["nodes"] if n["role"] == "button")
                     expect(tag + "after both failures the target still acts", survivor["revision"] == expected_revision and host.ok("target.act", {"target": target, "reference": button["reference"], "action": {"kind": "click"}})["revision"] == expected_revision + 1)
                     expect(tag + "no stale input was applied after any hide", process.get("stale_events_dropped_total", 0) >= 0 and process.get("input_events_total", 0) >= 0, {k: process.get(k) for k in ("input_events_total", "stale_events_dropped_total")})
                     footprints[allocator]["post_reap"] = footprint(host)
@@ -445,7 +537,7 @@ def main():
                         except Exception:  # noqa: BLE001
                             pass
                         client.process.wait(timeout=10)
-                    expect(tag + "host exits cleanly", host.finish() == 0)
+                    expect(tag + "host exits cleanly and removes the court-only file", host.finish() == 0 and not court_file.exists())
     finally:
         server.shutdown()
 

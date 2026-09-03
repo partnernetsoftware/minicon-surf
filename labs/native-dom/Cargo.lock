@@ -493,6 +493,7 @@ dependencies = [
  "dom_query",
  "fs2",
  "getrandom",
+ "native-dom-surface",
  "rquickjs",
  "rustls",
  "rustls-pki-types",
@@ -503,6 +504,10 @@ dependencies = [
  "url",
  "zeroize",
 ]
+
+[[package]]
+name = "native-dom-surface"
+version = "0.0.0"
 
 [[package]]
 name = "new_debug_unreachable"

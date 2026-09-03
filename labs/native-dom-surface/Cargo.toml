@@ -1,0 +1,27 @@
+[package]
+name = "native-dom-surface"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "The native route's G3 surface process (direct Cocoa, CPU bitmap) and its bounded binary IPC; the library part is the codec the host shares"
+
+[lib]
+name = "native_dom_surface"
+path = "src/lib.rs"
+
+[[bin]]
+name = "native-dom-surface"
+path = "src/main.rs"
+required-features = ["window"]
+
+[features]
+default = []
+# The window process itself: direct Cocoa through objc2. The host depends on
+# this crate without the feature and gets the codec only.
+window = ["dep:objc2", "dep:objc2-foundation", "dep:objc2-app-kit", "dep:libc"]
+
+[dependencies]
+libc = { version = "=0.2.189", optional = true }
+objc2 = { version = "=0.6.4", optional = true }
+objc2-foundation = { version = "=0.3.2", optional = true, default-features = false, features = ["std", "NSString", "NSDate", "NSGeometry", "NSArray", "NSObject", "NSRunLoop", "NSValue"] }
+objc2-app-kit = { version = "=0.3.2", optional = true, default-features = false, features = ["std", "NSApplication", "NSRunningApplication", "NSWindow", "NSView", "NSImageView", "NSImage", "NSImageRep", "NSBitmapImageRep", "NSEvent", "NSResponder", "NSGraphics", "NSScreen", "NSColor", "NSControl", "objc2-core-foundation"] }

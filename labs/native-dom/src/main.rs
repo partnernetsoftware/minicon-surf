@@ -26,6 +26,7 @@ mod arena;
 mod cdp;
 mod net;
 mod profile;
+mod surface;
 
 const PROTOCOL: &str = "minicon-surf.control";
 const VERSION: &str = "0.0.1";
@@ -78,6 +79,10 @@ const INSTALL_JS: &str = r#"(() => {
   return String(window.__mcs.revision);
 })()"#;
 const REVISION_JS: &str = "(() => String(window.__mcs ? window.__mcs.revision : -1))()";
+/// The painter's rows: (node id, role, name).
+type SemanticRows = Vec<(String, String, String)>;
+/// A host-side scroll advances the revision like any other page mutation.
+const SCROLL_REVISION_JS: &str = "(() => { if (!window.__mcs) { return '-1'; } window.__mcs.revision += 1; return String(window.__mcs.revision); })()";
 
 fn snapshot_script(max_nodes: u64) -> String {
     format!(
@@ -1003,6 +1008,9 @@ struct Target {
     /// from zero for each document, so its count is offset by this base.
     revision_base: u64,
     io: TargetIo,
+    /// Bounded scroll offset owned by the host (the synthetic host's rule);
+    /// moved only by surface input in this slice.
+    scroll_y: u64,
 }
 
 /// Where a document comes from: a court fixture file or a URL fetched under
@@ -1257,6 +1265,22 @@ struct Host {
     tls_roots: Option<net::TlsRoots>,
     /// TLS counters of targets that no longer exist.
     tls_retired: net::Budget,
+    /// The surface process binary; `None` keeps `surface.show` unsupported.
+    surface_binary: Option<PathBuf>,
+    surfaces: BTreeMap<String, SurfaceRecord>,
+    next_surface: u64,
+    surface_generation: u32,
+    surface_stats: surface::Stats,
+    /// Court-only event log, present only with `--surface-court-file`.
+    surface_court: Option<surface::CourtLog>,
+}
+
+/// One attached surface: its process and the frame it currently shows.
+struct SurfaceRecord {
+    id: String,
+    target_id: String,
+    process: surface::Process,
+    painting: surface::Painting,
 }
 
 const MAX_ADAPTERS: usize = 16;
@@ -1280,6 +1304,307 @@ impl Host {
     /// Keep a closing target's TLS counters in the host totals.
     fn retire_target(&mut self, target: &Target) {
         self.tls_retired.absorb_tls(&target.budget);
+    }
+
+    // ------------------------------------------------------------ surfaces
+
+    /// The semantic rows of a target for the painter: the same snapshot the
+    /// control door serves, kept as (node, role, name).
+    fn surface_rows(
+        target: &mut Target,
+        deadline: Instant,
+        policy: &net::Policy,
+    ) -> Result<(SemanticRows, u64), ControlError> {
+        let raw = Self::eval_json(target, &snapshot_script(64), deadline, policy)?;
+        let revision = raw
+            .get("revision")
+            .and_then(Value::as_u64)
+            .map(|r| target.revision_base + r)
+            .ok_or_else(|| {
+                ControlError::new("internal", "snapshot lacks a revision", false)
+                    .scoped("target", &target.id)
+            })?;
+        let nodes = raw
+            .get("nodes")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default()
+            .iter()
+            .map(|entry| {
+                (
+                    entry
+                        .get("node")
+                        .and_then(Value::as_str)
+                        .unwrap_or("node_0")
+                        .to_owned(),
+                    entry
+                        .get("role")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                    entry
+                        .get("name")
+                        .and_then(Value::as_str)
+                        .unwrap_or("")
+                        .to_owned(),
+                )
+            })
+            .collect();
+        Ok((nodes, revision))
+    }
+
+    fn surface_show(
+        &mut self,
+        arguments: &Value,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["target"])?;
+        let target_id = typed_field(object, "target", "target")?.to_owned();
+        if !self.targets.contains_key(&target_id) {
+            return Err(not_found("target", &target_id));
+        }
+        let Some(binary) = self.surface_binary.clone() else {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "no surface binary was given to this host",
+                false,
+            ));
+        };
+        if self.surfaces.values().any(|s| s.target_id == target_id) {
+            return Err(ControlError::new(
+                "conflict",
+                "target already has an attached surface",
+                false,
+            )
+            .scoped("target", &target_id));
+        }
+        if self.surfaces.len() >= surface::MAX_SURFACES {
+            return Err(ControlError::new(
+                "resource_limit",
+                "surface capacity reached",
+                true,
+            ));
+        }
+        let policy = self.policy.clone();
+        let started = Instant::now();
+        let target = self.target_mut(&target_id)?;
+        let scroll_y = target.scroll_y;
+        let (nodes, revision) = Self::surface_rows(target, deadline, &policy)?;
+        let painting = surface::paint(&nodes, scroll_y, revision);
+        self.next_surface += 1;
+        self.surface_generation = self.surface_generation.wrapping_add(1);
+        let id = format!("surface_{}", self.next_surface);
+        let (process, ready_ms, first_frame_ms) = surface::Process::spawn(
+            &binary,
+            self.surface_generation,
+            &id,
+            &painting.pixels,
+            &mut self.surface_stats,
+        )
+        .map_err(|detail| {
+            ControlError::new("internal", "surface process did not start", true)
+                .scoped("target", &target_id)
+                .details(json!({"reason":"surface_process","detail":detail}))
+        })?;
+        if let Some(log) = &self.surface_court {
+            // The court captures the own window itself (by this number) so the
+            // host never links or pays for CoreGraphics capture.
+            log.append(json!({
+                "event":"shown","surface":id,"target":target_id,
+                "window":{"number":process.ready.window_number,"content_x":process.ready.screen_x,"content_y":process.ready.screen_y,
+                          "content_width":process.ready.content_width,"content_height":process.ready.content_height},
+                "layout":painting.layout_json(),"revision":revision,
+            }));
+        }
+        let presentation_bytes = painting.pixels.len();
+        self.surfaces.insert(
+            id.clone(),
+            SurfaceRecord {
+                id: id.clone(),
+                target_id: target_id.clone(),
+                process,
+                painting,
+            },
+        );
+        Ok(json!({
+            "kind":"surface","surface":id,"target":target_id,"state":"headed",
+            "presentation_bytes":presentation_bytes,
+            "frame":{"width":surface::FRAME_WIDTH,"height":surface::FRAME_HEIGHT,"format":"bgra8"},
+            "painter":surface::PAINTER,
+            "latency":{"ready_ms":ready_ms,"first_frame_ms":first_frame_ms,"show_ms":started.elapsed().as_millis() as u64},
+        }))
+    }
+
+    fn surface_hide(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["surface"])?;
+        let surface_id = typed_field(object, "surface", "surface")?;
+        let record = self
+            .surfaces
+            .remove(surface_id)
+            .ok_or_else(|| not_found("surface", surface_id))?;
+        let released = record.painting.pixels.len();
+        let teardown = record.process.hide(&mut self.surface_stats);
+        if let Some(log) = &self.surface_court {
+            log.append(json!({"event":"hidden","surface":record.id,"target":record.target_id,"exit":teardown.exit.name(),"ms":teardown.ms}));
+        }
+        Ok(json!({
+            "kind":"surface_hidden","surface":record.id,"target":record.target_id,"state":"headless",
+            "released_presentation_bytes":released,
+            "teardown":{"exit":teardown.exit.name(),"reaped":teardown.reaped,"ms":teardown.ms},
+        }))
+    }
+
+    /// Release every surface of a target (teardown order adapters →
+    /// surfaces → target); returns how many.
+    fn release_surfaces_of(&mut self, target_id: &str) -> usize {
+        let ids: Vec<String> = self
+            .surfaces
+            .values()
+            .filter(|s| s.target_id == target_id)
+            .map(|s| s.id.clone())
+            .collect();
+        for id in &ids {
+            if let Some(record) = self.surfaces.remove(id) {
+                let teardown = record.process.hide(&mut self.surface_stats);
+                if let Some(log) = &self.surface_court {
+                    log.append(json!({"event":"hidden","surface":record.id,"target":record.target_id,"exit":teardown.exit.name(),"ms":teardown.ms}));
+                }
+            }
+        }
+        ids.len()
+    }
+
+    /// Apply pending surface input while the host is idle: FIFO per surface,
+    /// each event an atomic host-internal mutation, stale generations and
+    /// stale frames dropped; a child that went away is released.
+    fn pump_surfaces(&mut self, deadline: Instant) {
+        let ids: Vec<String> = self.surfaces.keys().cloned().collect();
+        for id in ids {
+            let (inputs, gone, generation) = {
+                let Some(record) = self.surfaces.get_mut(&id) else {
+                    continue;
+                };
+                let inputs = record.process.poll(&mut self.surface_stats);
+                (
+                    inputs,
+                    record.process.is_gone(),
+                    record.process.generation(),
+                )
+            };
+            if generation != self.surface_generation {
+                // Only the newest spawn generation is current.
+                self.surface_stats.stale_events_dropped_total += inputs.len() as u64;
+            } else {
+                for input in inputs {
+                    self.apply_surface_input(&id, input, deadline);
+                }
+            }
+            if gone && let Some(record) = self.surfaces.remove(&id) {
+                let error = record.process.last_error().map(str::to_owned);
+                let teardown = record.process.hide(&mut self.surface_stats);
+                if let Some(log) = &self.surface_court {
+                    log.append(json!({"event":"child_exit","surface":record.id,"target":record.target_id,"exit":teardown.exit.name(),"error":error}));
+                }
+            }
+        }
+    }
+
+    fn apply_surface_input(&mut self, surface_id: &str, input: surface::Input, deadline: Instant) {
+        self.surface_stats.input_events_total += 1;
+        let policy = self.policy.clone();
+        let Some(record) = self.surfaces.get(surface_id) else {
+            return;
+        };
+        let target_id = record.target_id.clone();
+        let frame_revision = record.painting.revision;
+        let hit = record
+            .painting
+            .row_at(usize::from(input.y))
+            .map(|row| row.node.clone());
+        if !self.targets.contains_key(&target_id) {
+            return;
+        }
+        self.sync_target_io(&target_id);
+        let Some(target) = self.targets.get_mut(&target_id) else {
+            return;
+        };
+        let Ok(current) = Self::revision(target, deadline, &policy) else {
+            return;
+        };
+        let mut applied: Option<(&'static str, u64)> = None;
+        match input.kind {
+            surface::INPUT_KIND_CLICK => {
+                // A click is valid only against the frame it was made on.
+                if current != frame_revision
+                    || usize::from(input.x) >= surface::FRAME_WIDTH as usize
+                {
+                    self.surface_stats.stale_events_dropped_total += 1;
+                } else if let Some(node) = hit
+                    && let Some(index) = node
+                        .strip_prefix("node_")
+                        .and_then(|s| s.parse::<usize>().ok())
+                        .filter(|n| *n >= 1)
+                {
+                    let base = target.revision_base;
+                    if let Ok(outcome) = Self::eval_json(
+                        target,
+                        &act_script(current - base, index - 1),
+                        deadline,
+                        &policy,
+                    ) && outcome.get("applied").and_then(Value::as_bool) == Some(true)
+                    {
+                        let after = Self::revision(target, deadline, &policy).unwrap_or(current);
+                        applied = Some(("click", after));
+                    }
+                }
+            }
+            surface::INPUT_KIND_SCROLL => {
+                let next = if input.delta >= 0 {
+                    target.scroll_y.saturating_add(input.delta as u64)
+                } else {
+                    target
+                        .scroll_y
+                        .saturating_sub(input.delta.unsigned_abs() as u64)
+                }
+                .min(surface::MAX_SCROLL);
+                target.scroll_y = next;
+                // The synthetic host's rule: a scroll advances the revision.
+                if let Ok(text) = target.eval(SCROLL_REVISION_JS, deadline, &policy)
+                    && let Ok(after) = text.parse::<u64>()
+                {
+                    applied = Some(("scroll", target.revision_base + after));
+                }
+            }
+            _ => {}
+        }
+        let _ = target;
+        if let Some((kind, revision)) = applied {
+            let _ = self.commit_target_io(&target_id, deadline);
+            let scroll_y = self
+                .targets
+                .get(&target_id)
+                .map(|t| t.scroll_y)
+                .unwrap_or(0);
+            if let Some(log) = &self.surface_court {
+                log.append(json!({"event":"input_applied","surface":surface_id,"target":target_id,"kind":kind,"revision":revision,"scroll_y":scroll_y}));
+            }
+            // Repaint after any applied input so the window follows the page.
+            let Some(target) = self.targets.get_mut(&target_id) else {
+                return;
+            };
+            if let Ok((nodes, rev)) = Self::surface_rows(target, deadline, &policy)
+                && let Some(record) = self.surfaces.get_mut(surface_id)
+            {
+                // Repaint into the frame the surface already owns: no new buffer.
+                surface::paint_into(&mut record.painting, &nodes, scroll_y, rev);
+                let _ = record
+                    .process
+                    .send_frame(&record.painting.pixels, &mut self.surface_stats);
+                if let Some(log) = &self.surface_court {
+                    log.append(json!({"event":"repainted","surface":surface_id,"layout":record.painting.layout_json()}));
+                }
+            }
+        }
     }
 
     fn tls_owner(&self) -> Value {
@@ -1793,6 +2118,11 @@ impl Host {
                 let id = typed_field(object, "target", "target")?.to_owned();
                 let policy = self.policy.clone();
                 let https = self.tls_roots.is_some();
+                let surface_id = self
+                    .surfaces
+                    .values()
+                    .find(|s| s.target_id == id)
+                    .map(|s| s.id.clone());
                 let target = self.target_mut(&id)?;
                 let revision = Self::revision(target, deadline, &policy)?;
                 Ok(json!({
@@ -1802,22 +2132,27 @@ impl Host {
                     "frames":[{"frame":target.frame_id,"parent":null,"generation":target.generation,"realm":target.realm_id}],
                     "realms":[{"realm":target.realm_id,"frame":target.frame_id,"world":"main"}],
                     "frame_limit":1,
-                    "network":target_network(&target.budget, https)
+                    "network":target_network(&target.budget, https),
+                    "surface":surface_id,
+                    "scroll_y":target.scroll_y
                 }))
             }
             "target.close" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?;
-                let closed = self
-                    .targets
-                    .remove(id)
-                    .ok_or_else(|| not_found("target", id))?;
-                self.retire_target(&closed);
+                if !self.targets.contains_key(id) {
+                    return Err(not_found("target", id));
+                }
                 let detached = self.detach_adapters_of(id);
+                let released = self.release_surfaces_of(id);
+                let closed = self.targets.remove(id).expect("checked above");
+                self.retire_target(&closed);
                 Ok(
-                    json!({"kind":"target_closed","target":id,"teardown":{"adapters_detached":detached,"order":["adapters","target"]}}),
+                    json!({"kind":"target_closed","target":id,"teardown":{"adapters_detached":detached,"surfaces_released":released,"order":["adapters","surfaces","target"]}}),
                 )
             }
+            "surface.show" => self.surface_show(a, deadline),
+            "surface.hide" => self.surface_hide(a),
             "target.snapshot" => self.target_snapshot(a, deadline),
             "target.act" => self.target_act(a, deadline),
             "target.wait" => self.target_wait(a, deadline),
@@ -2068,12 +2403,15 @@ impl Host {
             .collect();
         let closed = ids.len();
         let mut detached = 0;
+        let mut released = 0;
         for id in ids {
+            detached += self.detach_adapters_of(&id);
+            released += self.release_surfaces_of(&id);
             if let Some(closed) = self.targets.remove(&id) {
                 self.retire_target(&closed);
             }
-            detached += self.detach_adapters_of(&id);
         }
+        let _ = released;
         // The writer lock goes last and only when no session of this profile
         // remains; the volatile jar stays with the profile.
         if !self
@@ -2432,6 +2770,7 @@ impl Host {
             realm_id: format!("realm_{}", self.next_realm),
             revision_base,
             io,
+            scroll_y: 0,
         };
         let read_only = self
             .sessions
@@ -2823,6 +3162,7 @@ impl Host {
         let expected = bounded_u64(condition, "revision", 0, u64::MAX)?;
         let policy = self.policy.clone();
         loop {
+            self.pump_surfaces(deadline);
             let target = self.target_mut(&id)?;
             let revision = Self::revision(target, deadline, &policy)?;
             if revision >= expected {
@@ -2888,6 +3228,10 @@ impl Host {
                 "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
+                "surfaces":{"objects":self.surfaces.len(),"object_limit":surface::MAX_SURFACES,
+                    "bytes":self.surfaces.values().map(|s| s.painting.pixels.len()).sum::<usize>(),
+                    "painter":surface::PAINTER,"binary":self.surface_binary.is_some(),
+                    "process":self.surface_stats.to_json(self.surface_generation, self.surfaces.len())},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
             },
@@ -2955,7 +3299,7 @@ fn target_network(budget: &net::Budget, https: bool) -> Value {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]..."
+        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]... [--surface-binary FILE] [--surface-court-file FILE]"
     );
     std::process::exit(64);
 }
@@ -2980,6 +3324,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut ready_file = None;
     let mut profile_root: Option<PathBuf> = None;
     let mut pinned_roots: Vec<PathBuf> = Vec::new();
+    let mut surface_binary: Option<PathBuf> = None;
+    let mut surface_court_path: Option<PathBuf> = None;
     for pair in arguments[6..].chunks_exact(2) {
         match pair[0].as_str() {
             "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
@@ -2997,12 +3343,38 @@ fn main() -> Result<(), Box<dyn Error>> {
                 profile_root = Some(PathBuf::from(&pair[1]))
             }
             "--pinned-root" => pinned_roots.push(PathBuf::from(&pair[1])),
+            "--surface-binary" if surface_binary.is_none() => {
+                surface_binary = Some(PathBuf::from(&pair[1]))
+            }
+            "--surface-court-file" if surface_court_path.is_none() => {
+                surface_court_path = Some(PathBuf::from(&pair[1]))
+            }
             _ => usage(),
         }
     }
     if cdp_port.is_some() != ready_file.is_some() {
         usage();
     }
+    // The surface binary must be an absolute, existing file: the spawn path
+    // is fixed here once and never derived from anything else.
+    let surface_binary = match surface_binary {
+        Some(path) if path.is_absolute() && path.is_file() => Some(path),
+        Some(_) => {
+            eprintln!("--surface-binary: must be an absolute path to an existing file");
+            std::process::exit(64);
+        }
+        None => None,
+    };
+    let surface_court = match surface_court_path {
+        Some(path) => match surface::CourtLog::create(path) {
+            Ok(log) => Some(log),
+            Err(error) => {
+                eprintln!("--surface-court-file: {}", error.kind());
+                std::process::exit(64);
+            }
+        },
+        None => None,
+    };
     // The https slice exists only with explicitly pinned public roots; the
     // ring provider is selected inside `load_pinned_roots` and nowhere else.
     let tls_roots = if pinned_roots.is_empty() {
@@ -3058,6 +3430,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         cookie_rejections_total: 0,
         tls_roots,
         tls_retired: net::Budget::default(),
+        surface_binary,
+        surfaces: BTreeMap::new(),
+        next_surface: 0,
+        surface_generation: 0,
+        surface_stats: surface::Stats::default(),
+        surface_court,
     };
     if let Some(root) = profile_root {
         host.enable_profile_store(root, PathBuf::from(&arguments[5]))?;
@@ -3103,6 +3481,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             let outcome = host.execute_bridge(&bridge.operation, bridge.arguments);
             let _ = bridge.reply.send(outcome);
         }
+        // Surface input is the third source: applied while idle, FIFO per
+        // surface, between operations.
+        host.pump_surfaces(Instant::now() + Duration::from_millis(250));
         let line = match line_receiver.try_recv() {
             Ok(line) => line,
             Err(std::sync::mpsc::TryRecvError::Empty) => {

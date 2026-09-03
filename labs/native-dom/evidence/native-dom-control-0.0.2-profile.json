@@ -14,8 +14,8 @@
     {
       "check": "[system] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
       "detail": {
-        "footprint_delta": 344064,
-        "resident_delta": 933888
+        "footprint_delta": 311320,
+        "resident_delta": 868352
       },
       "passed": true
     },
@@ -254,7 +254,7 @@
     {
       "check": "[system] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
       "detail": {
-        "live": 6193608,
+        "live": 6275552,
         "profiles": {
           "budgets": {
             "accounted_bytes_per_profile": 131072,
@@ -374,8 +374,8 @@
     {
       "check": "[arena] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
       "detail": {
-        "footprint_delta": 294912,
-        "resident_delta": 884736
+        "footprint_delta": 229376,
+        "resident_delta": 802816
       },
       "passed": true
     },
@@ -614,7 +614,7 @@
     {
       "check": "[arena] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
       "detail": {
-        "live": 5669368,
+        "live": 5620216,
         "profiles": {
           "budgets": {
             "accounted_bytes_per_profile": 131072,
@@ -732,42 +732,42 @@
   "design": "labs/native-dom/profile-design-0.0.1.md",
   "footprint_bytes": {
     "arena": {
-      "empty": 2376016,
-      "empty_rss": 8224768,
-      "feature_off_empty": 2081104,
-      "feature_off_empty_rss": 7340032,
-      "live_three_profiles": 5521912,
-      "live_with_data": 5669368,
-      "post_close": 5013960,
-      "restart_live_one_target": 3735936,
+      "empty": 2326864,
+      "empty_rss": 8192000,
+      "feature_off_empty": 2097488,
+      "feature_off_empty_rss": 7389184,
+      "live_three_profiles": 5489144,
+      "live_with_data": 5620216,
+      "post_close": 4964808,
+      "restart_live_one_target": 3801472,
       "write_amplification": {
         "bytes": 950,
         "writes": 1
       }
     },
     "system": {
-      "empty": 2408784,
-      "empty_rss": 8257536,
+      "empty": 2376040,
+      "empty_rss": 8224768,
       "feature_off_empty": 2064720,
-      "feature_off_empty_rss": 7323648,
-      "live_three_profiles": 5620168,
-      "live_with_data": 6193608,
-      "post_close": 6193608,
-      "restart_live_one_target": 4292968,
+      "feature_off_empty_rss": 7356416,
+      "live_three_profiles": 5603808,
+      "live_with_data": 6275552,
+      "post_close": 6275552,
+      "restart_live_one_target": 4194664,
       "write_amplification": {
         "bytes": 950,
         "writes": 1
       }
     }
   },
-  "host_sha256": "18d76555f526fba7ac5114d0b8151a07e9b38ff3d01d92d4ff57e655aff807b5",
+  "host_sha256": "46f0b9f8c1a6a1d0e9de5f355dc3f0ac2cbcd3ba08574a60aca95e9d474bd8f6",
   "limitations": [
     "fake court values only; no real browser profile is read or migrated",
     "http only: Secure and SameSite=None cookies are refused by design",
     "no public suffix list: Domain attributes other than the request host are refused"
   ],
   "passed": false,
-  "release_binary_bytes": 5267808,
+  "release_binary_bytes": 5429568,
   "schema": "minicon-surf.native-dom-profile-receipt/0.0.1",
   "status": "failed",
   "store_modes": [
