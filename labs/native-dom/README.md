@@ -1307,8 +1307,12 @@ advancing the revision as the synthetic host does. `surface.hide` answers
 no window number, coordinate, capture, hit map, pid or handle; a court-only
 `--surface-court-file` (0600, under the court's mktemp, removed at exit)
 receives those plus `input_applied`, `repainted`, `hidden` and `child_exit`
-events. `memory.report.owners.surfaces` reports objects, frame bytes and
-the process counters; `target.inspect` gains `surface` and `scroll_y`.
+events. `memory.report.owners.surfaces` reports objects, frame bytes
+(the whole mapping while it exists, 0 after hide), the process counters
+and `frame` (backing `anonymous_mmap`, reserved, touched and live bytes,
+regions mapped and unmapped and the bytes returned so far, the host's
+virtual size and physical footprint); `target.inspect` gains `surface`
+and `scroll_y`.
 Teardown order at `target.close` and `session.close` is adapters →
 surfaces → target. The host itself links no AppKit: `native-dom-surface`
 is a path dependency without its `window` feature, so the host gets the
@@ -1352,37 +1356,44 @@ ms, kill and reap, counted (`kills_total` 1, `timeouts_total` 1); no stale
 input was applied; the host stayed one process except for its surface
 children and exited cleanly, removing the court-only file.
 
-Latencies (medians of the rounds): show 95 to 120 ms of which the child's
-`READY` takes 78 to 101 ms and the first frame 13 to 15 ms; hide 8.8 to
-19.8 ms.
+Latencies (medians of the rounds, on the frame-region build below):
+show 108 to 120 ms (default) and 107 to 131 ms (arena) of which the
+child's `READY` takes 87 to 112 ms and the first frame 12 to 17 ms; hide
+9.6 to 11.0 ms. Before the frame region the same court read show 95 to
+120 ms and hide 8.8 to 19.8 ms.
 
-Memory, complete process tree (bytes, default / arena):
+Memory, complete process tree (bytes, default / arena), on the
+frame-region build (`native-dom-control-0.0.2-surface` receipt, host
+`470c855f…`):
 
 | stage | default | arena |
 |---|---|---|
-| headless host | 3,342,672 | 2,916,712 |
-| spawn peak, host plus child (rounds 1–3) | 27,870,216 / 29,049,888 / 29,246,544 | 27,460,640 / 27,493,432 / 28,722,232 |
-| shown steady, host only | 4,440,400 / 5,685,608 / 5,833,088 | 4,145,512 / 4,325,760 / 5,472,640 |
-| post-hide host, over headless | +1,196,032 / +2,424,856 / +2,506,800 | +1,245,184 / +1,425,432 / +2,572,312 |
+| headless host | 3,539,304 | 2,982,248 |
+| spawn peak, host plus child (rounds 1–3) | 27,771,936 / 28,279,840 / 28,165,152 | 27,313,208 / 27,313,208 / 27,542,584 |
+| shown steady, host only | 4,735,336 / 5,013,864 / 5,079,400 | 4,211,072 / 4,325,760 / 4,440,448 |
+| post-hide host, over headless | +344,064 / +458,752 / +524,288 | +196,608 / +360,448 / +425,984 |
 | post-hide libmalloc in-use over headless | within the 65,536 cap | within the cap |
-| slope, round 3 − round 1 | 1,310,768 | 1,327,128 |
+| slope, round 3 − round 1 | 180,224 | 229,376 |
 
-The two pre-registered tolerances that fail are the post-hide host
-footprint (cap 262,144 over headless) and the slope (cap 65,536). Their
-attribution is the paired court below: the retained bytes are one or two
-copies of the freed 1 MB frame kept by the default zone plus small-block
-churn, and the in-use heap returns to baseline. How many copies a run
-keeps varies between runs of the same binary: the recorded run keeps two
-from round 2 under the default allocator and from round 3 under the arena
-(hence the 1.3 MB slopes above), a second run of the same build kept one
-under the default allocator (+1,261,568 / +1,392,664 / +1,441,816, slope
-180,248) and two under the arena (slope 1,409,048), and the committed
-pre-instrumentation build run the same day kept one under both
-(+1,277,952 / +1,409,048 / +1,441,816 and +1,343,488 / +1,556,504 /
-+1,605,656). An earlier probe that spawned `/usr/bin/true` read the spawn
-machinery as 1,130,496 bytes; the paired court corrects that reading to 0
-to 33 KB (that probe had already allocated the frame before spawning).
-Two host-side reductions are already in: frames are written to
+Before the frame region (the `Vec` frame in the default zone, host
+`55fd1030…`, receipt superseded) the same court read post-hide
++1,196,032 / +2,424,856 / +2,506,800 (default) and +1,245,184 /
++1,425,432 / +2,572,312 (arena) with slopes of 1,310,768 / 1,327,128,
+peaks of 27,870,216 to 29,246,544 and shown-steady of 4,440,400 to
+5,833,088. The two pre-registered tolerances that fail are the post-hide
+host footprint (cap 262,144 over headless) and the slope (cap 65,536).
+Their attribution is the paired court below, measured on the `Vec`
+build: the retained bytes were one or two copies of the freed 1 MB frame
+kept by the default zone plus small-block churn, and the in-use heap
+returns to baseline. How many copies a run kept varied between runs of
+the same binary (two from round 2 under the default allocator and from
+round 3 under the arena in the superseded receipt; one under the default
+allocator and two under the arena in a second run; one under both on the
+pre-instrumentation build). An earlier probe that spawned `/usr/bin/true`
+read the spawn machinery as 1,130,496 bytes; the paired court corrects
+that reading to 0 to 33 KB (that probe had already allocated the frame
+before spawning). Two host-side reductions are already in: frames are
+written to
 the pipe from the painting itself (no encode or queue copy; before this the
 post-hide excess was 6.5 MB) and repaints paint into the frame the surface
 already owns. The child while shown costs about 23 MB in the tree
@@ -1403,8 +1414,10 @@ activation; role-bar colours keep every channel far from the classifier's
 midpoint.
 
 Paired attribution of the post-hide retention (verdict: keep 106 of 110,
-attribute before any fix; `native-dom-control-0.0.2-surface-attribution`
-receipt, read-only, no cap moves).
+attribute before any fix; read-only, no cap moves; the numbers in this
+section are the `Vec`-frame build's, kept as the record that led to the
+candidate; the receipt of the same name now carries the frame-region
+build's rerun, summarised in the next section).
 [`surface-attribution-court.py`](surface-attribution-court.py) runs a fresh
 host per run, one warm-up plus seven, three show/hide rounds, default
 allocator and arena, twelve cells: the real child with frames of 640 × 400
@@ -1486,9 +1499,68 @@ rows into reused buffers instead of `serde_json` values); it is not
 proposed until the first is measured. Direct `posix_spawn` FFI is not
 proposed: the data show the spawn costs nothing that stays.
 
-Gaps: post-hide host footprint and slope over the pre-registered caps (the freed frame kept
-by the default zone and small-block churn; the spawn costs nothing that
-stays); macOS only; one window size; keys are recorded
+Frame region candidate, approved, implemented and measured
+([`surface-frame-region-0.0.1.md`](surface-frame-region-0.0.1.md): the
+frozen criteria first, then the code, then the receipts). Each surface
+record owns one anonymous `mmap` region of the frame's page-rounded
+length (1,032,192 bytes for 640 × 400; checked lengths, refused above the
+protocol's 3 MiB as `resource_limit`, an `mmap` failure as `internal`,
+both before any child exists); the painter writes the mapping in place;
+the pipe write borrows it for a synchronous `write_all`; the queue that
+copied a frame while one was in flight is a resend flag; `Drop` unmaps
+exactly once on every path (hide, failed show, child gone, target and
+session close, host exit). Unit tests (43): checked lengths and the
+bound, map, write and unmap counters, and three failed shows (a child
+that exits at once, one that answers garbage, one that never answers)
+each reaped with the region unmapped. `memory.report.owners.surfaces`
+gains `frame` (above); a probe of one show and hide read reserved
+1,032,192 / touched 1,032,192 / live 1,024,000 while shown and 0 / 0 / 0
+with `unmapped_bytes_total` 1,032,192 after hide; a second hide is
+`not_found`.
+
+Result against the frozen criteria (both allocators, the frozen court
+unchanged, run twice on the same build): the frame's contribution is
+gone and the variance with it. The attribution court on this build reads
+the painter at exactly +1,032,192 of footprint and the frame drop at
+exactly −1,032,192 in every round of every cell (seven runs each; the
+128 × 128 cell +65,536 / −65,536), so the post-hide excess no longer
+depends on the frame size (medians after rounds 1 / 2 / 3, default:
+196,608 / 278,528 / 311,296 for 640 × 400, 180,224 / 278,528 / 311,296
+for 256 × 256, 163,840 / 245,760 / 311,296 for 128 × 128; the exiting
+child's cell 163,840 / 229,376 / 294,912). The surface court read
+post-hide +344,064 / +458,752 / +524,288 (default) and +196,608 /
++360,448 / +425,984 (arena) in the recorded run and +327,680 / +442,368 /
++491,520 and +131,072 / +344,064 / +442,368 in the second run: no
+1 MB step in any round of either run. S2 (≤ 262,144 every round) fails
+from round 2 under both allocators (round 1 passes under the arena
+only), S3 (≤ 65,536) fails with slopes of 180,224 / 229,376 and 163,840
+/ 311,296. Mechanics 106 of 106, every regression at its count, the
+complete-tree peak 27,313,208 to 28,279,840 (not worse than 27,460,640
+to 29,246,544), hide latency 9.6 to 11.0 ms (was 8.8 to 19.8), show
+medians 110.1 ms (default, was 100.1) and 108.7 / 110.2 ms in the two
+runs (arena, was 100.0): at the 10 percent edge, dominated by the
+child's `READY`.
+
+Verdict under the pre-registered outcomes: both S2 and S3 fail, so the
+candidate is rejected for G3 and no cap moves; the frame region stays as
+the frame's backing because it removes one to two megabytes of zone
+retention and the variance, and every criterion other than S2 and S3
+holds. What remains is small-block churn that the frame never was: per
+round the stage deltas read snapshot +16,384 to +65,536, spawn pipes 0
+to +32,768, the reader thread's stack +16,384 (returned at join), the
+shown and hide entries 0 to +32,768; in-use returns to within 7,040
+bytes. After `target.close` and `session.close` the default allocator
+still holds 344,064 over headless while the arena holds 16,360: the
+churn is mostly the script realm's allocations during the snapshot
+evaluation (arena-backed under the arena and released with the target),
+plus control-plane JSON. The next step is the ruling's read-only
+attribution of that snapshot and `serde_json` churn before a second
+candidate is proposed.
+
+Gaps: post-hide host footprint and slope over the pre-registered caps
+(small-block churn of the snapshot evaluation and the control plane; the
+frame itself now returns exactly at hide, and the spawn costs nothing
+that stays); macOS only; one window size; keys are recorded
 and ignored; the painter is semantic rows, not layout; the WindowServer
 and compositor stay unattributed; Accessibility trust is required for the
 court's input.
@@ -1513,7 +1585,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 | `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
-| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` | the host with the G3 surface process integration and its court-only stage log (`surface_sha256` names the child binary) | every regression was rerun on this build and all seven receipts carry its hash | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
+| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, and the rerun `-profile`, `-frame-realm`, `-cdp-frame-tree`, `-https`, `-secure-cookie` | the host with the G3 surface process, its court-only stage log and the surface-owned mmap frame region (`surface_sha256` names the child binary) | every regression was rerun on this build and all seven receipts carry its hash; the superseded `Vec`-frame receipts are described in the G3 section by their numbers | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build |
 
 ## Findings against product contracts
 

@@ -224,3 +224,21 @@ the first non-releasing stage of every hide is `hide_entry`.
 Candidate for ruling: a dedicated `mmap` region for the frame, `munmap`
 at hide (section 8 of the lab README states the expected effect and the
 criteria). No cap moves; the surface court stays 106 of 110, narrow.
+
+## 9. The frame region (approved, implemented, measured)
+
+`surface-frame-region-0.0.1.md` froze the candidate and its criteria
+before the code. The frame is now one anonymous `mmap` region per surface
+record (page-rounded, checked, refused above the protocol bound before
+any child exists), painted in place, borrowed by the pipe write, unmapped
+exactly once at drop on every path; `owners.surfaces.frame` reports it.
+On this build the painter costs exactly the mapping and the drop returns
+exactly the mapping in every round of every attribution cell, and the
+surface court shows no 1 MB step in either of two runs: the frame's
+retention and its one-or-two-copies variance are gone. The residual
+small-block churn (about 0.2 to 0.5 MB after three rounds, mostly the
+script realm's snapshot evaluation and control-plane JSON) still fails S2
+from round 2 and S3 under both allocators, so the candidate is rejected
+for G3 under the pre-registered outcomes and no cap moves; the region
+stays as the frame's backing. Next: the read-only attribution of the
+snapshot and `serde_json` churn before a second candidate.

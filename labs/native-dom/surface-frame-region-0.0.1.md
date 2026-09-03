@@ -103,3 +103,26 @@ closed for this route only; no CSS or layout claim, and the WindowServer
 gap stays. S2 passes and S3 fails → `partial repair`, rejected for G3,
 no cap moves, followed by a read-only attribution of the snapshot and
 `serde_json` churn before a second candidate. S2 fails → rejected.
+
+## 5. Result (recorded after implementation; the criteria above did not move)
+
+Implemented in `frame_region.rs` (host `470c855f…`), 43 unit tests, the
+frozen court run twice, the attribution court once, every regression
+rerun. The frame's pages now come and go exactly with the surface:
+painter +1,032,192, drop −1,032,192 in every round of every cell; no
+1 MB step in any round of either court run, so the one-or-two-copies
+variance is gone. Post-hide over headless: +344,064 / +458,752 /
++524,288 (default) and +196,608 / +360,448 / +425,984 (arena), second
+run +327,680 / +442,368 / +491,520 and +131,072 / +344,064 / +442,368;
+slopes 180,224 / 229,376 and 163,840 / 311,296. S2 fails from round 2
+(round 1 passes under the arena only) and S3 fails under both
+allocators: rejected for G3, no cap moves. Everything else held:
+mechanics 106 of 106, regressions at their counts, complete-tree peak
+27.3 to 28.3 MB (not worse), hide 9.6 to 11.0 ms, show medians at the
+10 percent edge (110 ms against 100 ms, dominated by the child's
+`READY`). The residual is small-block churn that was never the frame:
+the snapshot evaluation in the script realm (the default allocator
+keeps 344,064 over headless after the target closes, the arena 16,360)
+and control-plane JSON. The region stays as the frame's backing; the
+next step is the ruling's read-only attribution of that churn before a
+second candidate.

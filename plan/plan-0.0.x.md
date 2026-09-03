@@ -1162,6 +1162,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [~] The frame-region candidate was approved, frozen with its criteria
+  before the code (`surface-frame-region-0.0.1.md`), implemented (one
+  anonymous `mmap` region per surface record, painted in place, borrowed
+  by the pipe write, unmapped exactly once on every path, reported under
+  `owners.surfaces.frame`) and measured against the unchanged court: the
+  frame's pages return exactly at drop and the one-or-two-copies variance
+  is gone in two court runs and seven attribution runs, but the residual
+  small-block churn (0.2 to 0.5 MB after three rounds, mostly the script
+  realm's snapshot evaluation and control-plane JSON) still fails S2 from
+  round 2 and S3 under both allocators. Rejected for G3 under the
+  pre-registered outcomes; no cap moves; the region stays as the frame's
+  backing; next is the read-only attribution of that churn before a
+  second candidate. The surface court stays 106 of 110, narrow; G1, G3,
+  P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
