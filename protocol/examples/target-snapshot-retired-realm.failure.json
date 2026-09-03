@@ -1,0 +1,19 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.1",
+  "request_id": "req_snapshot_realm_2",
+  "ok": false,
+  "error": {
+    "code": "not_found",
+    "message": "realm does not exist",
+    "retryable": false,
+    "scope": {
+      "kind": "realm",
+      "id": "realm_court_main_1"
+    },
+    "details": {
+      "reason": "realm_not_live_in_target",
+      "frame": "frame_court_main"
+    }
+  }
+}

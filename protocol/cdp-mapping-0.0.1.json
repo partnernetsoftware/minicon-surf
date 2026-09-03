@@ -26,13 +26,13 @@
       "native": "frame",
       "cdp": "Page.FrameId",
       "mapping": "adapter-scoped",
-      "boundary": "navigation lifetime requires qualification"
+      "boundary": "one-to-one with a native frame while both live, adapter-scoped and not stable across adapters; qualified on the synthetic host through Page.getFrameTree (main frame plus one bounded child); Page.frameNavigated and child-frame nesting are not projected; document generation has no CDP equivalent"
     },
     {
       "native": "realm",
       "cdp": "Runtime.ExecutionContextId",
-      "mapping": "adapter-scoped",
-      "boundary": "invalid after executionContextDestroyed"
+      "mapping": "not-projected",
+      "boundary": "realm identity and retirement are native; no Runtime.enable, executionContextCreated or executionContextDestroyed is projected in this increment, so a CDP client cannot observe realm replacement except through stale DOM handles after navigation"
     },
     {
       "native": "surface",
@@ -51,6 +51,28 @@
       "cdp": "DOM.NodeId|DOM.BackendNodeId",
       "mapping": "adapter-scoped-lossy",
       "boundary": "CDP IDs never bypass target revision validation"
+    }
+  ],
+  "losses": [
+    {
+      "native": "document generation",
+      "cdp": null,
+      "loss": "no CDP concept; Page.loaderId is the closest and is not mapped"
+    },
+    {
+      "native": "navigation",
+      "cdp": "Page.navigate / Page.frameNavigated",
+      "loss": "no target.navigate exists in 0.0.1; the synthetic host navigates through a link click and projects no navigation events"
+    },
+    {
+      "native": "child frames",
+      "cdp": "Page.FrameTree.childFrames",
+      "loss": "the synthetic host has exactly one bounded child frame and no nesting; engine hosts expose no frames yet"
+    },
+    {
+      "native": "world",
+      "cdp": "Runtime.ExecutionContextDescription.auxData.isDefault",
+      "loss": "only the main world exists on the synthetic host; isolated worlds are unprojected"
     }
   ]
 }

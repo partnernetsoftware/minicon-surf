@@ -135,10 +135,12 @@ def validate_request(document):
             object_id("target", target)
     if document["operation"] == "target.snapshot":
         arguments = document["arguments"]
-        require(
-            set(arguments) == {"target", "format", "max_bytes", "max_nodes"},
-            "snapshot arguments differ",
-        )
+        fields = {"target", "format", "max_bytes", "max_nodes"}
+        require(fields <= set(arguments) <= fields | {"frame", "realm"}, "snapshot arguments differ")
+        if "frame" in arguments:
+            object_id("frame", arguments["frame"])
+        if "realm" in arguments:
+            object_id("realm", arguments["realm"])
         require(arguments["format"] == "semantic", "snapshot format differs")
         require(
             type(arguments["max_bytes"]) is int
@@ -203,6 +205,10 @@ def validate_snapshot(result):
     require(type(revision) is int and revision >= 0, "snapshot revision differs")
     require(type(result.get("truncated")) is bool, "snapshot truncation flag differs")
     require(isinstance(result.get("nodes"), list), "snapshot nodes differ")
+    if "frame" in result or "realm" in result or "generation" in result:
+        object_id("frame", result.get("frame"))
+        object_id("realm", result.get("realm"))
+        require(type(result.get("generation")) is int and result["generation"] >= 1, "snapshot generation differs")
     for item in result["nodes"]:
         reference = item.get("reference", {})
         require(set(reference) == {"target", "revision", "node"}, "node reference fields differ")
@@ -274,6 +280,19 @@ def main():
     require(surface_request["capability"]["owner"]["kind"] not in OWNER_KINDS, "surface example must name a non-owner")
     require(surface_failure["error"]["code"] == "permission_denied", "surface example must be a typed refusal")
     require(surface_failure["error"]["details"]["reason"] == "surface_is_not_an_owner", "surface refusal reason differs")
+    frame_request = load_bounded(examples / "target-snapshot-frame.request.json", MAX_REQUEST_BYTES)
+    frame_success = load_bounded(examples / "target-snapshot-frame.success.json", MAX_RESPONSE_BYTES)
+    retired_request = load_bounded(examples / "target-snapshot-retired-realm.request.json", MAX_REQUEST_BYTES)
+    retired_failure = load_bounded(examples / "target-snapshot-retired-realm.failure.json", MAX_RESPONSE_BYTES)
+    validate_request(frame_request)
+    validate_request(retired_request)
+    validate_response(frame_success)
+    validate_response(retired_failure)
+    require(frame_request["request_id"] == frame_success["request_id"], "frame success does not echo request ID")
+    require(retired_request["request_id"] == retired_failure["request_id"], "retired-realm failure does not echo request ID")
+    require(frame_success["result"]["frame"] == frame_request["arguments"]["frame"], "frame snapshot names another frame")
+    require(frame_success["result"]["realm"] == frame_request["arguments"]["realm"], "frame snapshot names another realm")
+    require(retired_failure["error"]["code"] == "not_found" and retired_failure["error"]["scope"]["kind"] == "realm", "retired realm must be not_found with realm scope")
 
     wrong_revision = json.loads(json.dumps(success))
     wrong_revision["result"]["nodes"][0]["reference"]["revision"] = 6
@@ -327,7 +346,16 @@ def main():
     extra_field = json.loads(json.dumps(capability_request))
     extra_field["capability"]["grant"] = "everything"
     expect_invalid(extra_field, validate_request)
-    print("control 0.0.1: vocabulary mapping, 8 examples, and 12 negative cases passed")
+    wrong_frame_kind = json.loads(json.dumps(frame_request))
+    wrong_frame_kind["arguments"]["frame"] = "realm_court_child_1"
+    expect_invalid(wrong_frame_kind, validate_request)
+    unknown_snapshot_argument = json.loads(json.dumps(frame_request))
+    unknown_snapshot_argument["arguments"]["world"] = "isolated"
+    expect_invalid(unknown_snapshot_argument, validate_request)
+    zero_generation = json.loads(json.dumps(frame_success))
+    zero_generation["result"]["generation"] = 0
+    expect_invalid(zero_generation, validate_response)
+    print("control 0.0.1: vocabulary mapping, 12 examples, and 15 negative cases passed")
 
 
 if __name__ == "__main__":

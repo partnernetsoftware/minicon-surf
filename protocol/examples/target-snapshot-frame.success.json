@@ -1,0 +1,26 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.1",
+  "request_id": "req_snapshot_frame_1",
+  "ok": true,
+  "result": {
+    "kind": "semantic_snapshot",
+    "target": "target_court_1",
+    "revision": 7,
+    "frame": "frame_court_child",
+    "realm": "realm_court_child_1",
+    "generation": 1,
+    "truncated": false,
+    "nodes": [
+      {
+        "reference": {
+          "target": "target_court_1",
+          "revision": 7,
+          "node": "node_embedded_heading"
+        },
+        "role": "heading",
+        "name": "Embedded court"
+      }
+    ]
+  }
+}

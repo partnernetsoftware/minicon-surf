@@ -75,6 +75,8 @@ The qualified synthetic profile slice uses exact bounded arguments:
 | `profile.storage.put` | `session`, `kind`, `key`, `value` | `kind` is `cookie` or `local_storage`; 32 entries/bucket, 64-byte keys, 1,024-byte values. |
 | `profile.storage.get` | `session`, `kind`, `key` | Returns `found` plus a bounded value; the session proves writer ownership. |
 | `profile.policy.set` | `session`, `network`, `permissions` | Network is online/offline; permissions are allow/deny by default. |
+| `target.inspect` | `target` | Identity, revision and the bounded `frames[]`/`realms[]` enumeration (main frame first). |
+| `target.snapshot` | `target`, `format`, `max_bytes`, `max_nodes`; optional `frame`, `realm` | The result names the observed `frame`, `realm` and `generation`; a foreign, ended or unknown frame/realm is `not_found`. |
 | `session.close` | `session` | Closes owned targets/surfaces and releases the persistent writer lock when its last session closes; the synthetic host tears each target down in the order adapters → surfaces → target and reports it. |
 | `memory.trim` | none | On macOS, requests maximal malloc-zone pressure relief and reports released bytes; other platforms are unqualified. |
 
@@ -100,6 +102,49 @@ The proposed one-shot projection is
 `minicon-surf control --json <request.json`; stdout is the corresponding
 success or failure envelope. The command is illustrative and does not exist
 yet. Its operation names and object IDs cannot diverge from this schema.
+
+## Frames and realms
+
+Four things change at different times and are never collapsed into one:
+
+| Concept | Identity | Advances or ends when | Reference after that |
+|---|---|---|---|
+| target revision | integer per target | any navigation or observable document-state change | node references from before are `stale_revision` |
+| frame identity | `frame_` id per browsing-context node | minted when the node is created; the main frame lives as long as its target; a child frame ends when it is removed or when its parent's document is replaced; ids are never reused within a host generation | an ended frame id is `not_found` with `frame` scope |
+| document (navigation) generation | integer per frame, 1 for the first document | +1 on every same-frame navigation, i.e. every document replacement; the frame id survives it | reported in enumeration; it is not the target revision |
+| realm identity | `realm_` id per (frame, document generation, world) | minted with its document; retired when that document is replaced, its world is destroyed or its frame ends; never reused | a retired realm id is `not_found` with `realm` scope |
+
+Rules every host follows:
+
+- Enumeration is bounded and only through the owning target: `target.inspect`
+  lists `frames[]` (`frame`, `parent` or null, `generation`, `realm`) with the
+  main frame first and at most `frame_limit` entries, and `realms[]`
+  (`realm`, `frame`, `world`). Ids are opaque and encode nothing.
+- A `frame` or `realm` argument narrows an operation to that frame or asserts
+  which realm the caller believes is live; it never widens it. `target.snapshot`
+  accepts optional `frame` (default: the main frame) and optional `realm`
+  (must be the frame's current realm), and its result names the `frame`,
+  `realm` and `generation` it observed.
+- A frame or realm id that does not belong to the named live target, whether
+  it belongs to another target, has ended, or never existed, is refused with
+  the same `not_found`, so nothing can enumerate one target's frames through
+  another.
+- Frames and realms are never capability owners (`kind_is_not_an_owner`);
+  attenuation resolves the ownership chain from the `target` argument and
+  covers every frame- or realm-narrowed operation.
+- Navigation in the synthetic host is a click on a link node: it advances the
+  target revision, increments the main frame's generation, mints a new main
+  realm, ends the bounded child frame and its realm, and leaves every
+  earlier node reference stale. There is no `target.navigate` in `0.0.1`;
+  hosts that cannot navigate simply never replace a document.
+- CDP projects frame identity as an adapter-scoped `Page.FrameId` that is
+  one-to-one with a native frame while both live, qualified on the synthetic
+  host through `Page.getFrameTree`; realm identity is not yet projected
+  (`Runtime.ExecutionContextId`, context events), navigation events and
+  document generation have no projection, and child frames are limited to
+  the one bounded synthetic child. These are recorded losses, not
+  approximations. Hosts that do not implement the optional `frame`/`realm`
+  arguments fail closed with `invalid_request`, as with `capability`.
 
 ## Capability attenuation (optional envelope field)
 
@@ -171,7 +216,9 @@ is deliberately unencrypted, so it accepts court values only—not credentials.
 
 The examples demonstrate a snapshot request and its successful revision-scoped
 result, an action request and its stale-node failure, a session-attenuated
-snapshot, and a surface-located request refused as `permission_denied`. Run:
+snapshot, a surface-located request refused as `permission_denied`, a
+frame-scoped snapshot naming its realm and generation, and a retired-realm
+request refused as `not_found`. Run:
 
 ```sh
 python3 protocol/check_contract.py
