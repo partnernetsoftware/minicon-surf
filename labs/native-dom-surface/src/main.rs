@@ -13,7 +13,8 @@ use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use native_dom_surface::{
-    Body, INPUT_CLICK, INPUT_SCROLL, MAX_INPUT_PER_SECOND, Message, ProtocolError, Reader, Writer,
+    Body, INPUT_CLICK, INPUT_SCROLL, MAX_INPUT_PER_SECOND, Message, ProtocolError, Reader,
+    ReplayScript, Writer,
 };
 use objc2::rc::Retained;
 use objc2::{AnyThread, MainThreadMarker, MainThreadOnly};
@@ -29,13 +30,28 @@ const EXIT_DESCRIPTORS: i32 = 66;
 const EXIT_NO_MAIN_THREAD: i32 = 67;
 /// The window path was reached without the visible opt-in: fail closed.
 const EXIT_NOT_VISIBLE: i32 = 68;
+/// A court-only replay script that does not parse: fail closed.
+const EXIT_REPLAY_SCRIPT: i32 = 69;
 
 /// The protocol without a window: answers READY, acknowledges frames
 /// (keeping the latest when asked) and leaves at CLOSE. Court-only.
 fn headless_mode(generation: u32, keep_frames: bool) -> ! {
+    headless_mode_with(generation, keep_frames, ReplayScript::default())
+}
+
+/// The no-AppKit modes: `protocol` (frames discarded), `drain` (the latest
+/// frame kept) and `replay:<script>` (the paired causal court's
+/// counterfactual: after the acknowledgement of frame k the scripted
+/// `INPUT` events bound to k are sent, within the limiter). No AppKit
+/// object exists in any of them.
+fn headless_mode_with(generation: u32, keep_frames: bool, script: ReplayScript) -> ! {
     let mut reader = Reader::new(io::stdin().lock(), generation);
     let mut writer = Writer::new(io::stdout().lock(), generation);
     let mut kept: Option<Vec<u8>> = None;
+    let mut limiter = Limiter {
+        window_start: Instant::now(),
+        sent: 0,
+    };
     let code = loop {
         match reader.read_message() {
             Ok(message) => match message.body {
@@ -59,6 +75,22 @@ fn headless_mode(generation: u32, keep_frames: bool) -> ! {
                     }
                     if writer.send(Body::FrameAck { frame }).is_err() {
                         break EXIT_PROTOCOL;
+                    }
+                    for event in script.for_frame(frame) {
+                        if !limiter.allow() {
+                            break;
+                        }
+                        let sent = writer.send(Body::Input {
+                            kind: event.kind,
+                            x: event.x,
+                            y: event.y,
+                            delta: event.delta,
+                            key: 0,
+                            modifiers: 0,
+                        });
+                        if sent.is_err() {
+                            break;
+                        }
                     }
                 }
                 Body::Close => {
@@ -254,6 +286,10 @@ fn main() {
         Some("exit") => unsafe { libc::_exit(0) },
         Some("protocol") => headless_mode(generation, false),
         Some("drain") => headless_mode(generation, true),
+        Some(mode) if mode.starts_with("replay:") => match ReplayScript::parse(&mode[7..]) {
+            Ok(script) => headless_mode_with(generation, true, script),
+            Err(_) => std::process::exit(EXIT_REPLAY_SCRIPT),
+        },
         _ => {}
     }
     // Double gate: the host hands this variable down only under its own

@@ -213,9 +213,14 @@ pub const CLOSE_DEADLINE: Duration = Duration::from_millis(1000);
 pub const VISIBLE_ENV: &str = "MINICON_SURF_ALLOW_VISIBLE_COURT";
 
 /// Court-only child modes that never touch AppKit: `protocol` and `drain`
-/// speak the protocol without a window, `exit` leaves at once.
+/// speak the protocol without a window, `exit` leaves at once,
+/// `replay:<script>` is the paired causal court's counterfactual (a bounded
+/// input script the child sends after frame acknowledgements).
 pub fn is_headless_child_mode(mode: &str) -> bool {
     matches!(mode, "protocol" | "drain" | "exit")
+        || mode
+            .strip_prefix("replay:")
+            .is_some_and(|script| native_dom_surface::ReplayScript::parse(script).is_ok())
 }
 
 // ---------------------------------------------------------------- painter

@@ -468,6 +468,77 @@ impl<W: Write> Writer<W> {
     }
 }
 
+/// A court-only replay script for the headless counterfactual child
+/// (`surface-paired-causal-court-0.0.1.md` §4): after the acknowledgement
+/// of frame `frame` the child sends the event. Bounded: at most
+/// `MAX_REPLAY_BYTES` of ASCII and `MAX_REPLAY_EVENTS` events, kinds
+/// `click` (delta 0) and `scroll` (non-zero delta), coordinates inside the
+/// protocol's frame bounds. Format: `frame:kind:x:y:delta;...`.
+pub const MAX_REPLAY_BYTES: usize = 256;
+pub const MAX_REPLAY_EVENTS: usize = 16;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ReplayEvent {
+    pub frame: u32,
+    pub kind: u8,
+    pub x: u16,
+    pub y: u16,
+    pub delta: i16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ReplayScript {
+    pub events: Vec<ReplayEvent>,
+}
+
+impl ReplayScript {
+    pub fn parse(text: &str) -> Result<ReplayScript, ProtocolError> {
+        if text.len() > MAX_REPLAY_BYTES || !text.is_ascii() {
+            return Err(ProtocolError::Bound);
+        }
+        let mut events = Vec::new();
+        for item in text.split(';').filter(|s| !s.is_empty()) {
+            let parts: Vec<&str> = item.split(':').collect();
+            if parts.len() != 5 {
+                return Err(ProtocolError::Bound);
+            }
+            let frame: u32 = parts[0].parse().map_err(|_| ProtocolError::Bound)?;
+            let kind = match parts[1] {
+                "click" => INPUT_CLICK,
+                "scroll" => INPUT_SCROLL,
+                _ => return Err(ProtocolError::Bound),
+            };
+            let x: u16 = parts[2].parse().map_err(|_| ProtocolError::Bound)?;
+            let y: u16 = parts[3].parse().map_err(|_| ProtocolError::Bound)?;
+            let delta: i16 = parts[4].parse().map_err(|_| ProtocolError::Bound)?;
+            if frame == 0
+                || x >= MAX_WIDTH
+                || y >= MAX_HEIGHT
+                || (kind == INPUT_CLICK && delta != 0)
+                || (kind == INPUT_SCROLL && delta == 0)
+            {
+                return Err(ProtocolError::Bound);
+            }
+            events.push(ReplayEvent {
+                frame,
+                kind,
+                x,
+                y,
+                delta,
+            });
+            if events.len() > MAX_REPLAY_EVENTS {
+                return Err(ProtocolError::Bound);
+            }
+        }
+        Ok(ReplayScript { events })
+    }
+
+    /// The events bound to one frame, in script order.
+    pub fn for_frame(&self, frame: u32) -> impl Iterator<Item = &ReplayEvent> {
+        self.events.iter().filter(move |e| e.frame == frame)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -669,5 +740,34 @@ mod tests {
         let mut reader = Reader::new(std::io::Cursor::new(sink), 4);
         assert_eq!(reader.read_message().unwrap().sequence, 1);
         assert_eq!(reader.read_message().unwrap().sequence, 2);
+    }
+
+    #[test]
+    fn replay_scripts_are_bounded_and_typed() {
+        let script =
+            ReplayScript::parse("1:click:100:70:0;2:scroll:100:70:20;3:scroll:100:70:-20").unwrap();
+        assert_eq!(script.events.len(), 3);
+        assert_eq!(script.for_frame(2).count(), 1);
+        assert_eq!(script.for_frame(2).next().unwrap().kind, INPUT_SCROLL);
+        assert!(ReplayScript::parse("").unwrap().events.is_empty());
+        for bad in [
+            "0:click:1:1:0",
+            "1:click:1:1:5",
+            "1:scroll:1:1:0",
+            "1:tap:1:1:0",
+            "1:click:1024:1:0",
+            "1:click:1:768:0",
+            "1:click:1:1",
+            "1:click:1:1:0:9",
+        ] {
+            assert!(ReplayScript::parse(bad).is_err(), "{bad}");
+        }
+        let many = (1..=17)
+            .map(|i| format!("{i}:click:1:1:0"))
+            .collect::<Vec<_>>()
+            .join(";");
+        assert!(ReplayScript::parse(&many).is_err(), "17 events");
+        let long = "1:click:1:1:0;".repeat(20);
+        assert!(long.len() > MAX_REPLAY_BYTES && ReplayScript::parse(&long).is_err());
     }
 }

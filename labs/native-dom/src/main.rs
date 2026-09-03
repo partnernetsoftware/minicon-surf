@@ -3620,6 +3620,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             // Court-only knobs for the attribution court; they change nothing
             // unless given and are documented as such.
             "--surface-child-mode" if surface_child_mode.is_none() => {
+                // Only the no-AppKit modes exist; anything else is a usage error.
+                if !surface::is_headless_child_mode(&pair[1]) {
+                    usage();
+                }
                 surface_child_mode = Some(pair[1].clone())
             }
             "--surface-court-frame" => {
