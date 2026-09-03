@@ -605,6 +605,18 @@ signal (25% and 1 MiB), so interior trimming stays deferred; the 2.5×
 ratio seen under the adversarial allocator script remains an allocator
 risk on record, not a browser cost.
 
+### Receipt provenance
+
+Each receipt records the SHA-256 of the host binary that produced it. The
+binary is rebuilt from the commit that added the receipt, so the hashes
+differ across receipts by design:
+
+| receipt | host built from | note |
+|---|---|---|
+| `native-dom-control-0.0.2-network-court` | the bounded-network slice (before the allocator experiments) | unchanged since; the arena knob did not exist |
+| `native-dom-control-0.0.2-retention-attribution-arena` | the arena commit (`4c4b519`, measured in `468b8a9`) | the later tail-trim reporting fix (`12de192`) changes no value in this receipt: no realm is alive at its trim stage, so `arena_released_bytes` was already zero |
+| `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
+
 ## Findings against product contracts
 
 ### Agent control
