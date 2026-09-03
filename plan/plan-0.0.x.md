@@ -1172,7 +1172,9 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   churn court stays under G1 / M2 and is not called a surface leak. The
   frozen court's absolute S2 and S3 keep failing and stay quoted; whether
   this reading is adopted is the root's decision. The realm-side snapshot
-  memo is a rejected idea.
+  memo is a rejected idea. The counterfactual child mode and the harness
+  exist and arm B has run headless (7 of 7 valid, both allocators); arm
+  A waits for the owner's permission and no differential exists.
 - [~] Control-plane churn attribution (headless, read-only, 128 requests
   per arm, fresh host, one warm-up plus seven, both allocators): every
   operation grows the host by 0.1 to 1.5 KB per request with no plateau

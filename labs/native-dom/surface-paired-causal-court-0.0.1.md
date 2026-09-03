@@ -1,12 +1,14 @@
 # Paired causal G3 court 0.0.1 (pre-registered design; no run, no receipt)
 
-Status: design only, by cdx-k68's ruling after the control-plane churn
-attribution. This court is not implemented and has not run; it produces
-no receipt until (a) its counterfactual mode exists and (b) the visual
-arm has the OWNER's explicit permission for that run. It does not
-replace the frozen native court (106 of 110, `narrow`) and moves no cap:
-the absolute S2 and S3 of `surface-ipc-0.0.1.md` §6 stay in force and are
-reported by reference wherever this court reports.
+Status: design accepted by cdx-k68 for headless implementation only.
+The counterfactual child mode (§4) and the harness
+(`surface-paired-causal-court.py`) exist; arm B has run headless (§9);
+arm A has not run and is refused by the harness until the OWNER's
+explicit permission for a run exists. No paired differential has been
+computed and nothing here is a pass. It does not replace the frozen
+native court (106 of 110, `narrow`) and moves no cap: the absolute S2
+and S3 of `surface-ipc-0.0.1.md` §6 stay in force and are reported by
+reference wherever this court reports.
 
 ## 1. Question
 
@@ -44,14 +46,25 @@ runs interleaved A, B, A, B … so drift affects both alike.
 ## 3. Identical sequence (per round, both arms, no exceptions)
 
 1. `surface.show {target}`; wait for the court-only `shown` event.
-2. `target.inspect`; `memory.report`.
-3. Input 1: a click at the button's row (coordinates from the `shown`
-   event's layout, identical in both arms); wait for `input_applied` and
+2. Input 1: a click at the button's row (coordinates from the `shown`
+   event's layout of a probe run on the same page, identical in both
+   arms; every run checks its own `shown` layout has the same rows),
+   bound to the acknowledgement of frame 1; wait for `input_applied` and
    `repainted`; `target.inspect`.
-4. Input 2: a scroll of one row; wait for `input_applied` and
-   `repainted`; `target.inspect`.
-5. Input 3: a scroll back; wait; `target.inspect`; `memory.report`.
-6. `surface.hide {surface}`; `target.inspect`; `memory.report`.
+3. Input 2: a scroll of one row, bound to frame 2 (the repaint after the
+   click); wait; `target.inspect`.
+4. Input 3: a scroll back, bound to frame 3; wait; `target.inspect`;
+   `memory.report`.
+5. `surface.hide {surface}`; wait for `hidden`; `target.inspect`;
+   `memory.report`.
+
+Amendment (mechanism, recorded at implementation): the inputs are bound
+to frame acknowledgements because the counterfactual child can only act
+on what it receives; arm A therefore posts its real events at the same
+points (right after `shown` and after each `repainted`), so the host
+sees the same order in both arms. Per round both arms issue 1 show, 4
+inspects, 2 memory reports and 1 hide (12 inspects, 6 reports, 3 shows
+and 3 hides per run, recorded in the receipt).
 
 Every operation, its arguments, the order, the number of snapshots,
 inspects and memory reports, and the revision changes the inputs cause
@@ -64,7 +77,7 @@ code in both arms. Nothing the court does in A that touches the host
 differently is allowed: the own-window capture stays in the court
 process and is not performed in B, and it is not counted in either arm.
 
-## 4. The counterfactual child mode (court-only, to be implemented after ruling)
+## 4. The counterfactual child mode (court-only, implemented)
 
 `native-dom-surface <generation> replay:<script>` answers `HELLO` with
 `READY` (window number 0, the frame's size as content size), acknowledges
@@ -128,6 +141,31 @@ retention to attribute by stage before any candidate.
   `unverified` for the paired result.
 - No pid, path, window number, coordinates, capture or desktop content
   in the receipt; court-only facts stay in the court-only file.
+
+## 9. Arm B, observed (headless; no pass, no differential)
+
+`native-dom-control-0.0.2-surface-paired-causal` receipt, status
+`unverified-headless-counterfactual`, evaluation
+`pending-owner-authorized-visual`, arm A `not_observed`, D not
+computable. Arm B (replay child, 55-byte script of three events), one
+warm-up plus seven runs, three rounds, all 7 of 7 runs valid under both
+allocators (layout matched the probe, all three inputs applied and
+repainted every round, revision advanced, child reaped by protocol,
+owners 0/0 after every hide, the frame's 1,032,192 touched while shown
+and 0 after). Post-hide over headless, rounds 1 / 2 / 3, slope, and the
+in-process retention over `show_entry`:
+
+| allocator | post-hide over headless | slope | in-process retained |
+|---|---|---|---|
+| default | 294,912 / 409,600 / 442,368 | 147,456 | 294,912 / 114,688 / 32,768 |
+| arena | 294,912 / 475,136 / 524,288 | 229,376 | 262,144 / 147,456 / 32,768 |
+
+These are the counterfactual's absolute numbers under the frozen
+court's own sequence shape (with inputs), for comparison with arm A when
+it is authorized; they are not evaluated against any threshold here.
+Hygiene: no window owned by the child and no surface process before or
+after; the harness refuses to start when the visible-court variable is
+set and refuses `--visual` in this revision.
 
 ## 8. Rejected idea, recorded
 

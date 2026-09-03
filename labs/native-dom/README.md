@@ -1744,7 +1744,16 @@ input sequence on the same live target, so the presentation's own
 retention is the per-stage differential between the arms while the
 absolute S2 and S3 of the frozen court stay in force by reference. Its
 visual arm runs only under the three-part opt-in and the owner's
-permission for that run; the counterfactual mode is not implemented.
+permission for that run. Ruling: implemented headless-only — the
+child's bounded `replay:<script>` mode (≤ 256 bytes, ≤ 16 events, bound
+to frame acknowledgements, no AppKit) and the harness
+[`surface-paired-causal-court.py`](surface-paired-causal-court.py), which
+ran arm B only (`native-dom-control-0.0.2-surface-paired-causal`
+receipt, status `unverified-headless-counterfactual`, arm A
+`not_observed`, no differential computed, evaluation
+`pending-owner-authorized-visual`; §9 of the design records arm B's
+absolute numbers). The harness refuses to start with the visible-court
+variable set and refuses `--visual` in this revision.
 
 Gaps: post-hide host footprint and slope over the pre-registered caps
 (page churn of the whole control plane, see the attribution above; the
