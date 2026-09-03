@@ -1,0 +1,513 @@
+{
+ "arms": {
+  "A": {
+   "reason": "real surface child (visual): requires --visual, MINICON_SURF_ALLOW_VISIBLE_COURT=1 and the owner's explicit permission for the run; not run in this revision",
+   "status": "not_observed"
+  },
+  "B": {
+   "child_mode": "replay (no AppKit)",
+   "results": {
+    "arena": {
+     "exit_codes": [
+      0
+     ],
+     "requests_per_run": {
+      "memory.report": 6,
+      "surface.hide": 3,
+      "surface.show": 3,
+      "target.inspect": 12
+     },
+     "rounds": [
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 2
+        },
+        "show_ms": {
+         "maximum": 10,
+         "median": 9,
+         "minimum": 8
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 327680,
+        "median": 294912,
+        "minimum": 245760
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 1,
+       "shown_over_headless": {
+        "maximum": 1376256,
+        "median": 1327128,
+        "minimum": 1294336
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 32768,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 32768,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1032192,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 49152,
+        "shown->hide_entry": 147456
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 327680,
+        "median": 262144,
+        "minimum": 229376
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      },
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 2
+        },
+        "show_ms": {
+         "maximum": 10,
+         "median": 9,
+         "minimum": 8
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 540672,
+        "median": 475136,
+        "minimum": 442368
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 2,
+       "shown_over_headless": {
+        "maximum": 1589248,
+        "median": 1540096,
+        "minimum": 1474584
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 0,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 65536,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1032192,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 16384,
+        "shown->hide_entry": 49152
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 262144,
+        "median": 147456,
+        "minimum": 131072
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      },
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 2
+        },
+        "show_ms": {
+         "maximum": 9,
+         "median": 8,
+         "minimum": 7
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 606208,
+        "median": 524288,
+        "minimum": 491520
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 3,
+       "shown_over_headless": {
+        "maximum": 1638400,
+        "median": 1589248,
+        "minimum": 1540096
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 0,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 0,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1032192,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 16384,
+        "shown->hide_entry": 32768
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 98304,
+        "median": 32768,
+        "minimum": 32768
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      }
+     ],
+     "runs": 7,
+     "slope_post_hide": 229376,
+     "valid_runs": 7
+    },
+    "system": {
+     "exit_codes": [
+      0
+     ],
+     "requests_per_run": {
+      "memory.report": 6,
+      "surface.hide": 3,
+      "surface.show": 3,
+      "target.inspect": 12
+     },
+     "rounds": [
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 3
+        },
+        "show_ms": {
+         "maximum": 9,
+         "median": 9,
+         "minimum": 8
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 344064,
+        "median": 294912,
+        "minimum": 262144
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 1,
+       "shown_over_headless": {
+        "maximum": 1392664,
+        "median": 1343488,
+        "minimum": 1327128
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1048600,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 16384,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 16384,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1048600,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 49152,
+        "shown->hide_entry": 196608
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 344064,
+        "median": 294912,
+        "minimum": 262144
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      },
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 2
+        },
+        "show_ms": {
+         "maximum": 9,
+         "median": 8,
+         "minimum": 7
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 425984,
+        "median": 409600,
+        "minimum": 376832
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 2,
+       "shown_over_headless": {
+        "maximum": 1490968,
+        "median": 1458200,
+        "minimum": 1425408
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1048600,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 0,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 16384,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1048600,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 16384,
+        "shown->hide_entry": 49152
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 114688,
+        "median": 114688,
+        "minimum": 65536
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      },
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 2
+        },
+        "show_ms": {
+         "maximum": 8,
+         "median": 8,
+         "minimum": 7
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 458752,
+        "median": 442368,
+        "minimum": 409600
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 3,
+       "shown_over_headless": {
+        "maximum": 1523736,
+        "median": 1507352,
+        "minimum": 1458176
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1048600,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 0,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 0,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1048600,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 16384,
+        "shown->hide_entry": 16384
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 65536,
+        "median": 32768,
+        "minimum": 16384
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      }
+     ],
+     "runs": 7,
+     "slope_post_hide": 147456,
+     "valid_runs": 7
+    }
+   },
+   "status": "observed"
+  }
+ },
+ "design": "labs/native-dom/surface-paired-causal-court-0.0.1.md",
+ "differential": {
+  "D_owner_bytes": null,
+  "D_post_hide_footprint": null,
+  "D_slope_footprint": null,
+  "reason": "arm A not observed",
+  "status": "not_computable"
+ },
+ "evaluation": "pending-owner-authorized-visual",
+ "frozen_court_reference": {
+  "absolute_failures": [
+   {
+    "check": "[system] post-hide host footprint over headless, every round",
+    "detail": {
+     "per_round": [
+      278528,
+      425984,
+      458752
+     ],
+     "worst": 458752
+    }
+   },
+   {
+    "check": "[system] no slope over the rounds",
+    "detail": {
+     "slope": 180224
+    }
+   },
+   {
+    "check": "[arena] post-hide host footprint over headless, every round",
+    "detail": {
+     "per_round": [
+      311296,
+      442368,
+      507904
+     ],
+     "worst": 507904
+    }
+   },
+   {
+    "check": "[arena] no slope over the rounds",
+    "detail": {
+     "slope": 196608
+    }
+   }
+  ],
+  "checks_passed": 106,
+  "checks_total": 110,
+  "host_sha256_prefix": "32343eb5cb3ee4a0"
+ },
+ "host_sha256": "a69992be8d1efe8c9f73b8d3ed9351a183f912cd24d924a185186aef40762cff",
+ "hygiene": {
+  "after": {
+   "owner_windows": 0,
+   "surface_processes": 0
+  },
+  "before": {
+   "owner_windows": 0,
+   "surface_processes": 0
+  },
+  "headless": true
+ },
+ "limitations": [
+  "arm B is the surface binary's replay mode: a separate process that maps no AppKit; its tree peak is not the visual child's",
+  "the replay events are bound to frame acknowledgements, so arm A must post its real events at the same points (after shown and after each repainted) to keep the sequence identical",
+  "no pid, path, window number, coordinates beyond the replay script's row-derived values, capture or desktop content is recorded"
+ ],
+ "purpose": "paired causal evidence for the presentation's own retention (A real minus B counterfactual); this revision observes B only; nothing here is a pass and no cap moves",
+ "repetitions": 7,
+ "replay_events": 3,
+ "replay_script_bytes": 55,
+ "rounds": 3,
+ "schema": "minicon-surf/native-dom-surface-paired-causal/0.0.1",
+ "sequence_per_round": [
+  "surface.show",
+  "input:click(frame 1)",
+  "target.inspect",
+  "input:scroll(frame 2)",
+  "target.inspect",
+  "input:scroll-back(frame 3)",
+  "target.inspect",
+  "memory.report",
+  "surface.hide",
+  "target.inspect",
+  "memory.report"
+ ],
+ "status": "unverified-headless-counterfactual",
+ "surface_sha256": "d55e44cb8275ef672fa4081a03cc2d25a89eee1172d9c198554f11bb481b1650",
+ "thresholds": {
+  "D_owner_bytes": 0,
+  "D_post_hide_footprint_bytes_max": 65536,
+  "D_slope_footprint_bytes_max": 32768,
+  "binds": "this court only; the frozen court's S2 and S3 are unchanged and quoted by reference"
+ },
+ "warmup": 1
+}
