@@ -208,6 +208,16 @@ pub const READY_DEADLINE: Duration = Duration::from_millis(2000);
 pub const ACK_DEADLINE: Duration = Duration::from_millis(1000);
 pub const CLOSE_DEADLINE: Duration = Duration::from_millis(1000);
 
+/// The environment the child needs before it may create a window; the host
+/// sets it only under its own double opt-in.
+pub const VISIBLE_ENV: &str = "MINICON_SURF_ALLOW_VISIBLE_COURT";
+
+/// Court-only child modes that never touch AppKit: `protocol` and `drain`
+/// speak the protocol without a window, `exit` leaves at once.
+pub fn is_headless_child_mode(mode: &str) -> bool {
+    matches!(mode, "protocol" | "drain" | "exit")
+}
+
 // ---------------------------------------------------------------- painter
 
 /// One painted row: the node it stands for and where it is in the frame.
@@ -541,6 +551,7 @@ impl Process {
         first_frame: &[u8],
         size: FrameSize,
         child_mode: Option<&str>,
+        visual: bool,
         stats: &mut Stats,
         stage: &mut dyn FnMut(&str),
     ) -> Result<(Process, u64, u64), String> {
@@ -550,6 +561,13 @@ impl Process {
         if let Some(mode) = child_mode {
             // Court-only: a lab-local child mode for the attribution court.
             command.arg(mode);
+        }
+        // The child creates a window only with this variable; it is handed
+        // down only under the host's double opt-in and removed otherwise.
+        if visual {
+            command.env(VISIBLE_ENV, "1");
+        } else {
+            command.env_remove(VISIBLE_ENV);
         }
         let mut child = command
             .stdin(Stdio::piped())
@@ -1016,6 +1034,7 @@ mod tests {
                 painting.pixels.as_slice(),
                 size,
                 None,
+                false,
                 &mut stats,
                 &mut |_| {},
             );

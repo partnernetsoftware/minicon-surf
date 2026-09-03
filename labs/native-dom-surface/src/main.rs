@@ -27,6 +27,8 @@ use objc2_foundation::{NSDate, NSDefaultRunLoopMode, NSPoint, NSRect, NSSize, NS
 const EXIT_PROTOCOL: i32 = 65;
 const EXIT_DESCRIPTORS: i32 = 66;
 const EXIT_NO_MAIN_THREAD: i32 = 67;
+/// The window path was reached without the visible opt-in: fail closed.
+const EXIT_NOT_VISIBLE: i32 = 68;
 
 /// The protocol without a window: answers READY, acknowledges frames
 /// (keeping the latest when asked) and leaves at CLOSE. Court-only.
@@ -121,9 +123,10 @@ impl Window {
         window.setTitle(&NSString::from_str(title));
         window.setContentView(Some(&view));
         // A floating level keeps the surface above ordinary windows without
-        // activating the process or stealing focus.
+        // activating the process; `orderFrontRegardless` shows it without
+        // making it key or stealing focus from the user's application.
         window.setLevel(3);
-        window.makeKeyAndOrderFront(None);
+        window.orderFrontRegardless();
         Window {
             window,
             view,
@@ -252,6 +255,14 @@ fn main() {
         Some("protocol") => headless_mode(generation, false),
         Some("drain") => headless_mode(generation, true),
         _ => {}
+    }
+    // Double gate: the host hands this variable down only under its own
+    // `--visual 1` plus environment opt-in; without it no AppKit object is
+    // ever created and the process leaves before touching the window server.
+    if std::env::var_os("MINICON_SURF_ALLOW_VISIBLE_COURT").as_deref()
+        != Some(std::ffi::OsStr::new("1"))
+    {
+        std::process::exit(EXIT_NOT_VISIBLE);
     }
     let Some(mtm) = MainThreadMarker::new() else {
         std::process::exit(EXIT_NO_MAIN_THREAD);

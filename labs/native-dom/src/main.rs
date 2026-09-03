@@ -127,6 +127,30 @@ fn snapshot_script(max_nodes: u64) -> String {
     )
 }
 
+/// Lab-only (court arm): a snapshot-shaped result of a fixed size in two
+/// shapes, flat (one padding string) and nested (object-heavy entries),
+/// made equal in bytes inside the realm. Not a browser result.
+fn microbench_script(nested: bool) -> String {
+    format!(
+        r#"(() => {{
+  const s = window.__mcs;
+  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  const target = 16384;
+  const entries = [];
+  let nestedText = "";
+  while (true) {{
+    const i = entries.length + 1;
+    entries.push({{ node: "node_" + i, role: i % 3 === 0 ? "link" : (i % 3 === 1 ? "text" : "button"), name: "entry " + i + " " + "n".repeat(180), dom_id: "id_" + i }});
+    nestedText = JSON.stringify({{ revision: s.revision, truncated: false, nodes: entries }});
+    if (nestedText.length >= target) break;
+  }}
+  if ({nested}) return nestedText;
+  const base = JSON.stringify({{ revision: s.revision, truncated: false, nodes: [], pad: "" }});
+  return JSON.stringify({{ revision: s.revision, truncated: false, nodes: [], pad: "p".repeat(nestedText.length - base.length) }});
+}})()"#
+    )
+}
+
 fn act_script(revision: u64, index: usize) -> String {
     format!(
         r#"(() => {{
@@ -846,12 +870,28 @@ impl Realm {
         deadline: Instant,
         target_id: &str,
     ) -> Result<String, ControlError> {
+        self.eval_staged(script, deadline, target_id, &mut |_, _| {})
+    }
+
+    /// `eval` with court-only stage samples: after the realm produced its
+    /// value (realm-side allocations done), after the value crossed into a
+    /// host `String`, after the realm value was dropped, after the queued
+    /// jobs ran. Each sample carries the realm's arena statistics when an
+    /// arena serves it.
+    fn eval_staged(
+        &self,
+        script: &str,
+        deadline: Instant,
+        target_id: &str,
+        stage: &mut dyn FnMut(&str, Option<Value>),
+    ) -> Result<String, ControlError> {
         self.runtime
             .set_interrupt_handler(Some(Box::new(move || Instant::now() >= deadline)));
         let outcome = self
             .context
             .with(|ctx| match ctx.eval::<rquickjs::Value, _>(script) {
                 Ok(value) => {
+                    stage("after_realm_eval", self.arena_statistics());
                     if value.is_undefined() || value.is_null() {
                         Ok(String::new())
                     } else {
@@ -860,6 +900,7 @@ impl Realm {
                             .get::<_, rquickjs::Function>("String")
                             .and_then(|f| f.call((value,)))
                             .unwrap_or_default();
+                        stage("after_string_crossing", self.arena_statistics());
                         Ok(text)
                     }
                 }
@@ -873,6 +914,7 @@ impl Realm {
                 }
             });
         self.runtime.set_interrupt_handler(None);
+        stage("after_js_value_drop", self.arena_statistics());
         let result = match outcome {
             Ok(text) => text,
             Err(message) => {
@@ -891,6 +933,7 @@ impl Realm {
             }
         };
         self.drain_jobs(deadline);
+        stage("after_jobs_drained", self.arena_statistics());
         Ok(result)
     }
 
@@ -1040,10 +1083,26 @@ impl Target {
         deadline: Instant,
         policy: &net::Policy,
     ) -> Result<String, ControlError> {
-        let result = self.realm.eval(script, deadline, &self.id)?;
+        self.eval_staged(script, deadline, policy, &mut |_, _| {})
+    }
+
+    fn eval_staged(
+        &mut self,
+        script: &str,
+        deadline: Instant,
+        policy: &net::Policy,
+        stage: &mut dyn FnMut(&str, Option<Value>),
+    ) -> Result<String, ControlError> {
+        let result = self.realm.eval_staged(script, deadline, &self.id, stage)?;
         self.pump_network(deadline, policy)?;
         self.drain_store_writes(deadline)?;
+        stage("after_network_pump", self.realm.arena_statistics());
         Ok(result)
+    }
+
+    /// Court-only diagnostic: the realm's collector, never a fix.
+    fn run_gc(&self) {
+        self.realm.runtime.run_gc();
     }
 
     /// The document's URL for cookie purposes; fixture targets have none.
@@ -1279,6 +1338,13 @@ struct Host {
     surface_child_mode: Option<String>,
     surface_frame: surface::FrameSize,
     surface_stages: bool,
+    surface_snapshot_arm: Option<String>,
+    surface_court_gc: bool,
+    /// Visible windows need a double opt-in: `--visual 1` and the
+    /// environment `MINICON_SURF_ALLOW_VISIBLE_COURT=1`. Without both the
+    /// host never spawns a window: `surface.show` is refused unless a
+    /// court-only no-AppKit child mode is set. Default: headless.
+    surface_visual: bool,
 }
 
 /// One attached surface: its process and the frame it currently shows.
@@ -1320,8 +1386,34 @@ impl Host {
         target: &mut Target,
         deadline: Instant,
         policy: &net::Policy,
+        stage: &mut dyn FnMut(&str, Option<Value>),
+        arm: Option<&str>,
+        gc: bool,
     ) -> Result<(SemanticRows, u64), ControlError> {
-        let raw = Self::eval_json(target, &snapshot_script(64), deadline, policy)?;
+        // Court-only arms (`--surface-court-snapshot-arm`): `evaluate_only`
+        // evaluates the same script and drops its text unparsed;
+        // `parse_drop` parses and drops the `Value` before any row exists;
+        // `microbench_flat` / `microbench_nested` evaluate lab-only scripts
+        // that produce equal-byte JSON of the two shapes (not a browser
+        // result). The product path is the default.
+        stage("before_realm_eval", target.realm.arena_statistics());
+        let script = match arm {
+            Some("microbench_flat") => microbench_script(false),
+            Some("microbench_nested") => microbench_script(true),
+            _ => snapshot_script(64),
+        };
+        if arm == Some("evaluate_only") {
+            let text = target.eval_staged(&script, deadline, policy, stage)?;
+            drop(text);
+            stage("after_string_drop", target.realm.arena_statistics());
+            let revision = Self::revision(target, deadline, policy)?;
+            if gc {
+                target.run_gc();
+                stage("after_gc", target.realm.arena_statistics());
+            }
+            return Ok((Vec::new(), revision));
+        }
+        let raw = Self::eval_json_staged(target, &script, deadline, policy, stage)?;
         let revision = raw
             .get("revision")
             .and_then(Value::as_u64)
@@ -1330,6 +1422,15 @@ impl Host {
                 ControlError::new("internal", "snapshot lacks a revision", false)
                     .scoped("target", &target.id)
             })?;
+        if arm == Some("parse_drop") {
+            drop(raw);
+            stage("after_value_drop", target.realm.arena_statistics());
+            if gc {
+                target.run_gc();
+                stage("after_gc", target.realm.arena_statistics());
+            }
+            return Ok((Vec::new(), revision));
+        }
         let nodes = raw
             .get("nodes")
             .and_then(Value::as_array)
@@ -1356,6 +1457,13 @@ impl Host {
                 )
             })
             .collect();
+        stage("after_rows_extract", target.realm.arena_statistics());
+        drop(raw);
+        stage("after_value_drop", target.realm.arena_statistics());
+        if gc {
+            target.run_gc();
+            stage("after_gc", target.realm.arena_statistics());
+        }
         Ok((nodes, revision))
     }
 
@@ -1381,6 +1489,19 @@ impl Host {
         let target_id = typed_field(object, "target", "target")?.to_owned();
         if !self.targets.contains_key(&target_id) {
             return Err(not_found("target", &target_id));
+        }
+        let headless_child = self
+            .surface_child_mode
+            .as_deref()
+            .is_some_and(surface::is_headless_child_mode);
+        if !self.surface_visual && !headless_child {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "visible surfaces are not enabled on this host (headless by default; --visual 1 with MINICON_SURF_ALLOW_VISIBLE_COURT=1 opts in)",
+                false,
+            )
+            .scoped("target", &target_id)
+            .details(json!({"reason":"visible_surface_not_enabled"})));
         }
         let Some(binary) = self.surface_binary.clone() else {
             return Err(ControlError::new(
@@ -1408,12 +1529,35 @@ impl Host {
         let started = Instant::now();
         self.surface_stage("show_entry");
         let frame_size = self.surface_frame;
-        let target = self.target_mut(&target_id)?;
+        let arm = self.surface_snapshot_arm.clone();
+        let gc = self.surface_court_gc;
+        let stages = self.surface_stages;
+        // Field-level borrows: the court log and the stats beside the target.
+        let court = &self.surface_court;
+        let mut stage = |label: &str, arena: Option<Value>| {
+            if !stages {
+                return;
+            }
+            if let Some(log) = court {
+                let mut event = surface::self_sample();
+                event["event"] = json!("stage");
+                event["stage"] = json!(label);
+                if let Some(arena) = arena {
+                    event["arena"] = arena;
+                }
+                log.append(event);
+            }
+        };
+        let target = self
+            .targets
+            .get_mut(&target_id)
+            .ok_or_else(|| not_found("target", &target_id))?;
         let scroll_y = target.scroll_y;
-        let (nodes, revision) = Self::surface_rows(target, deadline, &policy)?;
-        self.surface_stage("after_snapshot");
+        let (nodes, revision) =
+            Self::surface_rows(target, deadline, &policy, &mut stage, arm.as_deref(), gc)?;
+        stage("after_snapshot", None);
         let painting = surface::paint(&nodes, scroll_y, revision, frame_size).map_err(|error| {
-            self.surface_stage("show_failed");
+            stage("show_failed", None);
             let (code, text, retryable) = match error {
                 frame_region::RegionError::TooLarge => {
                     ("resource_limit", "frame exceeds the protocol bound", false)
@@ -1431,24 +1575,11 @@ impl Host {
                 .scoped("target", &target_id)
                 .details(json!({"reason":"frame_region","detail":error.to_string()}))
         })?;
-        self.surface_stage("after_painter");
+        stage("after_painter", None);
         self.next_surface += 1;
         self.surface_generation = self.surface_generation.wrapping_add(1);
         let id = format!("surface_{}", self.next_surface);
         let child_mode = self.surface_child_mode.clone();
-        let court = self.surface_court.take();
-        let stages = self.surface_stages;
-        let mut stage = |label: &str| {
-            if !stages {
-                return;
-            }
-            if let Some(log) = &court {
-                let mut event = surface::self_sample();
-                event["event"] = json!("stage");
-                event["stage"] = json!(label);
-                log.append(event);
-            }
-        };
         let spawned = surface::Process::spawn(
             &binary,
             self.surface_generation,
@@ -1456,17 +1587,17 @@ impl Host {
             painting.pixels.as_slice(),
             frame_size,
             child_mode.as_deref(),
+            self.surface_visual,
             &mut self.surface_stats,
-            &mut stage,
+            &mut |label: &str| stage(label, None),
         );
-        self.surface_court = court;
         let (process, ready_ms, first_frame_ms) = spawned.map_err(|detail| {
-            self.surface_stage("show_failed");
+            stage("show_failed", None);
             ControlError::new("internal", "surface process did not start", true)
                 .scoped("target", &target_id)
                 .details(json!({"reason":"surface_process","detail":detail}))
         })?;
-        if let Some(log) = &self.surface_court {
+        if let Some(log) = court {
             // The court captures the own window itself (by this number) so the
             // host never links or pays for CoreGraphics capture.
             log.append(json!({
@@ -1487,7 +1618,7 @@ impl Host {
                 painting,
             },
         );
-        self.surface_stage("shown");
+        stage("shown", None);
         Ok(json!({
             "kind":"surface","surface":id,"target":target_id,"state":"headed",
             "presentation_bytes":presentation_bytes,
@@ -1667,7 +1798,8 @@ impl Host {
             let Some(target) = self.targets.get_mut(&target_id) else {
                 return;
             };
-            if let Ok((nodes, rev)) = Self::surface_rows(target, deadline, &policy)
+            if let Ok((nodes, rev)) =
+                Self::surface_rows(target, deadline, &policy, &mut |_, _| {}, None, false)
                 && let Some(record) = self.surfaces.get_mut(surface_id)
             {
                 // Repaint into the frame the surface already owns: no new buffer.
@@ -2102,11 +2234,28 @@ impl Host {
         deadline: Instant,
         policy: &net::Policy,
     ) -> Result<Value, ControlError> {
-        let text = target.eval(script, deadline, policy)?;
-        serde_json::from_str(&text).map_err(|_| {
+        Self::eval_json_staged(target, script, deadline, policy, &mut |_, _| {})
+    }
+
+    /// `eval_json` with court-only stage samples around the parse: the host
+    /// `String` alive, the `Value` parsed beside it, the `String` dropped.
+    fn eval_json_staged(
+        target: &mut Target,
+        script: &str,
+        deadline: Instant,
+        policy: &net::Policy,
+        stage: &mut dyn FnMut(&str, Option<Value>),
+    ) -> Result<Value, ControlError> {
+        let text = target.eval_staged(script, deadline, policy, stage)?;
+        stage("before_serde_parse", target.realm.arena_statistics());
+        let value = serde_json::from_str(&text).map_err(|_| {
             ControlError::new("internal", "engine returned malformed snapshot JSON", false)
                 .scoped("target", &target.id)
-        })
+        })?;
+        stage("after_serde_parse", target.realm.arena_statistics());
+        drop(text);
+        stage("after_string_drop", target.realm.arena_statistics());
+        Ok(value)
     }
 
     fn execute(&mut self, request: &Request) -> Result<Value, ControlError> {
@@ -3394,7 +3543,7 @@ fn target_network(budget: &net::Budget, https: bool) -> Value {
 
 fn usage() -> ! {
     eprintln!(
-        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]... [--surface-binary FILE] [--surface-court-file FILE] [--surface-child-mode MODE] [--surface-court-frame WxH] [--surface-court-stages 1]"
+        "usage: native-dom-control serve --stdio --fixture-root DIR --config-dir DIR [--allow-origin http://HOST:PORT]... [--cdp-port PORT --ready-file PATH] [--profile-root DIR] [--pinned-root FILE]... [--surface-binary FILE] [--surface-court-file FILE] [--surface-child-mode MODE] [--surface-court-frame WxH] [--surface-court-stages 1] [--surface-court-snapshot-arm ARM] [--surface-court-gc 1] [--visual 1 (needs MINICON_SURF_ALLOW_VISIBLE_COURT=1)]"
     );
     std::process::exit(64);
 }
@@ -3424,6 +3573,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut surface_child_mode: Option<String> = None;
     let mut surface_frame = surface::FrameSize::DEFAULT;
     let mut surface_stages = false;
+    let mut surface_snapshot_arm: Option<String> = None;
+    let mut surface_court_gc = false;
+    let mut visual_flag = false;
     for pair in arguments[6..].chunks_exact(2) {
         match pair[0].as_str() {
             "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
@@ -3456,6 +3608,17 @@ fn main() -> Result<(), Box<dyn Error>> {
                 surface_frame = surface::FrameSize::parse(&pair[1]).unwrap_or_else(|| usage())
             }
             "--surface-court-stages" => surface_stages = pair[1] == "1",
+            "--surface-court-snapshot-arm" => {
+                if !matches!(
+                    pair[1].as_str(),
+                    "evaluate_only" | "parse_drop" | "microbench_flat" | "microbench_nested"
+                ) {
+                    usage();
+                }
+                surface_snapshot_arm = Some(pair[1].clone());
+            }
+            "--surface-court-gc" => surface_court_gc = pair[1] == "1",
+            "--visual" => visual_flag = pair[1] == "1",
             _ => usage(),
         }
     }
@@ -3511,6 +3674,19 @@ fn main() -> Result<(), Box<dyn Error>> {
             std::process::exit(64);
         }
     };
+    // Visible windows: fail closed unless both the flag and the environment
+    // agree; a flag without the environment is a configuration error, not a
+    // silent downgrade.
+    let visual_env = std::env::var_os("MINICON_SURF_ALLOW_VISIBLE_COURT").as_deref()
+        == Some(std::ffi::OsStr::new("1"));
+    if visual_flag && !visual_env {
+        eprintln!(
+            "--visual 1 needs MINICON_SURF_ALLOW_VISIBLE_COURT=1 in the environment; refusing to start"
+        );
+        std::process::exit(2);
+    }
+    let surface_visual = visual_flag && visual_env;
+
     let mut host = Host {
         fixture_root,
         policy,
@@ -3546,6 +3722,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface_child_mode,
         surface_frame,
         surface_stages,
+        surface_snapshot_arm,
+        surface_court_gc,
+        surface_visual,
     };
     if let Some(root) = profile_root {
         host.enable_profile_store(root, PathBuf::from(&arguments[5]))?;

@@ -62,14 +62,18 @@ RETENTION = SURFACE.RETENTION
 STAGES = ["show_entry", "after_snapshot", "after_painter", "after_command_spawn", "after_reader_thread", "after_hello_ready",
           "after_first_frame_ack", "shown", "hide_entry", "after_close_reap_join", "after_frame_drop"]
 HIDE_SEQUENCE = ["shown", "hide_entry", "after_close_reap_join", "after_frame_drop"]
-CELLS = [("appkit-640x400", None, "640x400"), ("appkit-256x256", None, "256x256"), ("appkit-128x128", None, "128x128"),
-         ("protocol-640x400", "protocol", "640x400"), ("drain-640x400", "drain", "640x400"), ("exit-640x400", "exit", "640x400")]
+# Default (headless): the frame ladder on the no-AppKit `drain` child; the
+# real window cells run only under the double opt-in (`--visual` and
+# MINICON_SURF_ALLOW_VISIBLE_COURT=1) and show windows.
+CELLS = [("drain-640x400", "drain", "640x400"), ("drain-256x256", "drain", "256x256"), ("drain-128x128", "drain", "128x128"),
+         ("protocol-640x400", "protocol", "640x400"), ("exit-640x400", "exit", "640x400")]
+VISUAL_CELLS = [("appkit-640x400", None, "640x400"), ("appkit-256x256", None, "256x256"), ("appkit-128x128", None, "128x128")]
 ROUNDS = 3
 KEYS = ("footprint", "rss", "virtual", "in_use", "allocated", "threads")
 
 
 class Host(SURFACE.CDP.Host):
-    def __init__(self, binary, directory, allocator, surface_binary, court_file, child_mode, frame):
+    def __init__(self, binary, directory, allocator, surface_binary, court_file, child_mode, frame, visual=False):
         import os
         import subprocess
         environment = dict(os.environ)
@@ -81,6 +85,8 @@ class Host(SURFACE.CDP.Host):
                    "--surface-binary", str(surface_binary), "--surface-court-file", str(court_file), "--surface-court-frame", frame, "--surface-court-stages", "1"]
         if child_mode:
             command += ["--surface-child-mode", child_mode]
+        if visual:
+            command += ["--visual", "1"]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, env=environment)
         self.counter = 0
 
@@ -109,10 +115,10 @@ def read_stages(court_file):
     return stages
 
 
-def run_once(binary, surface_binary, allocator, child_mode, frame):
+def run_once(binary, surface_binary, allocator, child_mode, frame, visual=False):
     with tempfile.TemporaryDirectory(prefix="minicon-surf-surface-attribution-") as directory:
         court_file = Path(directory) / "court-only.ndjson"
-        host = Host(binary, directory, allocator, surface_binary, court_file, child_mode, frame)
+        host = Host(binary, directory, allocator, surface_binary, court_file, child_mode, frame, visual=visual)
         try:
             profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
             session = host.ok("session.open", {"profile": profile})["session"]
@@ -216,18 +222,25 @@ def main():
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--receipt", required=True)
-    parser.add_argument("--cells", default=",".join(c[0] for c in CELLS))
+    parser.add_argument("--cells", default="")
+    parser.add_argument("--visual", action="store_true", help="also run the real-window cells (shows windows); needs MINICON_SURF_ALLOW_VISIBLE_COURT=1")
     args = parser.parse_args()
-    wanted = set(args.cells.split(","))
+    if args.visual and not SURFACE.visual_opt_in(args):
+        print(json.dumps({"passed": None, "unverified": "--visual needs MINICON_SURF_ALLOW_VISIBLE_COURT=1; nothing was started"}))
+        return 3
+    cells = list(CELLS) + (list(VISUAL_CELLS) if SURFACE.visual_opt_in(args) else [])
+    wanted = set(args.cells.split(",")) if args.cells else {c[0] for c in cells}
+    live_hosts = []
+    SURFACE.install_cleanup(lambda: live_hosts)
     results = {}
     for allocator in ("system", "arena"):
         results[allocator] = {}
-        for label, mode, frame in CELLS:
+        for label, mode, frame in cells:
             if label not in wanted:
                 continue
             runs = []
             for repetition in range(args.warmup + args.repetitions):
-                run = run_once(args.binary, args.surface_binary, allocator, mode, frame)
+                run = run_once(args.binary, args.surface_binary, allocator, mode, frame, visual=mode is None)
                 if repetition >= args.warmup:
                     runs.append(run)
             results[allocator][label] = aggregate(runs)
@@ -238,7 +251,8 @@ def main():
         "surface_sha256": hashlib.sha256(Path(args.surface_binary).read_bytes()).hexdigest(),
         "purpose": "read-only paired attribution of the host's post-hide retention; no cap moves; the exit cell is the failed protocol path and stands apart",
         "stages": STAGES,
-        "cells": [{"label": c[0], "child_mode": c[1] or "appkit", "frame": c[2]} for c in CELLS if c[0] in wanted],
+        "cells": [{"label": c[0], "child_mode": c[1] or "appkit", "frame": c[2]} for c in cells if c[0] in wanted],
+        "visual": SURFACE.visual_opt_in(args),
         "repetitions": args.repetitions,
         "warmup": args.warmup,
         "rounds": ROUNDS,
@@ -248,6 +262,7 @@ def main():
             "the fixture page is a court fixture file, not the representative page over the network, so the painter's rows differ from the surface court's",
             "memory.trim after the run is a diagnostic, not a fix; no cap moves here",
             "no pid, path or command line is recorded",
+            "headless by default: the child runs in its no-AppKit modes; the appkit cells exist only under --visual with MINICON_SURF_ALLOW_VISIBLE_COURT=1 and show windows",
         ],
     }
     Path(args.receipt).write_text(json.dumps(receipt, indent=1, sort_keys=True) + "\n")

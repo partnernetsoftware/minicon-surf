@@ -231,8 +231,31 @@ def post_scroll(x, y, pixels):
 # ------------------------------------------------------------------- host
 
 
+VISIBLE_ENV = "MINICON_SURF_ALLOW_VISIBLE_COURT"
+
+
+def visual_opt_in(args):
+    """True only under the double opt-in: `--visual` and the environment."""
+    return bool(getattr(args, "visual", False)) and os.environ.get(VISIBLE_ENV) == "1"
+
+
+def install_cleanup(get_hosts):
+    """SIGINT/SIGTERM: end every host (its children get EOF and leave), then exit."""
+    def handler(signum, _frame):
+        for host in get_hosts():
+            try:
+                if host.process.poll() is None:
+                    host.process.kill()
+                    host.process.wait(timeout=5)
+            except Exception:  # noqa: BLE001
+                pass
+        sys.exit(128 + signum)
+    signal.signal(signal.SIGINT, handler)
+    signal.signal(signal.SIGTERM, handler)
+
+
 class Host(CDP.Host):
-    def __init__(self, binary, directory, allocator, origin, surface_binary, court_file=None):
+    def __init__(self, binary, directory, allocator, origin, surface_binary, court_file=None, visual=False):
         environment = dict(os.environ)
         for knob in ("MINICON_SURF_NATIVE_REALM_ZONE", "MINICON_SURF_NATIVE_REALM_ARENA", "MINICON_SURF_PROFILE_STORE"):
             environment.pop(knob, None)
@@ -245,6 +268,9 @@ class Host(CDP.Host):
             command += ["--surface-binary", str(surface_binary)]
         if court_file:
             command += ["--surface-court-file", str(court_file)]
+        if visual:
+            # The host's own double opt-in: the flag plus the inherited environment.
+            command += ["--visual", "1"]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, env=environment)
         self.counter = 0
         self.sampler = TreeSampler(self.process.pid, binary)
@@ -327,9 +353,18 @@ def main():
     parser.add_argument("--surface-binary", required=True)
     parser.add_argument("--client-modules", default=str(ROOT / "target" / "labs" / "d4"))
     parser.add_argument("--receipt", required=True)
+    parser.add_argument("--visual", action="store_true", help="this court shows real windows; it also needs MINICON_SURF_ALLOW_VISIBLE_COURT=1")
     args = parser.parse_args()
+    if not visual_opt_in(args):
+        # This whole court is visual (a real window, own-window capture, real
+        # input). Without the double opt-in it does not run: fail closed,
+        # reported as unverified, no receipt written or overwritten.
+        print(json.dumps({"passed": None, "unverified": "surface court is visual: run with --visual and MINICON_SURF_ALLOW_VISIBLE_COURT=1 (it shows windows); nothing was started"}))
+        return 3
     checks, footprints, latencies = [], {}, {}
     input_permitted = bool(_AX.AXIsProcessTrusted())
+    live_hosts = []
+    install_cleanup(lambda: live_hosts)
 
     def expect(name, condition, detail=None):
         checks.append({"check": name, "passed": bool(condition), **({"detail": detail} if detail is not None else {})})
@@ -342,7 +377,8 @@ def main():
             tag = f"[{allocator}] "
             with tempfile.TemporaryDirectory(prefix="minicon-surf-surface-court-") as directory:
                 court_file = Path(directory) / "surface-court-only.ndjson"
-                host = Host(args.binary, directory, allocator, origin, args.surface_binary, court_file)
+                host = Host(args.binary, directory, allocator, origin, args.surface_binary, court_file, visual=True)
+                live_hosts.append(host)
                 client = None
                 try:
                     # 1. Headless target with a CDP session held.
