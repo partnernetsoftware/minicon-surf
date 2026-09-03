@@ -1,0 +1,88 @@
+{
+  "schema": "minicon-surf.native-dom-cdp-qualification/0.0.1",
+  "status": "frozen-before-implementation",
+  "host": "labs/native-dom native-dom-control",
+  "authority": "control 0.0.1 over stdio is the only authority; the CDP edge translates each qualified method into a native operation executed by the host's main loop against the same targets, frames and revisions; the edge holds target names and adapter-scoped ids only, never a target, realm or profile",
+  "transport": {
+    "listen": "127.0.0.1 only; --cdp-port PORT (0 = ephemeral) with --ready-file PATH; non-loopback peers are dropped",
+    "discovery": ["GET /json/version", "GET /json", "GET /json/list"],
+    "websocket": "GET /devtools/browser/native-dom-control; RFC 6455 accept; client frames must be masked; no fragmentation; text, ping and close opcodes only",
+    "bounds": {
+      "http_header_bytes": 16384,
+      "cdp_message_bytes": 65536,
+      "connections": "one at a time, served sequentially",
+      "read_timeout_seconds": 30,
+      "native_reply_timeout_seconds": 30,
+      "native_deadline_ms_per_bridged_operation": 5000
+    }
+  },
+  "adapter": {
+    "registration": "Target.attachToTarget registers an adapter record {kind: cdp, target} in the host; owners.adapters counts them; target.close and session.close detach every adapter of the closed target and report adapters_detached",
+    "handle": "a CDP session holds the native target id and an adapter id; every command re-resolves the target through the host, so a closed target answers -32000 'target closed; adapter detached' and the session is dropped",
+    "frame_ids": "Page.FrameId is adapter-scoped per connection (cdp_frame_N), one-to-one with a native frame id while both live, never equal to the native id, kept across same-frame navigation because the native frame id is kept",
+    "execution_contexts": "Runtime.ExecutionContextId is never emitted; realms are not projected"
+  },
+  "methods": {
+    "qualified": {
+      "Browser.getVersion": "product and protocol strings; no browser identity beyond this host",
+      "Target.getBrowserContexts": "empty list",
+      "Target.setDiscoverTargets": "discover=true replays live native targets as Target.targetCreated events after the response",
+      "Target.setAutoAttach": "browser-level autoAttach=true replays live native targets as flattened Target.attachedToTarget sessions (waitingForDebugger=false); session-level calls are acknowledged only",
+      "Target.getTargets": "live native targets as type page",
+      "Target.attachToTarget": "flatten=true required; registers an adapter; -32000 when the target does not exist",
+      "Target.detachFromTarget": "drops the session and its adapter record",
+      "Page.getFrameTree": "the native target.inspect frames[] projected through adapter-scoped ids; the native host has one main frame, so childFrames is empty",
+      "DOM.getDocument": "root document node; childNodeCount is the semantic node count; refreshes the session's node table",
+      "DOM.querySelector": "document-rooted only; selectors button, a and #id; returns a session-scoped nodeId",
+      "DOM.resolveNode": "session-scoped objectId over the node reference (target, revision, node)",
+      "Runtime.callFunctionOn": "functionDeclaration function(){this.click();} only; a click on a link is the native same-frame navigation; a revision mismatch is -32000"
+    },
+    "explicit_losses_minus_32601": [
+      "Page.enable", "Page.navigate", "Page.setLifecycleEventsEnabled", "Page.reload",
+      "Runtime.enable", "Runtime.evaluate", "Runtime.runIfWaitingForDebugger",
+      "Network.enable", "Network.setCacheDisabled", "Fetch.disable", "Fetch.enable",
+      "Performance.enable", "Log.enable", "Emulation.*", "Input.*"
+    ],
+    "why": "acknowledging Page.enable, Runtime.enable or Network.enable without their events would emulate support; the native host has no execution-context, lifecycle or network events to project"
+  },
+  "named_client": {
+    "client": "puppeteer-core",
+    "version": "24.15.0",
+    "integrity": "sha512-2iy0iBeWbNyhgiCGd/wvGrDSo73emNFjSxYOcyAqYiagkYt5q4cPfVXaVDKBsukgc2fIIfLAalBZlaxldxdDYg==",
+    "runtime": "Node.js v26.7.0",
+    "installed_under": "target/labs/d4 (ignored; fetched from npm)",
+    "claimed": [
+      "puppeteer.connect({browserWSEndpoint}) succeeds",
+      "browser.targets() / waitForTarget lists exactly the native target ids",
+      "target.createCDPSession() attaches a flattened session",
+      "session.send for every qualified method above",
+      "session.detach() and browser.disconnect() release adapters"
+    ],
+    "not_claimed": [
+      "target.page() and any Page API of puppeteer: its initialization needs Network.enable, Page.enable, Runtime.enable and lifecycle events, all explicit -32601 here",
+      "Playwright, Chromium, Electron or any other client or engine",
+      "general CDP compatibility"
+    ]
+  },
+  "court": {
+    "script": "labs/native-dom/cdp-frame-tree-court.py drives stdio itself (requests validated by protocol/check_contract.py) and drives puppeteer-core through labs/native-dom/puppeteer-frame-tree.mjs over a command channel",
+    "steps": [
+      "stdio opens target A (semantic-nav.html) and target B (semantic-static.html)",
+      "puppeteer connects, discovers exactly {A, B}, attaches a session to A",
+      "Page.getFrameTree on A: one frame, no children, adapter-scoped id that differs from the native frame id; the court records the mapping",
+      "puppeteer clicks the in-court link on A through DOM.querySelector('a') / DOM.resolveNode / Runtime.callFunctionOn",
+      "stdio verifies on A: revision +1, generation 2, new realm, retired realm not_found, old node reference stale_revision",
+      "puppeteer re-fetches the document, sees the new node count, Page.getFrameTree keeps the same frame id; it clicks the new document's button and stdio sees revision +1 again",
+      "puppeteer's session on A cannot see B: Page.getFrameTree on a session attached to B yields different ids; a session id from another connection is unknown",
+      "stdio closes A: the puppeteer session's next command is -32000 'target closed; adapter detached'; owners.adapters drops by one",
+      "puppeteer detaches from B and disconnects; owners.adapters is zero; stdio closes B and the session",
+      "memory owners and footprint are sampled at empty, live (A and B open with sessions attached), and post-close, under the default allocator and the opt-in arena"
+    ],
+    "pass_rule": "every step is a typed check; any failure is recorded and the receipt's passed flag is false; no host or server restart is used to recover"
+  },
+  "unchanged": [
+    "no new control 0.0.1 operation",
+    "no Web API, child frame or Runtime realm projection",
+    "the network policy and budgets are those of target.open and link navigation"
+  ]
+}
