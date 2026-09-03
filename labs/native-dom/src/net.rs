@@ -772,6 +772,15 @@ fn get_once(
     let request = format!(
         "GET {path} HTTP/1.0\r\nHost: {host_header}\r\nUser-Agent: {USER_AGENT}\r\nAccept: text/html, application/json, text/javascript, */*;q=0.5\r\n{cookie_line}Connection: close\r\n\r\n"
     );
+    // The same bound on the request side: a header section the host builds
+    // (long path or a large cookie header) is refused, never sent oversized.
+    if request.len() > MAX_HEADER_BYTES {
+        return Err(NetError::new(
+            "resource_limit",
+            "request-header-bytes",
+            format!("request headers exceed {MAX_HEADER_BYTES} bytes"),
+        ));
+    }
     stream
         .write_all(request.as_bytes())
         .map_err(|e| tls_io_error("write", e))?;
@@ -799,15 +808,18 @@ fn get_once(
         }
         buffer.extend_from_slice(&chunk[..read]);
         if let Some(index) = find_header_end(&buffer) {
+            // The header section is everything up to and including the
+            // terminator; it is compared with the cap whether it arrived in
+            // one read, with the terminator in the same chunk, or across
+            // chunks, so the bound does not depend on chunk boundaries.
+            if index + 4 > MAX_HEADER_BYTES {
+                return Err(header_cap_exceeded());
+            }
             header_end = index;
             break;
         }
         if buffer.len() > MAX_HEADER_BYTES {
-            return Err(NetError::new(
-                "resource_limit",
-                "header-bytes",
-                format!("response headers exceed {MAX_HEADER_BYTES} bytes"),
-            ));
+            return Err(header_cap_exceeded());
         }
     }
     let head = parse_head(&buffer[..header_end])?;
@@ -886,6 +898,14 @@ fn get_once(
         framing,
         tls: tls_facts,
     })
+}
+
+fn header_cap_exceeded() -> NetError {
+    NetError::new(
+        "resource_limit",
+        "header-bytes",
+        format!("response headers exceed {MAX_HEADER_BYTES} bytes"),
+    )
 }
 
 fn io_error(stage: &'static str, error: io::Error) -> NetError {
@@ -1028,6 +1048,117 @@ mod tests {
 
     /// Serve one canned response on a loopback listener and hand back the
     /// request line the client sent.
+    /// Serve one response written in the given pieces with a pause between
+    /// them, so the client's reads see the pieces as separate chunks.
+    fn serve_in_pieces(pieces: Vec<Vec<u8>>) -> SocketAddr {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = Vec::new();
+            let mut chunk = [0u8; 1024];
+            while !request.windows(4).any(|w| w == b"\r\n\r\n") {
+                let n = stream.read(&mut chunk).unwrap();
+                if n == 0 {
+                    break;
+                }
+                request.extend_from_slice(&chunk[..n]);
+            }
+            for (index, piece) in pieces.iter().enumerate() {
+                if index > 0 {
+                    thread::sleep(Duration::from_millis(60));
+                }
+                if stream.write_all(piece).is_err() {
+                    break;
+                }
+                let _ = stream.flush();
+            }
+        });
+        address
+    }
+
+    /// A response whose header section is exactly `section` bytes long,
+    /// terminator included, followed by a two-byte body.
+    fn response_with_header_section(section: usize) -> Vec<u8> {
+        let fixed = b"HTTP/1.0 200 OK\r\nContent-Length: 2\r\nX-Pad: ";
+        let tail = b"\r\n\r\n";
+        let padding = section - fixed.len() - tail.len();
+        let mut out = fixed.to_vec();
+        out.extend(std::iter::repeat_n(b'y', padding));
+        out.extend_from_slice(tail);
+        assert_eq!(out.len(), section);
+        out.extend_from_slice(b"ok");
+        out
+    }
+
+    fn header_outcome(pieces: Vec<Vec<u8>>) -> Result<Hop, NetError> {
+        let address = serve_in_pieces(pieces);
+        get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[address],
+            1024,
+            Instant::now() + Duration::from_secs(5),
+            None,
+            None,
+        )
+    }
+
+    #[test]
+    fn header_cap_is_exact_regardless_of_chunking() {
+        let cap = MAX_HEADER_BYTES;
+        // One read, terminator in the same chunk as the padding.
+        assert!(header_outcome(vec![response_with_header_section(cap - 1)]).is_ok());
+        assert!(header_outcome(vec![response_with_header_section(cap)]).is_ok());
+        let err = header_outcome(vec![response_with_header_section(cap + 1)]).unwrap_err();
+        assert_eq!((err.code, err.reason), ("resource_limit", "header-bytes"));
+        // Terminator arrives in a later chunk than the padding.
+        for (section, expect_ok) in [(cap - 1, true), (cap, true), (cap + 1, false)] {
+            let response = response_with_header_section(section);
+            let split = section - 3;
+            let pieces = vec![response[..split].to_vec(), response[split..].to_vec()];
+            let outcome = header_outcome(pieces);
+            assert_eq!(
+                outcome.is_ok(),
+                expect_ok,
+                "section {section} across chunks"
+            );
+            if !expect_ok {
+                assert_eq!(outcome.unwrap_err().reason, "header-bytes");
+            }
+        }
+        // Padding split into many small chunks, terminator last.
+        let response = response_with_header_section(cap + 1);
+        let pieces: Vec<Vec<u8>> = response.chunks(5000).map(|c| c.to_vec()).collect();
+        assert_eq!(header_outcome(pieces).unwrap_err().reason, "header-bytes");
+        // A single header line longer than the cap, sent in one write.
+        let mut single = b"HTTP/1.0 200 OK\r\nX-Long: ".to_vec();
+        single.extend(std::iter::repeat_n(b'z', cap + 10));
+        single.extend_from_slice(b"\r\nContent-Length: 0\r\n\r\n");
+        assert_eq!(
+            header_outcome(vec![single]).unwrap_err().reason,
+            "header-bytes"
+        );
+    }
+
+    #[test]
+    fn request_headers_are_bounded_too() {
+        let (address, _) = serve_once(b"HTTP/1.0 200 OK\r\nContent-Length: 0\r\n\r\n");
+        let cookie = "a=".to_owned() + &"x".repeat(MAX_HEADER_BYTES);
+        let err = get_once(
+            &Url::parse("http://example.com/").unwrap(),
+            &[address],
+            1024,
+            soon(),
+            Some(&cookie),
+            None,
+        )
+        .unwrap_err();
+        assert_eq!(
+            (err.code, err.reason),
+            ("resource_limit", "request-header-bytes")
+        );
+    }
+
     fn serve_once(response: &'static [u8]) -> (SocketAddr, mpsc::Receiver<String>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         let address = listener.local_addr().unwrap();

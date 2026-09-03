@@ -67,7 +67,7 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
@@ -82,7 +82,7 @@
   {
    "check": "[system] H1 enabled empty over feature-off empty",
    "detail": {
-    "delta": -32768
+    "delta": 0
    },
    "passed": true
   },
@@ -281,6 +281,31 @@
    "passed": true
   },
   {
+   "check": "[system] a header section of 16383 bytes (cap 16384) is accepted",
+   "passed": true
+  },
+  {
+   "check": "[system] a header section of 16384 bytes (cap 16384) is accepted",
+   "passed": true
+  },
+  {
+   "check": "[system] a header section of 16385 bytes (cap + 1) is refused as resource_limit header-bytes",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "response headers exceed 16384 bytes",
+     "reason": "header-bytes"
+    },
+    "message": "network policy: header-bytes",
+    "retryable": false,
+    "scope": {
+     "id": "target_14",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
    "check": "[system] TLS 1.1-only is refused as permission_denied tls_protocol",
    "detail": {
     "code": "permission_denied",
@@ -291,7 +316,7 @@
     "message": "network policy: tls_protocol",
     "retryable": false,
     "scope": {
-     "id": "target_12",
+     "id": "target_15",
      "kind": "target"
     }
    },
@@ -313,7 +338,7 @@
    "detail": {
     "after": {
      "enabled": true,
-     "handshakes_total": 12,
+     "handshakes_total": 14,
      "limits": {
       "root_file_bytes": 16384,
       "root_files": 8,
@@ -321,19 +346,19 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
      "refused_total": 0,
-     "resumed_total": 9,
+     "resumed_total": 11,
      "session_cache_entries_per_profile": 16,
      "tls12_total": 3,
-     "tls13_total": 9
+     "tls13_total": 11
     },
     "before": {
      "enabled": true,
-     "handshakes_total": 9,
+     "handshakes_total": 11,
      "limits": {
       "root_file_bytes": 16384,
       "root_files": 8,
@@ -341,15 +366,15 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
      "refused_total": 0,
-     "resumed_total": 6,
+     "resumed_total": 8,
      "session_cache_entries_per_profile": 16,
      "tls12_total": 3,
-     "tls13_total": 6
+     "tls13_total": 8
     }
    },
    "passed": true
@@ -390,18 +415,18 @@
    "detail": {
     "after": [
      {
-      "frame": "frame_26",
+      "frame": "frame_29",
       "generation": 1,
       "parent": null,
-      "realm": "realm_16"
+      "realm": "realm_18"
      }
     ],
     "before": [
      {
-      "frame": "frame_26",
+      "frame": "frame_29",
       "generation": 1,
       "parent": null,
-      "realm": "realm_16"
+      "realm": "realm_18"
      }
     ],
     "clicked": {
@@ -409,15 +434,15 @@
      "details": {
       "detail": "server certificate does not match the URL host",
       "generation": 1,
-      "href": "https://127.0.0.1:54435/index.html",
+      "href": "https://127.0.0.1:58479/index.html",
       "navigation": "failed",
-      "realm": "realm_16",
+      "realm": "realm_18",
       "reason": "tls_hostname_mismatch"
      },
      "message": "network policy: tls_hostname_mismatch",
      "retryable": false,
      "scope": {
-      "id": "target_26",
+      "id": "target_29",
       "kind": "target"
      }
     }
@@ -427,21 +452,21 @@
   {
    "check": "[system] H2 first https target over first http target",
    "detail": {
-    "delta": 16384
+    "delta": 163840
    },
    "passed": true
   },
   {
    "check": "[system] H3 eight https targets over eight http targets, per target",
    "detail": {
-    "per_target": 28672
+    "per_target": 32768
    },
    "passed": true
   },
   {
    "check": "[system] H4 post-close libmalloc in-use enabled over feature-off",
    "detail": {
-    "delta": 12896
+    "delta": 44848
    },
    "passed": true
   },
@@ -449,7 +474,7 @@
    "check": "[system] owners are zero after every close and no TLS connection is live",
    "detail": {
     "enabled": true,
-    "handshakes_total": 49,
+    "handshakes_total": 51,
     "limits": {
      "root_file_bytes": 16384,
      "root_files": 8,
@@ -457,15 +482,15 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
     "refused_total": 0,
-    "resumed_total": 44,
+    "resumed_total": 46,
     "session_cache_entries_per_profile": 16,
     "tls12_total": 3,
-    "tls13_total": 46
+    "tls13_total": 48
    },
    "passed": true
   },
@@ -538,7 +563,7 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
@@ -553,7 +578,7 @@
   {
    "check": "[arena] H1 enabled empty over feature-off empty",
    "detail": {
-    "delta": -32768
+    "delta": 32768
    },
    "passed": true
   },
@@ -752,6 +777,31 @@
    "passed": true
   },
   {
+   "check": "[arena] a header section of 16383 bytes (cap 16384) is accepted",
+   "passed": true
+  },
+  {
+   "check": "[arena] a header section of 16384 bytes (cap 16384) is accepted",
+   "passed": true
+  },
+  {
+   "check": "[arena] a header section of 16385 bytes (cap + 1) is refused as resource_limit header-bytes",
+   "detail": {
+    "code": "resource_limit",
+    "details": {
+     "detail": "response headers exceed 16384 bytes",
+     "reason": "header-bytes"
+    },
+    "message": "network policy: header-bytes",
+    "retryable": false,
+    "scope": {
+     "id": "target_14",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] TLS 1.1-only is refused as permission_denied tls_protocol",
    "detail": {
     "code": "permission_denied",
@@ -762,7 +812,7 @@
     "message": "network policy: tls_protocol",
     "retryable": false,
     "scope": {
-     "id": "target_12",
+     "id": "target_15",
      "kind": "target"
     }
    },
@@ -784,7 +834,7 @@
    "detail": {
     "after": {
      "enabled": true,
-     "handshakes_total": 12,
+     "handshakes_total": 14,
      "limits": {
       "root_file_bytes": 16384,
       "root_files": 8,
@@ -792,19 +842,19 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
      "refused_total": 0,
-     "resumed_total": 9,
+     "resumed_total": 11,
      "session_cache_entries_per_profile": 16,
      "tls12_total": 3,
-     "tls13_total": 9
+     "tls13_total": 11
     },
     "before": {
      "enabled": true,
-     "handshakes_total": 9,
+     "handshakes_total": 11,
      "limits": {
       "root_file_bytes": 16384,
       "root_files": 8,
@@ -812,15 +862,15 @@
       "roots": 16
      },
      "live_connections": 0,
-     "pinned_root_bytes": 660,
+     "pinned_root_bytes": 664,
      "pinned_root_files": 1,
      "pinned_roots": 1,
      "provider": "ring",
      "refused_total": 0,
-     "resumed_total": 6,
+     "resumed_total": 8,
      "session_cache_entries_per_profile": 16,
      "tls12_total": 3,
-     "tls13_total": 6
+     "tls13_total": 8
     }
    },
    "passed": true
@@ -861,18 +911,18 @@
    "detail": {
     "after": [
      {
-      "frame": "frame_26",
+      "frame": "frame_29",
       "generation": 1,
       "parent": null,
-      "realm": "realm_16"
+      "realm": "realm_18"
      }
     ],
     "before": [
      {
-      "frame": "frame_26",
+      "frame": "frame_29",
       "generation": 1,
       "parent": null,
-      "realm": "realm_16"
+      "realm": "realm_18"
      }
     ],
     "clicked": {
@@ -880,15 +930,15 @@
      "details": {
       "detail": "server certificate does not match the URL host",
       "generation": 1,
-      "href": "https://127.0.0.1:54435/index.html",
+      "href": "https://127.0.0.1:58479/index.html",
       "navigation": "failed",
-      "realm": "realm_16",
+      "realm": "realm_18",
       "reason": "tls_hostname_mismatch"
      },
      "message": "network policy: tls_hostname_mismatch",
      "retryable": false,
      "scope": {
-      "id": "target_26",
+      "id": "target_29",
       "kind": "target"
      }
     }
@@ -898,14 +948,14 @@
   {
    "check": "[arena] H2 first https target over first http target",
    "detail": {
-    "delta": 147456
+    "delta": 262144
    },
    "passed": true
   },
   {
    "check": "[arena] H3 eight https targets over eight http targets, per target",
    "detail": {
-    "per_target": 71680
+    "per_target": 79872
    },
    "passed": true
   },
@@ -920,7 +970,7 @@
    "check": "[arena] owners are zero after every close and no TLS connection is live",
    "detail": {
     "enabled": true,
-    "handshakes_total": 49,
+    "handshakes_total": 51,
     "limits": {
      "root_file_bytes": 16384,
      "root_files": 8,
@@ -928,15 +978,15 @@
      "roots": 16
     },
     "live_connections": 0,
-    "pinned_root_bytes": 660,
+    "pinned_root_bytes": 664,
     "pinned_root_files": 1,
     "pinned_roots": 1,
     "provider": "ring",
     "refused_total": 0,
-    "resumed_total": 44,
+    "resumed_total": 46,
     "session_cache_entries_per_profile": 16,
     "tls12_total": 3,
-    "tls13_total": 46
+    "tls13_total": 48
    },
    "passed": true
   },
@@ -949,50 +999,50 @@
    "passed": true
   }
  ],
- "checks_passed": 68,
- "checks_total": 68,
+ "checks_passed": 74,
+ "checks_total": 74,
  "design": "labs/native-dom/https-design-0.0.1.md",
  "fixtures": {
-  "generation_seconds": 0.093,
+  "generation_seconds": 0.099,
   "mode": "generated-disposable",
   "public_certificates": {
    "court-ca.pem": {
-    "not_after": "Oct  3 08:23:39 2026 GMT",
-    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "not_after": "Oct  3 08:30:27 2026 GMT",
+    "not_before": "Sep  3 08:30:27 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "64:7E:5F:29:70:74:22:5D:9D:02:28:0E:7A:A9:1A:CF:BC:EE:99:67:C8:EA:63:78:C6:81:79:05:80:F2:52:F8",
+    "sha256_fingerprint": "6E:A1:0B:1D:66:46:74:52:B3:0C:9F:5A:06:58:3C:6E:7F:D3:DE:F3:64:1C:96:96:D3:F7:21:34:E9:B9:3F:DC",
     "subject": "CN=MiniCon Surf disposable court CA",
     "subject_alt_name": null
    },
    "loopback.pem": {
-    "not_after": "Oct  3 08:23:39 2026 GMT",
-    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "not_after": "Oct  3 08:30:27 2026 GMT",
+    "not_before": "Sep  3 08:30:27 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "D3:5D:B2:6F:A5:27:EA:14:AC:19:43:AE:D9:D3:D9:7A:05:F7:5F:A9:04:81:19:03:89:0C:57:50:DD:97:18:C4",
+    "sha256_fingerprint": "2F:84:63:C4:DA:2F:79:EC:18:62:50:40:61:D9:EC:2F:51:82:CC:0B:16:FC:A8:37:D8:B0:54:BA:56:CC:EE:45",
     "subject": "CN=loopback",
     "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
    },
    "other-ca-loopback.pem": {
-    "not_after": "Oct  3 08:23:39 2026 GMT",
-    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "not_after": "Oct  3 08:30:27 2026 GMT",
+    "not_before": "Sep  3 08:30:27 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "97:24:94:AC:15:42:36:A7:4D:81:4E:22:52:7A:11:10:D0:56:67:87:0D:56:F0:F1:0F:B9:7F:C5:BE:47:93:4A",
+    "sha256_fingerprint": "18:88:6A:85:7F:67:A7:B8:CD:18:07:F1:8F:9E:43:E4:AD:FE:A7:34:A7:84:99:EC:FE:8B:68:7F:D5:BC:69:67",
     "subject": "CN=other-ca-loopback",
     "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
    },
    "other-ca.pem": {
-    "not_after": "Oct  3 08:23:39 2026 GMT",
-    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "not_after": "Oct  3 08:30:27 2026 GMT",
+    "not_before": "Sep  3 08:30:27 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "76:68:DB:F2:AA:7E:C7:7C:1F:A2:27:37:F9:FC:14:9C:1E:C2:C2:BB:81:BD:18:F3:04:08:A0:28:D2:67:39:32",
+    "sha256_fingerprint": "9B:1F:76:D4:B6:37:B8:D6:39:E2:F9:C1:89:0B:1D:07:BA:F9:85:AA:12:91:94:00:D9:FC:5C:8E:10:8C:98:AD",
     "subject": "CN=MiniCon Surf disposable OTHER CA (not pinned)",
     "subject_alt_name": null
    },
    "wrong-name.pem": {
-    "not_after": "Oct  3 08:23:39 2026 GMT",
-    "not_before": "Sep  3 08:23:39 2026 GMT",
+    "not_after": "Oct  3 08:30:27 2026 GMT",
+    "not_before": "Sep  3 08:30:27 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "1D:CF:F5:E1:B2:F6:68:57:81:8A:F1:BD:AB:B7:8C:99:67:FF:85:AF:89:43:83:F5:C6:6A:AC:59:4D:F6:00:D1",
+    "sha256_fingerprint": "4F:3A:65:8E:D4:47:03:7F:F5:60:EE:3C:E2:3A:16:50:E8:42:B8:EA:B6:A3:FB:A2:C4:FC:90:49:84:4F:1D:C4",
     "subject": "CN=wrong-name",
     "subject_alt_name": "DNS:wrong.invalid"
    }
@@ -1001,32 +1051,32 @@
  "footprint_bytes": {
   "arena": {
    "off_eight_http": 5866000,
-   "off_empty": 2097488,
-   "off_first_http": 2769256,
-   "off_post_close": 2851152,
+   "off_empty": 2048336,
+   "off_first_http": 2670952,
+   "off_post_close": 2883920,
    "off_post_close_in_use": 120960,
-   "on_eight_https": 6439440,
-   "on_empty": 2064720,
-   "on_first_https": 2916712,
-   "on_post_close": 3424592,
+   "on_eight_https": 6504976,
+   "on_empty": 2081104,
+   "on_first_https": 2933096,
+   "on_post_close": 3490128,
    "on_post_close_in_use": 133856,
-   "tree_peak_enabled": 6439440
+   "tree_peak_enabled": 6504976
   },
   "system": {
-   "off_eight_http": 5964112,
-   "off_empty": 2097488,
-   "off_first_http": 3408208,
-   "off_post_close": 5964112,
+   "off_eight_http": 5980496,
+   "off_empty": 2048336,
+   "off_first_http": 3211600,
+   "off_post_close": 5996880,
    "off_post_close_in_use": 137280,
-   "on_eight_https": 6193488,
-   "on_empty": 2064720,
-   "on_first_https": 3424592,
-   "on_post_close": 6193488,
-   "on_post_close_in_use": 150176,
-   "tree_peak_enabled": 6193488
+   "on_eight_https": 6242640,
+   "on_empty": 2048336,
+   "on_first_https": 3375440,
+   "on_post_close": 6242640,
+   "on_post_close_in_use": 182128,
+   "tree_peak_enabled": 6242640
   }
  },
- "host_sha256": "a0b7667d58fdca6e44f855b26ce6026bcae5f587c2a68d442f91f416a022aae0",
+ "host_sha256": "5f14c90d48e3032fc6d7c98439cd89d7226176569cd800ba88f36a494fc8e6ed",
  "limitations": [
   "pinned test roots on loopback only: no system roots, no public web, no root-store breadth claim",
   "the TLS server is Python's ssl (OpenSSL): court infrastructure outside the host's process tree, never sampled",
@@ -1034,7 +1084,7 @@
   "one platform, one fixture set, fake values only; no leak-absence claim"
  ],
  "passed": true,
- "release_binary_bytes": 5266416,
+ "release_binary_bytes": 5266608,
  "schema": "minicon-surf.native-dom-https-receipt/0.0.1",
  "technology": "native-dom",
  "technology_version": "0.0.2"

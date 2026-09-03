@@ -1126,7 +1126,7 @@ python3 labs/native-dom/https-court.py \
   --receipt labs/native-dom/evidence/native-dom-control-0.0.2-https.json
 ```
 
-Evidence (`native-dom-control-0.0.2-https` receipt, 68 of 68, the same 34
+Evidence (`native-dom-control-0.0.2-https` receipt, 74 of 74, the same 37
 checks under the default allocator and the arena, feature off against
 enabled): the feature-off host reports TLS disabled and refuses an https
 target as `tls_no_pinned_roots`; the enabled host loads the representative
@@ -1134,7 +1134,8 @@ page and its script over TLS 1.3 from the pinned origin and negotiates TLS
 1.2 with a 1.2-only origin; wrong name, unpinned issuer, ALPN h2-only,
 downgrade redirect, private-address redirect, redirect loop, body cap,
 header cap and deadline are typed refusals with no path, certificate or
-crypto internal in the error; TLS 1.1-only is refused `tls_protocol`
+crypto internal in the error, and a header section of exactly the cap
+(16,384 bytes) is accepted while one byte more is refused; TLS 1.1-only is refused `tls_protocol`
 (the local OpenSSL still serves it at security level 0); https redirects
 within the cap are followed; the second https fetch of a profile resumes
 and another profile's first fetch is a full handshake; a `Secure` cookie
@@ -1148,18 +1149,18 @@ increments against the feature-off host (bytes, default / arena):
 
 | increment | measured | cap |
 |---|---|---|
-| H1 enabled empty over feature-off empty | −32,768 / −32,768 | ≤ 524,288 |
-| H2 first https target over first http target of the same page | 16,384 / 147,456 | ≤ 1,048,576 |
-| H3 eight https targets over eight http targets, per target | 28,672 / 71,680 | ≤ 131,072 |
-| H4 post-close libmalloc in-use, enabled over feature-off | 12,896 / 12,896 | ≤ 65,536 |
+| H1 enabled empty over feature-off empty | 0 / 32,768 | ≤ 524,288 |
+| H2 first https target over first http target of the same page | 163,840 / 262,144 | ≤ 1,048,576 |
+| H3 eight https targets over eight http targets, per target | 32,768 / 79,872 | ≤ 131,072 |
+| H4 post-close libmalloc in-use, enabled over feature-off | 44,848 / 12,896 | ≤ 65,536 |
 
-Footprint (bytes, default / arena): feature-off empty 2,097,488 / 2,097,488
-and enabled empty 2,064,720 / 2,064,720; first http target 3,408,208 /
-2,769,256 and first https target 3,424,592 / 2,916,712; eight http targets
-5,964,112 / 5,866,000 and eight https targets 6,193,488 / 6,439,440; after
-every close 5,964,112 / 2,851,152 (off) and 6,193,488 / 3,424,592 (on),
+Footprint (bytes, default / arena): feature-off empty 2,048,336 / 2,048,336
+and enabled empty 2,048,336 / 2,081,104; first http target 3,211,600 /
+2,670,952 and first https target 3,375,440 / 2,933,096; eight http targets
+5,980,496 / 5,866,000 and eight https targets 6,242,640 / 6,504,976; after
+every close 5,996,880 / 2,883,920 (off) and 6,242,640 / 3,490,128 (on),
 the default-allocator numbers being the zone reservation attributed earlier.
-Binary: 3,764,000 → 5,266,416 bytes (+1,502,416); lock 122 → 138 entries,
+Binary: 3,764,000 → 5,266,608 bytes (+1,502,608); lock 122 → 138 entries,
 six compiled here (`rustls` 0.23.43 Apache-2.0 OR ISC OR MIT, `ring` 0.17.14
 Apache-2.0 AND ISC, `rustls-webpki` 0.103.15 ISC, `rustls-pki-types` 1.15.1
 MIT OR Apache-2.0, `untrusted` 0.9.0 ISC, `once_cell` 1.21.4 MIT OR
@@ -1183,13 +1184,29 @@ one-time first-use cost cannot enter the H deltas; the click carries the
 node reference as the contract requires; the redirect landing is read from
 any node role; the private-address redirect uses an https target because an
 https origin refuses the fixture's http target as a downgrade first; the
-header-cap fixture sends 40 KB because the cap is checked per 8 KiB chunk
-before the header end is seen (a 20 KB block passes: the http cell's cap is
-a chunk-granular bound, recorded, not changed here); the cross-profile check
-counts exactly one full handshake among a target's three fetches. One unit
-test (`arena_is_unmapped_only_when_the_last_holder_drops`) failed once under
-the parallel test run and passed on every rerun; it is outside this slice
-and recorded as a flake to watch.
+header-cap fixture sends 40 KB, which exposed a real bound defect: the cap was checked
+per 8 KiB chunk only while the header end was not yet seen, so a 20 KB
+header block whose terminator arrived in the same chunk passed. Fixed
+before any push (cdx-k68's condition): the header section up to and
+including the terminator is compared with the cap once the terminator is
+found, whatever the chunking, and the host-built request head is bounded
+by the same cap (`request-header-bytes`); unit tests cover cap−1, cap and
+cap+1 with the terminator in the same chunk, across chunks, in many small
+chunks and a single over-long header line, and the court probes cap−1, cap
+and cap+1 through `/headers?section=N`. The cross-profile check counts
+exactly one full handshake among a target's three fetches. One unit test
+(`arena_is_unmapped_only_when_the_last_holder_drops`) failed once during
+a parallel `cargo test` with `left: 2, right: 1`: it asserted that a
+process-global unmap counter grew by exactly one while other arena tests
+drop arenas in parallel, a test-isolation defect and not an allocator
+invariant. `stress-tests.sh` repeats the suite; the pre-fix binary did not
+reproduce it in 300 parallel and 100 single-threaded runs, so the rate is
+below 1 in 400 here and the root cause rests on inspection; the test now
+watches its own arena through a weak handle and reads the global counter
+as a lower bound only, the zone test got the same treatment, and the
+fixed suite is green in 300 parallel and 100 single-threaded runs. No
+rustls provider is installed globally (each client carries its provider),
+tests read no environment variable, and no random seed is involved.
 
 Gaps: pinned test roots on loopback only; no system roots, revocation, CT,
 client certificates, HTTP/2, HSTS or public-web statement; ring's C and
@@ -1213,7 +1230,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
-| `native-dom-control-0.0.2-https`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
+| `native-dom-control-0.0.2-https`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice and the exact header cap | the journeys (27/27, 35/35 under both allocators, the network court with its recorded https-reason amendment) were rerun on this build; all four receipts carry its hash |
 
 ## Findings against product contracts
 

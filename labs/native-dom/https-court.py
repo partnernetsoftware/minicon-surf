@@ -113,6 +113,17 @@ class HttpsHandler(PROFILE.ProfileHandler):
             body = (b"<!doctype html><html><body><main><h1>Link</h1><p id=\"state\">before</p>"
                     b"<a id=\"go\" href=\"" + target.encode() + b"\">go</a></main></body></html>")
             return self.reply(200, body)
+        if path == "/headers":
+            # Court amendment (recorded, after the header-cap fix): a response whose header
+            # section is exactly `section` bytes, terminator included, so the cap is probed
+            # at cap-1, cap and cap+1 rather than only with an oversized block.
+            section = int(params.get("section", "0"))
+            body = b"ok"
+            fixed = f"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: {len(body)}\r\nX-Pad: ".encode()
+            padding = section - len(fixed) - 4
+            self.wfile.write(fixed + b"y" * padding + b"\r\n\r\n" + body)
+            self.close_connection = True
+            return None
         if path == "/bigheaders":
             # Court amendment (mechanism): the header cap is checked per 8 KiB chunk while the
             # header end is not yet seen, so the block must exceed the cap by more than a chunk.
@@ -306,6 +317,16 @@ def main():
                         ("deadline", f"{https}/slow", "deadline_exceeded", None)):
                     response = host.call("target.open", {"session": sessions["alpha"], "url": url}, 8000)
                     expect(tag + f"{label} is refused as {code}" + (f" {reason}" if reason else ""), refused(response, code, reason), response.get("error"))
+                cap = 16 * 1024
+                for section, expect_ok in ((cap - 1, True), (cap, True), (cap + 1, False)):
+                    response = host.call("target.open", {"session": sessions["alpha"], "url": f"{https}/headers?section={section}"}, 8000)
+                    if expect_ok:
+                        expect(tag + f"a header section of {section} bytes (cap {cap}) is accepted", response["ok"], response.get("error"))
+                        if response["ok"]:
+                            host.ok("target.close", {"target": response["result"]["target"]})
+                    else:
+                        expect(tag + f"a header section of {section} bytes (cap + 1) is refused as resource_limit header-bytes",
+                               refused(response, "resource_limit", "header-bytes"), response.get("error"))
                 if tls11_port:
                     response = host.call("target.open", {"session": sessions["alpha"], "url": f"https://127.0.0.1:{tls11_port}/index.html"})
                     expect(tag + "TLS 1.1-only is refused as permission_denied tls_protocol", refused(response, "permission_denied", "tls_protocol"), response.get("error"))

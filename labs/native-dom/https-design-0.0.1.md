@@ -180,9 +180,11 @@ re-authorization per redirect hop with `https` → `http` refused as
 session cache per profile (section 2's "at most 8 entries" reads "16
 entries, two server slots" for rustls), `Secure` and `SameSite=None` rules
 as in section 2, atomic failed navigation. `labs/native-dom/https-court.py`
-passes 68 of 68 under both allocators with H1–H4 at −32,768, 16,384 /
-147,456, 28,672 / 71,680 and 12,896 bytes against caps of 524,288,
-1,048,576, 131,072 and 65,536; the binary grows by 1,502,416 bytes; the P6
+passes 74 of 74 under both allocators with H1–H4 at 0 / 32,768, 163,840 /
+262,144, 32,768 / 79,872 and 44,848 / 12,896 bytes against caps of
+524,288, 1,048,576, 131,072 and 65,536; the binary grows by 1,502,608
+bytes; the court's 40 KB header fixture exposed a chunk-granular header
+cap that was fixed to an exact bound with cap±1 checks before any push; the P6
 v1 court and every regression hold. Recorded mechanism amendments: the
 empty sample follows the first request; ephemeral profiles on both sides;
 the click carries a node reference; redirect landing read from any role;

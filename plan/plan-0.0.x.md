@@ -138,7 +138,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── profile-specific budgets and diagnostics
 │   ├── [x] synthetic G4: two persistent + one ephemeral isolate storage/policy/locks
 │   ├── [~] native-dom slice: keychain-envelope sealed store · RFC 6265 subset jar · localStorage · write-through with fault court (80/82; total-live criterion unmet)
-│   ├── [x] native-dom opt-in HTTPS: pinned roots only · rustls + ring (C/perlasm inside) · Secure cookies over verified https · court 68/68
+│   ├── [x] native-dom opt-in HTTPS: pinned roots only · rustls + ring (C/perlasm inside) · Secure cookies over verified https · court 74/74
 │   ├── later: readonly and copy-on-write task profiles with explicit commit/discard
 │   └── corrupt, locked or incompatible profiles fail closed without harming others
 ├── [E7] bounded engine experiments
@@ -1083,10 +1083,13 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   per-hop re-authorization with downgrade refused, the http caps and
   deadline unchanged, a 16-entry per-profile session cache, `Secure` and
   `SameSite=None` cookie rules against the http origin of the same host,
-  atomic failed navigation. The frozen native court passes 68 of 68 under
-  both allocators with the pre-registered host increments at most 147,456
-  bytes for the first https target and 71,680 per further target against
-  caps of 1,048,576 and 131,072; the binary grows by 1.5 MB; the P6 v1
+  atomic failed navigation. The frozen native court passes 74 of 74 under
+  both allocators with the pre-registered host increments at most 262,144
+  bytes for the first https target and 79,872 per further target against
+  caps of 1,048,576 and 131,072; its 40 KB header fixture exposed a
+  chunk-granular response header cap, fixed to an exact bound (cap−1, cap,
+  cap+1 covered by unit tests and the court, the request head bounded the
+  same way) before any push; the binary grows by 1.5 MB; the P6 v1
   court stays 80 of 82 and every regression holds. The stack is Rust for
   TLS and verification with C and perlasm primitives inside `ring`: not
   pure Rust. Pinned loopback roots only, no public-web claim; G1, G3, P6

@@ -3373,7 +3373,8 @@ mod zone_tests {
             "the count never exceeds the limit"
         );
         drop(realm);
-        assert_eq!(ZONES_DESTROYED.load(Ordering::Relaxed), destroyed + 1);
+        // Process-global counter shared with parallel tests: a lower bound only.
+        assert!(ZONES_DESTROYED.load(Ordering::Relaxed) > destroyed);
         assert_eq!(
             ZONE_BLOCKS_LEAKED.load(Ordering::Relaxed),
             before,

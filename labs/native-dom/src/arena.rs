@@ -1078,18 +1078,25 @@ mod macos_tests {
 
     #[test]
     fn arena_is_unmapped_only_when_the_last_holder_drops() {
+        // The unmap counter is process-global and other arena tests run in
+        // parallel, so this test observes its own arena through a weak
+        // handle and reads the counter only as a lower bound.
         let unmapped = ARENAS_UNMAPPED.load(Ordering::Relaxed);
         let arena = Arena::reserve(1 << 20).unwrap();
+        let watch = Rc::downgrade(&arena);
         let allocator = ArenaAllocator(arena.clone());
         assert_eq!(Rc::strong_count(&arena), 2);
         drop(arena);
-        assert_eq!(
-            ARENAS_UNMAPPED.load(Ordering::Relaxed),
-            unmapped,
-            "allocator still holds it"
+        assert!(
+            watch.upgrade().is_some(),
+            "the allocator still holds the arena"
         );
         drop(allocator);
-        assert_eq!(ARENAS_UNMAPPED.load(Ordering::Relaxed), unmapped + 1);
+        assert!(
+            watch.upgrade().is_none(),
+            "the last holder dropped the arena"
+        );
+        assert!(ARENAS_UNMAPPED.load(Ordering::Relaxed) > unmapped);
     }
 
     #[test]
