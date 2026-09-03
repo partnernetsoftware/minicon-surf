@@ -1,0 +1,224 @@
+{
+  "schema": "minicon-surf.ecosystem-concept-map/0.0.1",
+  "status": "design-reference",
+  "runtime_dependencies": [],
+  "access_date": "2026-09-03",
+  "references": {
+    "electron": {
+      "version": "44.1.1",
+      "engine": "Chromium 152.0.7977.65, Node.js 24.19.0",
+      "released": "2026-09-02",
+      "sources": [
+        "https://releases.electronjs.org/releases/stable",
+        "https://www.electronjs.org/docs/latest/tutorial/process-model",
+        "https://www.electronjs.org/docs/latest/api/browser-window",
+        "https://www.electronjs.org/docs/latest/api/web-contents",
+        "https://www.electronjs.org/docs/latest/api/web-contents-view",
+        "https://www.electronjs.org/docs/latest/api/session",
+        "https://www.electronjs.org/docs/latest/tutorial/ipc",
+        "https://www.electronjs.org/docs/latest/api/app",
+        "https://www.electronjs.org/docs/latest/api/process",
+        "https://www.electronjs.org/docs/latest/api/utility-process",
+        "https://www.electronjs.org/docs/latest/tutorial/offscreen-rendering"
+      ],
+      "note": "docs/latest pages carry no version stamp; read on the access date while 44.1.1 was the listed stable release"
+    },
+    "wry": {
+      "docs_version": "0.56.1",
+      "docs_source": "https://docs.rs/wry/latest/wry/",
+      "pinned_source_version": "0.55.1",
+      "pinned_source": "crates.io registry cache, wry-0.55.1/src/lib.rs, src/web_context.rs, src/wkwebview/mod.rs",
+      "platform_engines": "WebKitGTK (Linux), WKWebView (macOS/iOS), WebView2 (Windows), Android WebView"
+    },
+    "tauri": {
+      "docs_source": "https://v2.tauri.app/ (security/capabilities, security/permissions, security/scope, concept/inter-process-communication, develop/plugins, concept/architecture)",
+      "pinned_source_versions": {
+        "tauri": "2.11.5",
+        "tauri-runtime": "2.11.3",
+        "tauri-runtime-wry": "2.11.4",
+        "tao": "0.35.3"
+      },
+      "pinned_source": "crates.io registry cache, tauri-2.11.5/src/{manager/mod.rs,ipc/authority.rs,ipc/protocol.rs,plugin.rs,webview/mod.rs,window/mod.rs,pattern.rs}, tauri-runtime-2.11.3/src/lib.rs, tauri-runtime-wry-2.11.4/src/lib.rs"
+    }
+  },
+  "surf_vocabulary_source": "protocol/README.md (control 0.0.1 object vocabulary and ownership)",
+  "map": [
+    {
+      "surf": "host / runtime",
+      "surf_meaning": "one bounded executable that owns every object below; measured as a complete process tree",
+      "electron": "main process (one per app) plus renderer, preload, utility processes; `app` lifecycle events; `app.getAppMetrics()` lists every process",
+      "wry": "none; the caller owns the event loop (tao or another `HasWindowHandle` provider) and the `WebView` values",
+      "tauri": "`App`/`AppHandle` over the `Runtime` trait (`tauri-runtime`, implemented by `tauri-runtime-wry`); `RunEvent::{Ready, ExitRequested, Exit, WindowEvent, WebviewEvent, MainEventsCleared}`",
+      "fidelity": "good for Electron and Tauri as a lifecycle shape; Wry has no runtime concept",
+      "hazard": "Electron's runtime is Chromium plus Node in every process type; borrowing its event names must not borrow its process model"
+    },
+    {
+      "surf": "profile",
+      "surf_meaning": "storage, network policy, permissions, budgets and persistence identity; exists without a process; ephemeral profiles are destroyed explicitly",
+      "electron": "`Session` from `session.fromPartition` (`persist:` prefix durable, otherwise in-memory); owns cookies, cache, storage, proxy, permission handlers, `webRequest`, `protocol.handle`; sessions cannot be destroyed",
+      "wry": "`WebContext::new(data_directory)` shared between WebViews; on macOS `WKWebsiteDataStore` default, `dataStoreForIdentifier` or `nonPersistentDataStore` when `with_incognito` (incognito ignores the WebContext); `clear_all_browsing_data`",
+      "tauri": "passes `data_directory`/incognito through to Wry per webview; capabilities and permissions are compiled per window/webview label, not per storage identity",
+      "fidelity": "partial: all three model storage identity, none models budgets or a destroyable ephemeral identity with locks",
+      "hazard": "an Electron-shaped Session that cannot be destroyed contradicts `profile.delete` and ephemeral teardown; Tauri ties policy to window labels instead of profiles"
+    },
+    {
+      "surf": "session",
+      "surf_meaning": "one live engine authority opened against exactly one profile; owns targets; closing it closes targets but not a persistent profile",
+      "electron": "no separate object; `app` plus a `Session` play this role together",
+      "wry": "none",
+      "tauri": "`AppHandle` (one per process) plus the window/webview managers keyed by label",
+      "fidelity": "weak everywhere; the single-writer session that arbitrates clients is Surf-native",
+      "hazard": "mapping session to Electron `app` invites one-authority-per-process assumptions and window-list based quit logic (`window-all-closed`)"
+    },
+    {
+      "surf": "target",
+      "surf_meaning": "one Agent-addressable top-level browsing context with its own lifetime; a surface never owns it",
+      "electron": "`WebContents`; created with a `BrowserWindow` and terminated with it (process-model doc); `WebContentsView` may adopt a `WebContents` and present it in one view at a time; `contents.close()`, `'destroyed'`, `'render-process-gone'`, `getProcessId()`",
+      "wry": "`WebView` built with `WebViewBuilder::build(&window)` or `build_as_child(&window)`; both require a `HasWindowHandle`; `Drop` removes the view and releases handlers",
+      "tauri": "`Webview` keyed by label; `WebviewWindow` merges one window with one webview (default); `manager.on_window_close` removes every webview of a closed window; `Webview::reparent` and multi-webview windows need the `unstable` feature",
+      "fidelity": "Electron's `WebContents` is the closest concept, but only the `BaseWindow` + `WebContentsView` split loosens the window binding",
+      "hazard": "in all three references the page lifetime is bound to a window; borrowing their target objects without the Surf ownership rule binds targets back to windows"
+    },
+    {
+      "surf": "frame",
+      "surf_meaning": "a node in the target's browsing-context tree",
+      "electron": "`webContents.mainFrame` / `WebFrameMain`",
+      "wry": "not exposed; `with_navigation_handler(url)` sees navigations only; `with_initialization_script_for_main_only` distinguishes the main frame for injection",
+      "tauri": "not exposed; `Plugin::on_navigation(webview, url)` and `on_page_load`",
+      "fidelity": "Electron only",
+      "hazard": "Tauri's capability doc warns that on Linux and Android it cannot distinguish an embedded iframe from the window itself, so origin-keyed authority leaks across frames there"
+    },
+    {
+      "surf": "realm",
+      "surf_meaning": "one JavaScript execution environment for a frame/document/world; replaced with its document",
+      "electron": "`executeJavaScript`, `executeJavaScriptInIsolatedWorld(worldId)`, preload with `contextIsolation`",
+      "wry": "`evaluate_script`, initialization scripts; no realm identity",
+      "tauri": "`eval_script` through the runtime; `initialization_script` per plugin; isolation pattern runs an `isolation://` iframe with crypto keys",
+      "fidelity": "Electron has world identity; the others have injection points only",
+      "hazard": "Tauri's isolation iframe and Electron's preload are privileged realms inside the page; Surf keeps the semantic snapshot and actions outside the page realm"
+    },
+    {
+      "surf": "surface (headed / headless)",
+      "surf_meaning": "a presentation attachment to at most one target; detaching releases presentation resources without closing or navigating the target; hidden is not hibernated",
+      "electron": "`BrowserWindow`/`BaseWindow`; `show: false` still creates and paints the renderer after `ready-to-show`; offscreen rendering still requires a (frameless) window; `backgroundThrottling` throttles hidden pages",
+      "wry": "no headless mode; `with_visible`/`set_visible` toggle a view attribute; `BackgroundThrottlingPolicy::{Disabled, Suspend, Throttle}` applies to a web view that is not in a window (macOS `WKInactiveSchedulingPolicy`)",
+      "tauri": "`Window::hide`/`show` = `set_visible`; `Webview::hide`/`show`; `Window::close` emits `CloseRequested`, `destroy` does not",
+      "fidelity": "none of the three separates presentation lifetime from page lifetime as a first-class object",
+      "hazard": "visibility is not detachment: a hidden Electron/Wry/Tauri view keeps its window, compositor and scheduling state; Surf's `show`/`hide` must be measured, not borrowed"
+    },
+    {
+      "surf": "revision / node reference",
+      "surf_meaning": "target-local monotonic semantic version; `(target, revision, node)` references that go stale explicitly",
+      "electron": "none; `webContents.debugger` exposes CDP `DOM` node ids, which are not revision-scoped",
+      "wry": "none",
+      "tauri": "none",
+      "fidelity": "Surf-native",
+      "hazard": "none to borrow; do not project CDP node ids as references"
+    },
+    {
+      "surf": "typed capability channel",
+      "surf_meaning": "bounded JSON operations with typed errors, deadlines and budgets; the same authority for CLI, CDP and any embedder",
+      "electron": "`contextBridge` exposes selected functions; `ipcRenderer.invoke`/`ipcMain.handle` two-way, `send`/`on` one-way, `webContents.send`, MessagePorts; structured clone; no built-in per-channel access control; the IPC tutorial warns against exposing `ipcRenderer` wholesale",
+      "wry": "`with_ipc_handler(Fn(Request<String>))`: one string channel from page to host; `with_custom_protocol` for host-served responses",
+      "tauri": "commands (`invoke`, JSON-RPC-like) gated by `RuntimeAuthority::resolve_access(command, window, webview, origin)` with `Origin::{Local, Remote{url}}`; capabilities compiled at build time (`dynamic-acl` only in debug or by feature); an `__TAURI_INVOKE_KEY__` guards the transport; scopes are `allow`/`deny` values that `the command itself` enforces; `Channel` for streaming",
+      "fidelity": "Tauri's capability/permission/scope vocabulary is the closest borrowable shape; Electron's `invoke`/`handle` pairing is a good envelope idiom",
+      "hazard": "Tauri keys authority on window/webview labels and origins, not on profile/session/target, and carries no deadline, budget or audit; a Surf channel that copies it would let a window label stand in for the target and leave scopes as honour-system"
+    },
+    {
+      "surf": "budgets and deadlines",
+      "surf_meaning": "process, profile, target, response, DOM, image, cache limits; every operation carries a deadline",
+      "electron": "none as first-class objects; `backgroundThrottling`, `app.commandLine` Chromium switches",
+      "wry": "`BackgroundThrottlingPolicy` only",
+      "tauri": "none",
+      "fidelity": "Surf-native",
+      "hazard": "throttling policies are scheduling knobs and must not be reported as budgets"
+    },
+    {
+      "surf": "memory ledger",
+      "surf_meaning": "owners (DOM, JS heap, network, images, fonts, render, storage), live, retained, resident and peak, over the complete process tree",
+      "electron": "`app.getAppMetrics()` → `ProcessMetric{pid, type, name, memory{workingSetSize, peakWorkingSetSize, privateBytes}, cpu}`; `process.getProcessMemoryInfo()` (`residentSet` not provided on macOS because of compression; `private` recommended), `getHeapStatistics`, `getBlinkMemoryInfo`",
+      "wry": "none",
+      "tauri": "none",
+      "fidelity": "Electron's per-process metric shape (pid, type, service name) is worth borrowing for process-per-target hosts",
+      "hazard": "Electron's numbers are per process and Chromium-defined; they are not owner attribution and are not comparable to Surf's physical footprint without the court's semantics"
+    },
+    {
+      "surf": "teardown",
+      "surf_meaning": "close order is explicit: surface detaches, target closes, session closes, profile lock releases; retention is measured after each step",
+      "electron": "`win.close()` (page may cancel) vs `win.destroy()` (no `beforeunload`, guarantees `closed`); `webContents` `'destroyed'`; `app.quit()` runs `before-quit` → close windows → `will-quit`; `app.exit()` skips them",
+      "wry": "`Drop` of `WebView` (removes the platform view, releases the IPC handler)",
+      "tauri": "`Window::close` (`CloseRequested` first) vs `destroy`; closing a window removes its webviews from the manager; `Plugin` `on_drop` hook; `RunEvent::ExitRequested` with an action sender",
+      "fidelity": "Electron's close-versus-destroy distinction and quit sequence are good vocabulary",
+      "hazard": "none of the three measures retention after teardown; a Surf embedder API must keep the court's post-close stage"
+    },
+    {
+      "surf": "plugin / extension",
+      "surf_meaning": "an optional owner that exposes owner, scope, deadline, budget, audit and teardown; absent plugins cost nothing",
+      "electron": "no plugin system in core; extension surface means Chrome extensions on a `Session` and Node modules/native addons in the main or utility process; `utilityProcess.fork` gives a child Node with `net` access and MessagePorts",
+      "wry": "none",
+      "tauri": "`Plugin` trait (`initialize`, `initialization_script`, `on_navigation`, `on_page_load`, `on_event`, `extend_api`) and `plugin::Builder` (`setup`, `on_webview_ready`, `on_drop`); plugins receive an `AppHandle`, register managed state and commands, and ship `permissions/default.toml`",
+      "fidelity": "Tauri's plugin lifecycle and default-permission files are the reference; Electron's utility process is the anti-pattern for ambient capability",
+      "hazard": "a Tauri plugin holds the whole `AppHandle`; there is no owner ledger, budget or teardown accounting; an Electron utility process has ambient Node and network"
+    },
+    {
+      "surf": "manifest / packaging",
+      "surf_meaning": "later optional layer; must not be a prerequisite for the runtime",
+      "electron": "none in core (external packagers)",
+      "wry": "none",
+      "tauri": "`tauri.conf.json` plus `src-tauri/capabilities/*` compiled by `tauri-build`/`tauri-codegen`; assets embedded at build time",
+      "fidelity": "Tauri's build-time capability compilation is the reference shape",
+      "hazard": "build-time capabilities cannot express per-profile or per-session policy that changes at runtime"
+    }
+  ],
+  "objections": [
+    "Plan 3b lists window-owned page lifetime only under Electron; the pinned Wry and Tauri sources bind a WebView to a window handle at build time and drop every webview when its window closes, so the hazard belongs to all three references.",
+    "Plan 3b describes Wry as 'startup-only headed/headless'; Wry has no headless mode at all, and visibility is a runtime view attribute (`set_visible`) that never detaches the page from its window.",
+    "Electron sessions cannot be destroyed; borrowing 'stable session objects' must exclude that property because Surf ephemeral profiles are destroyed explicitly and persistent profiles carry writer locks.",
+    "Tauri's runtime authority is keyed on window label, webview label and origin, and scopes are enforced by each command; it cannot be adopted as the Surf capability channel without re-keying on profile/session/target and adding deadline, budget and audit.",
+    "Electron's 'large extension surface' in plan 3b conflates Chrome extensions, Node modules and utility processes; only the first is a page-facing extension model, and the utility process is an ambient-capability escape hatch.",
+    "None of the three references measures retention after teardown or attributes memory to owners; Electron's per-process metrics are the only borrowable ledger shape."
+  ],
+  "micro_experiments": [
+    {
+      "id": "ME1",
+      "name": "typed capability envelope on the synthetic host",
+      "test": "add owner, scope, deadline_ms, budget and audit fields to one reserved control 0.0.1 operation and prove a request keyed only by a surface or window identifier is rejected with a typed error",
+      "prerequisite": "none beyond the synthetic control lab",
+      "gate": "G2 mechanism; does not touch G1/G3/P6/G6"
+    },
+    {
+      "id": "ME2",
+      "name": "adapter teardown ordering",
+      "test": "an adapter that holds a target reference must drop before session close; reuse the arena's reference-count proof (labs/native-dom) as the pattern and assert zero live adapter references after `session.close`",
+      "prerequisite": "none",
+      "gate": "teardown evidence for [X9] adapters"
+    },
+    {
+      "id": "ME3",
+      "name": "process-metric shape for process-per-target hosts",
+      "test": "extend the Lightpanda per-target host's memory report with `{pid, type, name}` per child, mirroring Electron's `ProcessMetric`, and check the sum equals the court's descendants-only RSS",
+      "prerequisite": "labs/lightpanda host",
+      "gate": "M2 ledger vocabulary; G1 stays open"
+    },
+    {
+      "id": "ME4",
+      "name": "no ambient capability for workers",
+      "test": "any future worker or utility process must inherit the profile's network policy: the native-dom network negatives (35-item court) run unchanged through the worker path",
+      "prerequisite": "a worker route, not yet planned",
+      "gate": "P6 policy; keeps the no-generic-IPC rule"
+    },
+    {
+      "id": "ME5",
+      "name": "visibility is not detachment",
+      "test": "on the synthetic surface court, record realm, DOM and scroll state plus footprint across hide → show and compare with a fresh open; a route whose hide is only `set_visible(false)` must fail the G3 shape",
+      "prerequisite": "labs/synthetic-control surface court",
+      "gate": "G3 stays open until a native surface exists"
+    }
+  ],
+  "limitations": [
+    "design reference only: nothing here was executed against Electron, Wry or Tauri",
+    "Electron statements come from docs/latest read on the access date; the pages carry no version stamp",
+    "Wry facts are cross-checked between docs.rs 0.56.1 and the pinned 0.55.1 source; Tauri facts come from the 2.11.x sources in the local registry cache and the v2 site",
+    "no memory or performance numbers are recorded; marketing figures were not used"
+  ]
+}

@@ -163,7 +163,8 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── future layers: Agent runtime → embeddable SurfView → optional Surf App framework
 │   ├── adapters and plugins expose owner · scope · deadline · budget · audit · teardown
 │   ├── unloaded ecosystem features have near-zero resident/process/dependency cost
-│   ├── [~] first research artifact is a concept/capability mapping, not API compatibility
+│   ├── [x] first research artifact is a concept/capability mapping, not API compatibility: labs/ecosystem-reference
+│   ├── all three references bind page lifetime to a window and none measures retention after teardown
 │   └── [-] no Node-in-page default, generic IPC, engine-specific public model or 0.0.x framework build
 ├── [G8] 0.0.x decision gates
 │   ├── [x] G0 terminology: versioned vocabulary/schema/mappings share one meaning
@@ -320,9 +321,9 @@ inheriting their engine choice or compatibility burden:
 
 | Reference | Borrow | Do not inherit |
 |---|---|---|
-| Electron | stable application/window/page/session objects, lifecycle events, diagnostics and a large extension surface | bundled Chromium/Node cost, page-wide host authority, generic unbounded IPC, window-owned page lifetime |
-| Wry | thin WebView/engine adapter, custom protocol hooks and platform event-loop integration | opaque system-engine behavior, startup-only headed/headless, backend identity leaking into the public contract |
-| Tauri | capability manifests, scoped commands, permissions, plugins and packaging ergonomics | permissions without memory owners/budgets, plugins that bypass target/profile authority |
+| Electron | stable application/window/page/session objects, close-versus-destroy and quit sequence, per-process metrics, Chrome-extension surface | bundled Chromium/Node cost, page-wide host authority, generic unbounded IPC, utility processes with ambient Node/network, sessions that cannot be destroyed, window-owned page lifetime |
+| Wry | thin WebView/engine adapter, custom protocol hooks and platform event-loop integration | opaque system-engine behavior, no headless mode (visibility is a view attribute, not detachment), window-bound view lifetime, backend identity leaking into the public contract |
+| Tauri | capability/permission/scope vocabulary, default permission sets, plugin lifecycle hooks, isolation pattern, packaging ergonomics | authority keyed on window label and origin instead of profile/session/target, scopes enforced by each command, build-time-only capabilities without deadline/budget/audit, plugins holding the whole app handle, webviews dropped with their window |
 
 The intended long-term layers are separable deliverables: the Agent browser
 runtime remains useful alone; an embeddable `SurfView` may expose Rust first
@@ -794,6 +795,22 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   stays opt-in: one platform, three small workloads and one reopen are not
   enough to make it the default, interior trimming and a soak remain
   unmeasured, and leak absence is not claimed. G1, G3, P6 and G6 stay open.
+- [~] The ecosystem reference map (`labs/ecosystem-reference`, design only,
+  no runtime dependency) reads Electron `44.1.1` documentation, the pinned
+  Wry `0.55.1` and Tauri `2.11.x` sources and maps them onto the control
+  0.0.1 vocabulary. Findings that corrected section 3b: all three references
+  bind page lifetime to a window (Wry builds a view only from a window
+  handle; Tauri drops a window's webviews on close and gates reparenting
+  behind `unstable`); Wry has no headless mode and visibility never detaches
+  a page; Electron sessions cannot be destroyed; Tauri's authority is keyed
+  on window label, webview label and origin with scopes enforced by each
+  command and capabilities compiled at build time; Electron's utility
+  process is ambient Node plus network; no reference measures retention
+  after teardown, and only Electron exposes a per-process metric shape worth
+  borrowing. Five micro-experiments are named (typed capability envelope,
+  adapter teardown ordering, process-metric shape, no ambient capability for
+  workers, visibility is not detachment). No gate moves: G1, G3, P6 and G6
+  stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -859,11 +876,15 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    memory, lifecycle or Agent-semantics regression. Keep a non-native backend
    in a shipped `combine` role only when that role is explicit, bounded and
    useful beyond what the current native slice can safely provide.
-9. [ ] Maintain an engine-neutral ecosystem concept map for Electron, Wry and
+9. [~] Maintain an engine-neutral ecosystem concept map for Electron, Wry and
    Tauri, including lifecycle, capability and resource-ownership mappings.
-   This is design input only during 0.0.x: do not build a plugin framework,
-   Node compatibility layer or application packager before G1/G3/P6/G6 and
-   the native embedding boundary have earned them.
+   The first map (`labs/ecosystem-reference`, Electron 44.1.1, Wry 0.55.1
+   source / 0.56.1 docs, Tauri 2.11.x, read 2026-09-03) names five
+   micro-experiments; the next step is ME1 (a typed capability envelope on
+   the synthetic host) and ME2 (adapter teardown ordering). This is design
+   input only during 0.0.x: do not build a plugin framework, Node
+   compatibility layer or application packager before G1/G3/P6/G6 and the
+   native embedding boundary have earned them.
 
 The first code milestone is therefore not “render a website.” It is “one
 bounded target has one identity and state while CLI, CDP, and an optional

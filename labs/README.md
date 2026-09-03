@@ -22,6 +22,7 @@ Planned first landscape:
 | `servo` | Rust embeddable full-engine candidate | active — API + software W1 runtime observed |
 | `synthetic-control` | engine-neutral identity/control/memory court | active — native stdio + lifecycle RSS observed; CDP pending |
 | `native-dom` | native bounded route: html5ever DOM, bounded QuickJS realm, bounded `http` fetch | active — control 0.0.1 journey 27/27; network court 35/35 on a hermetic representative page; footprint lower than Lightpanda at every live stage; post-close retention attributed to allocator reservation and returned by an opt-in macOS arena per realm, default unchanged |
+| `ecosystem-reference` | engine-neutral concept/capability/resource-ownership map of Electron, Wry and Tauri for [X9] | design-reference — no runtime dependency; six objections to plan 3b recorded; five micro-experiments named |
 | `blitz` | modular Rust HTML/CSS/native-component candidate | planned |
 | `wpe` | embedded low-consumption WebKit candidate | planned |
 | `wry` | system-WebView compatibility candidate | planned |
