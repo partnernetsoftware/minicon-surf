@@ -493,7 +493,6 @@ dependencies = [
  "dom_query",
  "fs2",
  "getrandom",
- "libc",
  "rquickjs",
  "security-framework",
  "serde_json",

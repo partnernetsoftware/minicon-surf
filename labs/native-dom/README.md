@@ -887,7 +887,7 @@ gate):
 | `zeroize` | 1.9.0 | Apache-2.0 OR MIT | key material cleared on drop |
 | `fs2` | 0.4.3 | MIT/Apache-2.0 | `flock` writer lock |
 | `security-framework` (+ `security-framework-sys`, `core-foundation`, `core-foundation-sys`) | 3.7.0 | MIT OR Apache-2.0 | macOS Keychain generic password (macOS target only) |
-| `libc` | 0.2.189 | MIT OR Apache-2.0 | `setrlimit(RLIMIT_CORE, 0)` and the helper's descriptor whitelist check (macOS target only; already in the tree through other crates) |
+| `libc` (helper experiment only, commit `906884b`; not a dependency of the restored host) | 0.2.189 | MIT OR Apache-2.0 | `setrlimit(RLIMIT_CORE, 0)` and the helper's descriptor whitelist check |
 
 Keychain ACL and the no-UI mode, reviewed after the verdict
 (`native-dom-control-0.0.2-keychain-acl-probe` receipt): the item the host
@@ -1051,9 +1051,9 @@ transient peak worsens by 0.3 to 1.3 MB for about 3 ms per create or open.
 
 Verdict: the experiment fails its frozen C4, so per the approval it changes
 nothing: the in-process path stays the default, the implementation and its
-evidence are kept in history (the commit that adds this paragraph carries
-the helper build; the next commit restores the in-process host and the
-receipts made with it), and P6 work moves to another gap. The arena cell of
+evidence are kept in history (commit `906884b` carries the helper build;
+the next commit restores the in-process host and the receipts made with
+it), and P6 work moves to another gap. The arena cell of
 the P6 slice therefore stays `failed`/`narrow`. The measurements of
 constraints 2 and 5 (kilohertz tree sampling, helper lifetime and
 descendant checks) are reusable for any later out-of-process design.
@@ -1082,7 +1082,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
-| `native-dom-control-0.0.2-profile-helper` | the helper build (the commit that adds the experiment's README paragraph; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
+| `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 
 ## Findings against product contracts
 

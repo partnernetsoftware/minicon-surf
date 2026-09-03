@@ -931,8 +931,6 @@ struct Profile {
     /// The data key while the profile is loaded (persistent only); zeroized
     /// when the profile is dropped.
     dek: Option<zeroize::Zeroizing<Vec<u8>>>,
-    /// The data key wrapped by the master key, stored unchanged on every write.
-    wrapped_dek: Option<profile::WrappedDek>,
     directory: Option<PathBuf>,
     /// Set after a failed disk commit: no further writes for this host.
     read_only: bool,
@@ -1403,12 +1401,9 @@ impl Host {
         if !profile.persistent {
             return Ok(());
         }
-        let (Some(source), Some(dek), Some(wrapped), Some(directory)) = (
-            &self.key_source,
-            &profile.dek,
-            &profile.wrapped_dek,
-            &profile.directory,
-        ) else {
+        let (Some(source), Some(dek), Some(directory)) =
+            (&self.key_source, &profile.dek, &profile.directory)
+        else {
             return Err(ControlError::new(
                 "internal",
                 "persistent profile lacks its key or directory",
@@ -1420,7 +1415,7 @@ impl Host {
             persistent_cookies: profile.jar.persistent.clone(),
             storage: profile.storage.clone(),
         };
-        let bytes = profile::seal_record(profile_id, dek, wrapped, &source.key_id(), &data)
+        let bytes = profile::seal_record(source, profile_id, dek, &data)
             .map_err(|e| store_error(e, profile_id))?;
         let written =
             profile::commit_record(directory, &bytes).map_err(|e| store_error(e, profile_id))?;
@@ -1542,9 +1537,12 @@ impl Host {
             Ok("envelope-keyfile-experiment") => profile::StoreMode::KeyfileExperiment,
             _ => profile::StoreMode::KeychainEnvelope,
         };
-        // The host holds data keys: no core dumps. It never touches the keychain
-        // itself; the helper process disables keychain UI on its own side.
-        profile::disable_core_dumps();
+        if mode == profile::StoreMode::KeychainEnvelope && !profile::disable_keychain_interaction()
+        {
+            eprintln!(
+                "native-dom-control: keychain interaction could not be disabled; persistent profiles fail closed"
+            );
+        }
         let source = profile::KeySource::new(mode, &root, &config_dir);
         let mut entries: Vec<_> = std::fs::read_dir(&root)?.flatten().collect();
         entries.sort_by_key(|e| e.file_name());
@@ -1564,7 +1562,7 @@ impl Host {
                 })
                 .and_then(|bytes| profile::open_record(&source, &id, &bytes));
             match loaded {
-                Ok((dek, wrapped, data)) if self.profiles.len() < MAX_PROFILES => {
+                Ok((dek, data)) if self.profiles.len() < MAX_PROFILES => {
                     self.profiles.insert(
                         id.clone(),
                         Profile {
@@ -1577,7 +1575,6 @@ impl Host {
                             },
                             storage: data.storage,
                             dek: Some(dek),
-                            wrapped_dek: Some(wrapped),
                             directory: Some(directory),
                             read_only: false,
                             lock: None,
@@ -1874,7 +1871,6 @@ impl Host {
                 jar: profile::Jar::default(),
                 storage: profile::Storage::default(),
                 dek: None,
-                wrapped_dek: None,
                 directory: None,
                 read_only: false,
                 lock: None,
@@ -1926,19 +1922,9 @@ impl Host {
             ));
         }
         let dek = profile::random_bytes(32).map_err(|e| store_error(e, &id))?;
-        // Wrap first: a missing or locked keychain fails here, before any file.
-        // The wrapped key is stored unchanged by every later write.
-        let wrapped = source
-            .wrap_dek(&id, &dek)
+        // Seal first: a missing or locked keychain fails here, before any file.
+        let bytes = profile::seal_record(source, &id, &dek, &profile::RecordData::default())
             .map_err(|e| store_error(e, &id))?;
-        let bytes = profile::seal_record(
-            &id,
-            &dek,
-            &wrapped,
-            &source.key_id(),
-            &profile::RecordData::default(),
-        )
-        .map_err(|e| store_error(e, &id))?;
         let directory =
             profile::create_profile_dir(&root, name).map_err(|e| store_error(e, &id))?;
         if let Err(error) = profile::commit_record(&directory, &bytes) {
@@ -1956,7 +1942,6 @@ impl Host {
                 jar: profile::Jar::default(),
                 storage: profile::Storage::default(),
                 dek: Some(dek),
-                wrapped_dek: Some(wrapped),
                 directory: Some(directory),
                 read_only: false,
                 lock: None,
@@ -2836,7 +2821,6 @@ impl Host {
                     "cookies":self.profiles.values().map(|p| p.jar.len()).sum::<usize>(),
                     "storage_keys":self.profiles.values().map(|p| p.storage.keys()).sum::<usize>(),
                     "store":self.key_source.as_ref().map(|k| k.mode.name()),
-                    "keychain_helper":self.key_source.as_ref().map(|k| k.helper.to_json()),
                     "store_writes_total":self.store_writes_total,
                     "store_bytes_written_total":self.store_bytes_written_total,
                     "cookie_rejections_total":self.cookie_rejections_total,
@@ -2911,11 +2895,6 @@ fn usage() -> ! {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let arguments: Vec<String> = std::env::args().skip(1).collect();
-    // Hidden helper mode: the same signed binary serves one keychain
-    // exchange over its stdio pipes and exits. Not part of the usage text.
-    if arguments.len() == 1 && arguments[0] == profile::HELPER_SUBCOMMAND {
-        std::process::exit(profile::run_keychain_helper());
-    }
     if arguments.len() < 6
         || arguments[0] != "serve"
         || arguments[1] != "--stdio"
