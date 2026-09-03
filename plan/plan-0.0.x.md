@@ -124,7 +124,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── independent labs/{techName} use the same workloads and receipt schema
 │   ├── [~] Lightpanda 0.4.0: W1/W2/W3/W7-native observed; retention bounded at ~7 MB through 128 cycles; one target per server, so combine: process-per-target under a Rust control host gives 8 targets at 76 MB footprint (Servo 179 MB, Chrome 868 MB)
 │   ├── [~] Servo 0.5.0: W1/W3/W7; one target 37.7 MB footprint vs Chrome 597.6 MB · 8 concurrent 179 MB vs 868 MB (RSS 87.5/1,232 · 137/2,207); narrowed to bounded sessions — ~0.7–0.9 MB/cycle growth linear to 128 cycles (130.6 MB retained) and ~290 MB close spike owned by Apple GL-on-Metal driver, no CPU-only path in the pinned release
-│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live, not default; G1 open
+│   ├── [~] native bounded route measures HTML/DOM/layout/JS/Web API cost incrementally; DOM 21/27 · + QuickJS realm 27/27 · + bounded http fetch 35/35; post-close retention is consistent with libmalloc reservation of freed blocks (tracked owners and in-use return near empty; no continued growth across one reopen); zone-per-realm repair significant post-close but +1 MB/realm live; realm heap arena (macOS mmap, unmapped at close) repairs post-close without the live cost on the same court, kept opt-in; G1 open
 │   ├── compatibility route may evaluate a system engine without hiding its memory
 │   ├── JS candidates require heap/time/task/capability limits and teardown evidence
 │   ├── representative journeys choose Web APIs; specification breadth alone does not
@@ -192,7 +192,7 @@ flowchart LR
     subgraph LAB["Engine Lab [E7]"]
         LP["Lightpanda 0.4.0<br/>W1/W2/W3/W7 · lowest RSS · 39 KB/cycle<br/>one target per server → process-per-target combine: 8 targets 237 MB engines"]
         SERVO["Servo 0.5.0<br/>CGL-backed W1/W3 · W7 stdio + CDP on one target<br/>narrow: ~0.9 MB/cycle growth owned by Apple GL driver<br/>~290 MB close spike · no CPU-only path · D4 clients open"]
-        NATIVE["bounded native route<br/>DOM + QuickJS realm + bounded http fetch<br/>2.4 MB one target · 4.7 MB eight (footprint)<br/>post-close = live: attributed to allocator reservation, bounded and reused · zone repair opt-in only"]
+        NATIVE["bounded native route<br/>DOM + QuickJS realm + bounded http fetch<br/>2.4 MB one target · 4.7 MB eight (footprint)<br/>post-close = live: attributed to allocator reservation, bounded and reused<br/>zone and arena repairs opt-in only · arena returns it at close without the zone's live cost"]
         COMPAT["compatibility route<br/>total process cost visible"]
         DECIDE["G5 route verdict<br/>keep · narrow · combine · reject"]
     end
@@ -658,9 +658,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   guaranteed usable capacity: a dense array growing until the realm throws
   reaches 0.7067 of 16 MiB under the default allocator and 0.4752 under the
   zone allocator, because the zone path holds old and new buffers during a
-  growth step by design. G1, G3, P6 and G6 stay open; the next retention
-  experiment is a realm heap arena unmapped at close, measured by the same
-  court.
+  growth step by design. G1, G3, P6 and G6 stay open.
+- [~] The realm heap arena named above is now measured on the same court
+  with three arms (default, zone, arena; three workloads; one warm-up plus
+  seven runs; `native-dom-control-0.0.2-retention-attribution-arena`
+  receipt). Each arena realm is one 32 MiB private anonymous mapping served
+  by a portable boundary-tag heap and unmapped when the runtime and its
+  allocator have both dropped; the mapping is shared through a reference
+  count, so no QuickJS block can outlive it, and the heap contract
+  (alignment, exact usable size, null on exhaustion with the old block kept
+  on a failed reallocation, abort on foreign pointers) is unit-tested with a
+  randomized model check. The 16 MiB cap is QuickJS's own: the pinned
+  quickjs-ng checks it before calling any allocator, which corrects the
+  earlier note that the zone had to carry it. Against the same-court
+  default arm the arena cut retained footprint from 3.3 to 4.0 MB to 0.67
+  to 0.90 MB (U = 0, p = 0.00058 in all three workloads) without the zone's
+  live cost: first-open live was 4,489,720 and 4,538,872 bytes on the
+  fixtures against 4,653,368 and 4,735,288 (lower, U = 0) and 5,390,840 on
+  the representative page against 5,308,728 (U = 15, p = 0.243, not
+  distinguishable), where the zone needed 11.8 to 16.1 MB; RSS after the
+  closes was 4.2 to 4.5 MB against 6.8 to 7.6 MB; the dense-array capacity
+  reached 0.6805 of the cap against 0.7067 (default) and 0.4752 (zone);
+  sixteen arenas were unmapped per run with zero blocks leaked. The
+  27-item journey and 35-item network court pass under the knob. The arena
+  stays opt-in: one platform, three small workloads and one reopen are not
+  enough to make it the default, interior trimming and a soak remain
+  unmeasured, and leak absence is not claimed. G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -711,9 +734,11 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
 7. [~] Continue the earned routes in order. The Rust process-per-target
    Lightpanda host is done at 1.9 MB empty. The native script-realm slice is
    done at 27/27 and 2.5 MB for one target; its bounded-network slice is done
-   at 35/35 but exposes unrecovered post-close retention. Repair and remeasure
-   that retention next, then continue D4 frame/realm mapping and bounded
-   engine-backed profile work. Rerun Servo only when a driver-free rendering
+   at 35/35. Its post-close retention is attributed to allocator reservation
+   and returned by an opt-in arena per realm without the zone's live cost on
+   one platform. Next: a second platform behind the arena's region boundary
+   and a soak, then D4 frame/realm mapping and bounded engine-backed profile
+   work. Rerun Servo only when a driver-free rendering
    context exists. G1 closes only when one route is both materially below the
    baselines and low-slope on the shared court.
 

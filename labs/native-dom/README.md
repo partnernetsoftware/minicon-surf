@@ -41,8 +41,9 @@ realm?
 [--allow-origin http://HOST:PORT]...` accepts the same arguments as
 `servo-control` plus an explicit origin allowlist. `memory.trim` runs
 `malloc_zone_pressure_relief` and reports released bytes; the environment
-knob `MINICON_SURF_NATIVE_REALM_ZONE=1` selects the macOS zone-per-realm
-experiment described under retention attribution. It offers ephemeral
+knobs `MINICON_SURF_NATIVE_REALM_ZONE=1` and `MINICON_SURF_NATIVE_REALM_ARENA=1`
+(mutually exclusive) select the macOS zone-per-realm and arena-per-realm
+experiments described under retention attribution. It offers ephemeral
 profiles, one session, hermetic fixture targets of at most 1 MiB or `url`
 targets fetched under the network policy, semantic snapshots, revision-scoped
 click actions, `revision_at_least` waits and a memory report that includes
@@ -209,10 +210,17 @@ destruction (leak counter 0 across every zone-cell close).
 
 Repair candidate, macOS only: `MINICON_SURF_NATIVE_REALM_ZONE=1` gives each
 QuickJS realm its own libmalloc zone through rquickjs's allocator hook and
-destroys the zone after the runtime drops. Because rquickjs makes
-`set_memory_limit` a no-op under a custom allocator, the zone allocator
-carries its own accounting and `memory.report` reads that count; the hook
-is compiled only on macOS and other targets get `unsupported_capability`.
+destroys the zone after the runtime drops. The zone allocator carries its
+own accounting and enforces the 16 MiB limit on served sizes, and
+`memory.report` reads that count; the hook is compiled only on macOS and
+other targets get `unsupported_capability`. (An earlier revision of this
+paragraph said rquickjs makes `set_memory_limit` a no-op under a custom
+allocator. That is the rquickjs documentation, but the pinned quickjs-ng
+checks `malloc_limit` in its own `js_malloc_rt`/`js_realloc_rt` wrappers
+before any allocator is called, so the limit binds under every allocator;
+`quickjs_enforces_its_limit_under_a_custom_allocator` proves it. The zone
+accounting is therefore a second, tighter check rather than the only one;
+the measurements above are unchanged.)
 The accounting contract, each point covered by a test: every block is
 charged by the size libmalloc actually served (a request that passes the
 pre-check but rounds over the limit is freed again and reported as out of
@@ -260,6 +268,132 @@ buffer itself exceeds the cap. This is the deliberate price of the failure
 contract; an atomic replace accounting with a separate transient-peak bound
 would be a further experiment, not a shortcut through that contract.
 
+### Realm heap arena (macOS prototype)
+
+`MINICON_SURF_NATIVE_REALM_ARENA=1` is the experiment the previous section
+named: instead of a libmalloc zone, each QuickJS realm gets one private
+anonymous mapping (`mmap`, 32 MiB of address space, pages cost nothing until
+written) served by [`src/arena.rs`](src/arena.rs), and the mapping is
+returned to the kernel in one `munmap` at close. The design separates a
+portable part from the platform part:
+
+- `Heap` is plain Rust over a caller-provided byte range: boundary tags
+  (16-byte header holding the block size, an in-use bit and the previous
+  block's size), 64 free bins (exact 16-byte classes up to 512 bytes,
+  power-of-two bins above), first fit with splitting, coalescing with both
+  neighbours on free, in-place shrink, in-place growth into a free
+  successor, and otherwise allocate-copy-free. It never calls the operating
+  system, so its contract is tested on every platform: 16-byte alignment
+  (rquickjs requires `usize` alignment), exact and stable `usable_size`,
+  minimal non-null blocks for zero sizes, overflow-checked `calloc` that
+  zeroes the payload, null on exhaustion with nothing charged, the old
+  block valid, readable, writable and counted after a failed `realloc`,
+  abort rather than corruption on a pointer that is not a live block of
+  this heap, and a 20,000-step randomized model check that walks every
+  block and bin after each 32 operations and ends with the whole range
+  coalesced into one free block.
+- `Region`, `Arena` and `ArenaAllocator` are the macOS prototype:
+  `mmap`/`munmap`, plus `madvise(MADV_FREE_REUSABLE)` on the whole pages of
+  the free tail when `memory.trim` runs on a live realm and
+  `madvise(MADV_FREE_REUSE)` before the heap grows back into them. Other
+  targets compile without them and answer `unsupported_capability`.
+
+Destruction order is structural rather than positional. The realm and the
+allocator inside the QuickJS runtime each hold an `Rc` to the arena;
+rquickjs drops the allocator after `JS_FreeRuntime`, and the mapping goes
+away only when the last holder drops, so no allocator call and no QuickJS
+block can outlive it whatever the field order or any stray runtime handle.
+`realm_frees_every_block_before_its_arena_is_unmapped` checks that after the
+realm drops the heap holds zero blocks and the realm's `Rc` is the last one;
+`memory.report` counts `arenas_unmapped` and `arena_blocks_leaked_total`
+(zero in every court run). The heap is single-threaded by construction: it
+is reached only through the runtime that owns the allocator, and rquickjs
+without the `parallel` feature keeps that runtime on one thread. The arena
+carries no byte limit of its own: the 16 MiB cap is QuickJS's, proven to
+bind under a custom allocator by the test above, and the reservation is
+twice the cap so that a large reallocation which cannot grow in place can
+hold old and new buffers at once, as the default allocator can.
+
+Three-arm court (`native-dom-control-0.0.2-retention-attribution-arena`
+receipt: default, zone and arena rerun together, three workloads, one
+warm-up plus seven runs each), medians in bytes:
+
+| static fixture | system | zone | arena |
+|---|---|---|---|
+| empty | 1,343,800 | 1,343,800 | 1,343,800 |
+| live (8 targets) | 4,653,368 | 15,008,080 | 4,489,720 |
+| post-close | 4,669,752 | 2,031,928 | 2,015,544 |
+| post-trim | 4,669,752 | 2,031,928 | 2,015,544 |
+| reopen live | 4,866,384 | 3,899,752 | 4,719,096 |
+| post-reclose | 4,866,384 | 2,228,560 | 2,261,304 |
+| retained fp | 3,325,952 | 688,128 | 671,744 |
+| RSS live | 6,815,744 | 17,154,048 | 6,520,832 |
+| RSS post-close | 6,832,128 | 15,613,952 | 4,177,920 |
+
+| interactive fixture | system | zone | arena |
+|---|---|---|---|
+| empty | 1,343,800 | 1,343,800 | 1,343,800 |
+| live (8 targets) | 4,735,288 | 11,829,584 | 4,538,872 |
+| post-close | 4,735,288 | 2,130,232 | 2,064,696 |
+| post-trim | 4,735,288 | 2,130,232 | 2,081,080 |
+| reopen live | 4,931,920 | 3,948,904 | 4,751,864 |
+| post-reclose | 4,931,920 | 2,294,096 | 2,277,688 |
+| retained fp | 3,391,488 | 786,432 | 720,896 |
+| RSS live | 6,897,664 | 13,975,552 | 6,569,984 |
+| RSS post-close | 6,897,664 | 12,451,840 | 4,227,072 |
+
+| representative page | system | zone | arena |
+|---|---|---|---|
+| empty | 1,343,800 | 1,343,800 | 1,343,800 |
+| live (8 targets) | 5,308,728 | 16,105,808 | 5,390,840 |
+| post-close | 5,308,728 | 2,326,840 | 2,244,920 |
+| post-trim | 5,308,728 | 2,343,224 | 2,244,920 |
+| reopen live | 5,488,976 | 4,112,744 | 5,571,064 |
+| post-reclose | 5,488,976 | 2,441,552 | 2,425,144 |
+| retained fp | 3,964,928 | 983,040 | 901,120 |
+| RSS live | 7,602,176 | 18,382,848 | 7,553,024 |
+| RSS post-close | 7,602,176 | 16,826,368 | 4,538,368 |
+
+Judged on every axis at once, against the same-court default arm:
+
+- post-close: retained footprint falls from 3.3 to 4.0 MB to 0.67 to
+  0.90 MB (exact two-sided Mann-Whitney U = 0, p = 0.00058 in all three
+  workloads), the same level the zone reached;
+- first-open live: 4,489,720 and 4,538,872 on the fixtures against
+  4,653,368 and 4,735,288 (U = 0, p = 0.00058, lower), and 5,390,840 on the
+  representative page against 5,308,728 (U = 15, p = 0.243, not
+  distinguishable); the zone's 11.8 to 16.1 MB live cost does not appear
+  (zone versus arena U = 0, p = 0.00058 everywhere). The arenas' own
+  touched extent at live is 2,331,264 bytes across eight fixture realms and
+  2,903,808 on the representative page;
+- RSS after the closes: 4.18 to 4.54 MB against 6.8 to 7.6 MB (U = 0,
+  p = 0.00058) and the zone's 12.5 to 16.8 MB;
+- capacity: the dense array reaches 11,417,184 bytes (0.6805 of 16 MiB)
+  before the realm throws, identical in seven runs, against 0.7067 under the
+  default allocator and 0.4752 under the zone; the arena grew the array in
+  place and its touched extent peaked at 11,485,488 bytes, so old and new
+  buffers were never both resident;
+- reopen: eight targets reopened cost 212,992 to 245,760 bytes over the
+  first live stage and the second close retained the same amount as the
+  first; sixteen arenas were unmapped per run with zero blocks leaked.
+
+`memory.trim` on the closed host releases nothing under any arm because no
+realm is alive to trim; the arena tail trim is exercised by its unit test
+and applies to live realms only. Under the arena the 0.67 to 0.90 MB that
+remain are no longer QuickJS: libmalloc in-use is back within 4,096 bytes
+of empty, so they are the default zone's reserved regions from the parsed
+trees, network buffers and host containers, plus kernel accounting the
+court does not split further. Under this knob the 27-item journey passes
+27 of 27 and the network court 35 of 35.
+
+No axis is clearly worse, so the arena passes the criteria this experiment
+set. It nevertheless stays opt-in and the default allocator is unchanged:
+this is one macOS arm64 machine, three small workloads and a single reopen;
+interior trimming, a many-cycle soak, fragmentation under long-lived
+realms and a second platform behind the `Region` boundary are unmeasured,
+and the remaining retention is still not attributed to a tracked owner.
+Leak absence is not claimed. G1 stays open.
+
 ## Findings against product contracts
 
 ### Agent control
@@ -306,13 +440,16 @@ target by footprint. Every later slice is measured against this row.
 - Public-address negatives are refused before any connection, so they
   exercise policy rather than reachability; the `.invalid` negative depends
   on the system resolver returning no address.
-- Memory freed by closing realms stays in libmalloc as reserved regions:
-  attributed above; the only measured way to return it (a zone per realm)
-  costs live footprint and is not the default.
+- Memory freed by closing realms stays in libmalloc as reserved regions
+  under the default allocator: attributed above. The zone per realm returns
+  it at a live-footprint cost; the arena per realm returns it without that
+  cost on this court, but both are macOS opt-in experiments and the default
+  is unchanged until the arena has been measured on more workloads and a
+  second platform.
 - The next slice must add a bounded persistent-profile store (cookies and
   local storage) under the same journey and court, then `https` with pinned
   roots; each passes only if the 27-item journey and the 35-item network
   court stay green and the footprint court row stays below Lightpanda's
-  single server at one target. A repair that returns reserved memory without
-  the zone's live cost (for example a realm heap arena unmapped at close)
-  is a separate experiment against the same retention court.
+  single server at one target. The arena's next steps are a second platform
+  behind the same `Region` boundary, interior (not only tail) trimming, and
+  a soak of many open/close cycles before it can be proposed as a default.
