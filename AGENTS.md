@@ -24,6 +24,10 @@ messages, screenshots, fixtures, receipts, or examples:
 - a real profile, cookie database, browsing history, downloaded page, URL with
   private query parameters, or environment-variable value;
 - raw command output before checking it for the above.
+- any private key or reusable credential material, including keys labelled as
+  test-only. Generate disposable TLS keys under ignored `target/` or a temporary
+  directory at court runtime; if a fixed private fixture is unavoidable, inject
+  it explicitly from an untracked directory outside the repository.
 
 Use repository-relative paths for files in the clone and `~/...` for generic
 paths under a user home. Use RFC 2606 domains, loopback, `data:` URLs, or
@@ -40,6 +44,16 @@ rg -n '/Users/|/home/|[A-Za-z]:\\\\Users\\\\|@[^ ]+\.|(token|password|secret|api
 
 Review every hit; URLs and explanatory placeholder text may be legitimate,
 but host/user paths and credentials are not.
+
+Also reject private-key material independently of its filename:
+
+```bash
+git grep -n -I -E 'BEGIN (RSA |EC |OPENSSH |ENCRYPTED )?PRIVATE KEY'
+```
+
+Public certificates may be committed when needed, but a PEM containing a
+private-key block may not. Never print private fixture contents into logs or
+receipts.
 
 ## Lab discipline
 
