@@ -128,6 +128,12 @@ fn act_script(revision: u64, index: usize) -> String {
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
   const t = el.tagName.toLowerCase();
+  if (t === "a" && el.hasAttribute("href")) {{
+    const ev = new Event("click", {{ bubbles: true, cancelable: true }});
+    el.dispatchEvent(ev);
+    if (ev.defaultPrevented) return JSON.stringify({{ applied: true }});
+    return JSON.stringify({{ navigate: el.getAttribute("href") }});
+  }}
   if (!(t === "button" || (t === "input" && /^(button|submit|reset)$/.test(el.type)))) {{
     return JSON.stringify({{ unsupported: true }});
   }}
@@ -294,6 +300,24 @@ fn exact_object<'a>(
         .ok_or_else(|| invalid("arguments must be an object"))?;
     if object.len() != keys.len() || !keys.iter().all(|key| object.contains_key(*key)) {
         return Err(invalid(&format!("expected exactly the fields {keys:?}")));
+    }
+    Ok(object)
+}
+
+fn allowed_object<'a>(
+    value: &'a Value,
+    required: &[&str],
+    optional: &[&str],
+) -> Result<&'a Map<String, Value>, ControlError> {
+    let object = value
+        .as_object()
+        .ok_or_else(|| invalid("arguments must be an object"))?;
+    if !required.iter().all(|key| object.contains_key(*key))
+        || object
+            .keys()
+            .any(|key| !required.contains(&key.as_str()) && !optional.contains(&key.as_str()))
+    {
+        return Err(invalid("arguments fields differ"));
     }
     Ok(object)
 }
@@ -876,6 +900,33 @@ struct Target {
     budget: net::Budget,
     realm: Realm,
     last_snapshot: Option<(u64, usize)>,
+    /// The main frame's id: minted with the target and kept for its life.
+    frame_id: String,
+    /// Document generation of the main frame: 1 for the first document,
+    /// +1 for every same-frame navigation.
+    generation: u64,
+    /// The live realm's id: minted with each document, retired with it.
+    realm_id: String,
+    /// Target revisions are monotonic across navigations: the realm counts
+    /// from zero for each document, so its count is offset by this base.
+    revision_base: u64,
+}
+
+/// Where a document comes from: a court fixture file or a URL fetched under
+/// the network policy.
+enum Source {
+    Fixture(String),
+    Url(String),
+}
+
+/// Fixture names and relative fixture links share one shape: a lowercase
+/// `.html` file name inside the court, never a path.
+fn valid_fixture_name(name: &str) -> bool {
+    name.ends_with(".html")
+        && name
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
+        && !name.contains("..")
 }
 
 impl Target {
@@ -988,6 +1039,10 @@ struct Host {
     next_profile: u64,
     next_session: u64,
     next_target: u64,
+    next_frame: u64,
+    next_realm: u64,
+    realms_retired_total: u64,
+    navigations_total: u64,
 }
 
 impl Host {
@@ -997,6 +1052,8 @@ impl Host {
             .ok_or_else(|| not_found("target", id))
     }
 
+    /// The target's absolute revision: the live realm's count plus the base
+    /// carried over every navigation, so it never decreases.
     fn revision(
         target: &mut Target,
         deadline: Instant,
@@ -1006,7 +1063,7 @@ impl Host {
         text.parse::<i64>()
             .ok()
             .filter(|r| *r >= 0)
-            .map(|r| r as u64)
+            .map(|r| target.revision_base + r as u64)
             .ok_or_else(|| {
                 ControlError::new(
                     "internal",
@@ -1083,6 +1140,9 @@ impl Host {
                     "kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,
                     "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"revision":revision,"load_complete":true,"crashed":false,
                     "script_realm":true,"scripts_run":target.script_count,"scripts_skipped":target.skipped_scripts,
+                    "frames":[{"frame":target.frame_id,"parent":null,"generation":target.generation,"realm":target.realm_id}],
+                    "realms":[{"realm":target.realm_id,"frame":target.frame_id,"world":"main"}],
+                    "frame_limit":1,
                     "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
                 }))
             }
@@ -1261,66 +1321,109 @@ impl Host {
                 true,
             ));
         }
-        self.next_target += 1;
-        let id = format!("target_{}", self.next_target);
-        let mut budget = net::Budget::default();
-        let policy = self.policy.clone();
-
-        let (label, base, bytes, framing) = if by_fixture {
+        let source = if by_fixture {
             let fixture = string_field(object, "fixture")?;
-            if !fixture.ends_with(".html")
-                || !fixture
-                    .bytes()
-                    .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-' || b == b'.')
-                || fixture.contains("..")
-            {
+            if !valid_fixture_name(fixture) {
                 return Err(invalid("fixture must be a court fixture file name"));
             }
-            let path = self.fixture_root.join(fixture);
-            let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-            if size > MAX_FIXTURE_BYTES {
-                return Err(ControlError::new(
-                    "resource_limit",
-                    "fixture exceeds the bounded document size",
-                    false,
-                ));
-            }
-            let bytes = std::fs::read(&path).map_err(|_| {
-                ControlError::new("not_found", "fixture does not exist in the court", false)
-            })?;
-            (fixture.to_owned(), None, bytes, "fixture")
+            Source::Fixture(fixture.to_owned())
         } else {
-            let raw = string_field(object, "url")?;
-            let response = net::fetch(raw, &policy, &mut budget, deadline)
-                .map_err(|error| net_error(error, &id))?;
-            if response.status >= 400 {
-                return Err(ControlError::new(
-                    "not_found",
-                    "document request was not successful",
-                    false,
-                )
-                .scoped("target", &id)
-                .details(json!({"status":response.status,"url":response.url.as_str()})));
+            Source::Url(string_field(object, "url")?.to_owned())
+        };
+        self.next_target += 1;
+        self.next_frame += 1;
+        let id = format!("target_{}", self.next_target);
+        let frame_id = format!("frame_{}", self.next_frame);
+        let mut target = self.build_target(
+            &id,
+            session,
+            source,
+            net::Budget::default(),
+            frame_id,
+            1,
+            0,
+            deadline,
+        )?;
+        let policy = self.policy.clone();
+        let revision = Self::revision(&mut target, deadline, &policy)?;
+        let summary = json!({
+            "kind":"target","target":id,"session":session,"revision":revision,"fixture":target.fixture,
+            "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"scripts_run":target.script_count,
+            "scripts_skipped":target.skipped_scripts.len(),
+            "frame":target.frame_id,"generation":target.generation,"realm":target.realm_id,
+            "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
+        });
+        self.targets.insert(id, target);
+        Ok(summary)
+    }
+
+    /// Build a complete target for one document: fetch or read it, parse
+    /// it, mint a realm, seed and run its scripts under the policy and the
+    /// given budget, and install the revision instrumentation. Nothing is
+    /// shared with any existing target, so a failure leaves the caller's
+    /// state untouched; `target.open` inserts the result and a navigation
+    /// swaps it into the existing target.
+    #[allow(clippy::too_many_arguments)]
+    fn build_target(
+        &mut self,
+        id: &str,
+        session: &str,
+        source: Source,
+        mut budget: net::Budget,
+        frame_id: String,
+        generation: u64,
+        revision_base: u64,
+        deadline: Instant,
+    ) -> Result<Target, ControlError> {
+        let policy = self.policy.clone();
+        let (label, base, bytes, framing) = match source {
+            Source::Fixture(fixture) => {
+                let path = self.fixture_root.join(&fixture);
+                let size = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+                if size > MAX_FIXTURE_BYTES {
+                    return Err(ControlError::new(
+                        "resource_limit",
+                        "fixture exceeds the bounded document size",
+                        false,
+                    ));
+                }
+                let bytes = std::fs::read(&path).map_err(|_| {
+                    ControlError::new("not_found", "fixture does not exist in the court", false)
+                })?;
+                (fixture, None, bytes, "fixture")
             }
-            if response
-                .content_type
-                .as_deref()
-                .is_some_and(|t| !t.starts_with("text/html"))
-            {
-                return Err(ControlError::new(
-                    "unsupported_capability",
-                    "document is not text/html",
-                    false,
+            Source::Url(raw) => {
+                let response = net::fetch(&raw, &policy, &mut budget, deadline)
+                    .map_err(|error| net_error(error, id))?;
+                if response.status >= 400 {
+                    return Err(ControlError::new(
+                        "not_found",
+                        "document request was not successful",
+                        false,
+                    )
+                    .scoped("target", id)
+                    .details(json!({"status":response.status,"url":response.url.as_str()})));
+                }
+                if response
+                    .content_type
+                    .as_deref()
+                    .is_some_and(|t| !t.starts_with("text/html"))
+                {
+                    return Err(ControlError::new(
+                        "unsupported_capability",
+                        "document is not text/html",
+                        false,
+                    )
+                    .scoped("target", id)
+                    .details(json!({"content_type":response.content_type})));
+                }
+                (
+                    "url".to_owned(),
+                    Some(response.url.clone()),
+                    response.body,
+                    response.framing.as_str(),
                 )
-                .scoped("target", &id)
-                .details(json!({"content_type":response.content_type})));
             }
-            (
-                "url".to_owned(),
-                Some(response.url.clone()),
-                response.body,
-                response.framing.as_str(),
-            )
         };
 
         let text = String::from_utf8_lossy(&bytes).into_owned();
@@ -1375,21 +1478,24 @@ impl Host {
         drop(document);
 
         let realm = Realm::new(self.realm_allocation)?;
-        realm.eval(DOM_SHIM_JS, deadline, &id)?;
+        realm.eval(DOM_SHIM_JS, deadline, id)?;
         let seed = format!(
             "__mcsSeed({})",
             serde_json::to_string(&tree).expect("tree serializes")
         );
-        realm.eval(&seed, deadline, &id)?;
+        realm.eval(&seed, deadline, id)?;
         if let Some(base_url) = &base {
             realm.eval(
                 &format!("__mcsLocation({})", json!(base_url.as_str())),
                 deadline,
-                &id,
+                id,
             )?;
         }
+        // The realm id is minted only once the document exists; a failed
+        // build never consumes one.
+        self.next_realm += 1;
         let mut target = Target {
-            id: id.clone(),
+            id: id.to_owned(),
             session_id: session.to_owned(),
             fixture: label,
             url: base,
@@ -1401,6 +1507,10 @@ impl Host {
             budget,
             realm,
             last_snapshot: None,
+            frame_id,
+            generation,
+            realm_id: format!("realm_{}", self.next_realm),
+            revision_base,
         };
         for (index, (origin, script)) in scripts.iter().enumerate() {
             if let Err(error) = target.eval(script, deadline, &policy) {
@@ -1408,23 +1518,94 @@ impl Host {
                 details["script_index"] = json!(index);
                 details["script"] = json!(origin);
                 return Err(ControlError::new("target_crashed", "a script threw", false)
-                    .scoped("target", &id)
+                    .scoped("target", id)
                     .details(details));
             }
         }
         target.eval("__mcsComplete()", deadline, &policy)?;
-        let revision = target
-            .eval(INSTALL_JS, deadline, &policy)?
-            .parse::<u64>()
-            .unwrap_or(0);
-        let summary = json!({
-            "kind":"target","target":id,"session":session,"revision":revision,"fixture":target.fixture,
-            "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"scripts_run":target.script_count,
-            "scripts_skipped":target.skipped_scripts.len(),
-            "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied}
-        });
-        self.targets.insert(id, target);
-        Ok(summary)
+        target.eval(INSTALL_JS, deadline, &policy)?;
+        Ok(target)
+    }
+
+    /// Same-frame navigation after a link click: the new document is built
+    /// completely (fetch under the target's own policy and budget, parse,
+    /// realm, scripts) before anything in the live target changes; on any
+    /// failure the target keeps its document, realm, generation and
+    /// revision, and only the network budget records the attempt.
+    fn navigate(&mut self, id: &str, href: &str, deadline: Instant) -> Result<Value, ControlError> {
+        let policy = self.policy.clone();
+        let prepared = {
+            let target = self.target_mut(id)?;
+            let current = Self::revision(target, deadline, &policy)?;
+            let source = match &target.url {
+                Some(base_url) => base_url
+                    .join(href)
+                    .map(|resolved| Source::Url(resolved.into()))
+                    .map_err(|_| {
+                        ControlError::new("invalid_request", "link href is malformed", false)
+                            .scoped("target", id)
+                    }),
+                None if valid_fixture_name(href) => Ok(Source::Fixture(href.to_owned())),
+                None => Err(ControlError::new(
+                    "unsupported_capability",
+                    "a fixture target can only follow links to court fixture files",
+                    false,
+                )
+                .scoped("target", id)),
+            };
+            source.map(|source| {
+                (
+                    target.session_id.clone(),
+                    source,
+                    target.budget.clone(),
+                    target.frame_id.clone(),
+                    target.generation,
+                    current,
+                )
+            })
+        };
+        let built = match prepared {
+            Ok((session, source, budget, frame_id, generation, base_revision)) => self
+                .build_target(
+                    id,
+                    &session,
+                    source,
+                    budget,
+                    frame_id,
+                    generation + 1,
+                    base_revision + 1,
+                    deadline,
+                ),
+            Err(error) => Err(error),
+        };
+        let target = self.target_mut(id)?;
+        match built {
+            Ok(replacement) => {
+                let retired_realm = std::mem::replace(target, replacement).realm_id;
+                self.realms_retired_total += 1;
+                self.navigations_total += 1;
+                let target = self.target_mut(id)?;
+                let revision = Self::revision(target, deadline, &policy)?;
+                Ok(json!({
+                    "kind":"action","target":id,"revision":revision,"applied":true,"navigated":true,
+                    "frame":target.frame_id,"generation":target.generation,"realm":target.realm_id,
+                    "retired_realm":retired_realm,"url":target.url.as_ref().map(Url::as_str),"fixture":target.fixture,
+                    "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied},
+                }))
+            }
+            Err(error) => {
+                // Only the attempt's network accounting reaches the live
+                // target; document, realm, generation and revision are as
+                // they were.
+                target.budget.denied += 1;
+                let mut details = error.details.clone().unwrap_or_else(|| json!({}));
+                details["navigation"] = json!("failed");
+                details["href"] = json!(href);
+                details["generation"] = json!(target.generation);
+                details["realm"] = json!(target.realm_id);
+                Err(error.details(details))
+            }
+        }
     }
 
     fn target_snapshot(
@@ -1432,7 +1613,11 @@ impl Host {
         arguments: &Value,
         deadline: Instant,
     ) -> Result<Value, ControlError> {
-        let object = exact_object(arguments, &["target", "format", "max_bytes", "max_nodes"])?;
+        let object = allowed_object(
+            arguments,
+            &["target", "format", "max_bytes", "max_nodes"],
+            &["frame", "realm"],
+        )?;
         let id = typed_field(object, "target", "target")?.to_owned();
         if string_field(object, "format")? != "semantic" {
             return Err(ControlError::new(
@@ -1445,6 +1630,30 @@ impl Host {
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
         let policy = self.policy.clone();
         let target = self.target_mut(&id)?;
+        // A foreign, retired or unknown frame or realm is one and the same
+        // refusal: only the target's live main frame and realm exist.
+        if object.get("frame").is_some() {
+            let frame = typed_field(object, "frame", "frame")?;
+            if frame != target.frame_id {
+                return Err(
+                    not_found("frame", frame).details(json!({"reason":"frame_not_live_in_target"}))
+                );
+            }
+        }
+        if object.get("realm").is_some() {
+            let realm = typed_field(object, "realm", "realm")?;
+            if realm != target.realm_id {
+                return Err(not_found("realm", realm).details(
+                    json!({"reason":"realm_not_live_in_target","frame":target.frame_id}),
+                ));
+            }
+        }
+        let (frame_id, realm_id, generation, base) = (
+            target.frame_id.clone(),
+            target.realm_id.clone(),
+            target.generation,
+            target.revision_base,
+        );
         let raw = Self::eval_json(target, &snapshot_script(max_nodes), deadline, &policy)?;
         if raw.get("error").is_some() {
             return Err(ControlError::new(
@@ -1454,9 +1663,14 @@ impl Host {
             )
             .scoped("target", &id));
         }
-        let revision = raw.get("revision").and_then(Value::as_u64).ok_or_else(|| {
-            ControlError::new("internal", "snapshot lacks a revision", false).scoped("target", &id)
-        })?;
+        let revision = raw
+            .get("revision")
+            .and_then(Value::as_u64)
+            .map(|r| base + r)
+            .ok_or_else(|| {
+                ControlError::new("internal", "snapshot lacks a revision", false)
+                    .scoped("target", &id)
+            })?;
         let mut truncated = raw
             .get("truncated")
             .and_then(Value::as_bool)
@@ -1497,9 +1711,11 @@ impl Host {
             .get_mut(&id)
             .expect("target exists")
             .last_snapshot = Some((revision, count));
-        Ok(
-            json!({"kind":"semantic_snapshot","target":id,"revision":revision,"truncated":truncated,"nodes":nodes}),
-        )
+        Ok(json!({
+            "kind":"semantic_snapshot","target":id,"revision":revision,
+            "frame":frame_id,"realm":realm_id,"generation":generation,
+            "truncated":truncated,"nodes":nodes,
+        }))
     }
 
     fn target_act(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
@@ -1558,7 +1774,13 @@ impl Host {
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             );
         }
-        let outcome = Self::eval_json(target, &act_script(revision, index), deadline, &policy)?;
+        let base = target.revision_base;
+        let outcome = Self::eval_json(
+            target,
+            &act_script(revision - base, index),
+            deadline,
+            &policy,
+        )?;
         if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
             return Err(ControlError::new(
                 "stale_revision",
@@ -1566,7 +1788,7 @@ impl Host {
                 true,
             )
             .scoped("target", &id)
-            .details(json!({"reference_revision":revision,"current_revision":current})));
+            .details(json!({"reference_revision":revision,"current_revision":base + current})));
         }
         if outcome.get("missing").is_some() {
             return Err(
@@ -1576,9 +1798,13 @@ impl Host {
         if outcome.get("unsupported").is_some() {
             return Err(ControlError::new(
                 "unsupported_capability",
-                "click requires a button node",
+                "click requires a button or link node",
                 false,
             ));
+        }
+        if let Some(href) = outcome.get("navigate").and_then(Value::as_str) {
+            let href = href.to_owned();
+            return self.navigate(&id, &href, deadline);
         }
         if outcome.get("applied").and_then(Value::as_bool) != Some(true) {
             return Err(
@@ -1659,6 +1885,8 @@ impl Host {
                 "profiles":{"objects":self.profiles.len(),"object_limit":MAX_PROFILES},
                 "sessions":{"objects":self.session.iter().count(),"object_limit":1},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
+                "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
+                "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()}},
             },
@@ -1772,6 +2000,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_profile: 0,
         next_session: 0,
         next_target: 0,
+        next_frame: 0,
+        next_realm: 0,
+        realms_retired_total: 0,
+        navigations_total: 0,
     };
     let stdin = io::stdin();
     let mut reader = stdin.lock();

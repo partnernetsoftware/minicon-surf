@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>MiniCon Surf Navigation Court</title>
+  </head>
+  <body>
+    <main>
+      <h1>Navigation Court</h1>
+      <p>Two links: one stays inside the court, one leaves it.</p>
+      <a href="semantic-static.html">Court result</a>
+      <a href="https://example.com/result">Example result</a>
+      <button id="stay" type="button">Stay</button>
+    </main>
+    <script>
+      document.getElementById("stay").addEventListener("click", () => {
+        const status = document.createElement("p");
+        status.textContent = "Stayed";
+        document.querySelector("main").append(status);
+      });
+    </script>
+  </body>
+</html>

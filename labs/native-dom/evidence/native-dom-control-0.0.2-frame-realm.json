@@ -1,0 +1,516 @@
+{
+  "checks": [
+    {
+      "check": "[system] open names frame, generation 1 and realm",
+      "passed": true
+    },
+    {
+      "check": "[system] inspect enumerates exactly one main frame and one main-world realm with frame_limit 1",
+      "passed": true
+    },
+    {
+      "check": "[system] frame and realm ids are host-wide and disjoint across targets",
+      "passed": true
+    },
+    {
+      "check": "[system] a snapshot names its frame, realm and generation and carries the target revision",
+      "passed": true
+    },
+    {
+      "check": "[system] naming the live frame and realm is accepted",
+      "passed": true
+    },
+    {
+      "check": "[system] another target's frame and an unknown frame are the same not_found",
+      "passed": true
+    },
+    {
+      "check": "[system] another target's realm is not_found with realm scope",
+      "passed": true
+    },
+    {
+      "check": "[system] a fixture target cannot follow a link out of the court",
+      "detail": {
+        "code": "unsupported_capability",
+        "details": {
+          "generation": 1,
+          "href": "https://example.com/result",
+          "navigation": "failed",
+          "realm": "realm_1"
+        },
+        "message": "a fixture target can only follow links to court fixture files",
+        "retryable": false,
+        "scope": {
+          "id": "target_1",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] a failed navigation leaves frame, realm, generation and revision untouched",
+      "passed": true
+    },
+    {
+      "check": "[system] the old realm is still live after the failed navigation",
+      "passed": true
+    },
+    {
+      "check": "[system] the old document still acts and advances the revision without navigating",
+      "passed": true
+    },
+    {
+      "check": "[system] a link click inside the court is a same-frame navigation",
+      "detail": {
+        "applied": true,
+        "fixture": "semantic-static.html",
+        "frame": "frame_1",
+        "generation": 2,
+        "kind": "action",
+        "navigated": true,
+        "network": {
+          "bytes": 0,
+          "denied": 1,
+          "fetches": 0
+        },
+        "realm": "realm_3",
+        "retired_realm": "realm_1",
+        "revision": 2,
+        "target": "target_1",
+        "url": null
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the target revision stays monotonic across the navigation",
+      "passed": true
+    },
+    {
+      "check": "[system] after navigation: same frame, generation 2, new realm, one frame still",
+      "passed": true
+    },
+    {
+      "check": "[system] a node reference from before the navigation is stale_revision",
+      "passed": true
+    },
+    {
+      "check": "[system] the retired realm is not_found with realm scope and a typed reason",
+      "passed": true
+    },
+    {
+      "check": "[system] the new document is observable through the surviving frame at generation 2",
+      "passed": true
+    },
+    {
+      "check": "[system] waits use the absolute revision after navigation",
+      "passed": true
+    },
+    {
+      "check": "[system] a same-origin link navigates over the bounded network",
+      "detail": {
+        "applied": true,
+        "fixture": "url",
+        "frame": "frame_3",
+        "generation": 2,
+        "kind": "action",
+        "navigated": true,
+        "network": {
+          "bytes": 827,
+          "denied": 0,
+          "fetches": 2
+        },
+        "realm": "realm_5",
+        "retired_realm": "realm_4",
+        "revision": 1,
+        "target": "target_3",
+        "url": "http://127.0.0.1:62652/about.html"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the navigation fetch is charged to the target's own budget",
+      "passed": true
+    },
+    {
+      "check": "[system] navigating back mints a third realm on the same frame",
+      "passed": true
+    },
+    {
+      "check": "[system] 'Leave the origin' navigation fails typed as unsupported_capability and leaves the target untouched",
+      "detail": {
+        "code": "unsupported_capability",
+        "details": {
+          "detail": "scheme https is not offered; only http is",
+          "generation": 3,
+          "href": "https://example.com/",
+          "navigation": "failed",
+          "realm": "realm_6",
+          "reason": "scheme"
+        },
+        "message": "network policy: scheme",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] 'Private address' navigation fails typed as permission_denied and leaves the target untouched",
+      "detail": {
+        "code": "permission_denied",
+        "details": {
+          "detail": "address class refused: link-local (includes metadata services)",
+          "generation": 3,
+          "href": "http://169.254.169.254/latest/meta-data/",
+          "navigation": "failed",
+          "realm": "realm_6",
+          "reason": "address"
+        },
+        "message": "network policy: address",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] 'Missing page' navigation fails typed as not_found and leaves the target untouched",
+      "detail": {
+        "code": "not_found",
+        "details": {
+          "generation": 3,
+          "href": "/notfound",
+          "navigation": "failed",
+          "realm": "realm_6",
+          "status": 404,
+          "url": "http://127.0.0.1:62652/notfound"
+        },
+        "message": "document request was not successful",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] 'Not a document' navigation fails typed as unsupported_capability and leaves the target untouched",
+      "detail": {
+        "code": "unsupported_capability",
+        "details": {
+          "content_type": "application/json",
+          "generation": 3,
+          "href": "data.json",
+          "navigation": "failed",
+          "realm": "realm_6"
+        },
+        "message": "document is not text/html",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] failed navigations are charged as denied attempts, never as documents",
+      "passed": true
+    },
+    {
+      "check": "[system] capability attenuation is not implemented here and fails closed as invalid_request",
+      "passed": true
+    },
+    {
+      "check": "[system] owners count one frame and one realm per live target, with retirements tallied",
+      "passed": true
+    },
+    {
+      "check": "[system] closing every target leaves zero frames, realms and script realms",
+      "passed": true
+    },
+    {
+      "check": "[system] a closed target's frame is not_found at the target",
+      "passed": true
+    },
+    {
+      "check": "[system] host exits cleanly",
+      "passed": true
+    },
+    {
+      "check": "[arena] open names frame, generation 1 and realm",
+      "passed": true
+    },
+    {
+      "check": "[arena] inspect enumerates exactly one main frame and one main-world realm with frame_limit 1",
+      "passed": true
+    },
+    {
+      "check": "[arena] frame and realm ids are host-wide and disjoint across targets",
+      "passed": true
+    },
+    {
+      "check": "[arena] a snapshot names its frame, realm and generation and carries the target revision",
+      "passed": true
+    },
+    {
+      "check": "[arena] naming the live frame and realm is accepted",
+      "passed": true
+    },
+    {
+      "check": "[arena] another target's frame and an unknown frame are the same not_found",
+      "passed": true
+    },
+    {
+      "check": "[arena] another target's realm is not_found with realm scope",
+      "passed": true
+    },
+    {
+      "check": "[arena] a fixture target cannot follow a link out of the court",
+      "detail": {
+        "code": "unsupported_capability",
+        "details": {
+          "generation": 1,
+          "href": "https://example.com/result",
+          "navigation": "failed",
+          "realm": "realm_1"
+        },
+        "message": "a fixture target can only follow links to court fixture files",
+        "retryable": false,
+        "scope": {
+          "id": "target_1",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] a failed navigation leaves frame, realm, generation and revision untouched",
+      "passed": true
+    },
+    {
+      "check": "[arena] the old realm is still live after the failed navigation",
+      "passed": true
+    },
+    {
+      "check": "[arena] the old document still acts and advances the revision without navigating",
+      "passed": true
+    },
+    {
+      "check": "[arena] a link click inside the court is a same-frame navigation",
+      "detail": {
+        "applied": true,
+        "fixture": "semantic-static.html",
+        "frame": "frame_1",
+        "generation": 2,
+        "kind": "action",
+        "navigated": true,
+        "network": {
+          "bytes": 0,
+          "denied": 1,
+          "fetches": 0
+        },
+        "realm": "realm_3",
+        "retired_realm": "realm_1",
+        "revision": 2,
+        "target": "target_1",
+        "url": null
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the target revision stays monotonic across the navigation",
+      "passed": true
+    },
+    {
+      "check": "[arena] after navigation: same frame, generation 2, new realm, one frame still",
+      "passed": true
+    },
+    {
+      "check": "[arena] a node reference from before the navigation is stale_revision",
+      "passed": true
+    },
+    {
+      "check": "[arena] the retired realm is not_found with realm scope and a typed reason",
+      "passed": true
+    },
+    {
+      "check": "[arena] the new document is observable through the surviving frame at generation 2",
+      "passed": true
+    },
+    {
+      "check": "[arena] waits use the absolute revision after navigation",
+      "passed": true
+    },
+    {
+      "check": "[arena] a same-origin link navigates over the bounded network",
+      "detail": {
+        "applied": true,
+        "fixture": "url",
+        "frame": "frame_3",
+        "generation": 2,
+        "kind": "action",
+        "navigated": true,
+        "network": {
+          "bytes": 827,
+          "denied": 0,
+          "fetches": 2
+        },
+        "realm": "realm_5",
+        "retired_realm": "realm_4",
+        "revision": 1,
+        "target": "target_3",
+        "url": "http://127.0.0.1:62652/about.html"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the navigation fetch is charged to the target's own budget",
+      "passed": true
+    },
+    {
+      "check": "[arena] navigating back mints a third realm on the same frame",
+      "passed": true
+    },
+    {
+      "check": "[arena] 'Leave the origin' navigation fails typed as unsupported_capability and leaves the target untouched",
+      "detail": {
+        "code": "unsupported_capability",
+        "details": {
+          "detail": "scheme https is not offered; only http is",
+          "generation": 3,
+          "href": "https://example.com/",
+          "navigation": "failed",
+          "realm": "realm_6",
+          "reason": "scheme"
+        },
+        "message": "network policy: scheme",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] 'Private address' navigation fails typed as permission_denied and leaves the target untouched",
+      "detail": {
+        "code": "permission_denied",
+        "details": {
+          "detail": "address class refused: link-local (includes metadata services)",
+          "generation": 3,
+          "href": "http://169.254.169.254/latest/meta-data/",
+          "navigation": "failed",
+          "realm": "realm_6",
+          "reason": "address"
+        },
+        "message": "network policy: address",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] 'Missing page' navigation fails typed as not_found and leaves the target untouched",
+      "detail": {
+        "code": "not_found",
+        "details": {
+          "generation": 3,
+          "href": "/notfound",
+          "navigation": "failed",
+          "realm": "realm_6",
+          "status": 404,
+          "url": "http://127.0.0.1:62652/notfound"
+        },
+        "message": "document request was not successful",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] 'Not a document' navigation fails typed as unsupported_capability and leaves the target untouched",
+      "detail": {
+        "code": "unsupported_capability",
+        "details": {
+          "content_type": "application/json",
+          "generation": 3,
+          "href": "data.json",
+          "navigation": "failed",
+          "realm": "realm_6"
+        },
+        "message": "document is not text/html",
+        "retryable": false,
+        "scope": {
+          "id": "target_3",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] failed navigations are charged as denied attempts, never as documents",
+      "passed": true
+    },
+    {
+      "check": "[arena] capability attenuation is not implemented here and fails closed as invalid_request",
+      "passed": true
+    },
+    {
+      "check": "[arena] owners count one frame and one realm per live target, with retirements tallied",
+      "passed": true
+    },
+    {
+      "check": "[arena] closing every target leaves zero frames, realms and script realms",
+      "passed": true
+    },
+    {
+      "check": "[arena] a closed target's frame is not_found at the target",
+      "passed": true
+    },
+    {
+      "check": "[arena] host exits cleanly",
+      "passed": true
+    }
+  ],
+  "checks_passed": 62,
+  "checks_total": 62,
+  "footprint_bytes": {
+    "arena": {
+      "empty": 1360184,
+      "post_close": 2113848,
+      "two_fixture_targets_live": 2212200
+    },
+    "system": {
+      "empty": 1360184,
+      "post_close": 3785016,
+      "two_fixture_targets_live": 2900280
+    }
+  },
+  "host_sha256": "f3e76f56055043a4acb6ef30c6c524df13acf95293dc8978c2859f86b9724ad4",
+  "losses": [
+    "no child frames: every native-dom target is one main frame; frame_limit is 1",
+    "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",
+    "no CDP projection of frames or realms on this host",
+    "navigation is a link click only; no target.navigate, no history, no form submission",
+    "fixture targets may follow links only to court fixture files; url targets follow links under the same policy, budget, redirect, size and deadline limits as target.open"
+  ],
+  "passed": true,
+  "schema": "minicon-surf.native-dom-frame-realm-receipt/0.0.1",
+  "semantic": "one main frame and one main-world realm per native target; a link click is a same-frame navigation built completely before the swap; native requests validated by protocol/check_contract.py; run under the default allocator and the opt-in arena",
+  "status": "observed",
+  "technology": "native-dom",
+  "technology_version": "0.0.2"
+}

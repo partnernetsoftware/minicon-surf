@@ -120,6 +120,7 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── domain/method/version matrix names exact supported behavior
 │   ├── [~] tool journeys qualify selected Playwright/Puppeteer clients: puppeteer-core 24.15 connects and lists the Servo target; page handles need frame/realm/network mapping
 │   ├── [~] frame/realm rules: target revision · frame identity · document generation · realm identity kept distinct; bounded per-target enumeration; foreign, ended and unknown ids refused alike; frames and realms never owners; synthetic court 28/28 with Page.getFrameTree adapter-scoped ids; realm projection, navigation events and nesting are recorded losses
+│   ├── [~] native route carries the rules on real documents: one main frame and realm per target, link click = same-frame navigation built completely before the swap under the unchanged network policy, failed navigations leave the target untouched; court 62/62 under default and arena; no child frames, no capability, no CDP frames on this host
 │   └── [-] no claim that Chromium-specific behavior exists when it does not
 ├── [H5] dynamic presentation surface
 │   ├── browser session and page lifetime do not belong to the GUI
@@ -950,6 +951,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   document generation are recorded losses in the CDP mapping. D4 stays open
   until an engine host exposes frames and a named external client observes
   them; G1, G3, P6 and G6 stay open.
+- [~] The native route now carries the frame/realm rules on real documents.
+  Each target is one main frame with one main-world realm; ids are
+  host-wide and never reused; the revision the caller sees is monotonic
+  across navigations. A click on a link is a same-frame navigation: the new
+  document is fetched under the target's own policy and budget (origin
+  allowlist, redirects, sizes, deadline, address rules unchanged), parsed,
+  given a fresh realm and its scripts run, and only then swapped into the
+  live target, so a refused or failed navigation leaves document, realm,
+  generation and revision as they were and is charged as a denied attempt.
+  The native court passes 62 of 62 (the same 31 checks under the default
+  allocator and the opt-in arena): identity and enumeration, foreign and
+  unknown ids refused alike, the in-court fixture link and the same-origin
+  loopback link navigating (generation 2 and 3 on the same frame, realms
+  retired, old references stale), `https`, private-address, 404 and
+  non-HTML links failing typed with the target untouched, owners at zero
+  after the closes; the 27-item journey and 35-item network court pass on
+  the same binary under both allocators. Losses on this host are recorded:
+  no child frames, no capability attenuation (fail-closed
+  `invalid_request`), no CDP frame projection. D4 stays open until a named
+  external client observes frames through CDP; G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -1006,9 +1027,10 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    and returned by an opt-in arena per realm without the zone's live cost on
    one platform, and holds through a 128-cycle soak under frozen criteria.
    Next: a second platform behind the arena's region boundary and interior
-   (not only tail) trimming, then carry the D4 frame/realm rules (synthetic
-   28/28) into an engine host with a named external client, and bounded
-   engine-backed profile work. Rerun Servo only when a driver-free rendering
+   (not only tail) trimming; the D4 frame/realm rules now hold on the
+   synthetic (28/28) and native (62/62) hosts, so the next D4 step is a
+   qualified `Page.getFrameTree` on an engine host observed by a named
+   external client, then bounded engine-backed profile work. Rerun Servo only when a driver-free rendering
    context exists. G1 closes only when one route is both materially below the
    baselines and low-slope on the shared court.
 8. [~] Treat the native bounded route as the convergence path. After each

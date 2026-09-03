@@ -605,6 +605,89 @@ signal (25% and 1 MiB), so interior trimming stays deferred; the 2.5×
 ratio seen under the adversarial allocator script remains an allocator
 risk on record, not a browser cost.
 
+### Frames, realms and link navigation (D4 on the native route)
+
+Hypothesis: the control 0.0.1 frame/realm rules hold on real documents:
+every native target exposes one main frame and one main-world realm with
+host-wide monotonic ids, a real link click on a hermetic page is a
+same-frame navigation that keeps the frame, increments the document
+generation, retires the realm and keeps the target revision monotonic, and a
+navigation that the bounded network policy refuses leaves the target
+exactly as it was.
+
+Scope: `Target` carries `frame_id` (minted with the target), `generation`,
+`realm_id` (minted with each document, never reused) and a revision base so
+the revision the caller sees is the realm's count plus everything before the
+last navigation. `target.open` reports `frame`, `generation` and `realm`;
+`target.inspect` lists `frames[]` (one, `parent` null) and `realms[]` with
+`frame_limit` 1; `target.snapshot` takes optional `frame` and `realm` and
+names what it observed, refusing a foreign, retired or unknown id with the
+same `not_found`. A click on an `<a href>` node dispatches the click event
+and, unless the page prevented the default, navigates: the new document is
+built completely first (`build_target`, the same path `target.open` uses:
+fetch under the target's own policy and budget with the same origin,
+redirect, size, deadline and address rules, parse, a fresh realm, scripts,
+instrumentation) and only then swapped into the live target, so a failed
+navigation cannot half-update anything; the attempt is charged as a denied
+network attempt and the error carries `navigation: failed` with the
+untouched generation and realm. Fixture targets may follow links only to
+court fixture files; the network boundary is not widened. Frames and realms
+count as owners in `memory.report` with `retired_total` and
+`navigations_total`.
+
+Losses, recorded rather than approximated: no child frames (`frame_limit`
+1); no capability attenuation on this host, so a request carrying the field
+is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
+of frames or realms here; navigation is a link click only (no
+`target.navigate`, history or form submission).
+
+Reproduction:
+
+```sh
+python3 labs/native-dom/frame-realm-court.py \
+  --binary labs/native-dom/target/release/native-dom-control \
+  --receipt labs/native-dom/evidence/native-dom-control-0.0.2-frame-realm.json
+```
+
+Evidence (`native-dom-control-0.0.2-frame-realm` receipt, 62 of 62, the
+same 31 checks under the default allocator and the opt-in arena): open
+names frame, generation 1 and realm; inspect enumerates one frame and one
+realm; ids are disjoint across targets; snapshots name frame, realm and
+generation and accept the live pair; another target's frame and an unknown
+frame are the same `not_found` with the same message, another target's
+realm is `not_found` with realm scope; the out-of-court `https` link on the
+fixture page fails `unsupported_capability` with `navigation: failed` and
+leaves frame, realm, generation and revision untouched, the old realm still
+serves snapshots and the button still acts; the in-court link
+(`semantic-nav.html` → `semantic-static.html`) navigates: same frame,
+generation 2, the old realm retired, the revision one above the previous,
+the old node reference `stale_revision`, the retired realm `not_found` with
+`realm_not_live_in_target`, the new document observable at generation 2 and
+`revision_at_least` waiting on the absolute revision; over the bounded
+network the representative `nav.html` follows its same-origin link to
+`about.html` (one fetch charged to the target), back again to a third realm
+on the same frame, and its `https`, private-address, `/notfound` and
+`data.json` links fail as `unsupported_capability`, `permission_denied`,
+`not_found` and `unsupported_capability` with the target untouched each
+time; a capability-bearing request is `invalid_request`; owners count three
+frames and realms with three retirements and three navigations, then zero
+after the closes, and a closed target's frame is `not_found` at the target.
+The 27-item journey and the 35-item network court pass under both
+allocators on the same binary. Footprint with two fixture targets live was
+2,900,280 bytes (default) and 2,212,200 (arena) against 1,360,184 empty,
+and 3,785,016 / 2,113,848 after the closes: the identity bookkeeping is a
+few strings per target and shows no measurable delta against the earlier
+courts.
+
+Gaps: one frame per target, so the child-frame half of the rules is
+exercised only on the synthetic court; no engine-side iframe support; no
+CDP `Page.getFrameTree` on this host; the failed-navigation rollback is
+proven by construction and by the court, not by a fault-injection inside
+the build.
+
+Verdict: `keep`. D4 stays open until a named external client observes these
+frames through CDP; G1, G3, P6 and G6 stay open.
+
 ### Receipt provenance
 
 Each receipt records the SHA-256 of the host binary that produced it. The
@@ -616,6 +699,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-network-court` | the bounded-network slice (before the allocator experiments) | unchanged since; the arena knob did not exist |
 | `native-dom-control-0.0.2-retention-attribution-arena` | the arena commit (`4c4b519`, measured in `468b8a9`) | the later tail-trim reporting fix (`12de192`) changes no value in this receipt: no realm is alive at its trim stage, so `arena_released_bytes` was already zero |
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
+| `native-dom-control-0.0.2-frame-realm` | the host with frames, realms and link navigation | the journeys were rerun on this build (27/27, 35/35 under both allocators) |
 
 ## Findings against product contracts
 
@@ -657,8 +741,8 @@ target by footprint. Every later slice is measured against this row.
   same-origin external scripts run.
 - The DOM shim implements what the court fixtures and instrumentation use.
   It is not a Web-compatibility claim: unsupported selectors throw, and any
-  page relying on layout, `fetch`, `XMLHttpRequest`, `localStorage` or
-  timing fails explicitly.
+  page relying on layout, `XMLHttpRequest`, `localStorage` or timing fails
+  explicitly. Navigation is a link click on an `<a href>` only.
 - One fixture set, one platform, summed RSS and physical footprint only.
 - Public-address negatives are refused before any connection, so they
   exercise policy rather than reachability; the `.invalid` negative depends
