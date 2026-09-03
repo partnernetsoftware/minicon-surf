@@ -120,7 +120,8 @@ on an already-owned node so the tree remains a DAG rather than duplicating it.
 │   ├── domain/method/version matrix names exact supported behavior
 │   ├── [~] tool journeys qualify selected Playwright/Puppeteer clients: puppeteer-core 24.15 connects and lists the Servo target; page handles need frame/realm/network mapping
 │   ├── [~] frame/realm rules: target revision · frame identity · document generation · realm identity kept distinct; bounded per-target enumeration; foreign, ended and unknown ids refused alike; frames and realms never owners; synthetic court 28/28 with Page.getFrameTree adapter-scoped ids; realm projection, navigation events and nesting are recorded losses
-│   ├── [~] native route carries the rules on real documents: one main frame and realm per target, link click = same-frame navigation built completely before the swap under the unchanged network policy, failed navigations leave the target untouched; court 62/62 under default and arena; no child frames, no capability, no CDP frames on this host
+│   ├── [~] native route carries the rules on real documents: one main frame and realm per target, link click = same-frame navigation built completely before the swap under the unchanged network policy, failed navigations leave the target untouched; court 62/62 under default and arena; no child frames, no capability on this host
+│   ├── [~] native route exposes a bounded loopback CDP edge on the same live target: adapters registered in the host, Page.FrameId adapter-scoped and kept across navigation, puppeteer-core 24.15.0 observes Page.getFrameTree and drives the link click through createCDPSession; court 58/58; target.page() and realm projection are explicit losses
 │   └── [-] no claim that Chromium-specific behavior exists when it does not
 ├── [H5] dynamic presentation surface
 │   ├── browser session and page lifetime do not belong to the GUI
@@ -971,6 +972,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   no child frames, no capability attenuation (fail-closed
   `invalid_request`), no CDP frame projection. D4 stays open until a named
   external client observes frames through CDP; G1, G3, P6 and G6 stay open.
+- [~] D4 has its first engine-host observation by a named external client.
+  The native route now serves a bounded loopback CDP edge (`--cdp-port`,
+  `--ready-file`; header and message bounds, masked frames, one connection at
+  a time, 30 s timeouts) whose qualified methods were frozen before the code:
+  each method is a control 0.0.1 operation executed by the host's main loop
+  against the same target, frame and revision the stdio door uses; every
+  session is an adapter record the host counts and detaches at `target.close`
+  and `session.close`; `Page.FrameId` is adapter-scoped, differs from the
+  native id and survives a same-frame navigation; `Runtime.ExecutionContextId`
+  is never emitted and `Page.enable`, `Page.navigate`, `Runtime.enable`,
+  `Network.*` and the rest are explicit `-32601`. `puppeteer-core 24.15.0`
+  on Node.js v26.7.0, through `connect`, `targets`, `createCDPSession`,
+  `session.send`, `detach` and `disconnect` only, passes the court 58 of 58
+  under the default allocator and the arena: it discovers exactly the native
+  targets, reads the frame tree, clicks the in-court link, and stdio verifies
+  revision +1, generation 2 and a new realm while the CDP frame id stays;
+  sessions never see another target's frames; a target closed over stdio
+  turns the session into a typed failure; adapters and owners are zero after
+  detach, disconnect and close. Two post-freeze revisions (events before
+  responses; adapter counts equal the client's sessions) are recorded in the
+  matrix. `target.page()`, Playwright and any other engine or client remain
+  outside the claim, so D4 stays open; G1, G3, P6 and G6 stay open.
 - [~] The first unfair short-fetch/persistent-server comparison remains
   rejected. Its replacement gives Lightpanda `0.4.0` and installed Google
   Chrome `152.0.7977.65` the same fresh-profile CDP W1 target, semantic-ready
@@ -1027,10 +1050,11 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
    and returned by an opt-in arena per realm without the zone's live cost on
    one platform, and holds through a 128-cycle soak under frozen criteria.
    Next: a second platform behind the arena's region boundary and interior
-   (not only tail) trimming; the D4 frame/realm rules now hold on the
-   synthetic (28/28) and native (62/62) hosts, so the next D4 step is a
-   qualified `Page.getFrameTree` on an engine host observed by a named
-   external client, then bounded engine-backed profile work. Rerun Servo only when a driver-free rendering
+   (not only tail) trimming; the D4 frame/realm rules hold on the synthetic
+   (28/28) and native (62/62) hosts and `puppeteer-core 24.15.0` observes the
+   native frame tree over a bounded loopback edge (58/58), so the next D4
+   steps are a second named client and page-level APIs only if their events
+   can be projected honestly; then bounded engine-backed profile work. Rerun Servo only when a driver-free rendering
    context exists. G1 closes only when one route is both materially below the
    baselines and low-slope on the shared court.
 8. [~] Treat the native bounded route as the convergence path. After each

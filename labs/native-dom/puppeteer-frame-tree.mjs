@@ -35,9 +35,9 @@ async function send(sessionName, method, params) {
   try {
     return { ok: true, result: await withTimeout(session.send(method, params || {}), 10000) };
   } catch (error) {
+    // puppeteer-core's ProtocolError carries the CDP error code as `code`.
     const message = String(error.message || error);
-    const code = /^Protocol error \([^)]*\): (-?\d+)?/.exec(message);
-    return { ok: false, error: { message: message.slice(0, 300), protocol_code: code && code[1] ? Number(code[1]) : null } };
+    return { ok: false, error: { message: message.slice(0, 300), protocol_code: typeof error.code === "number" ? error.code : null } };
   }
 }
 

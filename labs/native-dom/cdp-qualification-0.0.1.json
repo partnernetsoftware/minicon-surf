@@ -5,7 +5,11 @@
   "authority": "control 0.0.1 over stdio is the only authority; the CDP edge translates each qualified method into a native operation executed by the host's main loop against the same targets, frames and revisions; the edge holds target names and adapter-scoped ids only, never a target, realm or profile",
   "transport": {
     "listen": "127.0.0.1 only; --cdp-port PORT (0 = ephemeral) with --ready-file PATH; non-loopback peers are dropped",
-    "discovery": ["GET /json/version", "GET /json", "GET /json/list"],
+    "discovery": [
+      "GET /json/version",
+      "GET /json",
+      "GET /json/list"
+    ],
     "websocket": "GET /devtools/browser/native-dom-control; RFC 6455 accept; client frames must be masked; no fragmentation; text, ping and close opcodes only",
     "bounds": {
       "http_header_bytes": 16384,
@@ -27,7 +31,7 @@
       "Browser.getVersion": "product and protocol strings; no browser identity beyond this host",
       "Target.getBrowserContexts": "empty list",
       "Target.setDiscoverTargets": "discover=true replays live native targets as Target.targetCreated events after the response",
-      "Target.setAutoAttach": "browser-level autoAttach=true replays live native targets as flattened Target.attachedToTarget sessions (waitingForDebugger=false); session-level calls are acknowledged only",
+      "Target.setAutoAttach": "browser-level autoAttach=true replays live native targets as flattened Target.attachedToTarget sessions announced before the response (waitingForDebugger=false), each an adapter record; session-level calls are acknowledged only",
       "Target.getTargets": "live native targets as type page",
       "Target.attachToTarget": "flatten=true required; registers an adapter; -32000 when the target does not exist",
       "Target.detachFromTarget": "drops the session and its adapter record",
@@ -38,10 +42,21 @@
       "Runtime.callFunctionOn": "functionDeclaration function(){this.click();} only; a click on a link is the native same-frame navigation; a revision mismatch is -32000"
     },
     "explicit_losses_minus_32601": [
-      "Page.enable", "Page.navigate", "Page.setLifecycleEventsEnabled", "Page.reload",
-      "Runtime.enable", "Runtime.evaluate", "Runtime.runIfWaitingForDebugger",
-      "Network.enable", "Network.setCacheDisabled", "Fetch.disable", "Fetch.enable",
-      "Performance.enable", "Log.enable", "Emulation.*", "Input.*"
+      "Page.enable",
+      "Page.navigate",
+      "Page.setLifecycleEventsEnabled",
+      "Page.reload",
+      "Runtime.enable",
+      "Runtime.evaluate",
+      "Runtime.runIfWaitingForDebugger",
+      "Network.enable",
+      "Network.setCacheDisabled",
+      "Fetch.disable",
+      "Fetch.enable",
+      "Performance.enable",
+      "Log.enable",
+      "Emulation.*",
+      "Input.*"
     ],
     "why": "acknowledging Page.enable, Runtime.enable or Network.enable without their events would emulate support; the native host has no execution-context, lifecycle or network events to project"
   },
@@ -84,5 +99,17 @@
     "no new control 0.0.1 operation",
     "no Web API, child frame or Runtime realm projection",
     "the network policy and budgets are those of target.open and link navigation"
+  ],
+  "revisions_after_freeze": [
+    {
+      "what": "Target.targetCreated (after setDiscoverTargets) and Target.attachedToTarget (after setAutoAttach and attachToTarget) are written before the command's response; Target.detachedFromTarget after detachFromTarget",
+      "why": "puppeteer-core builds its target list and its CDPSession objects from events received during the command; events after the response left browser.targets() empty and createCDPSession failing",
+      "effect": "none on the qualified method set; the frozen text said 'after the response' for targetCreated"
+    },
+    {
+      "what": "adapter counts equal the sessions the client holds: the auto-attach replay registers one adapter per live target and every createCDPSession adds one more",
+      "why": "an auto-attached target is what puppeteer-core exposes as available; the court therefore expects 2 adapters after connect with two targets, 3 after createCDPSession on A, 4 with both explicit sessions, 2 after A closes over stdio, 1 after the explicit B session detaches, 0 after disconnect",
+      "effect": "court expectations state these counts explicitly; a first draft that acknowledged setAutoAttach without replay was withdrawn because it left the client without any available target"
+    }
   ]
 }

@@ -688,6 +688,93 @@ the build.
 Verdict: `keep`. D4 stays open until a named external client observes these
 frames through CDP; G1, G3, P6 and G6 stay open.
 
+### Qualified CDP frame tree with a named client (D4)
+
+Hypothesis: the native route can expose the same live target through a
+bounded loopback CDP edge without a second copy of state or a second
+authority, project frame identity as adapter-scoped `Page.FrameId`s that are
+one-to-one with the native frame while both live and survive a same-frame
+navigation, and be driven by a pinned external client whose exact claim is
+recorded, with every unsupported method an explicit loss.
+
+Scope: `src/cdp.rs` (loopback `--cdp-port PORT --ready-file PATH`, header
+16 KiB and message 64 KiB bounds, masked frames only, one connection at a
+time, 30 s read timeout) translates each qualified method into a control
+0.0.1 operation sent over a channel to the host's main loop, which now
+multiplexes stdio lines and edge requests at operation boundaries; the edge
+keeps target names, adapter ids and per-session node tables only. Every
+session is an adapter record in the host (`adapter.attach`/`detach`/
+`inspect` exist only on the bridge, never over stdio), `memory.report`
+counts `owners.adapters`, and `target.close`/`session.close` detach the
+adapters of the closed target and report `adapters_detached`; a command on
+a session whose target closed is `-32000 target closed; adapter detached`.
+The qualification matrix
+([`cdp-qualification-0.0.1.json`](cdp-qualification-0.0.1.json)) was
+committed before the edge: qualified methods are `Browser.getVersion`,
+`Target.getBrowserContexts/setDiscoverTargets/setAutoAttach/getTargets/attachToTarget/detachFromTarget`,
+`Page.getFrameTree`, `DOM.getDocument/querySelector/resolveNode` and
+`Runtime.callFunctionOn` (click only); `Page.enable`, `Page.navigate`,
+`Runtime.enable`, `Network.*`, `Fetch.*`, `Performance.enable`, `Log.enable`
+and the rest are explicit `-32601`, and no `Runtime.ExecutionContextId` is
+ever emitted. Two revisions after the freeze are recorded in the matrix:
+events are written before their command's response (`targetCreated`,
+`attachedToTarget`) because the client builds its target list and sessions
+from them, and adapter counts equal the sessions the client holds (one per
+auto-attached target plus one per explicit `createCDPSession`). The named
+client is `puppeteer-core 24.15.0` on Node.js v26.7.0 (integrity in the
+matrix), used only through `puppeteer.connect`, `browser.targets`/
+`waitForTarget`, `target.createCDPSession`, `session.send`, `session.detach`
+and `browser.disconnect`; `target.page()` and every puppeteer Page API are
+outside the claim because their initialization needs the `-32601` methods.
+No Chromium, Electron or Playwright statement follows from any of this.
+
+Reproduction (the client package lives under the ignored `target/labs/d4`):
+
+```sh
+python3 labs/native-dom/cdp-frame-tree-court.py \
+  --binary labs/native-dom/target/release/native-dom-control \
+  --receipt labs/native-dom/evidence/native-dom-control-0.0.2-cdp-frame-tree.json
+```
+
+Evidence (`native-dom-control-0.0.2-cdp-frame-tree` receipt, 58 of 58, the
+same 29 checks under the default allocator and the opt-in arena; the court
+drives stdio itself with contract-validated requests and the client through
+`puppeteer-frame-tree.mjs`): the client is the pinned version; `connect`
+succeeds; `waitForTarget` finds the exact native target id and `targets()`
+lists exactly the two native targets; `createCDPSession` attaches and the
+host holds three adapters (two auto-attached, one explicit) with no new
+owner; `Page.getFrameTree` returns one main frame with no children whose id
+`cdp_frame_1` differs from the native `frame_1`; `DOM.getDocument` reports
+the native node count; `querySelector('a')`, `resolveNode` and
+`callFunctionOn` click the link and stdio sees the same-frame navigation
+(revision +1, generation 2, new realm, same frame), the pre-navigation
+native reference is `stale_revision`, the retired realm `not_found`, the
+pre-navigation CDP object fails typed; the CDP frame id survives the
+navigation; the re-fetched document has the new node count and a click on
+its button is accepted without navigating; a session on B sees a different
+adapter id and never A's; four adapters live with both explicit sessions;
+`Page.navigate` and `Runtime.enable` are `-32601`; `target.close` over stdio
+detaches both of A's adapters and the session's next command fails typed;
+detaching B's explicit session and `browser.disconnect` bring adapters to
+zero while the host keeps serving; after the closes every owner is zero.
+Footprint (bytes) with the edge listening: empty 1,425,720 (default) and
+1,442,104 (arena) against 1,343,800 without the edge, so the listener and
+the stdin reader thread cost about 65–98 KB; two targets with sessions
+attached 3,162,424 / 2,474,344; after the closes 3,457,336 / 2,130,232. A
+client fact recorded by the court: this puppeteer-core version does not
+populate `ProtocolError.code`, so typed failures are matched on the edge's
+message text (`Method not found`, `target closed; adapter detached`).
+
+Gaps: one client and version; loopback only, one connection at a time;
+one main frame, no realm projection, no navigation events; `target.page()`
+unsupported; a connection that dies mid-command releases its adapters only
+when the read fails or times out (30 s).
+
+Verdict: `keep`. D4 moves to "one engine host observed by a named external
+client through `Page.getFrameTree`" on this route only; it stays open for
+Playwright, for page-level APIs and for engine hosts other than this one.
+G1, G3, P6 and G6 stay open.
+
 ### Receipt provenance
 
 Each receipt records the SHA-256 of the host binary that produced it. The
@@ -699,7 +786,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-network-court` | the bounded-network slice (before the allocator experiments) | unchanged since; the arena knob did not exist |
 | `native-dom-control-0.0.2-retention-attribution-arena` | the arena commit (`4c4b519`, measured in `468b8a9`) | the later tail-trim reporting fix (`12de192`) changes no value in this receipt: no realm is alive at its trim stage, so `arena_released_bytes` was already zero |
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
-| `native-dom-control-0.0.2-frame-realm` | the host with frames, realms and link navigation | the journeys were rerun on this build (27/27, 35/35 under both allocators) |
+| `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree` | the host with the loopback CDP edge (frames, realms, link navigation, adapters) | the journeys were rerun on this build (27/27, 35/35 under both allocators) and both receipts carry its hash |
 
 ## Findings against product contracts
 

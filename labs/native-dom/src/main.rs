@@ -23,6 +23,7 @@ use serde_json::{Map, Value, json};
 use url::Url;
 
 mod arena;
+mod cdp;
 mod net;
 
 const PROTOCOL: &str = "minicon-surf.control";
@@ -1043,9 +1044,108 @@ struct Host {
     next_realm: u64,
     realms_retired_total: u64,
     navigations_total: u64,
+    /// Adapters (today: CDP sessions) registered against live targets. A
+    /// record holds names only; the target owns its state and the record is
+    /// removed when the target closes.
+    adapters: BTreeMap<String, AdapterRecord>,
+    next_adapter: u64,
+    adapters_detached_total: u64,
+    next_bridge_request: u64,
+}
+
+const MAX_ADAPTERS: usize = 16;
+
+struct AdapterRecord {
+    target_id: String,
+    kind: String,
 }
 
 impl Host {
+    /// Operations only the in-process CDP edge may request: adapter
+    /// bookkeeping is not part of control 0.0.1 and never reaches stdio,
+    /// whose parser refuses unknown operation names.
+    fn execute_bridge(&mut self, operation: &str, arguments: Value) -> Result<Value, String> {
+        let outcome = match operation {
+            "adapter.attach" => self.adapter_attach(&arguments),
+            "adapter.detach" => self.adapter_detach(&arguments),
+            "adapter.inspect" => self.adapter_inspect(&arguments),
+            _ => {
+                if !OPERATIONS.contains(&operation) {
+                    return Err("invalid_request".into());
+                }
+                self.next_bridge_request += 1;
+                let request = Request {
+                    request_id: format!("req_cdp_{}", self.next_bridge_request),
+                    deadline: Duration::from_millis(5000),
+                    operation: operation.to_owned(),
+                    arguments,
+                };
+                self.execute(&request)
+            }
+        };
+        outcome.map_err(|error| error.code.to_owned())
+    }
+
+    fn adapter_attach(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["target", "kind"])?;
+        let target = typed_field(object, "target", "target")?;
+        if !self.targets.contains_key(target) {
+            return Err(not_found("target", target));
+        }
+        if self.adapters.len() >= MAX_ADAPTERS {
+            return Err(ControlError::new(
+                "resource_limit",
+                "adapter capacity reached",
+                true,
+            ));
+        }
+        self.next_adapter += 1;
+        let id = format!("adapter_{}", self.next_adapter);
+        self.adapters.insert(
+            id.clone(),
+            AdapterRecord {
+                target_id: target.to_owned(),
+                kind: string_field(object, "kind")?.to_owned(),
+            },
+        );
+        Ok(json!({"kind":"adapter","adapter":id,"target":target}))
+    }
+
+    fn adapter_detach(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["adapter"])?;
+        let id = string_field(object, "adapter")?;
+        self.adapters
+            .remove(id)
+            .map(|_| json!({"kind":"adapter_detached","adapter":id}))
+            .ok_or_else(|| ControlError::new("not_found", "adapter does not exist", false))
+    }
+
+    /// Alive only while its target is: the target's close removes the record.
+    fn adapter_inspect(&self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["adapter"])?;
+        let id = string_field(object, "adapter")?;
+        let record = self
+            .adapters
+            .get(id)
+            .ok_or_else(|| ControlError::new("not_found", "adapter does not exist", false))?;
+        if !self.targets.contains_key(&record.target_id) {
+            return Err(not_found("target", &record.target_id));
+        }
+        Ok(
+            json!({"kind":"adapter","adapter":id,"target":record.target_id,"adapter_kind":record.kind}),
+        )
+    }
+
+    /// Detach every adapter of a target that is going away; returns how many.
+    fn detach_adapters_of(&mut self, target_id: &str) -> usize {
+        let before = self.adapters.len();
+        self.adapters
+            .retain(|_, record| record.target_id != target_id);
+        let detached = before - self.adapters.len();
+        self.adapters_detached_total += detached as u64;
+        detached
+    }
+
     fn target_mut(&mut self, id: &str) -> Result<&mut Target, ControlError> {
         self.targets
             .get_mut(id)
@@ -1152,7 +1252,10 @@ impl Host {
                 self.targets
                     .remove(id)
                     .ok_or_else(|| not_found("target", id))?;
-                Ok(json!({"kind":"target_closed","target":id}))
+                let detached = self.detach_adapters_of(id);
+                Ok(
+                    json!({"kind":"target_closed","target":id,"teardown":{"adapters_detached":detached,"order":["adapters","target"]}}),
+                )
             }
             "target.snapshot" => self.target_snapshot(a, deadline),
             "target.act" => self.target_act(a, deadline),
@@ -1291,9 +1394,14 @@ impl Host {
             }
         };
         let closed = self.targets.len();
-        self.targets.clear();
+        let ids: Vec<String> = self.targets.keys().cloned().collect();
+        let mut detached = 0;
+        for id in ids {
+            self.targets.remove(&id);
+            detached += self.detach_adapters_of(&id);
+        }
         Ok(
-            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed}),
+            json!({"kind":"session_closed","session":session.id,"profile":session.profile_id,"closed_targets":closed,"teardown":{"adapters_detached":detached,"order":["adapters","targets"]}}),
         )
     }
 
@@ -1887,6 +1995,7 @@ impl Host {
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
                 "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
+                "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()}},
             },
@@ -1965,17 +2074,26 @@ fn main() -> Result<(), Box<dyn Error>> {
         usage();
     }
     let mut policy = net::Policy::default();
+    let mut cdp_port = None;
+    let mut ready_file = None;
     for pair in arguments[6..].chunks_exact(2) {
-        if pair[0] != "--allow-origin" {
-            usage();
-        }
-        match net::AllowedOrigin::parse(&pair[1]) {
-            Ok(origin) => policy.allowed_origins.push(origin),
-            Err(message) => {
-                eprintln!("--allow-origin: {message}");
-                std::process::exit(64);
+        match pair[0].as_str() {
+            "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
+                Ok(origin) => policy.allowed_origins.push(origin),
+                Err(message) => {
+                    eprintln!("--allow-origin: {message}");
+                    std::process::exit(64);
+                }
+            },
+            "--cdp-port" if cdp_port.is_none() => {
+                cdp_port = Some(pair[1].parse::<u16>().unwrap_or_else(|_| usage()));
             }
+            "--ready-file" if ready_file.is_none() => ready_file = Some(PathBuf::from(&pair[1])),
+            _ => usage(),
         }
+    }
+    if cdp_port.is_some() != ready_file.is_some() {
+        usage();
     }
     let realm_zone = std::env::var("MINICON_SURF_NATIVE_REALM_ZONE").is_ok_and(|v| v == "1");
     let realm_arena = std::env::var("MINICON_SURF_NATIVE_REALM_ARENA").is_ok_and(|v| v == "1");
@@ -2004,13 +2122,61 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_realm: 0,
         realms_retired_total: 0,
         navigations_total: 0,
+        adapters: BTreeMap::new(),
+        next_adapter: 0,
+        adapters_detached_total: 0,
+        next_bridge_request: 0,
     };
-    let stdin = io::stdin();
-    let mut reader = stdin.lock();
+    // The optional loopback CDP edge reaches this same host through a
+    // channel; its requests are executed here, at operation boundaries,
+    // against the same targets the stdio door uses.
+    let (bridge_sender, bridge_receiver) = std::sync::mpsc::channel::<cdp::BridgeRequest>();
+    let _cdp_server = if let (Some(port), Some(ready_file)) = (cdp_port, ready_file) {
+        let server = cdp::Server::start(port, bridge_sender)?;
+        let receipt = json!({
+            "cdp_port":server.port(),
+            "browser_websocket_url":server.browser_websocket_url(),
+        });
+        std::fs::write(ready_file, serde_json::to_vec(&receipt)?)?;
+        Some(server)
+    } else {
+        drop(bridge_sender);
+        None
+    };
+    let (line_sender, line_receiver) = std::sync::mpsc::channel::<Line>();
+    std::thread::spawn(move || {
+        let stdin = io::stdin();
+        let mut reader = stdin.lock();
+        loop {
+            match read_bounded_line(&mut reader) {
+                Ok(Line::Eof) | Err(_) => {
+                    let _ = line_sender.send(Line::Eof);
+                    return;
+                }
+                Ok(line) => {
+                    if line_sender.send(line).is_err() {
+                        return;
+                    }
+                }
+            }
+        }
+    });
     let stdout = io::stdout();
     let mut out = stdout.lock();
     loop {
-        let response = match read_bounded_line(&mut reader)? {
+        while let Ok(bridge) = bridge_receiver.try_recv() {
+            let outcome = host.execute_bridge(&bridge.operation, bridge.arguments);
+            let _ = bridge.reply.send(outcome);
+        }
+        let line = match line_receiver.try_recv() {
+            Ok(line) => line,
+            Err(std::sync::mpsc::TryRecvError::Empty) => {
+                std::thread::sleep(Duration::from_millis(1));
+                continue;
+            }
+            Err(std::sync::mpsc::TryRecvError::Disconnected) => break,
+        };
+        let response = match line {
             Line::Eof => break,
             Line::Oversized => envelope("req_invalid", Err(invalid("request exceeds byte limit"))),
             Line::Bytes(bytes) if bytes.is_empty() => {
@@ -2028,6 +2194,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         out.write_all(b"\n")?;
         out.flush()?;
     }
+    // Stop answering the edge before the server thread is joined, so a
+    // connection still cleaning up gets an immediate error instead of
+    // waiting on a loop that no longer runs.
+    drop(bridge_receiver);
     Ok(())
 }
 

@@ -1,0 +1,740 @@
+{
+  "checks": [
+    {
+      "check": "[system] the named client is the pinned puppeteer-core",
+      "detail": {
+        "client": "puppeteer-core",
+        "node": "v26.7.0",
+        "version": "24.15.0"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] puppeteer.connect succeeds over the loopback WebSocket endpoint",
+      "detail": {
+        "connected": true,
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] waitForTarget finds the exact native target id",
+      "detail": {
+        "id": "target_1",
+        "ok": true,
+        "type": "page",
+        "url": "minicon-surf://court/semantic-nav.html"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] browser.targets lists exactly the native targets",
+      "detail": {
+        "ok": true,
+        "targets": [
+          {
+            "id": "target_1",
+            "type": "page",
+            "url": "minicon-surf://court/semantic-nav.html"
+          },
+          {
+            "id": "target_2",
+            "type": "page",
+            "url": "minicon-surf://court/semantic-static.html"
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] createCDPSession attaches a flattened session to A",
+      "detail": {
+        "attached": true,
+        "ok": true,
+        "session_id": "cdp_session_3"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the host holds one adapter per auto-attached target plus the explicit session, and no new owner",
+      "detail": {
+        "detached_total": 0,
+        "object_limit": 16,
+        "objects": 3
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] Page.getFrameTree returns one main frame with no children",
+      "detail": {
+        "ok": true,
+        "result": {
+          "frameTree": {
+            "childFrames": [],
+            "frame": {
+              "id": "cdp_frame_1",
+              "loaderId": "",
+              "mimeType": "text/html",
+              "securityOrigin": "",
+              "url": "minicon-surf://court/semantic-nav.html"
+            }
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the CDP frame id is adapter-scoped and differs from the native frame id",
+      "detail": {
+        "cdp": "cdp_frame_1",
+        "native": "frame_1"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] DOM.getDocument reports the native semantic node count",
+      "detail": {
+        "backendNodeId": 1,
+        "childNodeCount": 5,
+        "localName": "",
+        "nodeId": 1,
+        "nodeName": "#document",
+        "nodeType": 9,
+        "nodeValue": ""
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] querySelector('a') and resolveNode yield a session-scoped object",
+      "detail": {
+        "link": {
+          "ok": true,
+          "result": {
+            "nodeId": 2
+          }
+        },
+        "resolved": {
+          "ok": true,
+          "result": {
+            "object": {
+              "className": "HTMLElement",
+              "description": "element",
+              "objectId": "object_2",
+              "subtype": "node",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] Runtime.callFunctionOn clicks the link",
+      "detail": {
+        "ok": true,
+        "result": {
+          "result": {
+            "type": "undefined"
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] stdio sees the same-frame navigation: revision +1, generation 2, new realm, same frame",
+      "detail": [
+        {
+          "frame": "frame_1",
+          "generation": 2,
+          "parent": null,
+          "realm": "realm_3"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "check": "[system] the pre-navigation native reference is stale_revision",
+      "passed": true
+    },
+    {
+      "check": "[system] the retired realm is not_found with realm scope",
+      "passed": true
+    },
+    {
+      "check": "[system] the pre-navigation CDP object fails typed (the native act is stale_revision)",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Runtime.callFunctionOn): native control operation failed",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the CDP frame id survives the navigation",
+      "detail": {
+        "after": "cdp_frame_1",
+        "before": "cdp_frame_1"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] after re-fetching the document CDP sees the new node count",
+      "detail": {
+        "backendNodeId": 1,
+        "childNodeCount": 5,
+        "localName": "",
+        "nodeId": 1,
+        "nodeName": "#document",
+        "nodeType": 9,
+        "nodeValue": ""
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the client continues on the new document: the button click is accepted and nothing navigates",
+      "detail": {
+        "click": {
+          "ok": true,
+          "result": {
+            "result": {
+              "type": "undefined"
+            }
+          }
+        },
+        "revision": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] a session on B sees B's frame with a different adapter id and never A's",
+      "detail": {
+        "b": "cdp_frame_2"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] four adapters are registered while both explicit sessions and both auto-attached sessions live",
+      "passed": true
+    },
+    {
+      "check": "[system] Page.navigate is an explicit -32601",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.navigate): Method not found",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] Runtime.enable is an explicit -32601 (no realm projection)",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Runtime.enable): Method not found",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] target.close over stdio detaches both of A's adapters (auto-attached and explicit)",
+      "detail": {
+        "kind": "target_closed",
+        "target": "target_1",
+        "teardown": {
+          "adapters_detached": 2,
+          "order": [
+            "adapters",
+            "target"
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the closed target's CDP session fails typed",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.getFrameTree): target closed; adapter detached",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] owners drop to one target and B's two adapters",
+      "passed": true
+    },
+    {
+      "check": "[system] detaching the explicit B session releases its adapter",
+      "detail": {
+        "detached": true,
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] browser.disconnect releases the auto-attached adapter and leaves the host serving",
+      "passed": true
+    },
+    {
+      "check": "[system] after the closes every owner below the session is zero",
+      "passed": true
+    },
+    {
+      "check": "[system] host exits cleanly",
+      "passed": true
+    },
+    {
+      "check": "[arena] the named client is the pinned puppeteer-core",
+      "detail": {
+        "client": "puppeteer-core",
+        "node": "v26.7.0",
+        "version": "24.15.0"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] puppeteer.connect succeeds over the loopback WebSocket endpoint",
+      "detail": {
+        "connected": true,
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] waitForTarget finds the exact native target id",
+      "detail": {
+        "id": "target_1",
+        "ok": true,
+        "type": "page",
+        "url": "minicon-surf://court/semantic-nav.html"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] browser.targets lists exactly the native targets",
+      "detail": {
+        "ok": true,
+        "targets": [
+          {
+            "id": "target_1",
+            "type": "page",
+            "url": "minicon-surf://court/semantic-nav.html"
+          },
+          {
+            "id": "target_2",
+            "type": "page",
+            "url": "minicon-surf://court/semantic-static.html"
+          }
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] createCDPSession attaches a flattened session to A",
+      "detail": {
+        "attached": true,
+        "ok": true,
+        "session_id": "cdp_session_3"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the host holds one adapter per auto-attached target plus the explicit session, and no new owner",
+      "detail": {
+        "detached_total": 0,
+        "object_limit": 16,
+        "objects": 3
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] Page.getFrameTree returns one main frame with no children",
+      "detail": {
+        "ok": true,
+        "result": {
+          "frameTree": {
+            "childFrames": [],
+            "frame": {
+              "id": "cdp_frame_1",
+              "loaderId": "",
+              "mimeType": "text/html",
+              "securityOrigin": "",
+              "url": "minicon-surf://court/semantic-nav.html"
+            }
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the CDP frame id is adapter-scoped and differs from the native frame id",
+      "detail": {
+        "cdp": "cdp_frame_1",
+        "native": "frame_1"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] DOM.getDocument reports the native semantic node count",
+      "detail": {
+        "backendNodeId": 1,
+        "childNodeCount": 5,
+        "localName": "",
+        "nodeId": 1,
+        "nodeName": "#document",
+        "nodeType": 9,
+        "nodeValue": ""
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] querySelector('a') and resolveNode yield a session-scoped object",
+      "detail": {
+        "link": {
+          "ok": true,
+          "result": {
+            "nodeId": 2
+          }
+        },
+        "resolved": {
+          "ok": true,
+          "result": {
+            "object": {
+              "className": "HTMLElement",
+              "description": "element",
+              "objectId": "object_2",
+              "subtype": "node",
+              "type": "object"
+            }
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] Runtime.callFunctionOn clicks the link",
+      "detail": {
+        "ok": true,
+        "result": {
+          "result": {
+            "type": "undefined"
+          }
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] stdio sees the same-frame navigation: revision +1, generation 2, new realm, same frame",
+      "detail": [
+        {
+          "frame": "frame_1",
+          "generation": 2,
+          "parent": null,
+          "realm": "realm_3"
+        }
+      ],
+      "passed": true
+    },
+    {
+      "check": "[arena] the pre-navigation native reference is stale_revision",
+      "passed": true
+    },
+    {
+      "check": "[arena] the retired realm is not_found with realm scope",
+      "passed": true
+    },
+    {
+      "check": "[arena] the pre-navigation CDP object fails typed (the native act is stale_revision)",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Runtime.callFunctionOn): native control operation failed",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the CDP frame id survives the navigation",
+      "detail": {
+        "after": "cdp_frame_1",
+        "before": "cdp_frame_1"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] after re-fetching the document CDP sees the new node count",
+      "detail": {
+        "backendNodeId": 1,
+        "childNodeCount": 5,
+        "localName": "",
+        "nodeId": 1,
+        "nodeName": "#document",
+        "nodeType": 9,
+        "nodeValue": ""
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the client continues on the new document: the button click is accepted and nothing navigates",
+      "detail": {
+        "click": {
+          "ok": true,
+          "result": {
+            "result": {
+              "type": "undefined"
+            }
+          }
+        },
+        "revision": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] a session on B sees B's frame with a different adapter id and never A's",
+      "detail": {
+        "b": "cdp_frame_2"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] four adapters are registered while both explicit sessions and both auto-attached sessions live",
+      "passed": true
+    },
+    {
+      "check": "[arena] Page.navigate is an explicit -32601",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.navigate): Method not found",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] Runtime.enable is an explicit -32601 (no realm projection)",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Runtime.enable): Method not found",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] target.close over stdio detaches both of A's adapters (auto-attached and explicit)",
+      "detail": {
+        "kind": "target_closed",
+        "target": "target_1",
+        "teardown": {
+          "adapters_detached": 2,
+          "order": [
+            "adapters",
+            "target"
+          ]
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the closed target's CDP session fails typed",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.getFrameTree): target closed; adapter detached",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] owners drop to one target and B's two adapters",
+      "passed": true
+    },
+    {
+      "check": "[arena] detaching the explicit B session releases its adapter",
+      "detail": {
+        "detached": true,
+        "ok": true
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] browser.disconnect releases the auto-attached adapter and leaves the host serving",
+      "passed": true
+    },
+    {
+      "check": "[arena] after the closes every owner below the session is zero",
+      "passed": true
+    },
+    {
+      "check": "[arena] host exits cleanly",
+      "passed": true
+    }
+  ],
+  "checks_passed": 58,
+  "checks_total": 58,
+  "client": {
+    "client": "puppeteer-core",
+    "node": "v26.7.0",
+    "version": "24.15.0"
+  },
+  "footprint_bytes": {
+    "arena": {
+      "empty": 1442104,
+      "live_two_targets_one_session": 2474344,
+      "post_close": 2130232
+    },
+    "system": {
+      "empty": 1425720,
+      "live_two_targets_one_session": 3162424,
+      "post_close": 3457336
+    }
+  },
+  "frame_id_mapping": {
+    "arena": {
+      "cdp_frame": "cdp_frame_1",
+      "native_frame": "frame_1"
+    },
+    "system": {
+      "cdp_frame": "cdp_frame_1",
+      "native_frame": "frame_1"
+    }
+  },
+  "host_sha256": "d5899490c29482254ec69abff056a86bc6ce7f7027f928284034596bbb1d8bb2",
+  "limitations": [
+    "one named client and version; target.page() and every puppeteer Page API are outside the claim",
+    "loopback only; one connection at a time",
+    "Page.FrameId is adapter-scoped per connection; Runtime.ExecutionContextId is never emitted",
+    "no child frames, no Web API growth, no realm projection"
+  ],
+  "passed": true,
+  "qualification": {
+    "adapter": {
+      "execution_contexts": "Runtime.ExecutionContextId is never emitted; realms are not projected",
+      "frame_ids": "Page.FrameId is adapter-scoped per connection (cdp_frame_N), one-to-one with a native frame id while both live, never equal to the native id, kept across same-frame navigation because the native frame id is kept",
+      "handle": "a CDP session holds the native target id and an adapter id; every command re-resolves the target through the host, so a closed target answers -32000 'target closed; adapter detached' and the session is dropped",
+      "registration": "Target.attachToTarget registers an adapter record {kind: cdp, target} in the host; owners.adapters counts them; target.close and session.close detach every adapter of the closed target and report adapters_detached"
+    },
+    "authority": "control 0.0.1 over stdio is the only authority; the CDP edge translates each qualified method into a native operation executed by the host's main loop against the same targets, frames and revisions; the edge holds target names and adapter-scoped ids only, never a target, realm or profile",
+    "court": {
+      "pass_rule": "every step is a typed check; any failure is recorded and the receipt's passed flag is false; no host or server restart is used to recover",
+      "script": "labs/native-dom/cdp-frame-tree-court.py drives stdio itself (requests validated by protocol/check_contract.py) and drives puppeteer-core through labs/native-dom/puppeteer-frame-tree.mjs over a command channel",
+      "steps": [
+        "stdio opens target A (semantic-nav.html) and target B (semantic-static.html)",
+        "puppeteer connects, discovers exactly {A, B}, attaches a session to A",
+        "Page.getFrameTree on A: one frame, no children, adapter-scoped id that differs from the native frame id; the court records the mapping",
+        "puppeteer clicks the in-court link on A through DOM.querySelector('a') / DOM.resolveNode / Runtime.callFunctionOn",
+        "stdio verifies on A: revision +1, generation 2, new realm, retired realm not_found, old node reference stale_revision",
+        "puppeteer re-fetches the document, sees the new node count, Page.getFrameTree keeps the same frame id; it clicks the new document's button and stdio sees revision +1 again",
+        "puppeteer's session on A cannot see B: Page.getFrameTree on a session attached to B yields different ids; a session id from another connection is unknown",
+        "stdio closes A: the puppeteer session's next command is -32000 'target closed; adapter detached'; owners.adapters drops by one",
+        "puppeteer detaches from B and disconnects; owners.adapters is zero; stdio closes B and the session",
+        "memory owners and footprint are sampled at empty, live (A and B open with sessions attached), and post-close, under the default allocator and the opt-in arena"
+      ]
+    },
+    "host": "labs/native-dom native-dom-control",
+    "methods": {
+      "explicit_losses_minus_32601": [
+        "Page.enable",
+        "Page.navigate",
+        "Page.setLifecycleEventsEnabled",
+        "Page.reload",
+        "Runtime.enable",
+        "Runtime.evaluate",
+        "Runtime.runIfWaitingForDebugger",
+        "Network.enable",
+        "Network.setCacheDisabled",
+        "Fetch.disable",
+        "Fetch.enable",
+        "Performance.enable",
+        "Log.enable",
+        "Emulation.*",
+        "Input.*"
+      ],
+      "qualified": {
+        "Browser.getVersion": "product and protocol strings; no browser identity beyond this host",
+        "DOM.getDocument": "root document node; childNodeCount is the semantic node count; refreshes the session's node table",
+        "DOM.querySelector": "document-rooted only; selectors button, a and #id; returns a session-scoped nodeId",
+        "DOM.resolveNode": "session-scoped objectId over the node reference (target, revision, node)",
+        "Page.getFrameTree": "the native target.inspect frames[] projected through adapter-scoped ids; the native host has one main frame, so childFrames is empty",
+        "Runtime.callFunctionOn": "functionDeclaration function(){this.click();} only; a click on a link is the native same-frame navigation; a revision mismatch is -32000",
+        "Target.attachToTarget": "flatten=true required; registers an adapter; -32000 when the target does not exist",
+        "Target.detachFromTarget": "drops the session and its adapter record",
+        "Target.getBrowserContexts": "empty list",
+        "Target.getTargets": "live native targets as type page",
+        "Target.setAutoAttach": "browser-level autoAttach=true replays live native targets as flattened Target.attachedToTarget sessions announced before the response (waitingForDebugger=false), each an adapter record; session-level calls are acknowledged only",
+        "Target.setDiscoverTargets": "discover=true replays live native targets as Target.targetCreated events after the response"
+      },
+      "why": "acknowledging Page.enable, Runtime.enable or Network.enable without their events would emulate support; the native host has no execution-context, lifecycle or network events to project"
+    },
+    "named_client": {
+      "claimed": [
+        "puppeteer.connect({browserWSEndpoint}) succeeds",
+        "browser.targets() / waitForTarget lists exactly the native target ids",
+        "target.createCDPSession() attaches a flattened session",
+        "session.send for every qualified method above",
+        "session.detach() and browser.disconnect() release adapters"
+      ],
+      "client": "puppeteer-core",
+      "installed_under": "target/labs/d4 (ignored; fetched from npm)",
+      "integrity": "sha512-2iy0iBeWbNyhgiCGd/wvGrDSo73emNFjSxYOcyAqYiagkYt5q4cPfVXaVDKBsukgc2fIIfLAalBZlaxldxdDYg==",
+      "not_claimed": [
+        "target.page() and any Page API of puppeteer: its initialization needs Network.enable, Page.enable, Runtime.enable and lifecycle events, all explicit -32601 here",
+        "Playwright, Chromium, Electron or any other client or engine",
+        "general CDP compatibility"
+      ],
+      "runtime": "Node.js v26.7.0",
+      "version": "24.15.0"
+    },
+    "revisions_after_freeze": [
+      {
+        "effect": "none on the qualified method set; the frozen text said 'after the response' for targetCreated",
+        "what": "Target.targetCreated (after setDiscoverTargets) and Target.attachedToTarget (after setAutoAttach and attachToTarget) are written before the command's response; Target.detachedFromTarget after detachFromTarget",
+        "why": "puppeteer-core builds its target list and its CDPSession objects from events received during the command; events after the response left browser.targets() empty and createCDPSession failing"
+      },
+      {
+        "effect": "court expectations state these counts explicitly; a first draft that acknowledged setAutoAttach without replay was withdrawn because it left the client without any available target",
+        "what": "adapter counts equal the sessions the client holds: the auto-attach replay registers one adapter per live target and every createCDPSession adds one more",
+        "why": "an auto-attached target is what puppeteer-core exposes as available; the court therefore expects 2 adapters after connect with two targets, 3 after createCDPSession on A, 4 with both explicit sessions, 2 after A closes over stdio, 1 after the explicit B session detaches, 0 after disconnect"
+      }
+    ],
+    "schema": "minicon-surf.native-dom-cdp-qualification/0.0.1",
+    "status": "frozen-before-implementation",
+    "transport": {
+      "bounds": {
+        "cdp_message_bytes": 65536,
+        "connections": "one at a time, served sequentially",
+        "http_header_bytes": 16384,
+        "native_deadline_ms_per_bridged_operation": 5000,
+        "native_reply_timeout_seconds": 30,
+        "read_timeout_seconds": 30
+      },
+      "discovery": [
+        "GET /json/version",
+        "GET /json",
+        "GET /json/list"
+      ],
+      "listen": "127.0.0.1 only; --cdp-port PORT (0 = ephemeral) with --ready-file PATH; non-loopback peers are dropped",
+      "websocket": "GET /devtools/browser/native-dom-control; RFC 6455 accept; client frames must be masked; no fragmentation; text, ping and close opcodes only"
+    },
+    "unchanged": [
+      "no new control 0.0.1 operation",
+      "no Web API, child frame or Runtime realm projection",
+      "the network policy and budgets are those of target.open and link navigation"
+    ]
+  },
+  "schema": "minicon-surf.native-dom-cdp-frame-tree-receipt/0.0.1",
+  "status": "observed",
+  "technology": "native-dom",
+  "technology_version": "0.0.2"
+}

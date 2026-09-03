@@ -26,7 +26,7 @@
       "native": "frame",
       "cdp": "Page.FrameId",
       "mapping": "adapter-scoped",
-      "boundary": "one-to-one with a native frame while both live, adapter-scoped and not stable across adapters; qualified on the synthetic host through Page.getFrameTree (main frame plus one bounded child); Page.frameNavigated and child-frame nesting are not projected; document generation has no CDP equivalent"
+      "boundary": "one-to-one with a native frame while both live, adapter-scoped and not stable across adapters; qualified through Page.getFrameTree on the synthetic host (main frame plus one bounded child) and on the native route (one main frame) where puppeteer-core 24.15.0 observes it over a loopback edge and keeps the same id across a same-frame navigation; Page.frameNavigated and child-frame nesting are not projected; document generation has no CDP equivalent"
     },
     {
       "native": "realm",
