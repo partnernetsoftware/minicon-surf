@@ -1353,11 +1353,16 @@ content):
 
 ```sh
 cargo build --release --locked --offline --manifest-path labs/native-dom-surface/Cargo.toml --features window
-python3 labs/native-dom/surface-court.py \
+# MANUAL, VISUAL: this shows real windows. Only with the owner's permission
+# for this run, once, in the foreground, never from a chain or a script.
+MINICON_SURF_ALLOW_VISIBLE_COURT=1 python3 labs/native-dom/surface-court.py --visual \
   --binary labs/native-dom/target/release/native-dom-control \
   --surface-binary "$PWD/labs/native-dom-surface/target/release/native-dom-surface" \
   --receipt labs/native-dom/evidence/native-dom-control-0.0.2-surface.json
 ```
+
+The recorded receipt is a historical manual measurement (host
+`32343eb5…`); the default reproduction commands of this lab never run it.
 
 Evidence (`native-dom-control-0.0.2-surface` receipt, 106 of 110, the same
 55 checks under the default allocator and the arena, one CDP session held
