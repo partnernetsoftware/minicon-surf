@@ -300,6 +300,37 @@ fn operation_available(operation: &str, version: &str) -> bool {
         || (version == VERSION_NEXT && NAVIGATION_OPERATIONS.contains(&operation))
 }
 
+/// Saturating lifetime diagnostics for one target, kept beside it so they
+/// survive the document swap. They are reported and never gate: what gates is
+/// the per-document budget of `net`, the operation's deadline and the policy.
+#[derive(Debug, Clone, Copy, Default)]
+struct Lifetime {
+    retired_fetches: u64,
+    retired_bytes: u64,
+    navigation_attempts: u64,
+    navigation_commits: u64,
+    navigation_refusals: u64,
+}
+
+impl Lifetime {
+    /// Absorb the budget of a document that is being replaced.
+    fn retire(&mut self, budget: &net::Budget) {
+        self.retired_fetches = self.retired_fetches.saturating_add(budget.fetches as u64);
+        self.retired_bytes = self.retired_bytes.saturating_add(budget.bytes as u64);
+    }
+
+    fn to_json(self, active: &net::Budget) -> Value {
+        json!({
+            "fetches_total": self.retired_fetches.saturating_add(active.fetches as u64),
+            "bytes_total": self.retired_bytes.saturating_add(active.bytes as u64),
+            "navigation_attempts_total": self.navigation_attempts,
+            "navigation_commits_total": self.navigation_commits,
+            "navigation_refusals_total": self.navigation_refusals,
+            "gates": false,
+        })
+    }
+}
+
 /// A target's bounded history: committed URLs and a position, nothing else.
 /// No document, realm, body, form, scroll, script, cookie or storage state is
 /// kept, so going back refetches rather than restoring a page.
@@ -1378,6 +1409,8 @@ struct Host {
     /// One bounded history per target with a URL, kept beside the targets so
     /// it survives the document swap a navigation performs.
     histories: BTreeMap<String, History>,
+    /// Saturating per-target diagnostics, likewise kept across the swap.
+    lifetimes: BTreeMap<String, Lifetime>,
     /// Adapters (today: CDP sessions) registered against live targets. A
     /// record holds names only; the target owns its state and the record is
     /// removed when the target closes.
@@ -2492,6 +2525,7 @@ impl Host {
                 let released = self.release_surfaces_of(id);
                 let closed = self.targets.remove(id).expect("checked above");
                 self.histories.remove(id);
+                self.lifetimes.remove(id);
                 self.retire_target(&closed);
                 Ok(
                     json!({"kind":"target_closed","target":id,"teardown":{"adapters_detached":detached,"surfaces_released":released,"order":["adapters","surfaces","target"]}}),
@@ -2755,6 +2789,7 @@ impl Host {
             released += self.release_surfaces_of(&id);
             if let Some(closed) = self.targets.remove(&id) {
                 self.histories.remove(&id);
+                self.lifetimes.remove(&id);
                 self.retire_target(&closed);
             }
         }
@@ -3163,14 +3198,9 @@ impl Host {
             })?
             .to_json();
         let target = self.targets.get(id).expect("target exists");
-        let url = target
-            .url
-            .as_ref()
-            .map(Url::as_str)
-            .ok_or_else(|| {
-                ControlError::new("internal", "navigated target has no URL", false)
-                    .scoped("target", id)
-            })?;
+        let url = target.url.as_ref().map(Url::as_str).ok_or_else(|| {
+            ControlError::new("internal", "navigated target has no URL", false).scoped("target", id)
+        })?;
         Ok(json!({
             "kind":"navigation","target":id,"frame":target.frame_id,"generation":target.generation,
             "realm":target.realm_id,"revision":revision,"url":url,"history":history,
@@ -3275,7 +3305,9 @@ impl Host {
             .get("delta")
             .and_then(Value::as_i64)
             .filter(|delta| {
-                *delta != 0 && usize::try_from(delta.unsigned_abs()).unwrap_or(usize::MAX) <= MAX_HISTORY_ENTRIES
+                *delta != 0
+                    && usize::try_from(delta.unsigned_abs()).unwrap_or(usize::MAX)
+                        <= MAX_HISTORY_ENTRIES
             })
             .ok_or_else(|| invalid("delta must be a non-zero offset within the history window"))?;
         self.current_url(&id)?;
@@ -3302,6 +3334,10 @@ impl Host {
     /// revision, and only the network budget records the attempt.
     fn navigate(&mut self, id: &str, href: &str, deadline: Instant) -> Result<Value, ControlError> {
         let policy = self.policy.clone();
+        {
+            let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
+            lifetime.navigation_attempts = lifetime.navigation_attempts.saturating_add(1);
+        }
         let prepared = {
             let target = self.target_mut(id)?;
             let current = Self::revision(target, deadline, &policy)?;
@@ -3325,7 +3361,6 @@ impl Host {
                 (
                     target.session_id.clone(),
                     source,
-                    target.budget.clone(),
                     target.frame_id.clone(),
                     target.generation,
                     current,
@@ -3333,13 +3368,15 @@ impl Host {
             })
         };
         let built = match prepared {
-            Ok((session, source, budget, frame_id, generation, base_revision)) => {
+            Ok((session, source, frame_id, generation, base_revision)) => {
                 match self.io_for(&session, None) {
                     Ok(io) => self.build_target(
                         id,
                         &session,
                         source,
-                        budget,
+                        // A fresh document budget: the candidate never spends
+                        // the live document's, and never inherits its spend.
+                        net::Budget::default(),
                         frame_id,
                         generation + 1,
                         base_revision + 1,
@@ -3410,7 +3447,14 @@ impl Host {
         let target = self.target_mut(id)?;
         match built {
             Ok(replacement) => {
-                let retired_realm = std::mem::replace(target, replacement).realm_id;
+                let retired = std::mem::replace(target, replacement);
+                let retired_realm = retired.realm_id;
+                // The replaced document's spend leaves the gate and becomes a
+                // lifetime diagnostic; its TLS counters stay attributable.
+                let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
+                lifetime.retire(&retired.budget);
+                lifetime.navigation_commits = lifetime.navigation_commits.saturating_add(1);
+                self.tls_retired.absorb_tls(&retired.budget);
                 self.realms_retired_total += 1;
                 self.navigations_total += 1;
                 let target = self.target_mut(id)?;
@@ -3423,15 +3467,18 @@ impl Host {
                 }))
             }
             Err(error) => {
-                // Only the attempt's network accounting reaches the live
-                // target; document, realm, generation and revision are as
-                // they were.
-                target.budget.denied += 1;
+                // The candidate is discarded whole: the live document keeps
+                // its own budget, realm, generation and revision untouched.
+                // Only the saturating diagnostic records the refusal.
+                let generation = target.generation;
+                let realm = target.realm_id.clone();
+                let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
+                lifetime.navigation_refusals = lifetime.navigation_refusals.saturating_add(1);
                 let mut details = error.details.clone().unwrap_or_else(|| json!({}));
                 details["navigation"] = json!("failed");
                 details["href"] = json!(href);
-                details["generation"] = json!(target.generation);
-                details["realm"] = json!(target.realm_id);
+                details["generation"] = json!(generation);
+                details["realm"] = json!(realm);
                 Err(error.details(details))
             }
         }
@@ -3729,7 +3776,11 @@ impl Host {
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements,
                     "history_entries":self.histories.values().map(|h| h.entries.len()).sum::<usize>(),
                     "history_entry_limit":MAX_HISTORY_ENTRIES,
-                    "history_bytes":self.histories.values().map(History::bytes).sum::<usize>()},
+                    "history_bytes":self.histories.values().map(History::bytes).sum::<usize>(),
+                    "lifetime":self.targets.values().map(|target| {
+                        let lifetime = self.lifetimes.get(&target.id).copied().unwrap_or_default();
+                        json!({"target":target.id,"network":lifetime.to_json(&target.budget)})
+                    }).collect::<Vec<_>>()},
                 "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
@@ -3739,7 +3790,7 @@ impl Host {
                     "frame":self.surface_frame_owner(),
                     "process":self.surface_stats.to_json(self.surface_generation, self.surfaces.len())},
                 "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
-                "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_target":net::MAX_FETCHES_PER_TARGET,"bytes_per_target":net::MAX_BYTES_PER_TARGET,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
+                "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_document":net::MAX_FETCHES_PER_DOCUMENT,"bytes_per_document":net::MAX_BYTES_PER_DOCUMENT,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
             },
             "allocator":{"realm_allocation":self.realm_allocation.name(),"realm_zone":self.realm_allocation == RealmAllocation::Zone,"realm_arena":self.realm_allocation == RealmAllocation::Arena,"realm_arena_reserved_bytes":REALM_ARENA_BYTES,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed),"arenas_unmapped":arenas_unmapped,"arena_blocks_leaked_total":arena_leaked},
             "libmalloc":libmalloc_statistics(),
@@ -3968,6 +4019,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         realms_retired_total: 0,
         navigations_total: 0,
         histories: BTreeMap::new(),
+        lifetimes: BTreeMap::new(),
         adapters: BTreeMap::new(),
         next_adapter: 0,
         adapters_detached_total: 0,
@@ -4443,5 +4495,89 @@ mod arena_realm_tests {
             "the free tail is returned page by page"
         );
         realm.eval("const again = []; for (let i = 0; i < 20000; i++) again.push({i}); String(again.length)", deadline, "target_test").unwrap();
+    }
+}
+
+#[cfg(test)]
+mod navigation_tests {
+    use super::*;
+
+    /// The per-document budget gates; the lifetime totals only count, and they
+    /// saturate rather than wrap.
+    #[test]
+    fn lifetime_diagnostics_saturate_and_never_gate() {
+        let mut lifetime = Lifetime::default();
+        let spent = net::Budget {
+            fetches: 30,
+            bytes: 1024,
+            ..net::Budget::default()
+        };
+        lifetime.retire(&spent);
+        lifetime.retire(&spent);
+        lifetime.navigation_attempts = 3;
+        lifetime.navigation_commits = 2;
+        lifetime.navigation_refusals = 1;
+        let active = net::Budget {
+            fetches: 2,
+            bytes: 16,
+            ..net::Budget::default()
+        };
+        let reported = lifetime.to_json(&active);
+        assert_eq!(reported["fetches_total"], json!(62));
+        assert_eq!(reported["bytes_total"], json!(2064));
+        assert_eq!(reported["navigation_attempts_total"], json!(3));
+        assert_eq!(reported["navigation_commits_total"], json!(2));
+        assert_eq!(reported["navigation_refusals_total"], json!(1));
+        assert_eq!(reported["gates"], json!(false), "diagnostics never gate");
+        // The totals are far above one document's gate and change nothing.
+        assert!(reported["fetches_total"].as_u64().unwrap() > net::MAX_FETCHES_PER_DOCUMENT as u64);
+        lifetime.retired_fetches = u64::MAX;
+        lifetime.retire(&spent);
+        assert_eq!(
+            lifetime.retired_fetches,
+            u64::MAX,
+            "saturating, never wrapping"
+        );
+    }
+
+    /// A window of eight bounded URLs: a commit drops the forward entries and
+    /// evicts the oldest; nothing but URLs and a position is kept.
+    #[test]
+    fn history_is_a_bounded_window_of_urls() {
+        let mut history = History::new("http://127.0.0.1/a");
+        assert_eq!(history.to_json()["length"], json!(1));
+        assert_eq!(history.to_json()["can_go_back"], json!(false));
+        for index in 0..MAX_HISTORY_ENTRIES {
+            history.commit(&format!("http://127.0.0.1/{index}"));
+        }
+        assert_eq!(
+            history.entries.len(),
+            MAX_HISTORY_ENTRIES,
+            "the window is capped"
+        );
+        assert_eq!(
+            history.to_json()["position"],
+            json!(MAX_HISTORY_ENTRIES - 1)
+        );
+        assert_eq!(history.to_json()["can_go_forward"], json!(false));
+        assert_eq!(
+            history.entries[0], "http://127.0.0.1/0",
+            "the first entry was evicted once the window filled"
+        );
+        let (position, url) = history.at(-2).expect("two back");
+        assert_eq!(position, MAX_HISTORY_ENTRIES - 3);
+        assert_eq!(url, history.entries[MAX_HISTORY_ENTRIES - 3]);
+        assert!(history.at(1).is_none(), "past the newest entry");
+        assert!(
+            history.at(-(MAX_HISTORY_ENTRIES as i64)).is_none(),
+            "before the oldest entry"
+        );
+        // Committing from a back position truncates what was ahead.
+        history.position = 2;
+        history.commit("http://127.0.0.1/new");
+        assert_eq!(history.position, 3);
+        assert_eq!(history.entries.len(), 4);
+        assert_eq!(history.to_json()["can_go_forward"], json!(false));
+        assert!(history.bytes() > 0 && history.bytes() < 1024 * MAX_HISTORY_ENTRIES);
     }
 }

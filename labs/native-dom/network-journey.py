@@ -316,6 +316,16 @@ def main():
                    and inspect["result"]["network"] == {"fetches": 4, "bytes": inspect["result"]["network"]["bytes"], "denied": 0}
                    and inspect["result"]["scripts_run"] == 1 and inspect["result"]["scripts_skipped"] == [], inspect)
             memory = host.call("memory.report", {})
+            # Court amendment, recorded when the navigation slice landed: the
+            # fetch and byte limits bound one document, not a target's whole
+            # life, so the reported keys are per_document and a navigation
+            # gives its committed document a fresh budget. The limits
+            # themselves did not move; only what they are scoped to is now
+            # explicit, and the lifetime totals beside them never gate.
+            limits = memory["result"]["owners"]["network"]["limits"]
+            expect(checks, "the fetch and byte limits are named per document, at their frozen values",
+                   limits.get("fetches_per_document") == 32 and limits.get("bytes_per_document") == 4194304
+                   and "fetches_per_target" not in limits and "bytes_per_target" not in limits, limits)
             expect(checks, "memory.report exposes network owners and limits",
                    memory["ok"] and memory["result"]["owners"]["network"]["fetches"] == 4
                    and memory["result"]["owners"]["network"]["limits"]["redirects"] == 3
@@ -364,7 +374,7 @@ def main():
 
             count = host.call("target.open", {"session": session, "url": f"{origin}/count.html"}, 30000)
             summary = roles(snapshot(host, count["result"]["target"])) if count["ok"] else None
-            expect(checks, "sequential fetches stop at the per-target budget of 32",
+            expect(checks, "sequential fetches stop at the per-document budget of 32",
                    count["ok"] and ("text", "ok=31 first_failure=resource_limit") in summary, summary)
             if count["ok"]:
                 host.call("target.close", {"target": count["result"]["target"]})
@@ -427,8 +437,9 @@ def main():
                                 for name in sorted(os.listdir(FIXTURES))},
             "server": "loopback HTTP/1.0 server in the court process on an ephemeral port, allowlisted as the only origin",
             "network_limits": {"scheme": "http", "redirects": 3, "header_bytes": 16384, "response_bytes": 1048576,
-                               "per_fetch_ms": 3000, "pending_per_turn": 4, "fetches_per_target": 32,
-                               "bytes_per_target": 4194304, "external_scripts": 8},
+                               "per_fetch_ms": 3000, "pending_per_turn": 4, "fetches_per_document": 32,
+                               "bytes_per_document": 4194304, "external_scripts": 8,
+                               "scope": "the fetch and byte limits bound one document; a navigation commits a fresh budget with its new realm, and the failed candidate's spend is discarded with it"},
         },
         "checks": checks,
         "passed": passed,

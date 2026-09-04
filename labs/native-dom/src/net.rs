@@ -29,8 +29,17 @@ pub const MAX_RESPONSE_BYTES: usize = 1024 * 1024;
 pub const PER_FETCH_TIMEOUT: Duration = Duration::from_millis(3000);
 pub const CONNECT_TIMEOUT: Duration = Duration::from_millis(1500);
 pub const MAX_PENDING_PER_TURN: usize = 4;
-pub const MAX_FETCHES_PER_TARGET: usize = 32;
-pub const MAX_BYTES_PER_TARGET: usize = 4 * 1024 * 1024;
+/// The fetch and byte limits bound **one document**, not a target's whole
+/// life. A target's first document gets one budget; every navigation, reload
+/// or traverse builds its candidate with a fresh one and, only when that
+/// candidate commits atomically, the fresh budget becomes the active
+/// document's alongside its new realm. A failed candidate is discarded whole,
+/// so the live document's budget is untouched. Lifetime totals are kept as
+/// saturating diagnostics that never gate; the enforcement boundary is the
+/// explicit operation, its deadline, the origin, TLS and address policy, the
+/// redirect, header and body caps, and these per-document limits.
+pub const MAX_FETCHES_PER_DOCUMENT: usize = 32;
+pub const MAX_BYTES_PER_DOCUMENT: usize = 4 * 1024 * 1024;
 pub const MAX_EXTERNAL_SCRIPTS: usize = 8;
 const USER_AGENT: &str = "MiniCon-Surf-native-dom/0.0.2";
 /// Pinned-root input bounds: files, bytes per file, bytes in total, certificates.
@@ -560,12 +569,12 @@ pub fn fetch_with(
 ) -> Result<Response, NetError> {
     let mut current = Url::parse(url)
         .map_err(|e| NetError::new("invalid_request", "url", format!("URL is malformed: {e}")))?;
-    if budget.fetches >= MAX_FETCHES_PER_TARGET {
+    if budget.fetches >= MAX_FETCHES_PER_DOCUMENT {
         budget.denied += 1;
         return Err(NetError::new(
             "resource_limit",
             "fetch-count",
-            format!("target already performed {MAX_FETCHES_PER_TARGET} fetches"),
+            format!("this document already performed {MAX_FETCHES_PER_DOCUMENT} fetches"),
         ));
     }
     budget.fetches += 1;
@@ -573,7 +582,7 @@ pub fn fetch_with(
     loop {
         let addresses = authorize(&current, policy).inspect_err(|_| budget.denied += 1)?;
         let hop_deadline = std::cmp::min(deadline, Instant::now() + PER_FETCH_TIMEOUT);
-        let remaining_budget = MAX_BYTES_PER_TARGET.saturating_sub(budget.bytes);
+        let remaining_budget = MAX_BYTES_PER_DOCUMENT.saturating_sub(budget.bytes);
         let cap = std::cmp::min(MAX_RESPONSE_BYTES, remaining_budget);
         let cookie_header = cookies
             .as_deref_mut()
@@ -1377,10 +1386,10 @@ mod tests {
     }
 
     #[test]
-    fn budget_refuses_the_thirty_third_fetch_before_any_network() {
+    fn budget_refuses_the_thirty_third_fetch_of_one_document_before_any_network() {
         let policy = Policy::default();
         let mut budget = Budget {
-            fetches: MAX_FETCHES_PER_TARGET,
+            fetches: MAX_FETCHES_PER_DOCUMENT,
             ..Budget::default()
         };
         let err = fetch("http://10.0.0.1/", &policy, &mut budget, soon()).unwrap_err();
