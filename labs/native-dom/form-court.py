@@ -43,6 +43,20 @@ Third amendment (mechanism): three checks put whole option objects into their
 details, so the fixture's labels reached the receipt. A label is page text and
 a receipt carries none, so the details now report the shape of the options and
 not their labels. No criterion moved.
+
+Fourth extension (criteria added by §14, none moved): the second audit found
+four defects this court did not look for, so it now also proves cancellation
+at each of the three key phases separately, each button subtype against each
+supported key with the click's cancellation gating the submit or the reset
+behind it, that space sets a radio rather than toggling it and leaves an
+already checked one checked, that a canceled change restores the whole radio
+group including the sibling it had cleared, and that a canceled reset event
+mutates nothing whether it is reached by the key or by 0.0.1's click. The
+earlier criteria stand unchanged; these are additions.
+
+Falsifiability, recorded: the pre-fix host was rebuilt and run against this
+file. Eleven of the new checks failed per allocator arm, one for each defect
+§14 records, and every earlier check still passed.
 """
 
 import argparse
@@ -134,8 +148,11 @@ class FormHandler(PROFILE.ProfileHandler):
     CANCEL_FORM = (b"<!doctype html><html><body><main><h1>Cancel form</h1>"
                    b"<form id=\"cf\" method=\"get\" action=\"/landed.html\">"
                    b"<input id=\"cc\" name=\"agree\" type=\"checkbox\">"
+                   b"<input id=\"cr1\" name=\"pick\" type=\"radio\" value=\"one\" checked>"
+                   b"<input id=\"cr2\" name=\"pick\" type=\"radio\" value=\"two\">"
                    b"<button id=\"cgo\" type=\"submit\">Send</button></form></main>"
                    b"<script>document.getElementById('cc').addEventListener('click',(e)=>e.preventDefault());"
+                   b"document.getElementById('cr2').addEventListener('click',(e)=>e.preventDefault());"
                    b"document.getElementById('cf').addEventListener('submit',(e)=>e.preventDefault());</script>"
                    b"</body></html>")
     HANDLER_FORM = (b"<!doctype html><html><body><main><h1>Handler form</h1>"
@@ -146,6 +163,53 @@ class FormHandler(PROFILE.ProfileHandler):
                     b"<script>document.getElementById('hf').addEventListener('submit',()=>{"
                     b"document.getElementById('mark').textContent='handler ran';});</script>"
                     b"</body></html>")
+    # The three key phases, one canceler each, plus one that lets it through.
+    KEYS_FORM = (b"<!doctype html><html><body><main><h1>Keys form</h1>"
+                 b"<form id=\"kf\" method=\"get\" action=\"/landed.html\">"
+                 b"<button id=\"kd\" name=\"down\" type=\"button\">D</button>"
+                 b"<button id=\"kp\" name=\"press\" type=\"button\">P</button>"
+                 b"<button id=\"ku\" name=\"up\" type=\"button\">U</button>"
+                 b"<button id=\"kok\" name=\"through\" type=\"button\">K</button>"
+                 b"</form><p id=\"kmark\">before</p></main>"
+                 b"<script>var mark=document.getElementById('kmark');"
+                 b"var phases=[['kd','keydown'],['kp','keypress'],['ku','keyup']];"
+                 b"for (var i=0;i<phases.length;i++){(function(id,phase){"
+                 b"document.getElementById(id).addEventListener(phase,function(e){"
+                 b"e.preventDefault();mark.textContent='handler '+phase;});})(phases[i][0],phases[i][1]);}"
+                 b"var ids=['kd','kp','ku','kok'];"
+                 b"for (var j=0;j<ids.length;j++){document.getElementById(ids[j])"
+                 b".addEventListener('click',function(){mark.textContent='clicked';});}"
+                 b"</script></body></html>")
+    # One of each button subtype in one bounded form.
+    SUBTYPE_FORM = (b"<!doctype html><html><body><main><h1>Subtype form</h1>"
+                    b"<form id=\"bf\" method=\"get\" action=\"/landed.html\">"
+                    b"<input id=\"bc\" name=\"agree\" type=\"checkbox\">"
+                    b"<button id=\"breg\" name=\"reg\" type=\"button\">Reg</button>"
+                    b"<button id=\"bdef\" name=\"def\">Def</button>"
+                    b"<input id=\"bsub\" name=\"sub\" type=\"submit\" value=\"S\">"
+                    b"<input id=\"brst\" name=\"rst\" type=\"reset\" value=\"R\">"
+                    b"</form><p id=\"bmark\">before</p></main>"
+                    b"<script>document.getElementById('breg').addEventListener('click',function(){"
+                    b"document.getElementById('bmark').textContent='regular clicked';});"
+                    b"</script></body></html>")
+    # The same subtypes with their click canceled, and a canceled reset.
+    GATE_FORM = (b"<!doctype html><html><body><main><h1>Gate form</h1>"
+                 b"<form id=\"gf\" method=\"get\" action=\"/landed.html\">"
+                 b"<input id=\"gc\" name=\"agree\" type=\"checkbox\">"
+                 b"<button id=\"gsub\" name=\"sub\" type=\"submit\">S</button>"
+                 b"<input id=\"grst\" name=\"rst\" type=\"reset\" value=\"R\">"
+                 b"</form></main>"
+                 b"<script>var ids=['gsub','grst'];"
+                 b"for (var i=0;i<ids.length;i++){document.getElementById(ids[i])"
+                 b".addEventListener('click',function(e){e.preventDefault();});}"
+                 b"</script></body></html>")
+    RESET_FORM = (b"<!doctype html><html><body><main><h1>Reset form</h1>"
+                  b"<form id=\"rf\" method=\"get\" action=\"/landed.html\">"
+                  b"<input id=\"rc\" name=\"agree\" type=\"checkbox\">"
+                  b"<input id=\"rrst\" name=\"rst\" type=\"reset\" value=\"R\">"
+                  b"</form></main>"
+                  b"<script>document.getElementById('rf').addEventListener('reset',function(e){"
+                  b"e.preventDefault();});</script></body></html>")
     DENIED_FORM = (b"<!doctype html><html><body><main><h1>Denied form</h1>"
                    b"<form id=\"df\" method=\"get\" action=\"http://10.0.0.1/x.html\">"
                    b"<input id=\"dt\" name=\"text\" type=\"text\" value=\"\">"
@@ -161,6 +225,14 @@ class FormHandler(PROFILE.ProfileHandler):
             return self.reply(200, self.CANCEL_FORM, "text/html")
         if path == "/handler-form.html":
             return self.reply(200, self.HANDLER_FORM, "text/html")
+        if path == "/keys-form.html":
+            return self.reply(200, self.KEYS_FORM, "text/html")
+        if path == "/subtype-form.html":
+            return self.reply(200, self.SUBTYPE_FORM, "text/html")
+        if path == "/gate-form.html":
+            return self.reply(200, self.GATE_FORM, "text/html")
+        if path == "/reset-form.html":
+            return self.reply(200, self.RESET_FORM, "text/html")
         if path == "/denied-form.html":
             return self.reply(200, self.DENIED_FORM, "text/html")
         if path == "/scheme-form.html":
@@ -451,6 +523,112 @@ def run(binary, allocator, origin, expect, tag):
                                and after == before,
                                {"error": answer.get("error"), "revision": [before, after]})
 
+            # 4c2. The same cross-product over the button subtypes, because a
+            # representative button proved nothing about the other three.
+            subtypes = ("reg", "def", "sub", "rst")
+            for key in ("enter", "space"):
+                for which in subtypes:
+                    page = NAV.open_target(host, session, origin, "/subtype-form.html")
+                    snap = snapshot(host, page)
+                    act(host, page, node(snap, "checkbox"), {"kind": "set_checked", "checked": True})
+                    snap = snapshot(host, page)
+                    button = node(snap, "button", which)
+                    before = host.ok("target.inspect", {"target": page})
+                    answer = act(host, page, button, {"kind": "press", "key": key})
+                    after = host.ok("target.inspect", {"target": page})
+                    moved = after["frames"][0]["generation"] > before["frames"][0]["generation"]
+                    if which in ("def", "sub"):
+                        expect(tag + f"press {key} on a {which} button clicks then submits its form",
+                               button is not None and answer.get("ok") and moved
+                               and "/landed.html" in (after.get("url") or ""),
+                               {"ok": answer.get("ok"), "moved": moved})
+                    else:
+                        state = snapshot(host, page)
+                        checked = [n.get("checked") for n in state["nodes"] if n.get("role") == "checkbox"]
+                        marks = [n.get("name") for n in state["nodes"] if n.get("role") == "text"]
+                        if which == "reg":
+                            expect(tag + f"press {key} on a regular button only clicks",
+                                   button is not None and answer.get("ok")
+                                   and answer["result"]["applied"] is True
+                                   and answer["result"]["role"] == "button" and not moved
+                                   and checked == [True]
+                                   and any("regular clicked" in (m or "") for m in marks),
+                                   {"result": answer.get("result"), "checked": checked, "moved": moved})
+                        else:
+                            expect(tag + f"press {key} on a reset button clicks then resets its form",
+                                   button is not None and answer.get("ok")
+                                   and answer["result"]["applied"] is True
+                                   and answer["result"]["role"] == "button" and not moved
+                                   and checked == [False],
+                                   {"result": answer.get("result"), "checked": checked, "moved": moved})
+                    host.ok("target.close", {"target": page})
+
+            # 4c3. A canceled click gates what follows it: no submit, no reset.
+            for key in ("enter", "space"):
+                for which, role_name in (("sub", "submit"), ("rst", "reset")):
+                    gate = NAV.open_target(host, session, origin, "/gate-form.html")
+                    snap = snapshot(host, gate)
+                    act(host, gate, node(snap, "checkbox"), {"kind": "set_checked", "checked": True})
+                    snap = snapshot(host, gate)
+                    before = host.ok("target.inspect", {"target": gate})
+                    answer = act(host, gate, node(snap, "button", which), {"kind": "press", "key": key})
+                    after = host.ok("target.inspect", {"target": gate})
+                    checked = [n.get("checked") for n in snapshot(host, gate)["nodes"]
+                               if n.get("role") == "checkbox"]
+                    expect(tag + f"a canceled click stops the {role_name} behind {key}",
+                           answer.get("ok") and answer["result"]["applied"] is False
+                           and answer["result"]["default_prevented"] is True
+                           and after["frames"][0]["generation"] == before["frames"][0]["generation"]
+                           and after["url"] == before["url"] and checked == [True],
+                           {"result": answer.get("result"), "checked": checked})
+                    host.ok("target.close", {"target": gate})
+
+            # 4c4. Each key phase, canceled on its own, stops the activation
+            # while whatever the handler changed stays.
+            keys = NAV.open_target(host, session, origin, "/keys-form.html")
+            for which, phase in (("down", "keydown"), ("press", "keypress"), ("up", "keyup")):
+                snap = snapshot(host, keys)
+                before = host.ok("target.inspect", {"target": keys})["revision"]
+                answer = act(host, keys, node(snap, "button", which), {"kind": "press", "key": "space"})
+                state = snapshot(host, keys)
+                after = host.ok("target.inspect", {"target": keys})["revision"]
+                marks = [n.get("name") for n in state["nodes"] if n.get("role") == "text"]
+                expect(tag + f"a canceled {phase} does not activate and keeps the handler's effect",
+                       answer.get("ok") and answer["result"]["applied"] is False
+                       and answer["result"]["default_prevented"] is True
+                       and any(f"handler {phase}" in (m or "") for m in marks)
+                       and not any("clicked" in (m or "") for m in marks)
+                       and after > before,
+                       {"result": answer.get("result"), "marks": marks,
+                        "revision": [before, after]})
+            snap = snapshot(host, keys)
+            answer = act(host, keys, node(snap, "button", "through"), {"kind": "press", "key": "space"})
+            marks = [n.get("name") for n in snapshot(host, keys)["nodes"] if n.get("role") == "text"]
+            expect(tag + "an uncanceled key activates, so the three checks above mean something",
+                   answer.get("ok") and answer["result"]["applied"] is True
+                   and any("clicked" in (m or "") for m in marks),
+                   {"result": answer.get("result"), "marks": marks})
+            host.ok("target.close", {"target": keys})
+
+            # 4c5. Space sets a radio; it never turns a checked one off.
+            host.ok("target.navigate", {"target": target, "url": f"{origin}/form.html"})
+            def radios():
+                return [n.get("checked") for n in snapshot(host, target)["nodes"]
+                        if n.get("role") == "radio"]
+            snap = snapshot(host, target)
+            act(host, target, node(snap, "radio", index=0), {"kind": "press", "key": "space"})
+            first = radios()
+            snap = snapshot(host, target)
+            again = act(host, target, node(snap, "radio", index=0), {"kind": "press", "key": "space"})
+            second = radios()
+            expect(tag + "space sets a radio and leaves an already checked one checked",
+                   first == [True, False] and again.get("ok") and second == [True, False],
+                   {"after_first": first, "after_second": second})
+            snap = snapshot(host, target)
+            act(host, target, node(snap, "radio", index=1), {"kind": "press", "key": "space"})
+            expect(tag + "space on the sibling moves the selection rather than adding one",
+                   radios() == [False, True], {"checked": radios()})
+
             # 4d. Cancellation: the page's preventDefault is respected.
             cancel = NAV.open_target(host, session, origin, "/cancel-form.html")
             snap = snapshot(host, cancel)
@@ -470,7 +648,45 @@ def run(binary, allocator, origin, expect, tag):
                    and after["url"] == state["url"]
                    and after["frames"][0]["generation"] == state["frames"][0]["generation"],
                    answer.get("result"))
+            for kind, action in (("a canceled set_checked", {"kind": "set_checked", "checked": True}),
+                                 ("a canceled space", {"kind": "press", "key": "space"})):
+                snap = snapshot(host, cancel)
+                answer = act(host, cancel, node(snap, "radio", index=1), action)
+                group = [n.get("checked") for n in snapshot(host, cancel)["nodes"]
+                         if n.get("role") == "radio"]
+                expect(tag + f"{kind} restores the whole radio group, sibling included",
+                       answer.get("ok") and answer["result"]["applied"] is False
+                       and answer["result"]["default_prevented"] is True
+                       and group == [True, False],
+                       {"result": answer.get("result"), "checked": group})
             host.ok("target.close", {"target": cancel})
+
+            # 4d2. A canceled reset event mutates nothing, through the key and
+            # through the click that 0.0.1 already offers.
+            for label, action in (("press", {"kind": "press", "key": "enter"}),
+                                  ("click", {"kind": "click"})):
+                reset = NAV.open_target(host, session, origin, "/reset-form.html")
+                snap = snapshot(host, reset)
+                act(host, reset, node(snap, "checkbox"), {"kind": "set_checked", "checked": True})
+                snap = snapshot(host, reset)
+                before = host.ok("target.inspect", {"target": reset})
+                answer = act(host, reset, node(snap, "button", "rst"), action)
+                after = host.ok("target.inspect", {"target": reset})
+                checked = [n.get("checked") for n in snapshot(host, reset)["nodes"]
+                           if n.get("role") == "checkbox"]
+                if label == "press":
+                    ruled = (answer.get("ok") and answer["result"]["applied"] is False
+                             and answer["result"]["default_prevented"] is True)
+                else:
+                    # 0.0.1's shape is unchanged: a click answers applied and
+                    # nothing else. Only the effect behind it is corrected.
+                    ruled = (answer.get("ok")
+                             and sorted(answer["result"]) == ["applied", "kind", "revision", "target"])
+                expect(tag + f"a canceled reset reached by {label} leaves every control alone",
+                       ruled and checked == [True]
+                       and after["frames"][0]["generation"] == before["frames"][0]["generation"],
+                       {"result": answer.get("result"), "checked": checked})
+                host.ok("target.close", {"target": reset})
 
             # 4e. A failed submit keeps identity and history; the handler's own
             # effect stays, because no browser rolls that back.

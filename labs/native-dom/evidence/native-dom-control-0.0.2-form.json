@@ -504,8 +504,291 @@
      }
     },
     "revision": [
-     27,
-     27
+     28,
+     28
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a regular button only clicks",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 3,
+     "role": "button",
+     "target": "target_3"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a def button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a sub button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a reset button clicks then resets its form",
+   "detail": {
+    "checked": [
+     false
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 2,
+     "role": "button",
+     "target": "target_6"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a regular button only clicks",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 3,
+     "role": "button",
+     "target": "target_7"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a def button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a sub button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a reset button clicks then resets its form",
+   "detail": {
+    "checked": [
+     false
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 2,
+     "role": "button",
+     "target": "target_10"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled click stops the submit behind enter",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_11"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled click stops the reset behind enter",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_12"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled click stops the submit behind space",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_13"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled click stops the reset behind space",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_14"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled keydown does not activate and keeps the handler's effect",
+   "detail": {
+    "marks": [
+     "handler keydown"
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_15"
+    },
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled keypress does not activate and keeps the handler's effect",
+   "detail": {
+    "marks": [
+     "handler keypress"
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 2,
+     "role": "button",
+     "target": "target_15"
+    },
+    "revision": [
+     1,
+     2
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled keyup does not activate and keeps the handler's effect",
+   "detail": {
+    "marks": [
+     "handler keyup"
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 3,
+     "role": "button",
+     "target": "target_15"
+    },
+    "revision": [
+     2,
+     3
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an uncanceled key activates, so the three checks above mean something",
+   "detail": {
+    "marks": [
+     "clicked"
+    ],
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 5,
+     "role": "button",
+     "target": "target_15"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] space sets a radio and leaves an already checked one checked",
+   "detail": {
+    "after_first": [
+     true,
+     false
+    ],
+    "after_second": [
+     true,
+     false
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] space on the sibling moves the selection rather than adding one",
+   "detail": {
+    "checked": [
+     false,
+     true
     ]
    },
    "passed": true
@@ -523,7 +806,7 @@
      "kind": "action",
      "revision": 0,
      "role": "checkbox",
-     "target": "target_3"
+     "target": "target_16"
     }
    },
    "passed": true
@@ -537,7 +820,78 @@
     "kind": "action",
     "revision": 0,
     "role": "form",
-    "target": "target_3"
+    "target": "target_16"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled set_checked restores the whole radio group, sibling included",
+   "detail": {
+    "checked": [
+     true,
+     false
+    ],
+    "result": {
+     "action": "set_checked",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 0,
+     "role": "radio",
+     "target": "target_16"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled space restores the whole radio group, sibling included",
+   "detail": {
+    "checked": [
+     true,
+     false
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 0,
+     "role": "radio",
+     "target": "target_16"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled reset reached by press leaves every control alone",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_17"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled reset reached by click leaves every control alone",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "applied": true,
+     "kind": "action",
+     "revision": 1,
+     "target": "target_18"
+    }
    },
    "passed": true
   },
@@ -549,14 +903,14 @@
      "details": {
       "generation": 1,
       "navigation": "failed",
-      "realm": "realm_14",
+      "realm": "realm_35",
       "reason": "navigation_failed",
       "redacted": true
      },
      "message": "the form submission did not navigate",
      "retryable": false,
      "scope": {
-      "id": "target_4",
+      "id": "target_19",
       "kind": "target"
      }
     },
@@ -584,14 +938,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_15",
+     "realm": "realm_36",
      "reason": "address",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_5",
+     "id": "target_20",
      "kind": "target"
     }
    },
@@ -604,14 +958,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_16",
+     "realm": "realm_37",
      "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_6",
+     "id": "target_21",
      "kind": "target"
     }
    },
@@ -624,14 +978,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_17",
+     "realm": "realm_38",
      "reason": "tls_no_pinned_roots",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_7",
+     "id": "target_22",
      "kind": "target"
     }
    },
@@ -644,14 +998,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_18",
+     "realm": "realm_39",
      "reason": "network_offline",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_8",
+     "id": "target_23",
      "kind": "target"
     }
    },
@@ -664,14 +1018,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_18",
+     "realm": "realm_39",
      "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": true,
     "scope": {
-     "id": "target_8",
+     "id": "target_23",
      "kind": "target"
     }
    },
@@ -689,7 +1043,7 @@
   {
    "check": "[system] the ledger records the actions without any value, label or query",
    "detail": {
-    "count": 50,
+    "count": 64,
     "limit": 64
    },
    "passed": true
@@ -711,8 +1065,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 856736,
-    "at_8": 856736,
+    "at_128": 865696,
+    "at_8": 865696,
     "cap": 65536,
     "growth": 0
    },
@@ -721,8 +1075,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 856736,
-    "at_64": 856736,
+    "at_128": 865696,
+    "at_64": 865696,
     "cap": 8192
    },
    "passed": true
@@ -730,8 +1084,8 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 802480,
-    "fresh": 842704
+    "after_submit": 811440,
+    "fresh": 851664
    },
    "passed": true
   },
@@ -740,7 +1094,7 @@
    "detail": {
     "audit_bytes": 6806,
     "audit_capacity_bytes": 6144,
-    "audit_dropped_total": 115,
+    "audit_dropped_total": 153,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -1270,8 +1624,291 @@
      }
     },
     "revision": [
-     27,
-     27
+     28,
+     28
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a regular button only clicks",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 3,
+     "role": "button",
+     "target": "target_3"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a def button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a sub button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a reset button clicks then resets its form",
+   "detail": {
+    "checked": [
+     false
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 2,
+     "role": "button",
+     "target": "target_6"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a regular button only clicks",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 3,
+     "role": "button",
+     "target": "target_7"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a def button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a sub button clicks then submits its form",
+   "detail": {
+    "moved": true,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a reset button clicks then resets its form",
+   "detail": {
+    "checked": [
+     false
+    ],
+    "moved": false,
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 2,
+     "role": "button",
+     "target": "target_10"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled click stops the submit behind enter",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_11"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled click stops the reset behind enter",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_12"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled click stops the submit behind space",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_13"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled click stops the reset behind space",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_14"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled keydown does not activate and keeps the handler's effect",
+   "detail": {
+    "marks": [
+     "handler keydown"
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_15"
+    },
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled keypress does not activate and keeps the handler's effect",
+   "detail": {
+    "marks": [
+     "handler keypress"
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 2,
+     "role": "button",
+     "target": "target_15"
+    },
+    "revision": [
+     1,
+     2
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled keyup does not activate and keeps the handler's effect",
+   "detail": {
+    "marks": [
+     "handler keyup"
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 3,
+     "role": "button",
+     "target": "target_15"
+    },
+    "revision": [
+     2,
+     3
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an uncanceled key activates, so the three checks above mean something",
+   "detail": {
+    "marks": [
+     "clicked"
+    ],
+    "result": {
+     "action": "press",
+     "applied": true,
+     "kind": "action",
+     "revision": 5,
+     "role": "button",
+     "target": "target_15"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] space sets a radio and leaves an already checked one checked",
+   "detail": {
+    "after_first": [
+     true,
+     false
+    ],
+    "after_second": [
+     true,
+     false
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] space on the sibling moves the selection rather than adding one",
+   "detail": {
+    "checked": [
+     false,
+     true
     ]
    },
    "passed": true
@@ -1289,7 +1926,7 @@
      "kind": "action",
      "revision": 0,
      "role": "checkbox",
-     "target": "target_3"
+     "target": "target_16"
     }
    },
    "passed": true
@@ -1303,7 +1940,78 @@
     "kind": "action",
     "revision": 0,
     "role": "form",
-    "target": "target_3"
+    "target": "target_16"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled set_checked restores the whole radio group, sibling included",
+   "detail": {
+    "checked": [
+     true,
+     false
+    ],
+    "result": {
+     "action": "set_checked",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 0,
+     "role": "radio",
+     "target": "target_16"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled space restores the whole radio group, sibling included",
+   "detail": {
+    "checked": [
+     true,
+     false
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 0,
+     "role": "radio",
+     "target": "target_16"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled reset reached by press leaves every control alone",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "action": "press",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 1,
+     "role": "button",
+     "target": "target_17"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled reset reached by click leaves every control alone",
+   "detail": {
+    "checked": [
+     true
+    ],
+    "result": {
+     "applied": true,
+     "kind": "action",
+     "revision": 1,
+     "target": "target_18"
+    }
    },
    "passed": true
   },
@@ -1315,14 +2023,14 @@
      "details": {
       "generation": 1,
       "navigation": "failed",
-      "realm": "realm_14",
+      "realm": "realm_35",
       "reason": "navigation_failed",
       "redacted": true
      },
      "message": "the form submission did not navigate",
      "retryable": false,
      "scope": {
-      "id": "target_4",
+      "id": "target_19",
       "kind": "target"
      }
     },
@@ -1350,14 +2058,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_15",
+     "realm": "realm_36",
      "reason": "address",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_5",
+     "id": "target_20",
      "kind": "target"
     }
    },
@@ -1370,14 +2078,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_16",
+     "realm": "realm_37",
      "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_6",
+     "id": "target_21",
      "kind": "target"
     }
    },
@@ -1390,14 +2098,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_17",
+     "realm": "realm_38",
      "reason": "tls_no_pinned_roots",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_7",
+     "id": "target_22",
      "kind": "target"
     }
    },
@@ -1410,14 +2118,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_18",
+     "realm": "realm_39",
      "reason": "network_offline",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": false,
     "scope": {
-     "id": "target_8",
+     "id": "target_23",
      "kind": "target"
     }
    },
@@ -1430,14 +2138,14 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_18",
-     "reason": "navigation_failed",
+     "realm": "realm_39",
+     "reason": "read",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": true,
     "scope": {
-     "id": "target_8",
+     "id": "target_23",
      "kind": "target"
     }
    },
@@ -1455,7 +2163,7 @@
   {
    "check": "[arena] the ledger records the actions without any value, label or query",
    "detail": {
-    "count": 50,
+    "count": 64,
     "limit": 64
    },
    "passed": true
@@ -1477,18 +2185,18 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 836768,
-    "at_8": 836752,
+    "at_128": 845408,
+    "at_8": 845344,
     "cap": 65536,
-    "growth": 16
+    "growth": 64
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 836768,
-    "at_64": 836752,
+    "at_128": 845408,
+    "at_64": 845344,
     "cap": 8192
    },
    "passed": true
@@ -1496,8 +2204,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 781856,
-    "fresh": 822112
+    "after_submit": 790432,
+    "fresh": 830672
    },
    "passed": true
   },
@@ -1506,7 +2214,7 @@
    "detail": {
     "audit_bytes": 6806,
     "audit_capacity_bytes": 6144,
-    "audit_dropped_total": 115,
+    "audit_dropped_total": 153,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -1577,11 +2285,11 @@
    "passed": true
   }
  ],
- "checks_passed": 119,
- "checks_total": 119,
+ "checks_passed": 163,
+ "checks_total": 163,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "9370cc31a0e6ec5ae116453a8ae6541713bdee971d22da8897bcc0ff1b2dd154",
+ "host_sha256": "be320726133153ac708279ed80321fb1be4cc5d51b25f49746794c82a1aedffa",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",
