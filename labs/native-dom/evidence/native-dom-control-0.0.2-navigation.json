@@ -41,7 +41,7 @@
   },
   {
    "check": "[system] navigate commits the requested URL",
-   "detail": "http://127.0.0.1:65459/about.html",
+   "detail": "http://127.0.0.1:54778/about.html",
    "passed": true
   },
   {
@@ -135,7 +135,7 @@
      "length": 3,
      "position": 1
     },
-    "url": "http://127.0.0.1:65459/about.html"
+    "url": "http://127.0.0.1:54778/about.html"
    },
    "passed": true
   },
@@ -148,7 +148,7 @@
      "length": 3,
      "position": 0
     },
-    "url": "http://127.0.0.1:65459/index.html"
+    "url": "http://127.0.0.1:54778/index.html"
    },
    "passed": true
   },
@@ -161,7 +161,7 @@
      "length": 3,
      "position": 2
     },
-    "url": "http://127.0.0.1:65459/count.html"
+    "url": "http://127.0.0.1:54778/count.html"
    },
    "passed": true
   },
@@ -328,11 +328,11 @@
      "code": "not_found",
      "details": {
       "generation": 20,
-      "href": "http://127.0.0.1:65459/absent.html",
+      "href": "http://127.0.0.1:54778/absent.html",
       "navigation": "failed",
       "realm": "realm_20",
       "status": 404,
-      "url": "http://127.0.0.1:65459/absent.html"
+      "url": "http://127.0.0.1:54778/absent.html"
      },
      "message": "document request was not successful",
      "retryable": false,
@@ -393,7 +393,7 @@
     "details": {
      "engine_error": "interrupted",
      "generation": 20,
-     "href": "http://127.0.0.1:65459/index.html",
+     "href": "http://127.0.0.1:54778/index.html",
      "navigation": "failed",
      "realm": "realm_20"
     },
@@ -494,7 +494,7 @@
    "check": "[system] post-navigation retention stays within its budget",
    "detail": {
     "cap": 262144,
-    "over_steady": 0
+    "over_steady": 16384
    },
    "passed": true
   },
@@ -515,18 +515,87 @@
    "passed": true
   },
   {
+   "check": "[cdp] the client navigates the target through Page.navigate",
+   "detail": {
+    "cdp": {
+     "frameId": "cdp_frame_1",
+     "loaderId": ""
+    },
+    "error": null,
+    "url": "http://127.0.0.1:54778/about.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] the projected frame id is the adapter's, never the native one",
+   "detail": {
+    "frameId": "cdp_frame_1",
+    "loaderId": ""
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] the client reloads through Page.reload without moving the history",
+   "detail": {
+    "cdp": {
+     "frameId": "cdp_frame_1",
+     "loaderId": ""
+    },
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] an argument this host cannot honour is refused typed, not ignored",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Page.reload): this host supports neither cache control nor load scripts",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Page.getNavigationHistory stays an explicit -32601: the host is the only history authority",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Page.getNavigationHistory): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Page.navigateToHistoryEntry stays an explicit -32601: the host is the only history authority",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Page.navigateToHistoryEntry): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
    "check": "[system] the navigating arm's excess over the control arm stays within its budget",
    "detail": {
     "cap": 1048576,
-    "excess": 917504
+    "excess": 1146880
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] the excess does not keep growing over the last navigations",
    "detail": {
     "cap": 65536,
-    "tail_excess_slope": 32768
+    "tail_excess_slope": 65536
    },
    "passed": true
   },
@@ -562,7 +631,7 @@
   },
   {
    "check": "[arena] navigate commits the requested URL",
-   "detail": "http://127.0.0.1:65459/about.html",
+   "detail": "http://127.0.0.1:54778/about.html",
    "passed": true
   },
   {
@@ -656,7 +725,7 @@
      "length": 3,
      "position": 1
     },
-    "url": "http://127.0.0.1:65459/about.html"
+    "url": "http://127.0.0.1:54778/about.html"
    },
    "passed": true
   },
@@ -669,7 +738,7 @@
      "length": 3,
      "position": 0
     },
-    "url": "http://127.0.0.1:65459/index.html"
+    "url": "http://127.0.0.1:54778/index.html"
    },
    "passed": true
   },
@@ -682,7 +751,7 @@
      "length": 3,
      "position": 2
     },
-    "url": "http://127.0.0.1:65459/count.html"
+    "url": "http://127.0.0.1:54778/count.html"
    },
    "passed": true
   },
@@ -849,11 +918,11 @@
      "code": "not_found",
      "details": {
       "generation": 20,
-      "href": "http://127.0.0.1:65459/absent.html",
+      "href": "http://127.0.0.1:54778/absent.html",
       "navigation": "failed",
       "realm": "realm_20",
       "status": 404,
-      "url": "http://127.0.0.1:65459/absent.html"
+      "url": "http://127.0.0.1:54778/absent.html"
      },
      "message": "document request was not successful",
      "retryable": false,
@@ -914,7 +983,7 @@
     "details": {
      "engine_error": "interrupted",
      "generation": 20,
-     "href": "http://127.0.0.1:65459/index.html",
+     "href": "http://127.0.0.1:54778/index.html",
      "navigation": "failed",
      "realm": "realm_20"
     },
@@ -1015,7 +1084,7 @@
    "check": "[arena] post-navigation retention stays within its budget",
    "detail": {
     "cap": 262144,
-    "over_steady": 0
+    "over_steady": 16384
    },
    "passed": true
   },
@@ -1039,7 +1108,7 @@
    "check": "[arena] the navigating arm's excess over the control arm stays within its budget",
    "detail": {
     "cap": 1048576,
-    "excess": 671744
+    "excess": 720896
    },
    "passed": true
   },
@@ -1052,12 +1121,12 @@
    "passed": true
   }
  ],
- "checks_passed": 74,
- "checks_total": 76,
+ "checks_passed": 79,
+ "checks_total": 82,
  "checks_unverified": 2,
  "control_version": "0.0.2",
  "design": "labs/native-dom/navigation-design-0.0.1.md",
- "host_sha256": "38866cd314d8190935e02b1190e639ea8ea117bc28932470b0932a96e22edb60",
+ "host_sha256": "5c650f091678388b93f26574dd7178dcf38bcf76bb83e365ceae90d3ebad2d71",
  "limitations": [
   "history is metadata only: an entry is the final canonical committed URL, so a traverse refetches and no page state is restored",
   "the soak is differential by design: the control-churn court showed every control request grows the host without a plateau, so an absolute cap would fail for reasons unrelated to navigation; the two arms hold the request count, deadline and target identical and differ in the operation under test",
@@ -1071,86 +1140,86 @@
   "arena": {
    "arms": {
     "control": {
-     "8": 114688,
-     "16": 147456,
-     "24": 180224,
-     "32": 196608,
-     "40": 196608,
-     "48": 196608,
-     "56": 196608,
-     "64": 196608,
-     "72": 196608,
-     "80": 196608,
-     "88": 196608,
-     "96": 196608,
-     "104": 196608,
-     "112": 196608,
-     "120": 196608,
-     "128": 196608
+     "8": 81920,
+     "16": 98304,
+     "24": 98304,
+     "32": 114688,
+     "40": 114688,
+     "48": 114688,
+     "56": 114688,
+     "64": 114688,
+     "72": 114688,
+     "80": 114688,
+     "88": 114688,
+     "96": 114688,
+     "104": 114688,
+     "112": 114688,
+     "120": 114688,
+     "128": 114688
     },
     "navigating": {
-     "8": 524288,
-     "16": 688128,
-     "24": 737280,
-     "32": 737280,
-     "40": 819200,
-     "48": 819200,
-     "56": 835584,
-     "64": 835584,
-     "72": 851968,
-     "80": 851968,
-     "88": 851968,
-     "96": 868352,
-     "104": 868352,
-     "112": 868352,
-     "120": 868352,
-     "128": 868352
+     "8": 475136,
+     "16": 606208,
+     "24": 688128,
+     "32": 720896,
+     "40": 737280,
+     "48": 753664,
+     "56": 786432,
+     "64": 802816,
+     "72": 819200,
+     "80": 819200,
+     "88": 819200,
+     "96": 819200,
+     "104": 819200,
+     "112": 819200,
+     "120": 835584,
+     "128": 835584
     }
    },
-   "excess_at_128": 671744,
+   "excess_at_128": 720896,
    "tail_excess_slope": 32768
   },
   "system": {
    "arms": {
     "control": {
      "8": 49152,
-     "16": 49152,
-     "24": 49152,
-     "32": 49152,
-     "40": 49152,
-     "48": 49152,
-     "56": 49152,
-     "64": 49152,
-     "72": 49152,
-     "80": 65536,
-     "88": 65536,
-     "96": 65536,
-     "104": 65536,
-     "112": 65536,
+     "16": 65536,
+     "24": 65536,
+     "32": 65536,
+     "40": 65536,
+     "48": 65536,
+     "56": 65536,
+     "64": 81920,
+     "72": 81920,
+     "80": 81920,
+     "88": 81920,
+     "96": 81920,
+     "104": 81920,
+     "112": 81920,
      "120": 81920,
      "128": 81920
     },
     "navigating": {
-     "8": 753664,
-     "16": 851968,
-     "24": 868352,
-     "32": 868352,
-     "40": 901120,
-     "48": 901120,
-     "56": 933888,
-     "64": 933888,
-     "72": 950272,
-     "80": 966656,
-     "88": 983040,
-     "96": 983040,
-     "104": 983040,
-     "112": 983040,
-     "120": 983040,
-     "128": 999424
+     "8": 868352,
+     "16": 999424,
+     "24": 1064960,
+     "32": 1064960,
+     "40": 1130496,
+     "48": 1130496,
+     "56": 1146880,
+     "64": 1163264,
+     "72": 1179648,
+     "80": 1179648,
+     "88": 1179648,
+     "96": 1196032,
+     "104": 1212416,
+     "112": 1212416,
+     "120": 1212416,
+     "128": 1228800
     }
    },
-   "excess_at_128": 917504,
-   "tail_excess_slope": 32768
+   "excess_at_128": 1146880,
+   "tail_excess_slope": 65536
   }
  },
  "technology": "native-dom"

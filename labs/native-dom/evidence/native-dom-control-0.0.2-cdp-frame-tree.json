@@ -219,10 +219,43 @@
       "passed": true
     },
     {
-      "check": "[system] Page.navigate is an explicit -32601",
+      "check": "[system] Page.navigate is mapped and fails typed on a fixture target, not -32601",
       "detail": {
         "error": {
-          "message": "Protocol error (Page.navigate): Method not found",
+          "message": "Protocol error (Page.navigate): native control operation failed",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] Page.reload is mapped and fails typed on a fixture target, not -32601",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.reload): native control operation failed",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] Page.getNavigationHistory is an explicit -32601: the host is the only history authority",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.getNavigationHistory): Method not found",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] Page.navigateToHistoryEntry is an explicit -32601: the host is the only history authority",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.navigateToHistoryEntry): Method not found",
           "protocol_code": null
         },
         "ok": false
@@ -511,10 +544,43 @@
       "passed": true
     },
     {
-      "check": "[arena] Page.navigate is an explicit -32601",
+      "check": "[arena] Page.navigate is mapped and fails typed on a fixture target, not -32601",
       "detail": {
         "error": {
-          "message": "Protocol error (Page.navigate): Method not found",
+          "message": "Protocol error (Page.navigate): native control operation failed",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] Page.reload is mapped and fails typed on a fixture target, not -32601",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.reload): native control operation failed",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] Page.getNavigationHistory is an explicit -32601: the host is the only history authority",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.getNavigationHistory): Method not found",
+          "protocol_code": null
+        },
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] Page.navigateToHistoryEntry is an explicit -32601: the host is the only history authority",
+      "detail": {
+        "error": {
+          "message": "Protocol error (Page.navigateToHistoryEntry): Method not found",
           "protocol_code": null
         },
         "ok": false
@@ -585,8 +651,8 @@
       "passed": true
     }
   ],
-  "checks_passed": 58,
-  "checks_total": 58,
+  "checks_passed": 64,
+  "checks_total": 64,
   "client": {
     "client": "puppeteer-core",
     "node": "v26.7.0",
@@ -594,14 +660,14 @@
   },
   "footprint_bytes": {
     "arena": {
-      "empty": 1966416,
-      "live_two_targets_one_session": 3129728,
-      "post_close": 2670928
+      "empty": 1999184,
+      "live_two_targets_one_session": 3113344,
+      "post_close": 2621776
     },
     "system": {
-      "empty": 1966416,
-      "live_two_targets_one_session": 3670352,
-      "post_close": 4079952
+      "empty": 1982800,
+      "live_two_targets_one_session": 3834192,
+      "post_close": 4227408
     }
   },
   "frame_id_mapping": {
@@ -614,7 +680,7 @@
       "native_frame": "frame_1"
     }
   },
-  "host_sha256": "925d062bffd16d7c6dc28e16fc59c5e0548f5ca35f093abfe11f00ee9eec4e95",
+  "host_sha256": "5c650f091678388b93f26574dd7178dcf38bcf76bb83e365ceae90d3ebad2d71",
   "limitations": [
     "one named client and version; target.page() and every puppeteer Page API are outside the claim",
     "loopback only; one connection at a time",
