@@ -154,10 +154,16 @@ Rules every host follows:
   lists `frames[]` (`frame`, `parent` or null, `generation`, `realm`, and the
   optional `url`) with the main frame first and at most `frame_limit`
   entries, and `realms[]` (`realm`, `frame`, `world`). Ids are opaque and
-  encode nothing. `url` is additive and optional: when present it is the
-  final URL of the response that built that frame, after redirects; it is
-  absent for a frame that has no URL, so a reader treats absence as normal
-  rather than as an error.
+  encode nothing. `url` is additive and optional: when a host reports it, it
+  is the final URL of the response that built that frame, after redirects. It
+  is absent whenever a frame has no URL or its host does not track one, so a
+  reader treats absence as normal rather than as an error and never infers
+  from one host's reporting that another host reports it.
+- Why a host did **not** build a frame is a host-level additive diagnostic,
+  not a contract obligation: no host is required to report one, and the
+  native route's `frames_skipped` — a bounded tally over a closed vocabulary
+  of fixed reasons — is described normatively in `labs/native-dom/README.md`
+  and its design record, not here.
 - A `frame` or `realm` argument narrows an operation to that frame or asserts
   which realm the caller believes is live; it never widens it. `target.snapshot`
   accepts optional `frame` (default: the main frame) and optional `realm`
@@ -179,8 +185,11 @@ Rules every host follows:
   one-to-one with a native frame while both live, qualified on the synthetic
   host through `Page.getFrameTree`; realm identity is not yet projected
   (`Runtime.ExecutionContextId`, context events), navigation events and
-  document generation have no projection, child frames project flat, each
-  carrying its own `url`, and nesting is not offered. These are recorded losses, not
+  document generation have no projection, child frames project flat with no
+  nesting, and a projected frame's `url` is only as good as the host behind
+  it: the native route is qualified to project each frame's own final URL,
+  while the synthetic host has no child document to name and its adapter
+  substitutes the target or court address, which stays a recorded loss. These are recorded losses, not
   approximations. Hosts that do not implement the optional `frame`/`realm`
   arguments fail closed with `invalid_request`, exactly as with
   `capability`: a caller that requires frame or realm narrowing MUST NOT

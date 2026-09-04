@@ -541,3 +541,32 @@ redirecting to **another allowlisted origin** must not become a child, so the
 court now allows both of its origins and the criterion exercises the rule it
 names. This one mattered: as frozen, it would have passed against a host with
 no post-redirect origin check at all.
+
+
+## 20. Documentation correction: what is qualified, and where
+
+The root's review found one sentence claiming more than was measured. §18.2's
+wording had reached the protocol README and both CDP mappings as "each frame
+carries its own final url", which reads as a statement about every host. It is
+not: the synthetic host has one bounded child with no document of its own to
+name, its adapter substitutes the target or court address, and nothing about
+it was changed or measured by this increment.
+
+Corrected, without implying that evidence transferred between hosts:
+
+- The optional `frames[].url` stays **generic** in the protocol: when a host
+  reports it, it is that frame's final URL; absence means the frame has none
+  *or the host tracks none*, and one host's reporting says nothing about
+  another's.
+- The **native route** is the one qualified to project each frame's own final
+  URL, proven by this court.
+- The **synthetic route** proves the tree shape and the identity mapping only;
+  its child URL stays unavailable and substituted, recorded as a loss in both
+  mappings rather than quietly implied to be fixed.
+- `frames_skipped` is a **host-level additive diagnostic**. The protocol notes
+  that no host is obliged to report why a frame was not built and points at
+  `labs/native-dom/README.md`, which is its normative description: the closed
+  vocabulary, the saturating counts, the absence of a reason that did not
+  occur, and the live-owner total.
+
+No code and no criterion moved.

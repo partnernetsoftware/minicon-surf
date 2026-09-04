@@ -67,7 +67,7 @@
     {
       "native": "child frames",
       "cdp": "Page.FrameTree.childFrames",
-      "loss": "the synthetic host has exactly one bounded child frame and the native host builds bounded, same-origin, depth-one children; both project flat, each frame carries its own final url, and no nesting is offered"
+      "loss": "both hosts project child frames flat and offer no nesting: the synthetic host has exactly one bounded child frame, which proves the tree shape and the identity mapping only, and its adapter substitutes the target or court address for that child because it has no document of its own to name; the native host builds bounded, same-origin, depth-one children and is the route qualified to project each frame's own final url"
     },
     {
       "native": "world",

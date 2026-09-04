@@ -620,7 +620,8 @@ Scope: `Target` carries `frame_id` (minted with the target), `generation`,
 the revision the caller sees is the realm's count plus everything before the
 last navigation. `target.open` reports `frame`, `generation` and `realm`;
 `target.inspect` lists `frames[]` (the main frame first, then bounded child
-frames, each with the optional `url` of the response that built it) and
+frames, each with the optional `url` of the final response that built it, which
+this route reports for every frame it builds) and
 `realms[]` with `frame_limit` 8; `target.snapshot` takes optional `frame` and `realm` and
 names what it observed, refusing a foreign, retired or unknown id with the
 same `not_found`. A click on an `<a href>` node dispatches the click event
@@ -647,9 +648,17 @@ before the fetch and still same-origin after every redirect, and answers
 `text/html`; anything else is refused, and a refused attempt leaves nothing
 behind, its cookies included. A child that cannot be built is skipped, never
 fatal to its parent. Refusals are a bounded tally on `target.inspect` as
-`frames_skipped` (`reason`, `count`) over a closed set of fixed reasons that
-never carries a `src` or a redirect target, counted by the frame owner's
-`skipped_total`; `scripts_skipped` keeps its own meaning. A parent navigation
+`frames_skipped`, and this file is its normative description: the protocol
+requires no host to report why a frame was not built, and none of the other
+routes does. Each entry is a `reason` and a `count`, the reasons a closed
+vocabulary of twelve fixed strings — `no_network_origin`, `no_src`,
+`srcdoc`, `malformed_src`, `scheme_not_fetched`, `cross_origin_src`,
+`cross_origin_redirect`, `not_html`, `status_not_ok`, `fetch_failed`,
+`realm_build_failed`, `frame_limit` — chosen so a `src`, a redirect target
+or any other page text can never appear in one. A reason with no
+occurrences is absent rather than zero, the counts saturate, and the frame
+owner's `skipped_total` sums them over live targets. `scripts_skipped`
+keeps its own meaning and its own contents. A parent navigation
 ends its children, and the click path names them in `ended_frames`. One child
 costs about 247 KB of live owner bytes, seven about 1.7 MB, and the whole
 cost returns on close.
