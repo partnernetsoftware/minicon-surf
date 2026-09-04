@@ -1162,6 +1162,37 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Proposed, design only, nothing implemented and nothing measured:
+  frame-aware actions and child navigation
+  (`labs/native-dom/frame-action-design-0.0.1.md`). A live child frame can be
+  observed and not acted in, and the record compares two coherent models for
+  changing that. Model A keeps one target-global observable revision, defined
+  as the base plus the sum of every live frame's counter with an ending
+  frame's counter folded into the base, so it stays monotonic; the node band
+  already says which frame a reference belongs to, so `target.act` needs no
+  request change and `0.0.2` is untouched. Model B introduces frame-local
+  versioned references and waits in a `0.0.3` beside the two existing
+  schemas, buying precise staleness and a per-frame wait at the cost of a
+  version and a second failure axis. The record analyses why the node bands
+  alone are insufficient — they say where a node is, never when; band *k* is
+  reused by a replaced child's document; they cannot say whether a link in a
+  child navigates the child or the target; and they reach neither the audit
+  ledger nor CDP — and it fixes the semantics both models must share: child
+  link and GET submit navigate the child, a child never replaces its parent's
+  document, parent navigation teardown is unchanged, a child navigation
+  advances that child's generation and replaces its realm, history stays the
+  main frame's, a child navigation's cookies commit only if it commits,
+  frames are still never capability owners, and a foreign, ended or unknown
+  frame stays one `not_found`. Per-frame bookkeeping is 8 bytes per frame
+  under A and 40 under B, against a measured 247,034 live owner bytes per
+  child, so bookkeeping is not the memory question; child scripts are, and
+  they stay excluded, with the new argument that model A's affordability
+  depends on it: a script-free child's counter can change only when the host
+  acts in it, so the revision stays one evaluation to read. The consequence
+  to record is that an action in a child behaves as it would in a script-free
+  document, where nothing can cancel it. The recommendation is model A; six
+  decisions wait on the root, the first being A or B. G1, G3, P6 and G6 stay
+  open.
 - [~] Implemented and measured on the native route: bounded child frames
   (`labs/native-dom/child-frame-design-0.0.1.md`). The audit found the frame
   contract already written and already executable on the synthetic host, so
