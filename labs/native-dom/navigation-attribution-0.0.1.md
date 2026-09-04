@@ -89,3 +89,57 @@ The separation the court must make explicit:
 - It may not be followed by another optimisation in this increment. Its
   output is a recorded mechanism with its limitations, and then the work
   stops.
+
+## 7. Result of the one run (recorded mechanism, no verdict)
+
+Build `3089ab5d…`, one run, one warm-up plus seven measured runs, both
+allocators, four cells each. Receipt
+`native-dom-control-0.0.2-navigation-attribution`. This is a mechanism, not a
+judgement: the court has no pass and no fail, and no prior receipt changed.
+
+**Where the bytes appear.** Almost all of the differential is one stage, the
+step from the candidate's bytes having arrived to its document existing:
+parsing it and seeding and running its realm. Summed across 128 navigations
+under the default allocator that stage grows the footprint by 999,424 bytes,
+on 22 of the 128 navigations, while the whole navigating arm's excess over
+the control arm is about 1.0 to 1.15 MB. Nothing measurable appears at the
+swap itself, at the history and audit write, or at serialising the result.
+
+**What the navigation actually holds.** After 128 navigations the owners this
+slice added hold 264 bytes of history and 5,150 bytes of audit ledger, of
+which 5,120 is the reserved ring. That is roughly half a percent of the
+differential. libmalloc's in-use rises about 29.7 MB across the run at the
+parse stage and falls about 29.6 MB at the swap, so each document's
+allocations are made and the previous document's are freed every time and
+almost nothing accumulates in the allocator's own accounting.
+
+**What is left is unowned residue.** After `target.close` and
+`session.close` every navigation owner reads zero, yet the process is still
+1,081,344 bytes above its base under the default allocator and 442,344 under
+the arena. The arena's own figures show why: the same parse stage adds
+45,681,664 bytes across the run and the drop of the replaced realm returns
+45,075,456 of them, so the pages a realm uses come back when an arena owns
+them and stay resident when the default zone does.
+
+**So the differential is page-granular allocator retention of a realm that is
+built and destroyed once per navigation**, not a structure this slice keeps.
+That also explains the instability across batches: three batches read
+1,064,960, 1,048,576 and 1,163,264, because what is being counted is how many
+freed pages a zone happens to hold, not a quantity the code controls.
+
+**Observer effect, measured not assumed.** The differential with the
+in-process sampling on was lower than with it off, by 131,072 bytes under the
+default allocator and 49,152 under the arena. The sampling does not inflate
+the result; the sign is negative and the size is inside the run-to-run
+spread, which is itself further evidence that this measurement is noisy at
+this granularity.
+
+## 8. Limitations
+
+- One hermetic origin on loopback and one page pair; macOS only; one build.
+- The two arms differ in the operation under test, which is the question; the
+  request count, the deadline and the target are identical.
+- Per-stage figures are sums across a run of medians across runs, so a single
+  navigation's cost is an average, not a distribution.
+- The court says where the bytes are, not what to do about them. No
+  optimisation follows from it in this increment, and none was attempted.

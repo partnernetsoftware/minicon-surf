@@ -1,0 +1,502 @@
+{
+ "design": "labs/native-dom/navigation-attribution-0.0.1.md",
+ "host_sha256": "3089ab5d0aca51bebf93d69018e3d7e3761945ecd5da7753364045b9dcdc4b3f",
+ "limitations": [
+  "the in-process stage samples exist only with the court-only file and stage flags, which are off by default; their cost is reported as the observer effect rather than assumed away",
+  "outside readings are proc_pid_rusage physical footprint on the host, taken between requests, never from the host's own report",
+  "the two arms differ in the operation under test, which is the point; the request count, deadline and target are identical",
+  "one hermetic origin on loopback, one page pair, macOS only; no surface, no window, no AppKit",
+  "no pid, path, window or desktop fact is recorded"
+ ],
+ "navigations": 128,
+ "of": [
+  "native-dom-control-0.0.2-navigation",
+  "native-dom-control-0.0.2-navigation-replication",
+  "native-dom-control-0.0.2-navigation-repair"
+ ],
+ "repetitions": 7,
+ "results": {
+  "arena": {
+   "cells": {
+    "control": {
+     "after_close_over_base": {
+      "median": -180248,
+      "per_run": [
+       -180248,
+       -180248,
+       -196632,
+       -163864,
+       -180248,
+       -131096,
+       -163864
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 0,
+     "outside_over_base": {
+      "median": 147456,
+      "per_run": [
+       147456,
+       147456,
+       147456,
+       180224,
+       163840,
+       212992,
+       147456
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": null,
+      "audit_capacity_bytes": null,
+      "document_bytes": null,
+      "document_fetches": null,
+      "history_bytes": null,
+      "realm_malloc_bytes": null
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 0,
+      "audit_capacity_bytes": 0,
+      "history_bytes": 33,
+      "realm_malloc_bytes": 294960
+     },
+     "stage_deltas_median": {}
+    },
+    "control+stages": {
+     "after_close_over_base": {
+      "median": -213016,
+      "per_run": [
+       -229400,
+       -213016,
+       -213016,
+       -229400,
+       -213016,
+       -213016,
+       -229400
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 0,
+     "outside_over_base": {
+      "median": 147456,
+      "per_run": [
+       147456,
+       163840,
+       114688,
+       147456,
+       114688,
+       147456,
+       114688
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": null,
+      "audit_capacity_bytes": null,
+      "document_bytes": null,
+      "document_fetches": null,
+      "history_bytes": null,
+      "realm_malloc_bytes": null
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 0,
+      "audit_capacity_bytes": 0,
+      "history_bytes": 33,
+      "realm_malloc_bytes": 294960
+     },
+     "stage_deltas_median": {}
+    },
+    "navigating": {
+     "after_close_over_base": {
+      "median": 491496,
+      "per_run": [
+       507880,
+       507880,
+       491496,
+       507880,
+       409576,
+       425960,
+       458728
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 0,
+     "outside_over_base": {
+      "median": 851968,
+      "per_run": [
+       884736,
+       884736,
+       851968,
+       884736,
+       786432,
+       786432,
+       835584
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": null,
+      "audit_capacity_bytes": null,
+      "document_bytes": null,
+      "document_fetches": null,
+      "history_bytes": null,
+      "realm_malloc_bytes": null
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 5150,
+      "audit_capacity_bytes": 5120,
+      "history_bytes": 264,
+      "realm_malloc_bytes": 294960
+     },
+     "stage_deltas_median": {}
+    },
+    "navigating+stages": {
+     "after_close_over_base": {
+      "median": 442344,
+      "per_run": [
+       376808,
+       442344,
+       442344,
+       442344,
+       458728,
+       442344,
+       458728
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 128,
+     "outside_over_base": {
+      "median": 802816,
+      "per_run": [
+       753664,
+       802816,
+       802816,
+       802816,
+       786432,
+       802816,
+       819200
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": 5150,
+      "audit_capacity_bytes": 5120,
+      "document_bytes": 0,
+      "document_fetches": 0,
+      "history_bytes": 231,
+      "realm_malloc_bytes": 0
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 5150,
+      "audit_capacity_bytes": 5120,
+      "history_bytes": 264,
+      "realm_malloc_bytes": 294960
+     },
+     "stage_deltas_median": {
+      "after_history_audit->result_built": {
+       "footprint_grew_navigations": 0,
+       "footprint_sum": 0,
+       "in_use_sum": 180000
+      },
+      "after_swap->after_history_audit": {
+       "footprint_grew_navigations": 0,
+       "footprint_sum": -45075456,
+       "in_use_sum": -133936
+      },
+      "candidate_built->after_swap": {
+       "footprint_grew_navigations": 0,
+       "footprint_sum": 0,
+       "in_use_sum": 0
+      },
+      "candidate_fetched->candidate_built": {
+       "footprint_grew_navigations": 128,
+       "footprint_sum": 45681664,
+       "in_use_sum": 75984
+      },
+      "navigation_entry->candidate_fetched": {
+       "footprint_grew_navigations": 4,
+       "footprint_sum": 65536,
+       "in_use_sum": 96320
+      }
+     }
+    }
+   },
+   "differential": {
+    "observer_effect": -49152,
+    "with_stages": 655360,
+    "without_stages": 704512
+   }
+  },
+  "system": {
+   "cells": {
+    "control": {
+     "after_close_over_base": {
+      "median": 114688,
+      "per_run": [
+       131072,
+       98304,
+       114688,
+       131072,
+       114688,
+       114688,
+       147456
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 0,
+     "outside_over_base": {
+      "median": 98304,
+      "per_run": [
+       98304,
+       81920,
+       81920,
+       114688,
+       98304,
+       98304,
+       131072
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": null,
+      "audit_capacity_bytes": null,
+      "document_bytes": null,
+      "document_fetches": null,
+      "history_bytes": null,
+      "realm_malloc_bytes": null
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 0,
+      "audit_capacity_bytes": 0,
+      "history_bytes": 33,
+      "realm_malloc_bytes": 301296
+     },
+     "stage_deltas_median": {}
+    },
+    "control+stages": {
+     "after_close_over_base": {
+      "median": 98304,
+      "per_run": [
+       81920,
+       81920,
+       114688,
+       131072,
+       65536,
+       98304,
+       147456
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 0,
+     "outside_over_base": {
+      "median": 65536,
+      "per_run": [
+       65536,
+       65536,
+       98304,
+       114688,
+       65536,
+       65536,
+       147456
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": null,
+      "audit_capacity_bytes": null,
+      "document_bytes": null,
+      "document_fetches": null,
+      "history_bytes": null,
+      "realm_malloc_bytes": null
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 0,
+      "audit_capacity_bytes": 0,
+      "history_bytes": 33,
+      "realm_malloc_bytes": 301296
+     },
+     "stage_deltas_median": {}
+    },
+    "navigating": {
+     "after_close_over_base": {
+      "median": 1245184,
+      "per_run": [
+       1130496,
+       1245184,
+       1277952,
+       1245184,
+       1114112,
+       1130496,
+       1327104
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 0,
+     "outside_over_base": {
+      "median": 1245184,
+      "per_run": [
+       1130496,
+       1245184,
+       1277952,
+       1245184,
+       1114112,
+       1130496,
+       1327104
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": null,
+      "audit_capacity_bytes": null,
+      "document_bytes": null,
+      "document_fetches": null,
+      "history_bytes": null,
+      "realm_malloc_bytes": null
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 5150,
+      "audit_capacity_bytes": 5120,
+      "history_bytes": 264,
+      "realm_malloc_bytes": 301296
+     },
+     "stage_deltas_median": {}
+    },
+    "navigating+stages": {
+     "after_close_over_base": {
+      "median": 1081344,
+      "per_run": [
+       1064960,
+       1163264,
+       1163264,
+       1015808,
+       1081344,
+       966656,
+       1179648
+      ]
+     },
+     "exit_codes": [
+      0
+     ],
+     "navigations_sampled": 128,
+     "outside_over_base": {
+      "median": 1081344,
+      "per_run": [
+       1064960,
+       1163264,
+       1163264,
+       1015808,
+       1081344,
+       966656,
+       1179648
+      ]
+     },
+     "owner_growth_across_run_median": {
+      "audit_bytes": 5150,
+      "audit_capacity_bytes": 5120,
+      "document_bytes": 0,
+      "document_fetches": 0,
+      "history_bytes": 231,
+      "realm_malloc_bytes": 0
+     },
+     "owners_after_close_median": {
+      "audit_bytes": 0,
+      "history_bytes": 0,
+      "realm_malloc_bytes": 0
+     },
+     "owners_live_after_median": {
+      "audit_bytes": 5150,
+      "audit_capacity_bytes": 5120,
+      "history_bytes": 264,
+      "realm_malloc_bytes": 301296
+     },
+     "stage_deltas_median": {
+      "after_history_audit->result_built": {
+       "footprint_grew_navigations": 0,
+       "footprint_sum": 0,
+       "in_use_sum": 171984
+      },
+      "after_swap->after_history_audit": {
+       "footprint_grew_navigations": 0,
+       "footprint_sum": 0,
+       "in_use_sum": -29598784
+      },
+      "candidate_built->after_swap": {
+       "footprint_grew_navigations": 0,
+       "footprint_sum": 0,
+       "in_use_sum": 0
+      },
+      "candidate_fetched->candidate_built": {
+       "footprint_grew_navigations": 22,
+       "footprint_sum": 999424,
+       "in_use_sum": 29726736
+      },
+      "navigation_entry->candidate_fetched": {
+       "footprint_grew_navigations": 2,
+       "footprint_sum": 32768,
+       "in_use_sum": 90304
+      }
+     }
+    }
+   },
+   "differential": {
+    "observer_effect": -131072,
+    "with_stages": 1015808,
+    "without_stages": 1146880
+   }
+  }
+ },
+ "schema": "minicon-surf/native-dom-navigation-attribution/0.0.1",
+ "stages": [
+  "navigation_entry",
+  "candidate_fetched",
+  "candidate_built",
+  "after_swap",
+  "after_history_audit",
+  "result_built"
+ ],
+ "status": "attribution-only",
+ "verdict": "none: this court has no pass and no fail, moves no cap and replaces no receipt",
+ "warmup": 1
+}
