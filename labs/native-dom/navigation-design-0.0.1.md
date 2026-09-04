@@ -309,3 +309,70 @@ inherited pass: a row changes only on its own measured evidence.
 Atomic rollback, the differential memory court and every existing gate are
 preserved. Any ambiguity that would require touching the closed contract
 beyond this is raised before the change, not decided in code.
+
+## 14. Audit-ledger representation repair (pre-registered before the code)
+
+The differential soak failed one pre-registered cap after the audit ledger
+landed: over 128 navigations the navigating arm exceeded the control arm by
+1,146,880 bytes under the default allocator against the 1,048,576 budget,
+about 9.0 KB per navigation instead of 8. The arena arm held at 720,896 and
+both tail slopes held. Before the ledger the same court measured 917,504 and
+passed, so the ledger costs roughly 1.8 KB per navigation. **The cap does not
+move.** This section freezes one repair before it is written.
+
+### 14.1 What costs the bytes
+
+Every navigation appends a record that owns four freshly allocated strings:
+the target id, the operation name, the outcome category and the origin. In a
+soak those four are the *same* values over and over, so the host allocates and
+frees roughly four small blocks per navigation, and the default zone keeps the
+freed pages. Growing the ledger by one entry also shifted the whole vector
+when it was full, since the oldest was removed from the front.
+
+### 14.2 The repair
+
+One bounded representation change, no behaviour change:
+
+- **A preallocated ring of exactly 64 records per session.** The deque is
+  reserved once, at its capacity; a full ledger pushes the newest and pops the
+  oldest with no move of the remaining records.
+- **Compact fields.** The operation and the outcome become `&'static str`:
+  both are already fixed vocabularies (three operation names; `committed` plus
+  the typed error codes, which the host already holds as static strings), so
+  they cost nothing per record.
+- **Shared, bounded origins and target ids.** Each ledger keeps a small
+  interning table, at most 32 origins and at most one entry per live target,
+  and a record holds a shared handle. Repeated navigation to the same origin
+  allocates nothing after the first. If a table is full, that record owns its
+  own copy, which stays bounded because the ledger itself is.
+- **Implicit owner chain.** A ledger belongs to one session and a session
+  belongs to one profile for its life, so neither is stored per record; both
+  are materialised at `session.inspect` from the session itself.
+
+### 14.3 What must not change
+
+- Every observable field of a record stays exactly as it is: `sequence`,
+  `session`, `profile`, `target`, `operation`, `origin`, `outcome`,
+  `deadline_ms`, `result_bytes_limit`. The target id materialises identically
+  even though it is compact inside.
+- The 64-entry capacity, the eviction of the oldest, `dropped_total`, and the
+  release of a ledger with its session.
+- No memoisation that keeps an unbounded string, no global allocator change,
+  no counterfactual tuning of either soak arm, and no weakening of any check.
+
+### 14.4 Honest accounting
+
+`memory.report` keeps reporting the live entry count, the limit and the drop
+total, and adds the reserved capacity of the rings and the bytes the interning
+tables hold, so the ledger's cost is stated rather than hidden by sharing.
+
+### 14.5 Acceptance, frozen
+
+- Both allocators meet the existing differential cap of 8,192 bytes per
+  navigation over 128 navigations, and the existing tail-slope budget.
+- The audit semantics, the capacity and the drop count are unchanged, proven
+  by the court's ledger assertions.
+- Every other frozen check stays green.
+
+If the repair misses the cap, the outcome is recorded `narrow` and the work
+stops there. The cap is not moved and the arms are not retuned.
