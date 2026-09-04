@@ -72,6 +72,11 @@ Amendments after the freeze, in order, none of them moving a criterion:
    from the first implementation of this file. It is implemented now, against
    the pinned client over the loopback edge, and qualifies the mapping on a
    real URL target rather than by inspection.
+ 9 Gap 5 closed, criterion restored. `profile.policy.set` is implemented on
+   this route now, so the offline-profile rollback criterion is evaluated as
+   it was originally frozen. It is no longer recorded unverified, and
+   `unsupported_operation` was never counted as success. The record of its
+   temporary unverified state stays above.
 """
 
 import argparse
@@ -186,6 +191,7 @@ class Host:
 
 
 def refused(response, code, reason=None):
+    """A typed refusal, optionally with the exact reason the host names."""
     if response.get("ok"):
         return False
     error = response["error"]
@@ -372,19 +378,35 @@ def run(binary, allocator, origin, expect, unverified, tag):
                 # That click changed the document without replacing it, so the
                 # identity the remaining criteria hold still is re-read here.
                 settled = state(host, target)
-            offline = host.call("profile.policy.set", {"session": session, "network": "offline",
-                                                       "permissions": "deny"})
-            if offline.get("ok"):
-                response = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"})
-                after = state(host, target)
-                expect(tag + "an offline profile refuses before any socket and changes nothing",
-                       refused(response, "permission_denied") and identity(after) == identity(settled),
-                       {"error": response.get("error")})
-                host.ok("profile.policy.set", {"session": session, "network": "online", "permissions": "deny"})
-            else:
-                unverified(tag + "an offline profile refuses before any socket and changes nothing",
-                           {"reason": "profile.policy.set is reserved by the contract but not offered by this route",
-                            "error": offline.get("error", {}).get("code")})
+            host.ok("profile.policy.set", {"session": session, "network": "offline",
+                                           "permissions": "deny_by_default"})
+            response = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"})
+            after = state(host, target)
+            expect(tag + "an offline profile refuses before any socket and changes nothing",
+                   refused(response, "permission_denied", "network_offline")
+                   and identity(after) == identity(settled),
+                   {"error": response.get("error")})
+            reloaded_offline = host.call("target.reload", {"target": target})
+            expect(tag + "an offline profile refuses a reload the same way",
+                   refused(reloaded_offline, "permission_denied", "network_offline"),
+                   reloaded_offline.get("error"))
+            inspected_offline = host.ok("profile.inspect", {"profile": profile})
+            expect(tag + "profile.inspect reports the policy and says the permission grants nothing",
+                   inspected_offline.get("policy", {}).get("network") == "offline"
+                   and inspected_offline["policy"]["permissions"] == "deny_by_default"
+                   and inspected_offline["policy"]["permissions_effect"] == "recorded_only",
+                   inspected_offline.get("policy"))
+            host.ok("profile.policy.set", {"session": session, "network": "online",
+                                           "permissions": "allow_by_default"})
+            restored = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"})
+            expect(tag + "restoring online re-enables navigation under the unchanged allowlist",
+                   restored.get("ok") and (restored.get("result") or {}).get("url") == f"{origin}/index.html",
+                   restored.get("error"))
+            denied_still = host.call("target.navigate", {"target": target, "url": "http://10.0.0.1/evil.html"})
+            expect(tag + "the allowlist is unchanged by the switch",
+                   refused(denied_still, "permission_denied") and not refused(denied_still, "permission_denied", "network_offline"),
+                   denied_still.get("error"))
+            settled = state(host, target)
             deadline = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"}, 1)
             after = state(host, target)
             expect(tag + "an expired deadline is typed and leaves the target whole",

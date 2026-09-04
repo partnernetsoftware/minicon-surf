@@ -259,6 +259,38 @@ def main():
                     expect(tag + "an expired cookie is deleted", "court-gone" not in text_of(host, echo))
                     host.ok("target.close", {"target": echo})
 
+                    # 4a2. The profile's policy: one profile's switch never
+                    # reaches another's, and it takes effect at once.
+                    host.ok("profile.policy.set", {"session": sessions["alpha"], "network": "offline",
+                                                   "permissions": "deny_by_default"})
+                    denied = host.call("target.open", {"session": sessions["alpha"], "url": f"{origin}/echo.html"})
+                    expect(tag + "an offline profile refuses a new target before any socket",
+                           refused(denied, "permission_denied"), denied.get("error"))
+                    beta_page = host.call("target.open", {"session": sessions["beta"], "url": f"{origin}/echo.html"})
+                    expect(tag + "the other profile is untouched by that switch",
+                           beta_page.get("ok"), beta_page.get("error"))
+                    if beta_page.get("ok"):
+                        host.ok("target.close", {"target": beta_page["result"]["target"]})
+                    inspected = host.ok("profile.inspect", {"profile": alpha})
+                    expect(tag + "profile.inspect reports the policy and that the permission grants nothing",
+                           inspected.get("policy", {}).get("network") == "offline"
+                           and inspected["policy"]["permissions"] == "deny_by_default"
+                           and inspected["policy"]["permissions_effect"] == "recorded_only", inspected.get("policy"))
+                    owners = host.ok("memory.report", {})["owners"]["profiles"]
+                    expect(tag + "the policy is accounted in bounded owner counts",
+                           owners.get("policies", {}).get("offline") == 1
+                           and owners["policies"]["deny_by_default"] == 1
+                           and owners["policies"]["bytes"] > 0, owners.get("policies"))
+                    # Back online, but with the non-default permission left in
+                    # place: the restart has to read that back out of the
+                    # sealed record, and it blocks nothing meanwhile.
+                    host.ok("profile.policy.set", {"session": sessions["alpha"], "network": "online",
+                                                   "permissions": "deny_by_default"})
+                    allowed = host.call("target.open", {"session": sessions["alpha"], "url": f"{origin}/echo.html"})
+                    expect(tag + "restoring online works at once under the unchanged allowlist",
+                           allowed.get("ok"), allowed.get("error"))
+                    if allowed.get("ok"):
+                        host.ok("target.close", {"target": allowed["result"]["target"]})
                     # 4b. Session cookies live in the profile's volatile jar (D4).
                     volatile = host.ok("target.open", {"session": sessions["alpha"], "url": f"{origin}/cookie/set?name=volatile&value=court-volatile&attrs=Path%3D/"})["target"]
                     host.ok("target.close", {"target": volatile})
@@ -352,6 +384,10 @@ def main():
                     host.ok("target.close", {"target": echo})
                     page = host.ok("target.open", {"session": session, "url": f"{origin}/storage.html?alpha-4"})["target"]
                     expect(tag + "alpha's localStorage survives the restart", "seen=alpha-1" in text_of(host, page))
+                    restarted_policy = host.ok("profile.inspect", {"profile": alpha}).get("policy", {})
+                    expect(tag + "alpha's policy survives the restart inside the sealed record",
+                           restarted_policy.get("network") == "online"
+                           and restarted_policy.get("permissions") == "deny_by_default", restarted_policy)
                     # Supplementary D6 record (not a gate): the restarted host holds the persisted
                     # profile and its fixture data with one open target and no churn history.
                     footprints[allocator]["restart_live_one_target"] = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"]

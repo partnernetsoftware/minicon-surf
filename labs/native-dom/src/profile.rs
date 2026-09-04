@@ -544,10 +544,27 @@ impl Storage {
 
 /// Everything a persistent profile keeps on disk, in the clear only inside
 /// the seal.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct RecordData {
     pub persistent_cookies: Vec<Cookie>,
     pub storage: Storage,
+    /// The profile's policy. A record written before this field existed has
+    /// neither key, and reads back as the default a profile starts with, so
+    /// the format version does not move and both directions stay compatible:
+    /// an older reader ignores the field, a newer one defaults it.
+    pub online: bool,
+    pub allow_by_default: bool,
+}
+
+impl Default for RecordData {
+    fn default() -> RecordData {
+        RecordData {
+            persistent_cookies: Vec::new(),
+            storage: Storage::default(),
+            online: true,
+            allow_by_default: true,
+        }
+    }
 }
 
 impl RecordData {
@@ -569,6 +586,10 @@ impl RecordData {
             "profile":profile_id,
             "cookies":self.persistent_cookies.iter().map(Cookie::to_json).collect::<Vec<_>>(),
             "storage":storage,
+            "policy":{
+                "network": if self.online { "online" } else { "offline" },
+                "permissions": if self.allow_by_default { "allow_by_default" } else { "deny_by_default" },
+            },
         })
     }
 
@@ -611,9 +632,16 @@ impl RecordData {
         if storage.accounted_bytes() > MAX_ACCOUNTED_BYTES_PER_PROFILE {
             return None;
         }
+        // A record without a policy is a record written before the field
+        // existed: it means the default a profile starts with.
+        let policy = &value["policy"];
+        let online = policy["network"].as_str() != Some("offline");
+        let allow_by_default = policy["permissions"].as_str() != Some("deny_by_default");
         Some(RecordData {
             persistent_cookies: cookies,
             storage,
+            online,
+            allow_by_default,
         })
     }
 }

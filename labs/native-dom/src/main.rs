@@ -305,6 +305,50 @@ fn operation_available(operation: &str, version: &str) -> bool {
         || (version == VERSION_NEXT && NAVIGATION_OPERATIONS.contains(&operation))
 }
 
+/// A profile's policy: the network switch and the default permission answer.
+/// Both are exactly the values control 0.0.1 reserved for
+/// `profile.policy.set`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ProfilePolicy {
+    online: bool,
+    allow_by_default: bool,
+}
+
+impl Default for ProfilePolicy {
+    /// What a profile has before anything is set, and what a record written
+    /// before this field existed means when it is read back.
+    fn default() -> ProfilePolicy {
+        ProfilePolicy {
+            online: true,
+            allow_by_default: true,
+        }
+    }
+}
+
+impl ProfilePolicy {
+    fn network(self) -> &'static str {
+        if self.online { "online" } else { "offline" }
+    }
+
+    fn permissions(self) -> &'static str {
+        if self.allow_by_default {
+            "allow_by_default"
+        } else {
+            "deny_by_default"
+        }
+    }
+
+    fn to_json(self) -> Value {
+        json!({
+            "network": self.network(),
+            "permissions": self.permissions(),
+            // This slice has no API that consumes a permission, so the value
+            // is stored, reported and audited and grants nothing.
+            "permissions_effect": "recorded_only",
+        })
+    }
+}
+
 /// At most this many distinct origins are shared inside one ledger; a record
 /// beyond that owns its own copy, which stays bounded because the ledger is.
 const MAX_AUDIT_ORIGINS: usize = 32;
@@ -1227,6 +1271,8 @@ struct Profile {
     /// This profile's TLS client over the host's pinned roots; `None`
     /// without pinned roots.
     tls: Option<std::sync::Arc<net::TlsClient>>,
+    /// The network switch and default permission answer of this profile.
+    policy: ProfilePolicy,
 }
 
 /// A target's working copy of its profile's jar and storage, synced from the
@@ -1791,7 +1837,7 @@ impl Host {
                 true,
             ));
         }
-        let policy = self.policy.clone();
+        let policy = self.policy_for_target(&target_id);
         let started = Instant::now();
         self.surface_stage("show_entry");
         let frame_size = self.surface_frame;
@@ -1985,7 +2031,11 @@ impl Host {
 
     fn apply_surface_input(&mut self, surface_id: &str, input: surface::Input, deadline: Instant) {
         self.surface_stats.input_events_total += 1;
-        let policy = self.policy.clone();
+        let policy = self
+            .surfaces
+            .get(surface_id)
+            .map(|record| self.policy_for_target(&record.target_id))
+            .unwrap_or_else(|| self.policy.clone());
         let Some(record) = self.surfaces.get(surface_id) else {
             return;
         };
@@ -2206,6 +2256,32 @@ impl Host {
     }
 
     /// The profile behind a target, through its session.
+    /// The network policy that applies to one target: the host's allowlist
+    /// with the owning profile's switch. The switch is enforced inside
+    /// `authorize`, before a name is resolved or a socket is opened, so it
+    /// covers a navigation and a page's own fetch alike.
+    fn policy_for_target(&self, target_id: &str) -> net::Policy {
+        match self.target_profile_id(target_id) {
+            Some(profile) => self.policy_for_profile(&profile),
+            None => self.policy.clone(),
+        }
+    }
+
+    fn policy_for_profile(&self, profile_id: &str) -> net::Policy {
+        let mut policy = self.policy.clone();
+        if let Some(profile) = self.profiles.get(profile_id) {
+            policy.offline = !profile.policy.online;
+        }
+        policy
+    }
+
+    fn policy_for_session(&self, session_id: &str) -> net::Policy {
+        match self.sessions.get(session_id) {
+            Some(session) => self.policy_for_profile(&session.profile_id),
+            None => self.policy.clone(),
+        }
+    }
+
     fn target_profile_id(&self, target_id: &str) -> Option<String> {
         let target = self.targets.get(target_id)?;
         self.sessions
@@ -2275,6 +2351,8 @@ impl Host {
         let data = profile::RecordData {
             persistent_cookies: profile.jar.persistent.clone(),
             storage: profile.storage.clone(),
+            online: profile.policy.online,
+            allow_by_default: profile.policy.allow_by_default,
         };
         let bytes = profile::seal_record(source, profile_id, dek, &data)
             .map_err(|e| store_error(e, profile_id))?;
@@ -2424,6 +2502,10 @@ impl Host {
                 .and_then(|bytes| profile::open_record(&source, &id, &bytes));
             match loaded {
                 Ok((dek, data)) if self.profiles.len() < MAX_PROFILES => {
+                    let policy_from_record = ProfilePolicy {
+                        online: data.online,
+                        allow_by_default: data.allow_by_default,
+                    };
                     self.profiles.insert(
                         id.clone(),
                         Profile {
@@ -2440,6 +2522,7 @@ impl Host {
                             read_only: false,
                             lock: None,
                             tls: self.tls_client(),
+                            policy: policy_from_record,
                         },
                     );
                 }
@@ -2592,6 +2675,7 @@ impl Host {
                     "sessions":self.sessions.values().filter(|s| s.profile_id == profile.id).count(),
                     "cookies":{"objects":profile.jar.len(),"persistent":profile.jar.persistent.len(),"volatile":profile.jar.volatile.len(),"bytes":profile.jar.accounted_bytes()},
                     "storage":{"keys":profile.storage.keys(),"origins":profile.storage.origins.len(),"bytes":profile.storage.accounted_bytes()},
+                    "policy":profile.policy.to_json(),
                     "read_only":profile.read_only,
                     "store":self.key_source.as_ref().map(|k| k.mode.name()),
                     "budgets":profile_budgets(),
@@ -2630,6 +2714,7 @@ impl Host {
             "session.list" => Ok(
                 json!({"kind":"session_list","sessions":self.sessions.values().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()}),
             ),
+            "profile.policy.set" => self.profile_policy_set(a),
             "session.inspect" => self.session_inspect(a),
             "session.close" => self.session_close(a),
             "target.open" => self.target_open(a, deadline),
@@ -2639,7 +2724,7 @@ impl Host {
             "target.inspect" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?.to_owned();
-                let policy = self.policy.clone();
+                let policy = self.policy_for_target(&id);
                 let https = self.tls_roots.is_some();
                 let surface_id = self
                     .surfaces
@@ -2784,6 +2869,7 @@ impl Host {
                 read_only: false,
                 lock: None,
                 tls: self.tls_client(),
+                policy: ProfilePolicy::default(),
             },
         );
         Ok(
@@ -2856,6 +2942,7 @@ impl Host {
                 read_only: false,
                 lock: None,
                 tls: self.tls_client(),
+                policy: ProfilePolicy::default(),
             },
         );
         Ok(
@@ -3078,7 +3165,7 @@ impl Host {
             deadline,
             io,
         )?;
-        let policy = self.policy.clone();
+        let policy = self.policy_for_session(session);
         let revision = Self::revision(&mut target, deadline, &policy)?;
         let summary = json!({
             "kind":"target","target":id,"session":session,"revision":revision,"fixture":target.fixture,
@@ -3123,7 +3210,7 @@ impl Host {
         deadline: Instant,
         mut io: TargetIo,
     ) -> Result<Target, ControlError> {
-        let policy = self.policy.clone();
+        let policy = self.policy_for_session(session);
         let now = profile::now_seconds();
         let (label, base, bytes, framing) = match source {
             Source::Fixture(fixture) => {
@@ -3367,6 +3454,68 @@ impl Host {
         });
     }
 
+    /// `profile.policy.set`: the network switch and the default permission
+    /// answer of the session's profile, with exactly the arguments control
+    /// 0.0.1 reserved. A persistent profile writes the change through with
+    /// the store's existing atomic replacement; a failed write leaves the live
+    /// policy and the record exactly as they were.
+    fn profile_policy_set(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session", "network", "permissions"])?;
+        let session_id = typed_field(object, "session", "session")?.to_owned();
+        let online = match string_field(object, "network")? {
+            "online" => true,
+            "offline" => false,
+            _ => return Err(invalid("network must be online or offline")),
+        };
+        let allow_by_default = match string_field(object, "permissions")? {
+            "allow_by_default" => true,
+            "deny_by_default" => false,
+            _ => {
+                return Err(invalid(
+                    "permissions must be allow_by_default or deny_by_default",
+                ));
+            }
+        };
+        let profile_id = self
+            .sessions
+            .get(&session_id)
+            .map(|session| session.profile_id.clone())
+            .ok_or_else(|| not_found("session", &session_id))?;
+        let profile = self
+            .profiles
+            .get_mut(&profile_id)
+            .ok_or_else(|| not_found("profile", &profile_id))?;
+        let persistent = profile.persistent;
+        if persistent && profile.read_only {
+            return Err(commit_failed(
+                &profile_id,
+                "storage is read-only after an earlier failed commit",
+            ));
+        }
+        let previous = profile.policy;
+        profile.policy = ProfilePolicy {
+            online,
+            allow_by_default,
+        };
+        if persistent && let Err(error) = self.write_profile(&profile_id) {
+            // The disk refused: the live policy goes back to what the record
+            // still says, and nothing about this profile changed.
+            let profile = self.profiles.get_mut(&profile_id).expect("profile exists");
+            profile.policy = previous;
+            profile.read_only = true;
+            return Err(error);
+        }
+        let policy = self
+            .profiles
+            .get(&profile_id)
+            .expect("profile exists")
+            .policy;
+        Ok(json!({
+            "kind":"profile_policy","profile":profile_id,"session":session_id,
+            "policy":policy.to_json(),"persisted":persistent,
+        }))
+    }
+
     /// `session.inspect`: read-only and bounded. Identity and owner chain, the
     /// live targets and surfaces it owns, the versions and exact operations
     /// this host serves, and the audit ledger.
@@ -3421,7 +3570,7 @@ impl Host {
     /// The result every navigation operation returns: the identity after the
     /// swap, the committed URL and the bounded history state.
     fn navigation_result(&mut self, id: &str, deadline: Instant) -> Result<Value, ControlError> {
-        let policy = self.policy.clone();
+        let policy = self.policy_for_target(id);
         let target = self.target_mut(id)?;
         let revision = Self::revision(target, deadline, &policy)?;
         let history = self
@@ -3585,7 +3734,7 @@ impl Host {
     /// failure the target keeps its document, realm, generation and
     /// revision, and only the network budget records the attempt.
     fn navigate(&mut self, id: &str, href: &str, deadline: Instant) -> Result<Value, ControlError> {
-        let policy = self.policy.clone();
+        let policy = self.policy_for_target(id);
         {
             let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
             lifetime.navigation_attempts = lifetime.navigation_attempts.saturating_add(1);
@@ -3756,7 +3905,7 @@ impl Host {
         }
         let max_bytes = bounded_u64(object, "max_bytes", 1, MAX_RESPONSE_BYTES as u64)? as usize;
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
-        let policy = self.policy.clone();
+        let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
         // A foreign, retired or unknown frame or realm is one and the same
         // refusal: only the target's live main frame and realm exist.
@@ -3882,7 +4031,7 @@ impl Host {
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             })?
             - 1;
-        let policy = self.policy.clone();
+        let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
         let current = Self::revision(target, deadline, &policy)?;
         if current != revision {
@@ -3961,7 +4110,7 @@ impl Host {
             ));
         }
         let expected = bounded_u64(condition, "revision", 0, u64::MAX)?;
-        let policy = self.policy.clone();
+        let policy = self.policy_for_target(&id);
         loop {
             self.pump_surfaces(deadline);
             let target = self.target_mut(&id)?;
@@ -4012,6 +4161,10 @@ impl Host {
             "semantic":"native-dom-logical-owners-plus-script-realm-and-libmalloc-statistics",
             "owners":{
                 "profiles":{
+                    "policies":{"offline":self.profiles.values().filter(|p| !p.policy.online).count(),
+                        "deny_by_default":self.profiles.values().filter(|p| !p.policy.allow_by_default).count(),
+                        "bytes":self.profiles.len() * std::mem::size_of::<ProfilePolicy>(),
+                        "permissions_effect":"recorded_only"},
                     "objects":self.profiles.len(),"object_limit":MAX_PROFILES,
                     "persistent":self.profiles.values().filter(|p| p.persistent).count(),
                     "unavailable":self.unavailable_profiles.len(),

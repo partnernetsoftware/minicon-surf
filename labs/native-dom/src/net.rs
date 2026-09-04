@@ -119,6 +119,10 @@ pub struct Policy {
     /// True only when pinned roots were loaded; `https` is otherwise
     /// `unsupported_capability`.
     pub https: bool,
+    /// The profile's network switch. When it is off, every request of every
+    /// kind is refused here, before any name is resolved, any socket is
+    /// opened or any handshake begins.
+    pub offline: bool,
 }
 
 /// Per-target budget shared by navigation, external scripts and `fetch()`.
@@ -448,6 +452,13 @@ pub fn is_public_ip(ip: IpAddr) -> bool {
 /// addresses a connection may use. Allowlisted origins skip address
 /// classification; every other host must resolve only to public addresses.
 pub fn authorize(url: &Url, policy: &Policy) -> Result<Vec<SocketAddr>, NetError> {
+    if policy.offline {
+        return Err(NetError::new(
+            "permission_denied",
+            "network_offline",
+            "the profile's network policy is offline",
+        ));
+    }
     match url.scheme() {
         "http" => {}
         "https" if policy.https => {}
@@ -1051,6 +1062,7 @@ mod tests {
     fn policy_with(origin: &str) -> Policy {
         Policy {
             https: false,
+            offline: false,
             allowed_origins: vec![AllowedOrigin::parse(origin).unwrap()],
         }
     }
@@ -1284,6 +1296,36 @@ mod tests {
             let ip: IpAddr = text.parse().unwrap();
             assert!(is_public_ip(ip), "{text} must be public");
         }
+    }
+
+    /// An offline profile is refused here, before a name is resolved, a
+    /// socket is opened or a handshake begins.
+    #[test]
+    fn an_offline_policy_refuses_before_any_name_or_socket() {
+        let online = Policy::default();
+        let offline = Policy {
+            offline: true,
+            ..Policy::default()
+        };
+        let url = Url::parse("http://127.0.0.1:1/index.html").expect("url");
+        // The same URL is refused for its address under the online policy and
+        // for the switch under the offline one: the switch comes first.
+        let denied = authorize(&url, &offline).unwrap_err();
+        assert_eq!(
+            (denied.code, denied.reason),
+            ("permission_denied", "network_offline")
+        );
+        let allowed = authorize(&url, &online).unwrap_err();
+        assert_ne!(
+            allowed.reason, "network_offline",
+            "online refuses for another reason"
+        );
+        let mut budget = Budget::default();
+        let refused = fetch("http://127.0.0.1:1/", &offline, &mut budget, soon()).unwrap_err();
+        assert_eq!(
+            (refused.code, refused.reason),
+            ("permission_denied", "network_offline")
+        );
     }
 
     #[test]
