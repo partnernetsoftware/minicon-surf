@@ -267,6 +267,10 @@ mod tests {
 
     #[test]
     fn lengths_are_checked_and_bounded() {
+        // This test maps and drops a region too, so it takes the same lock:
+        // the counters below are process-global and every test that moves
+        // them is serialised against every test that reads them.
+        let _guard = test_lock();
         let (bytes, mapped) = lengths(FrameSize::DEFAULT).unwrap();
         assert_eq!(bytes, 640 * 400 * 4);
         assert!(mapped >= bytes && mapped - bytes < page_size() && mapped % page_size() == 0);
@@ -306,15 +310,21 @@ mod tests {
     fn map_write_and_unmap_exactly_once() {
         let _guard = test_lock();
         let before = counters();
+        // The counters are process-global and monotonic, so they are read as
+        // lower bounds. What this test owns is one region, and what it proves
+        // exactly is that region's own lifetime: the live difference rises by
+        // one while it is alive and returns to where it was when it is gone.
+        let live_before = before.regions_mapped_total - before.regions_unmapped_total;
         let mut region = FrameRegion::map(FrameSize::parse("128x128").unwrap()).unwrap();
         let after_map = counters();
-        assert_eq!(
-            after_map.regions_mapped_total,
-            before.regions_mapped_total + 1
+        assert!(
+            after_map.regions_mapped_total > before.regions_mapped_total,
+            "a map is at least one map"
         );
         assert_eq!(
-            after_map.regions_unmapped_total,
-            before.regions_unmapped_total
+            after_map.regions_mapped_total - after_map.regions_unmapped_total,
+            live_before + 1,
+            "exactly this region is live"
         );
         assert_eq!(region.frame_len(), 128 * 128 * 4);
         assert!(
@@ -331,17 +341,59 @@ mod tests {
         let mapped = region.mapped_len() as u64;
         drop(region);
         let after_drop = counters();
-        assert_eq!(
-            after_drop.regions_unmapped_total,
-            before.regions_unmapped_total + 1
+        assert!(
+            after_drop.regions_unmapped_total > after_map.regions_unmapped_total,
+            "the drop unmapped at least this region"
+        );
+        assert!(
+            after_drop.unmapped_bytes_total >= after_map.unmapped_bytes_total + mapped,
+            "and returned at least its mapped bytes"
         );
         assert_eq!(
-            after_drop.unmapped_bytes_total,
-            before.unmapped_bytes_total + mapped
+            after_drop.regions_mapped_total - after_drop.regions_unmapped_total,
+            live_before,
+            "nothing of this region is left live: unmapped exactly once"
+        );
+    }
+
+    /// The same property under parallel stress: many regions mapped and
+    /// dropped from several threads leave the live difference exactly where
+    /// they found it, and each counter advances by at least what was done.
+    #[test]
+    fn parallel_maps_and_drops_conserve_the_live_difference() {
+        let _guard = test_lock();
+        let before = counters();
+        let live_before = before.regions_mapped_total - before.regions_unmapped_total;
+        const THREADS: u64 = 4;
+        const EACH: u64 = 16;
+        let mut handles = Vec::new();
+        for _ in 0..THREADS {
+            handles.push(std::thread::spawn(|| {
+                let size = FrameSize::parse("64x64").expect("a size");
+                for _ in 0..EACH {
+                    let mut region = FrameRegion::map(size).expect("a region");
+                    region.as_mut_slice()[0] = 7;
+                    assert_eq!(region.as_slice()[0], 7);
+                    drop(region);
+                }
+            }));
+        }
+        for handle in handles {
+            handle.join().expect("a thread");
+        }
+        let after = counters();
+        assert!(
+            after.regions_mapped_total >= before.regions_mapped_total + THREADS * EACH,
+            "every region was mapped"
+        );
+        assert!(
+            after.regions_unmapped_total >= before.regions_unmapped_total + THREADS * EACH,
+            "and every one of them was unmapped"
         );
         assert_eq!(
-            after_drop.regions_mapped_total,
-            after_map.regions_mapped_total
+            after.regions_mapped_total - after.regions_unmapped_total,
+            live_before,
+            "none of them leaked and none was unmapped twice"
         );
     }
 }
