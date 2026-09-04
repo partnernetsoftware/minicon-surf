@@ -38,6 +38,11 @@ const VERSION_NEXT: &str = "0.0.2";
 const NAVIGATION_OPERATIONS: &[&str] = &["target.navigate", "target.reload", "target.traverse"];
 /// The history window: eight bounded entries, each a committed URL.
 const MAX_HISTORY_ENTRIES: usize = 8;
+/// The audit ledger `session.inspect` reports: the newest 64 records of the
+/// navigation operations. A record is evidence that an operation happened; it
+/// is never an authorization, and this host implements no capability
+/// attenuation.
+const MAX_AUDIT_ENTRIES: usize = 64;
 const MAX_URL_BYTES: usize = 2000;
 const MAX_REQUEST_BYTES: usize = 65_536;
 const MAX_RESPONSE_BYTES: usize = 4_194_304;
@@ -298,6 +303,48 @@ struct Request {
 fn operation_available(operation: &str, version: &str) -> bool {
     OPERATIONS.contains(&operation)
         || (version == VERSION_NEXT && NAVIGATION_OPERATIONS.contains(&operation))
+}
+
+/// One bounded audit record. It names an origin, never a path, a query or
+/// userinfo, and carries no value the page or the profile holds.
+#[derive(Debug, Clone)]
+struct AuditEntry {
+    sequence: u64,
+    profile: String,
+    target: String,
+    operation: String,
+    origin: Option<String>,
+    outcome: String,
+    deadline_ms: u64,
+}
+
+impl AuditEntry {
+    fn to_json(&self, session: &str) -> Value {
+        json!({
+            "sequence": self.sequence, "session": session, "profile": self.profile,
+            "target": self.target, "operation": self.operation, "origin": self.origin,
+            "outcome": self.outcome, "deadline_ms": self.deadline_ms,
+            "result_bytes_limit": MAX_RESPONSE_BYTES,
+        })
+    }
+
+    /// Roughly what the record costs, for the owner accounting.
+    fn bytes(&self) -> usize {
+        self.profile.len()
+            + self.target.len()
+            + self.operation.len()
+            + self.origin.as_ref().map_or(0, String::len)
+            + self.outcome.len()
+            + 3 * std::mem::size_of::<u64>()
+    }
+}
+
+/// The scheme, host and port of a URL and nothing else: no path, no query, no
+/// fragment and no userinfo ever reaches the ledger.
+fn origin_only(url: &str) -> Option<String> {
+    let url = Url::parse(url).ok()?;
+    let origin = url.origin();
+    origin.is_tuple().then(|| origin.ascii_serialization())
 }
 
 /// Saturating lifetime diagnostics for one target, kept beside it so they
@@ -1411,6 +1458,14 @@ struct Host {
     histories: BTreeMap<String, History>,
     /// Saturating per-target diagnostics, likewise kept across the swap.
     lifetimes: BTreeMap<String, Lifetime>,
+    /// The newest bounded audit records per session, released with it.
+    audits: BTreeMap<String, Vec<AuditEntry>>,
+    /// Monotonic across the host, so a record's place in the order is visible
+    /// even after older records have been dropped.
+    next_audit_sequence: u64,
+    audit_dropped_total: u64,
+    /// The deadline the request being executed carries, for the ledger.
+    current_deadline_ms: u64,
     /// Adapters (today: CDP sessions) registered against live targets. A
     /// record holds names only; the target owns its state and the record is
     /// removed when the target closes.
@@ -2382,6 +2437,7 @@ impl Host {
 
     fn execute(&mut self, request: &Request) -> Result<Value, ControlError> {
         let deadline = Instant::now() + request.deadline;
+        self.current_deadline_ms = request.deadline.as_millis() as u64;
         let a = &request.arguments;
         // Target operations run on a working copy of the profile that is
         // synced before and committed after; a failed commit is the
@@ -2482,6 +2538,7 @@ impl Host {
             "session.list" => Ok(
                 json!({"kind":"session_list","sessions":self.sessions.values().map(|s| json!({"session":s.id,"profile":s.profile_id})).collect::<Vec<_>>()}),
             ),
+            "session.inspect" => self.session_inspect(a),
             "session.close" => self.session_close(a),
             "target.open" => self.target_open(a, deadline),
             "target.list" => Ok(
@@ -2781,6 +2838,7 @@ impl Host {
             .filter(|t| t.session_id == session.id)
             .map(|t| t.id.clone())
             .collect();
+        self.audits.remove(&session.id);
         let closed = ids.len();
         let mut detached = 0;
         let mut released = 0;
@@ -3184,6 +3242,89 @@ impl Host {
         Ok(target)
     }
 
+    /// Append one bounded record of a navigation operation. It is evidence
+    /// that the operation happened, never an authorization: this host
+    /// implements no capability attenuation.
+    fn audit_navigation(
+        &mut self,
+        target_id: &str,
+        operation: &str,
+        url: Option<&str>,
+        outcome: &str,
+    ) {
+        let Some(session) = self.targets.get(target_id).map(|t| t.session_id.clone()) else {
+            return;
+        };
+        let profile = self.target_profile_id(target_id).unwrap_or_default();
+        let entry = AuditEntry {
+            sequence: self.next_audit_sequence,
+            profile,
+            target: target_id.to_owned(),
+            operation: operation.to_owned(),
+            origin: url.and_then(origin_only),
+            outcome: outcome.to_owned(),
+            deadline_ms: self.current_deadline_ms,
+        };
+        self.next_audit_sequence = self.next_audit_sequence.saturating_add(1);
+        let ledger = self.audits.entry(session).or_default();
+        ledger.push(entry);
+        while ledger.len() > MAX_AUDIT_ENTRIES {
+            ledger.remove(0);
+            self.audit_dropped_total = self.audit_dropped_total.saturating_add(1);
+        }
+    }
+
+    /// `session.inspect`: read-only and bounded. Identity and owner chain, the
+    /// live targets and surfaces it owns, the versions and exact operations
+    /// this host serves, and the audit ledger.
+    fn session_inspect(&mut self, arguments: &Value) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["session"])?;
+        let id = typed_field(object, "session", "session")?.to_owned();
+        let session = self
+            .sessions
+            .get(&id)
+            .ok_or_else(|| not_found("session", &id))?;
+        let profile = session.profile_id.clone();
+        let targets: Vec<&String> = self
+            .targets
+            .values()
+            .filter(|t| t.session_id == id)
+            .map(|t| &t.id)
+            .collect();
+        let surfaces: Vec<&String> = self
+            .surfaces
+            .values()
+            .filter(|s| {
+                self.targets
+                    .get(&s.target_id)
+                    .is_some_and(|t| t.session_id == id)
+            })
+            .map(|s| &s.id)
+            .collect();
+        let ledger = self.audits.get(&id);
+        Ok(json!({
+            "kind":"session_inspection","session":id,"profile":profile,
+            "targets":targets,"surfaces":surfaces,
+            "supported_protocol_versions":[VERSION, VERSION_NEXT],
+            "operations":{
+                VERSION: OPERATIONS,
+                VERSION_NEXT: OPERATIONS.iter().chain(NAVIGATION_OPERATIONS.iter()).collect::<Vec<_>>(),
+            },
+            // Discovery is advisory: a caller that wants 0.0.2 sends 0.0.2.
+            "discovery":"advisory",
+            // The ledger records; it never grants. No capability attenuation
+            // is implemented here, so an attenuated request is refused.
+            "capability_attenuation":"unsupported",
+            "audit":{
+                "entries": ledger.map(|entries| entries.iter().map(|e| e.to_json(&id)).collect::<Vec<_>>()).unwrap_or_default(),
+                "count": ledger.map_or(0, Vec::len),
+                "limit": MAX_AUDIT_ENTRIES,
+                "dropped_total": self.audit_dropped_total,
+                "records":"the navigation operations; an entry names an origin, never a path, a query or userinfo, and is evidence rather than authorization",
+            },
+        }))
+    }
+
     /// The result every navigation operation returns: the identity after the
     /// swap, the committed URL and the bounded history state.
     fn navigation_result(&mut self, id: &str, deadline: Instant) -> Result<Value, ControlError> {
@@ -3266,7 +3407,13 @@ impl Host {
             .ok_or_else(|| invalid("url must be a string"))?;
         let url = Self::navigation_url(requested, &id)?;
         self.current_url(&id)?;
-        self.navigate(&id, url.as_str(), deadline)?;
+        let outcome = self.navigate(&id, url.as_str(), deadline);
+        let category = outcome
+            .as_ref()
+            .err()
+            .map_or("committed", |error| error.code);
+        self.audit_navigation(&id, "target.navigate", Some(url.as_str()), category);
+        outcome?;
         let committed = self.current_url(&id)?;
         match self.histories.get_mut(&id) {
             Some(history) => history.commit(&committed),
@@ -3287,7 +3434,13 @@ impl Host {
         let object = exact_object(arguments, &["target"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let url = self.current_url(&id)?;
-        self.navigate(&id, &url, deadline)?;
+        let outcome = self.navigate(&id, &url, deadline);
+        let category = outcome
+            .as_ref()
+            .err()
+            .map_or("committed", |error| error.code);
+        self.audit_navigation(&id, "target.reload", Some(&url), category);
+        outcome?;
         self.navigation_result(&id, deadline)
     }
 
@@ -3320,7 +3473,13 @@ impl Host {
                     .scoped("target", &id)
                     .details(json!({"reason":"history_offset_out_of_window"}))
             })?;
-        self.navigate(&id, &url, deadline)?;
+        let outcome = self.navigate(&id, &url, deadline);
+        let category = outcome
+            .as_ref()
+            .err()
+            .map_or("committed", |error| error.code);
+        self.audit_navigation(&id, "target.traverse", Some(&url), category);
+        outcome?;
         if let Some(history) = self.histories.get_mut(&id) {
             history.position = position;
         }
@@ -3772,7 +3931,11 @@ impl Host {
                     "cookie_rejections_total":self.cookie_rejections_total,
                     "budgets":profile_budgets(),
                 },
-                "sessions":{"objects":self.sessions.len(),"object_limit":MAX_SESSIONS},
+                "sessions":{"objects":self.sessions.len(),"object_limit":MAX_SESSIONS,
+                    "audit_entries":self.audits.values().map(Vec::len).sum::<usize>(),
+                    "audit_entry_limit":MAX_AUDIT_ENTRIES,
+                    "audit_bytes":self.audits.values().flat_map(|l| l.iter()).map(AuditEntry::bytes).sum::<usize>(),
+                    "audit_dropped_total":self.audit_dropped_total},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements,
                     "history_entries":self.histories.values().map(|h| h.entries.len()).sum::<usize>(),
                     "history_entry_limit":MAX_HISTORY_ENTRIES,
@@ -4020,6 +4183,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         navigations_total: 0,
         histories: BTreeMap::new(),
         lifetimes: BTreeMap::new(),
+        audits: BTreeMap::new(),
+        next_audit_sequence: 0,
+        audit_dropped_total: 0,
+        current_deadline_ms: 0,
         adapters: BTreeMap::new(),
         next_adapter: 0,
         adapters_detached_total: 0,
