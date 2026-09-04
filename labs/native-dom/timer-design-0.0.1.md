@@ -422,11 +422,14 @@ distinction it should have drawn is this:
   timer that leaves the pending set leaves it through exactly one of them, and
   that set is closed: nothing else may be added to it without saying which
   outcome it splits.
-- **One host fault.** `collect_failed_total` counts something that happened to
-  the **host's bridge**, not to a timer. It does not partition anything and it
-  is not an outcome a page can cause: it says the host could not read what the
-  realm had recorded, so a schedule may have been lost without any of the six
-  being able to describe it. It exists precisely so that such a loss is
+- **One bridge fault.** `collect_failed_total` counts something that happened
+  between the host and the realm, not to a timer. It does not partition
+  anything and it is not a lifecycle outcome: it says the host could not read
+  what the realm had recorded, so a schedule may have been lost without any of
+  the six being able to describe it. **A page can cause it**, because §16.5 is
+  right that a page shares the realm and can perturb the contents of its own
+  bridge; what it buys by doing so is the loss of its own timers and a counter
+  that says the host noticed. It exists precisely so that such a loss is
   visible rather than silent.
 
 So the owner reports seven integers: six that classify timers and one that
@@ -447,8 +450,12 @@ memory and latency criteria are absent too, and two of them still name the
 So the 38 of 38 already recorded is **mechanics only**, and this record says
 so rather than letting the number stand for the frozen court. The caps do not
 move: T1–T5 are implemented as §12 froze them, with `dropped_total` replaced
-by the counters that superseded it — `retired_total` for T2 and T4, since
-those criteria were always about what a teardown accounts for.
+by the counter that actually accounts for each one — **T2 is 64 scheduled and
+cleared over 64 cycles, so its counter is `cleared_total` and its criterion is
+exactly 4,096**, while **T4 is a navigation with 64 pending, so its counter is
+`retired_total` and its criterion is exactly 64**. Both are exact deltas, not
+lower bounds, so the six-outcome partition is genuinely exercised: a timer
+counted in the wrong bucket fails one of them.
 
 ### 16.2 The build's own collect is a second, unvalidated bridge
 
@@ -471,13 +478,20 @@ object. What is genuinely absent is `setInterval`, `requestAnimationFrame`,
 throws — but that is absence, which the audit is right to say must be proven
 rather than assumed.
 
-Corrected: **the timer slice adds no clock**, and that is all §4 may claim.
-The realm inherits `Date` and `performance` from the engine, this host models
-neither, and together they are a real timing and fingerprinting surface that
-predates this slice. Removing `performance` would be cheap; removing `Date`
-is a compatibility decision of its own, and neither is taken here. §17 puts
-both to the root. The court asserts what is true today rather than what the
-design wished were true.
+Corrected, and the root has ruled how: **this slice adds no clock API and uses
+no realm-readable clock for scheduling** — that is all §4 may claim. `Date`
+and `performance` are shipped behaviour inherited from the engine, and they
+are **not** removed or poisoned here: doing that inside a bounded timer slice
+would be a broad compatibility regression hidden in an increment that has
+nothing to do with them, and it runs against the browser direction. Their
+fidelity, determinism and privacy are an explicit **separate gap**, recorded
+as such and not closed by this work.
+
+What the court asserts instead is that this implementation neither replaces
+nor widens their pre-fix surface: the observed shape of `Date`, `Date.now`
+and `performance` is the same before and after, and no epoch value is
+asserted. `setInterval`, `requestAnimationFrame`, `requestIdleCallback` and
+`Worker` stay absent, and the court proves that rather than assuming it.
 
 ### 16.4 A malformed entry inside a well-formed list was ignored
 
@@ -506,14 +520,64 @@ otherwise. **The trust boundary is recorded: the host trusts host-internal
 globals only as far as it validates them, and a page can cost itself its own
 timers.**
 
-## 17. Two decisions this audit raises
+## 17. What this audit leaves open
 
-1. **`Date` and `performance`.** A page can read the wall clock and measure
-   elapsed time through them today, on every route, and this host models
-   neither. Refusing `performance` is small and self-contained; refusing
-   `Date` is a compatibility decision. Neither is taken without a ruling.
+1. **`Date` and `performance` are a separate gap, ruled out of this slice.**
+   A page can read the wall clock and measure elapsed time through them today,
+   on every route, and this host models neither. That is recorded as its own
+   problem — fidelity, determinism and privacy — for its own increment, and
+   nothing here changes them.
 2. **Whether the timer CDP group should assert `-32601` for named methods**
    or simply record that no timer method is qualified. The methods are
    unimplemented and answer `-32601` through the same default as every other
    unqualified method, so a court group here restates an existing guarantee;
    it is cheap and it closes §11's group 14 honestly.
+
+## 18. Five more from the extended audit, recorded before the fix
+
+### 18.1 A deadline lost the rest of the due batch
+
+`run_due_timers` took the whole due batch out of the host's queue before
+running any of it. If the first callback hit the deadline, the boundary
+returned and callbacks 2..N were gone from the host's queue while their
+callbacks were still sitting in the realm's map — pending forever, never due
+again, never counted. **The host queue gives up an entry only when that entry
+has actually been attempted**: due entries are taken one at a time, and
+anything not attempted stays where it was.
+
+### 18.2 A clear from inside a running callback was not attributed
+
+A callback may clear another timer that is already in the boundary's due
+snapshot. The realm removes that callback and emits its clear record, but the
+host was only counting a clear when the handle was still in its own queue —
+and `take_due` had already removed it. The clear was real and went uncounted.
+The realm emits `-1` **only when it actually removed a pending callback**, so
+that record is counted exactly once on its own authority, independently of
+whether the host's queue still holds the handle. Removing it from the host
+queue stays a separate, idempotent step.
+
+### 18.3 T1 was comparing two different pages
+
+The draft measured `/landed.html` against a page full of timers, so the
+difference contained two different documents, two different scripts and two
+different realms as well as the timers. T1 now uses **one page with a switch**
+that suppresses scheduling, written so both forms have the same byte length
+and the same script shape, and the difference is the timers alone.
+
+### 18.4 T2 must be the frozen workload
+
+§12 froze T2 as 64 scheduled and cleared, 64 cycles, and the draft substituted
+eight open-and-close cycles. The frozen workload is what runs, and its
+criterion is an exact `cleared_total` delta of 4,096 with `retired_total` and
+`fired_total` unmoved.
+
+### 18.5 T3 is missing, and T5 needs a defensible reference
+
+T3 — a chain of 4,096 callbacks across boundaries, first-half against
+last-half footprint growth — is implemented as §12 froze it, reported rather
+than gated except for the no-acceleration bound. T5 measures from the moment
+the court asks for the wait, which is the last host-observable point before
+the timer can fire, and only §12's 250 ms upper bound gates; the elapsed value
+is reported beside it.
+
+No cap moves in any of this.
