@@ -236,3 +236,76 @@ Failure of any memory budget narrows the slice; it never moves a budget.
 
 Nothing is implemented until 1 and 2 are ruled. When they are, the order is:
 schema and mapping first, then the court, then the host.
+
+## 13. Amendment after the ruling (the sections above stay as the decision record)
+
+The root accepted both decisions with refinements. Sections 1 to 12 are left
+exactly as they were proposed, so the record shows what was asked and what was
+answered; where this section differs, this section governs.
+
+### 13.1 Decision 1 accepted, as option A, with refinements
+
+- `control-0.0.2` gets its **own schema file with its own version
+  discriminator**. It is not a patch of `0.0.1`.
+- A host serves **both versions concurrently**. `0.0.1` stays byte-compatible
+  and semantically unchanged: same operations, same results, same errors.
+- `session.inspect` **may advertise** `supported_protocol_versions` and the
+  exact `0.0.2` operation set. This is **host-defined discovery and advisory
+  only**. A caller that wants `0.0.2` sends `0.0.2` explicitly. A caller must
+  **never** strip the version or any field and retry, and a host must never
+  infer a version from the shape of a request.
+- Examples and the contract checker keep **separate coverage for both
+  versions**; `0.0.1` coverage is not rewritten to serve `0.0.2`.
+
+### 13.2 Decision 2 accepted, as metadata-only, with refinements
+
+- The delta operation is **`target.traverse`**, not `target.history`. The word
+  *history* is reserved for a later state or listing operation. The bounded
+  `history {position, length, can_go_back, can_go_forward}` field on
+  `target.inspect` is state, so it keeps that name.
+- An entry stores **only** a bounded canonical final committed URL, plus a
+  host-minted bounded identity and type **if and only if** the CDP mapping
+  needs them (§13.3). It stores **no** DOM, realm, response body, form state,
+  scroll position, script state, cookie or storage snapshot, and **no profile
+  facts**. This supersedes the phrase "plus the profile-scoped facts needed to
+  refetch it" in §4 and §7: an entry is a URL and, at most, an identity.
+- `target.traverse` refetches that final URL **under the profile's current
+  policy and state**, not under whatever was in force when the entry was
+  made, and it always produces a fresh document generation and realm.
+- `target.reload` **never appends** an entry and never moves the position.
+- `target.navigate` from a back position **truncates the forward entries**.
+- A redirect chain commits **only the final canonical URL**; intermediate hops
+  are never entries.
+- A failed navigation, reload or traverse **mutates nothing**: no entry, no
+  position change, no identity change, per the atomicity rule of §5.
+
+### 13.3 CDP mapping, narrowed
+
+- `Page.navigate` and `Page.reload` are **in the slice**.
+- `Page.getNavigationHistory` and `Page.navigateToHistoryEntry` may be
+  implemented **only if the host remains the sole history authority**:
+  adapter-scoped ids map onto host-minted entry identities, and an evicted,
+  foreign or stale id fails **typed**. If that cannot be met exactly, both
+  methods stay explicitly `-32601` in this increment. **Adapter-invented
+  history authority is forbidden**, so the adapter never keeps its own list,
+  never renumbers, and never answers from a cache.
+
+### 13.4 Backends, narrowed
+
+Only the native route is implemented and qualified in this increment.
+Lightpanda and Servo stay explicit `unsupported_operation` or unverified rows
+until each passes **this same court**. No shim, no partial mapping and no
+inherited pass: a row changes only on its own measured evidence.
+
+### 13.5 Order of work, frozen
+
+1. `control-0.0.2` schema, contract checker coverage and examples for both
+   versions, and the CDP mapping entries with their losses.
+2. The hermetic court of §11, frozen before the host changes.
+3. The native host implementation.
+4. Headless measurements against the pre-registered budgets of §7, including
+   the differential soak.
+
+Atomic rollback, the differential memory court and every existing gate are
+preserved. Any ambiguity that would require touching the closed contract
+beyond this is raised before the change, not decided in code.
