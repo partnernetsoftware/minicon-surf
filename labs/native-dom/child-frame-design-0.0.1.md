@@ -407,3 +407,107 @@ court asserts the lifetime that way and asserts the field on the click path.
 Whether the pinned navigation result should also carry `ended_frames` is a
 third question for the root, and it is not taken here. It is smaller than
 §12.1 and §12.2: nothing is lost without it, only convenience.
+
+## 18. The root's ruling, and the blockers it came with (sections 1 to 17 stay as written)
+
+### 18.1 D1 — no actions in a child frame, and why, for later
+
+Refused for this slice; every child-frame action stays typed-refused. The node
+bands of §15 close the aliasing hazard but they do not answer two questions,
+recorded here as the starting point of a later frame-action design rather than
+left implicit:
+
+1. **Revision convergence.** A child counts its own revision from zero while
+   `target.wait` and every node reference are scoped to the *target's*
+   revision. What a caller waits on, and what a child's mutation would have to
+   advance, is undecided.
+2. **Where a navigation lands.** A link click or a form submit inside a child
+   could replace the child's document or the whole target's. Nothing in the
+   current contract chooses, and the two have different identity, history and
+   teardown consequences.
+
+Until both are answered, `unsupported_capability` with
+`action_in_child_frame_unsupported` is the whole of the behaviour.
+
+### 18.2 D2 — every frame carries its final canonical URL
+
+Granted. Each frame stores the **final** URL of the response that built it,
+after redirects, and reports it as an **explicitly optional, additive**
+`url` on its `frames[]` entry, for the main frame and for children alike. It
+is absent when a frame has no URL, which is what a fixture target is, so a
+reader must treat absence as normal rather than as an error. The protocol
+wording and both CDP mappings change with it, and `Page.getFrameTree`
+projects each frame's own URL — never its parent's, which is the defect §12.2
+recorded. Its bytes are owner-accounted like any other document byte and stay
+under the per-child cap that is already frozen.
+
+### 18.3 D3 — the navigation result stays pinned
+
+Refused, as §17 proposed. `target.navigate`, `target.reload` and
+`target.traverse` keep their exact field set; the enumeration afterwards plus
+`stale_revision` or `not_found` is how a caller learns what ended. The click
+path keeps `ended_frames` on its own precedent.
+
+### 18.4 Blocker: same-origin must hold *after* the redirects
+
+The same-origin test ran on the requested URL only, so a same-origin `src`
+that redirected to another allowed origin became a child. The final response
+URL must be same-origin with the parent document; a child that leaves the
+origin on the way is refused. Both checks stay: before the fetch on what was
+asked for, and after it on what answered.
+
+### 18.5 Blocker: only `text/html` is parsed
+
+A child response must declare `text/html` before anything parses it. Any other
+media type, or none, is refused with a fixed reason and no parse.
+
+### 18.6 Blocker: a skipped child leaves nothing behind
+
+A rejected child is discarded whole, exactly as a failed navigation candidate
+is. Cookies from a refused redirect or a refused body, and any other profile
+working-copy mutation the attempt caused, are rolled back before the parent
+commits: the child fetch runs against a copy of the jar that is kept only if
+the child is kept. Network attempt counters stay as they are, because they are
+diagnostics of what was attempted rather than state that was committed.
+
+### 18.7 Blocker: a child that cannot be built is skipped, never fatal
+
+`Realm::new` and every seeding `eval` in the child path used `?`, so an
+allocator or engine failure while building the seventh child would have failed
+the whole parent's navigation, contradicting §2 and §8. Skipping is the
+invariant that stays: **every child-only construction failure is a skip with a
+fixed bounded reason**, the half-built realm is dropped, and the parent
+commits. Whole-parent failure was considered and rejected, because a transient
+per-child failure must not cost a document that is otherwise complete, and
+because the caller can already see that a frame is missing.
+
+### 18.8 Blocker: a skipped frame is not a skipped script
+
+`skipped_frames` was appended to the script skip list, so a refused iframe was
+reported under `scripts_skipped` and counted as one in the memory report. That
+is false and can mislead an agent. Frame skips become their own bounded
+diagnostic: `target.inspect` reports `frames_skipped` as a tally of
+`{reason, count}` over a **closed set of fixed reasons**, never a `src`, a
+redirect target or any other page text, and the frame owner in the memory
+report carries a saturating `skipped_total`. `scripts_skipped` keeps exactly
+its old meaning and its old contents.
+
+The closed set: `no_network_origin`, `no_src`, `srcdoc`, `malformed_src`,
+`cross_origin_src`, `cross_origin_redirect`, `not_html`, `status_not_ok`,
+`fetch_failed`, `realm_build_failed`, `frame_limit`.
+
+### 18.9 Court, extended again
+
+Added, all hermetic: a same-origin `src` that redirects within the origin
+becomes a child whose reported `url` is the **final** one; a same-origin `src`
+that redirects to another allowed origin does not become a child and is
+tallied `cross_origin_redirect`; the cookie such a refused redirect set never
+reaches the profile, proven by what a later same-origin request carries, with
+a kept child's cookie proving the instrument can see one at all; a response
+that is not `text/html` is refused `not_html` without a parse; a deterministic
+construction failure, forced by a court-only knob, is tallied
+`realm_build_failed` while the parent still commits; every skip class above is
+tallied under its own fixed reason and none of them appears in
+`scripts_skipped`; and the frame owner's `skipped_total` counts them. The
+memory criteria are rerun unchanged, with URL bytes now inside the owner
+accounting and the caps where they were frozen.
