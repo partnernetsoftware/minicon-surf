@@ -703,7 +703,23 @@ fn page_get_frame_tree(
     };
     let describe = |connection: &mut ConnectionState, frame: &Value| -> Value {
         let id = connection.frame_id(frame["frame"].as_str().unwrap_or(""));
-        let mut description = json!({"id":id,"loaderId":"","url":inspect["url"].as_str().map_or_else(|| format!("minicon-surf://court/{}", inspect["fixture"].as_str().unwrap_or("document")), str::to_owned),"securityOrigin":"","mimeType":"text/html"});
+        // Each frame reports its own URL. `frames[].url` is optional, so a
+        // frame without one falls back to the target's, and a fixture target
+        // to its court address, as before.
+        let url = frame["url"]
+            .as_str()
+            .or_else(|| inspect["url"].as_str())
+            .map_or_else(
+                || {
+                    format!(
+                        "minicon-surf://court/{}",
+                        inspect["fixture"].as_str().unwrap_or("document")
+                    )
+                },
+                str::to_owned,
+            );
+        let mut description =
+            json!({"id":id,"loaderId":"","url":url,"securityOrigin":"","mimeType":"text/html"});
         if let Some(parent) = frame["parent"].as_str() {
             description["parentId"] = json!(connection.frame_id(parent));
         }

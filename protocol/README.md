@@ -151,9 +151,13 @@ Four things change at different times and are never collapsed into one:
 Rules every host follows:
 
 - Enumeration is bounded and only through the owning target: `target.inspect`
-  lists `frames[]` (`frame`, `parent` or null, `generation`, `realm`) with the
-  main frame first and at most `frame_limit` entries, and `realms[]`
-  (`realm`, `frame`, `world`). Ids are opaque and encode nothing.
+  lists `frames[]` (`frame`, `parent` or null, `generation`, `realm`, and the
+  optional `url`) with the main frame first and at most `frame_limit`
+  entries, and `realms[]` (`realm`, `frame`, `world`). Ids are opaque and
+  encode nothing. `url` is additive and optional: when present it is the
+  final URL of the response that built that frame, after redirects; it is
+  absent for a frame that has no URL, so a reader treats absence as normal
+  rather than as an error.
 - A `frame` or `realm` argument narrows an operation to that frame or asserts
   which realm the caller believes is live; it never widens it. `target.snapshot`
   accepts optional `frame` (default: the main frame) and optional `realm`
@@ -175,8 +179,8 @@ Rules every host follows:
   one-to-one with a native frame while both live, qualified on the synthetic
   host through `Page.getFrameTree`; realm identity is not yet projected
   (`Runtime.ExecutionContextId`, context events), navigation events and
-  document generation have no projection, child frames project flat with a
-  child carrying its parent's `url`, and nesting is not offered. These are recorded losses, not
+  document generation have no projection, child frames project flat, each
+  carrying its own `url`, and nesting is not offered. These are recorded losses, not
   approximations. Hosts that do not implement the optional `frame`/`realm`
   arguments fail closed with `invalid_request`, exactly as with
   `capability`: a caller that requires frame or realm narrowing MUST NOT

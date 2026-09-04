@@ -1566,12 +1566,32 @@ struct ChildFrame {
     generation: u64,
     realm_id: String,
     realm: Realm,
+    /// The final URL of the response that built this frame, after redirects.
+    /// It is reported as the optional additive `url` of a `frames[]` entry and
+    /// its bytes are owner-accounted like any other document byte.
+    url: Option<Url>,
     /// The document's own bytes and elements, so the memory report attributes
-    /// an embedded document to its owner. A child's address is deliberately
-    /// not stored: no result carries it, and design §12.2 is unruled.
+    /// an embedded document to its owner.
     bytes: usize,
     element_count: usize,
 }
+
+/// Why a frame was not built. A closed set of fixed reasons: never a `src`,
+/// a redirect target or any other page text.
+const FRAME_SKIP_REASONS: [&str; 12] = [
+    "no_network_origin",
+    "no_src",
+    "srcdoc",
+    "malformed_src",
+    "scheme_not_fetched",
+    "cross_origin_src",
+    "cross_origin_redirect",
+    "not_html",
+    "status_not_ok",
+    "fetch_failed",
+    "realm_build_failed",
+    "frame_limit",
+];
 
 struct Target {
     id: String,
@@ -1603,6 +1623,10 @@ struct Target {
     /// Bounded child frames in document order, built with this document and
     /// ended with it. At most `MAX_FRAMES_PER_TARGET - 1`.
     children: Vec<ChildFrame>,
+    /// One saturating count per fixed reason, in the order of
+    /// `FRAME_SKIP_REASONS`. Bounded by construction however many iframes a
+    /// document carries, and never a URL.
+    frames_skipped: [u64; FRAME_SKIP_REASONS.len()],
 }
 
 /// Where a document comes from: a court fixture file or a URL fetched under
@@ -1675,13 +1699,72 @@ impl Target {
     }
 
     fn frames_json(&self) -> Value {
-        let mut frames = vec![json!({"frame":self.frame_id,"parent":Value::Null,
-            "generation":self.generation,"realm":self.realm_id})];
+        // `url` is optional and additive: it is the final URL of the response
+        // that built the frame, and it is absent when a frame has none, which
+        // is what a fixture target is.
+        let entry =
+            |frame: &str, parent: Value, generation: u64, realm: &str, url: Option<&Url>| {
+                let mut value = json!({"frame":frame,"parent":parent,
+                "generation":generation,"realm":realm});
+                if let Some(url) = url {
+                    value["url"] = json!(url.as_str());
+                }
+                value
+            };
+        let mut frames = vec![entry(
+            &self.frame_id,
+            Value::Null,
+            self.generation,
+            &self.realm_id,
+            self.url.as_ref(),
+        )];
         frames.extend(self.children.iter().map(|child| {
-            json!({"frame":child.id,"parent":self.frame_id,
-                "generation":child.generation,"realm":child.realm_id})
+            entry(
+                &child.id,
+                json!(self.frame_id),
+                child.generation,
+                &child.realm_id,
+                child.url.as_ref(),
+            )
         }));
         Value::Array(frames)
+    }
+
+    /// The bounded skip tally: one entry per reason that actually happened.
+    fn frames_skipped_json(&self) -> Value {
+        Value::Array(
+            FRAME_SKIP_REASONS
+                .iter()
+                .zip(self.frames_skipped.iter())
+                .filter(|(_, count)| **count > 0)
+                .map(|(reason, count)| json!({"reason":reason,"count":count}))
+                .collect(),
+        )
+    }
+
+    fn frames_skipped_total(&self) -> u64 {
+        self.frames_skipped
+            .iter()
+            .fold(0u64, |total, count| total.saturating_add(*count))
+    }
+
+    /// Document bytes this target owns: its own, every child's, and the URL
+    /// bytes each frame keeps.
+    fn document_bytes(&self) -> usize {
+        self.fixture_bytes
+            + self.url.as_ref().map(|url| url.as_str().len()).unwrap_or(0)
+            + self
+                .children
+                .iter()
+                .map(|child| {
+                    child.bytes
+                        + child
+                            .url
+                            .as_ref()
+                            .map(|url| url.as_str().len())
+                            .unwrap_or(0)
+                })
+                .sum::<usize>()
     }
 
     fn realms_json(&self) -> Value {
@@ -1949,6 +2032,10 @@ struct Host {
     surface_child_mode: Option<String>,
     surface_frame: surface::FrameSize,
     surface_stages: bool,
+    /// Court-only (`--court-child-build-failure 1`): every child frame's realm
+    /// construction fails, so the court can prove that a child that cannot be
+    /// built is skipped with its fixed reason and never fails its parent.
+    court_child_build_failure: bool,
     surface_snapshot_arm: Option<String>,
     surface_court_gc: bool,
     /// Visible windows need a double opt-in: `--visual 1` and the
@@ -3091,6 +3178,7 @@ impl Host {
                     "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"revision":revision,"load_complete":true,"crashed":false,
                     "script_realm":true,"scripts_run":target.script_count,"scripts_skipped":target.skipped_scripts,
                     "frames":target.frames_json(),
+                    "frames_skipped":target.frames_skipped_json(),
                     "realms":target.realms_json(),
                     "frame_limit":MAX_FRAMES_PER_TARGET,
                     "network":target_network(&target.budget, https),
@@ -3653,12 +3741,12 @@ impl Host {
         let mut embedded: Vec<Result<String, &'static str>> = Vec::new();
         for node in document.select("iframe").nodes() {
             if node.attr("srcdoc").is_some() {
-                embedded.push(Err("srcdoc is not built"));
+                embedded.push(Err("srcdoc"));
                 continue;
             }
             match node.attr("src") {
                 Some(src) if !src.trim().is_empty() => embedded.push(Ok(src.to_string())),
-                _ => embedded.push(Err("iframe without a src")),
+                _ => embedded.push(Err("no_src")),
             }
         }
         // Scripts in document order: inline text, or a same-origin external
@@ -3745,76 +3833,139 @@ impl Host {
         // its deadline, same-origin only. A child that cannot be built is
         // skipped with a reason; it never fails the parent's document.
         let mut children: Vec<ChildFrame> = Vec::new();
-        let mut skipped_frames: Vec<Value> = Vec::new();
+        let mut frames_skipped = [0u64; FRAME_SKIP_REASONS.len()];
+        let skip = |tally: &mut [u64; FRAME_SKIP_REASONS.len()], reason: &str| {
+            let index = FRAME_SKIP_REASONS
+                .iter()
+                .position(|candidate| *candidate == reason)
+                .expect("a frame skip reason is one of the closed set");
+            tally[index] = tally[index].saturating_add(1);
+        };
         for source in embedded {
             if children.len() + 1 >= MAX_FRAMES_PER_TARGET {
-                skipped_frames.push(json!({"reason":"frame limit"}));
+                skip(&mut frames_skipped, "frame_limit");
                 continue;
             }
             let src = match source {
                 Ok(src) => src,
                 Err(reason) => {
-                    skipped_frames.push(json!({"reason":reason}));
+                    skip(&mut frames_skipped, reason);
                     continue;
                 }
             };
             let Some(base_url) = &base else {
-                skipped_frames.push(json!({"reason":"embedded documents need a network origin"}));
+                skip(&mut frames_skipped, "no_network_origin");
                 continue;
             };
             let Ok(resolved) = base_url.join(&src) else {
-                skipped_frames.push(json!({"reason":"malformed src"}));
+                skip(&mut frames_skipped, "malformed_src");
                 continue;
             };
-            if !net::same_origin(base_url, &resolved) {
-                budget.denied += 1;
-                skipped_frames.push(json!({"reason":"cross-origin child refused"}));
+            // The scheme first, so a document that is never fetched is not
+            // reported as one refused for its origin.
+            if !matches!(resolved.scheme(), "http" | "https") {
+                skip(&mut frames_skipped, "scheme_not_fetched");
                 continue;
             }
+            if !net::same_origin(base_url, &resolved) {
+                budget.denied += 1;
+                skip(&mut frames_skipped, "cross_origin_src");
+                continue;
+            }
+            // The attempt runs against a copy of the jar. A child that is not
+            // kept leaves nothing behind: the copy is dropped and the parent
+            // commits with the jar it had, exactly as a failed navigation
+            // candidate leaves the live document untouched. The attempt
+            // counters stay, because they are diagnostics of what was tried.
+            let mut jar = io.jar.clone();
+            let mut rejections = io.cookie_rejections;
             let document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
             let mut hooks = JarHooks {
-                jar: &mut io.jar,
+                jar: &mut jar,
                 document_host: document_host.as_deref(),
                 now,
-                rejections: &mut io.cookie_rejections,
+                rejections: &mut rejections,
             };
-            let response = match net::fetch_with(
+            let outcome = net::fetch_with(
                 resolved.as_str(),
                 &policy,
                 &mut budget,
                 deadline,
                 Some(&mut hooks),
                 io.tls.as_deref(),
-            ) {
-                Ok(response) if response.status < 400 => response,
-                Ok(response) => {
-                    skipped_frames.push(json!({"reason":format!("status {}", response.status)}));
+            );
+            let response = match outcome {
+                Ok(response) if response.status >= 400 => {
+                    skip(&mut frames_skipped, "status_not_ok");
                     continue;
                 }
-                Err(error) => {
-                    skipped_frames.push(json!({"reason":error.reason,"code":error.code}));
+                Ok(response) => response,
+                Err(_) => {
+                    skip(&mut frames_skipped, "fetch_failed");
                     continue;
                 }
             };
+            // Same origin has to hold on what answered, not only on what was
+            // asked for: a redirect that leaves the origin is not a child.
+            if !net::same_origin(base_url, &response.url) {
+                budget.denied += 1;
+                skip(&mut frames_skipped, "cross_origin_redirect");
+                continue;
+            }
+            let html = response
+                .content_type
+                .as_deref()
+                .map(|value| {
+                    value
+                        .split(';')
+                        .next()
+                        .unwrap_or_default()
+                        .trim()
+                        .eq_ignore_ascii_case("text/html")
+                })
+                .unwrap_or(false);
+            if !html {
+                skip(&mut frames_skipped, "not_html");
+                continue;
+            }
             let text = String::from_utf8_lossy(&response.body).into_owned();
             let parsed = Document::from(text.as_str());
             let element_count = parsed.select("*").nodes().len();
             let mut child_tree = Vec::new();
             serialize_children(&parsed.root(), &mut child_tree);
             drop(parsed);
-            let realm = Realm::new(self.realm_allocation)?;
-            realm.eval(DOM_SHIM_JS, deadline, id)?;
-            realm.eval(
-                &format!(
-                    "__mcsSeed({})",
-                    serde_json::to_string(&child_tree).expect("tree serializes")
-                ),
-                deadline,
-                id,
-            )?;
-            realm.eval(&location_script(&response.url), deadline, id)?;
-            realm.eval("__mcsComplete()", deadline, id)?;
-            realm.eval(INSTALL_JS, deadline, id)?;
+            // Every construction failure here is this child's alone: the
+            // half-built realm is dropped and the parent still commits.
+            let built = (|| -> Result<Realm, ControlError> {
+                let realm = Realm::new(self.realm_allocation)?;
+                if self.court_child_build_failure {
+                    return Err(ControlError::new(
+                        "internal",
+                        "court-only: the child realm build is forced to fail",
+                        false,
+                    ));
+                }
+                realm.eval(DOM_SHIM_JS, deadline, id)?;
+                realm.eval(
+                    &format!(
+                        "__mcsSeed({})",
+                        serde_json::to_string(&child_tree).expect("tree serializes")
+                    ),
+                    deadline,
+                    id,
+                )?;
+                realm.eval(&location_script(&response.url), deadline, id)?;
+                realm.eval("__mcsComplete()", deadline, id)?;
+                realm.eval(INSTALL_JS, deadline, id)?;
+                Ok(realm)
+            })();
+            let Ok(realm) = built else {
+                skip(&mut frames_skipped, "realm_build_failed");
+                continue;
+            };
+            // The child is kept, so what its fetch changed is kept with it.
+            io.jar = jar;
+            io.cookie_rejections = rejections;
             self.next_frame += 1;
             self.next_realm += 1;
             children.push(ChildFrame {
@@ -3822,11 +3973,11 @@ impl Host {
                 generation: 1,
                 realm_id: format!("realm_{}", self.next_realm),
                 realm,
+                url: Some(response.url.clone()),
                 bytes: response.body.len(),
                 element_count,
             });
         }
-        skipped.extend(skipped_frames);
         let mut target = Target {
             id: id.to_owned(),
             session_id: session.to_owned(),
@@ -3847,6 +3998,7 @@ impl Host {
             io,
             scroll_y: 0,
             children,
+            frames_skipped,
         };
         let read_only = self
             .sessions
@@ -4913,11 +5065,10 @@ impl Host {
 
     fn memory_report(&self) -> Value {
         // Document owners count every frame's document, children included.
-        let fixture_bytes: usize = self
-            .targets
-            .values()
-            .map(|t| t.fixture_bytes + t.children.iter().map(|c| c.bytes).sum::<usize>())
-            .sum();
+        let fixture_bytes: usize = self.targets.values().map(Target::document_bytes).sum();
+        let frames_skipped_total: u64 = self.targets.values().fold(0u64, |total, t| {
+            total.saturating_add(t.frames_skipped_total())
+        });
         let elements: usize = self
             .targets
             .values()
@@ -4981,7 +5132,7 @@ impl Host {
                         let lifetime = self.lifetimes.get(&target.id).copied().unwrap_or_default();
                         json!({"target":target.id,"network":lifetime.to_json(&target.budget)})
                     }).collect::<Vec<_>>()},
-                "frames":{"objects":frame_objects,"object_limit":MAX_TARGETS * MAX_FRAMES_PER_TARGET,"frames_per_target":MAX_FRAMES_PER_TARGET},
+                "frames":{"objects":frame_objects,"object_limit":MAX_TARGETS * MAX_FRAMES_PER_TARGET,"frames_per_target":MAX_FRAMES_PER_TARGET,"skipped_total":frames_skipped_total},
                 "realms":{"objects":frame_objects,"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
                 "surfaces":{"objects":self.surfaces.len(),"object_limit":surface::MAX_SURFACES,
@@ -5086,6 +5237,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut surface_child_mode: Option<String> = None;
     let mut surface_frame = surface::FrameSize::DEFAULT;
     let mut surface_stages = false;
+    let mut court_child_build_failure = false;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -5125,6 +5277,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 surface_frame = surface::FrameSize::parse(&pair[1]).unwrap_or_else(|| usage())
             }
             "--surface-court-stages" => surface_stages = pair[1] == "1",
+            "--court-child-build-failure" => court_child_build_failure = pair[1] == "1",
             "--surface-court-snapshot-arm" => {
                 if !matches!(
                     pair[1].as_str(),
@@ -5245,6 +5398,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface_child_mode,
         surface_frame,
         surface_stages,
+        court_child_build_failure,
         surface_snapshot_arm,
         surface_court_gc,
         surface_visual,

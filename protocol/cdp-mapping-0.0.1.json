@@ -67,7 +67,7 @@
     {
       "native": "child frames",
       "cdp": "Page.FrameTree.childFrames",
-      "loss": "the synthetic host has exactly one bounded child frame and the native host builds bounded, same-origin, depth-one children; both project flat, a projected child carries its parent's url, and no nesting is offered"
+      "loss": "the synthetic host has exactly one bounded child frame and the native host builds bounded, same-origin, depth-one children; both project flat, each frame carries its own final url, and no nesting is offered"
     },
     {
       "native": "world",

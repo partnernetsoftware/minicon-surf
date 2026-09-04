@@ -620,7 +620,8 @@ Scope: `Target` carries `frame_id` (minted with the target), `generation`,
 the revision the caller sees is the realm's count plus everything before the
 last navigation. `target.open` reports `frame`, `generation` and `realm`;
 `target.inspect` lists `frames[]` (the main frame first, then bounded child
-frames) and `realms[]` with `frame_limit` 8; `target.snapshot` takes optional `frame` and `realm` and
+frames, each with the optional `url` of the response that built it) and
+`realms[]` with `frame_limit` 8; `target.snapshot` takes optional `frame` and `realm` and
 names what it observed, refusing a foreign, retired or unknown id with the
 same `not_found`. A click on an `<a href>` node dispatches the click event
 and, unless the page prevented the default, navigates: the new document is
@@ -641,14 +642,23 @@ with its parent under the parent's own fetch and byte budget, at most 7 of
 them, depth one. `target.snapshot` narrows to one and names what it observed;
 node ids are target-scoped, so a reference taken in a child is refused by
 `target.act` rather than resolved against the main frame. A child runs no
-scripts. A parent navigation ends its children, and the click path names them
-in `ended_frames`. One child costs about 247 KB of live owner bytes, seven
-about 1.7 MB, and the whole cost returns on close.
+scripts. A child is fetched only if its `src` is `http(s)`, same-origin
+before the fetch and still same-origin after every redirect, and answers
+`text/html`; anything else is refused, and a refused attempt leaves nothing
+behind, its cookies included. A child that cannot be built is skipped, never
+fatal to its parent. Refusals are a bounded tally on `target.inspect` as
+`frames_skipped` (`reason`, `count`) over a closed set of fixed reasons that
+never carries a `src` or a redirect target, counted by the frame owner's
+`skipped_total`; `scripts_skipped` keeps its own meaning. A parent navigation
+ends its children, and the click path names them in `ended_frames`. One child
+costs about 247 KB of live owner bytes, seven about 1.7 MB, and the whole
+cost returns on close.
 
-Losses, recorded rather than approximated: no acting inside a child frame,
-no child navigation, no nesting, no cross-origin or `srcdoc` children, no
-scripts in a child, and a child frame projected through CDP carries its
-parent's `url`; no capability attenuation on this host, so a request carrying the field
+Losses, recorded rather than approximated: no acting inside a child frame
+(refused typed, pending a design for what a child's revision means to
+`target.wait` and for whether a navigation inside a child replaces the child
+or the target), no child navigation, no nesting, no cross-origin or `srcdoc`
+children, no scripts in a child; no capability attenuation on this host, so a request carrying the field
 is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
 of frames or realms here; navigation is a link click only (no
 `target.navigate`, history or form submission).
