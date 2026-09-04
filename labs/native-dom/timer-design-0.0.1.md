@@ -1,0 +1,251 @@
+# A bounded timer slice for the native route — decision record, design only
+
+Status: **design only. No product code, no court run, no protocol change.**
+The behaviour at `ac1ece9` is untouched by this file. The decisions and
+hazards in §12 go to the root before anything is implemented.
+
+## 1. What exists today, and why it is worse than nothing
+
+`labs/native-dom/src/dom_shim.js` line 338:
+
+```js
+g.setTimeout = (fn, _ms, ...args) => { Promise.resolve().then(() => fn(...args)); return 0; };
+g.clearTimeout = () => {};
+```
+
+Three things are wrong with that, and they are wrong in the direction this
+project refuses:
+
+1. **The delay is discarded.** `setTimeout(fn, 5000)` runs `fn` at the next
+   job drain, which is the end of the current host evaluation. A page that
+   waits five seconds before doing something does it immediately.
+2. **`clearTimeout` cannot cancel.** It returns `undefined` and the callback
+   still runs. A page that schedules and then cancels runs the thing it
+   canceled.
+3. **The handle is a lie.** Every call returns `0`, so two timers are
+   indistinguishable and a page that stores handles in a map overwrites them.
+
+None of it is recorded as a loss anywhere. This slice's first purpose is to
+replace a silent approximation with either a real bounded mechanism or an
+explicit refusal.
+
+## 2. Scope
+
+**In:** `setTimeout(fn, ms, ...args)` and `clearTimeout(handle)`, in the
+**main frame only**.
+
+**Out, and refused rather than approximated:** `setInterval` /
+`clearInterval`, `requestAnimationFrame`, `requestIdleCallback`, workers of
+any kind, any background thread, timers in a child frame (children run no
+scripts — `child-frame-design-0.0.1.md` §16 — so a child has nothing to
+schedule from), and any clock a page can read. `Date.now()` and
+`performance.now()` stay absent: a timer's delay is host-side arithmetic and
+the realm never learns what time it is.
+
+## 3. Identity, ownership and lifetime
+
+- A timer belongs to **one realm**. Its handle is a small monotonic integer
+  minted per realm, starting at 1, never reused within that realm's life, so
+  two live timers are always distinguishable and a stale handle is inert.
+- A timer holds its callback, its arguments and its due time. Nothing else.
+- **Every timer of a realm is destroyed with that realm**: on navigation, on
+  reload, on traverse, on a child ending, on `target.close`. A due timer of a
+  document that has been replaced never runs, and its callback is dropped so
+  its closure is released. This falls out of the realm's own teardown and
+  needs no separate step, which is why timers are owned by the realm and not
+  by the target.
+- `clearTimeout(handle)` removes a pending timer and releases its callback
+  immediately. Clearing an unknown, already-fired or already-cleared handle is
+  a no-op, as in HTML.
+
+## 4. Time
+
+The host keeps one **monotonic** clock (`std::time::Instant`). A timer's due
+time is the instant it was scheduled plus its clamped delay. The realm has no
+clock at all, so a page can neither read the time nor measure elapsed time
+through this surface.
+
+`ms` is coerced as HTML does: a non-finite or negative value becomes `0`, and
+values are clamped to a bounded maximum (§6). No nesting-level clamp is
+implemented; a zero-delay timer is due immediately, and the per-boundary
+budget of §5 is what stops a chain of them from running forever.
+
+## 5. When a timer runs
+
+**Only at an operation boundary, never between one.** The host runs due
+timers at exactly these points, each of which is already a place where the
+realm may execute:
+
+| Operation | Runs due timers |
+|---|---|
+| `target.wait` | yes, on every poll, and the poll sleeps until the next due timer rather than a fixed interval |
+| `target.inspect`, `target.snapshot` | yes, before it observes, so what it reports includes what was due |
+| `target.act` | yes, **before** the preflight and not between the two phases |
+| `target.navigate`, `reload`, `traverse` | no: the document is being replaced and its timers are about to be destroyed |
+| `memory.report`, `session.*`, `profile.*` | no: they observe the host, not a document |
+
+Ordering is by due time, then by handle, so equal delays fire in the order
+they were scheduled. A callback that schedules another timer does not make the
+new one run in the same drain unless it is due; the drain takes a snapshot of
+what is due when it starts.
+
+**Bounded per boundary.** At most `MAX_TIMER_CALLBACKS_PER_BOUNDARY` (candidate
+32) callbacks run at one boundary, however many are due; the rest wait for the
+next one. That is what stops a page from holding the host inside one request.
+
+## 6. Bounds
+
+| Bound | Candidate | Why |
+|---|---|---|
+| pending timers per realm | 64 | a page that schedules more gets a refusal from `setTimeout`, which throws in the realm exactly as an over-limit allocation does |
+| callbacks run per operation boundary | 32 | one request cannot be held by a chain of zero-delay timers |
+| maximum delay | 2^31 − 1 ms | HTML's own overflow point; larger values clamp to it rather than wrapping |
+| callback memory | none of its own | a callback and its closure live in the realm and are already inside `REALM_MEMORY_LIMIT` (16 MiB); a timer adds a handle, an instant and a reference |
+
+## 7. Revision, and the guard timers make load-bearing
+
+A due callback may mutate the DOM. Those mutations move the main frame's
+counter through the `MutationObserver` that is already installed, so they move
+the **target-global revision** through the one checked helper, exactly like
+any other page-driven mutation. Nothing about the revision model changes.
+
+Two consequences must be stated rather than discovered:
+
+1. **`frame-action-design-0.0.1.md` §15's cache proof still holds**, and only
+   because children stay script-free. A child has no timers, so a child's
+   counter still moves only under a host evaluation in its realm. If timers
+   were ever granted to children, that proof and `target.wait`'s single
+   evaluation would both have to be reopened.
+2. **§29's preflight signature stops being theoretical.** A due timer is a
+   second way for the document to change between the two phases of an
+   activation. The design already re-derives and compares the whole effective
+   activation before dispatch, which covers it; §5 additionally forbids
+   running timers *between* the phases, so the two guards agree rather than
+   race.
+
+## 8. Failures, typed
+
+- **A callback throws.** The exception is caught, the timer is discarded, and
+  a bounded per-target counter records it. The target does **not** crash: a
+  timer is asynchronous and a thrown callback is not evidence that the
+  document is unusable. This differs from a script that throws during a
+  document build, which still fails the build, and the difference is
+  deliberate.
+- **A callback exceeds the request's deadline.** The realm's interrupt handler
+  already stops execution at the deadline; the operation answers
+  `deadline_exceeded` as it does for any long evaluation, and the timer is
+  discarded so the next request is not held by the same callback.
+- **`setTimeout` over the pending bound** throws in the realm, which surfaces
+  as the page's own error, not as a host failure.
+- **A handle that is unknown** is a no-op for `clearTimeout`.
+
+## 9. What the host reports
+
+`memory.report` gains one owner beside the existing ones:
+
+```
+"timers": { "objects": <live pending across realms>,
+            "object_limit": MAX_PENDING_TIMERS_PER_REALM * live realms,
+            "fired_total": <saturating>, "dropped_total": <saturating>,
+            "threw_total": <saturating> }
+```
+
+All counters are host-minted integers. No callback source, no delay
+distribution and no page text ever appears.
+
+Whether `target.inspect` should also carry a pending-timer count is a decision
+(§12.4), because that is an additive result field and this increment is
+otherwise shape-neutral.
+
+## 10. What stays a loss
+
+- `setInterval`, `requestAnimationFrame`, `requestIdleCallback`, workers.
+- Timers in a child frame.
+- Any clock readable from the realm.
+- CDP: `Runtime.evaluate` with `awaitPromise`, `Runtime.callFunctionOn` with
+  timers, `Emulation.setVirtualTimePolicy` and every other timer-adjacent CDP
+  method stay unimplemented and are recorded as losses in both mappings.
+- Real elapsed-time fidelity: a timer runs at the first operation boundary
+  **at or after** its due time, so a 10 ms timer with no requests for a second
+  runs a second late. This host has no background thread by design; the delay
+  is a lower bound, and that is a loss rather than an approximation.
+
+## 11. The frozen court
+
+`labs/native-dom/timer-court.py`, hermetic, headless, both allocators, to be
+written before any host change and to fail until the slice exists.
+
+1. **Delay is honoured.** A page schedules at 0 ms and at 50 ms; a snapshot
+   taken immediately sees only the first callback's effect, and one taken
+   after the host has waited past 50 ms sees both.
+2. **`clearTimeout` cancels.** A cleared timer never runs, proven by a mark it
+   would have written, and clearing an unknown or already-fired handle is a
+   no-op.
+3. **Handles are distinct.** Two timers scheduled in one turn get different
+   handles, and clearing one leaves the other.
+4. **Ordering.** Equal delays fire in scheduling order; a smaller delay
+   scheduled later fires first.
+5. **Only at boundaries.** No callback runs while the host is idle: a mark is
+   absent after a sleep with no request, and present after the next
+   observation.
+6. **The per-boundary budget holds.** A chain of zero-delay timers advances by
+   at most the budget per operation and never holds one request open.
+7. **The pending bound holds.** Scheduling past the bound throws in the realm
+   and the host answers the page's error, with the live count at the bound.
+8. **Teardown.** After a navigation, a reload, a traverse and a close, a timer
+   scheduled before it never runs and the owner count returns to zero.
+9. **Revision.** A due callback that mutates advances the target-global
+   revision by what the observer counted, and `target.wait` returns when a
+   timer's mutation reaches the awaited revision, without a fixed-interval
+   sleep.
+10. **A throwing callback** is counted, discarded, and leaves the target
+    usable: the next observation succeeds and the revision is intact.
+11. **Deadline.** A callback that outlives the request's deadline answers
+    `deadline_exceeded`, the timer is gone afterwards, and the target still
+    answers the next request.
+12. **Children.** A child frame has no timer surface: the shim in a child
+    realm exposes `setTimeout` as the same refusal every other unmodelled
+    feature gets, and no child timer can be scheduled or fire.
+13. **Secrecy.** No callback source, delay, or page text in the ledger, the
+    court log or the receipt; the timer owner reports integers only.
+14. **CDP.** The timer-adjacent methods stay `-32601`.
+
+## 12. Candidate memory and latency criteria, pre-registered
+
+To be frozen with the court, from the published evidence of the earlier
+slices, and never moved afterwards:
+
+| # | Workload | Candidate criterion |
+|---|---|---|
+| T1 | 64 pending timers on one target vs the same page with none | live owner bytes ≤ 65,536, i.e. the form court's realm plateau, since a pending timer is a handle, an instant and a reference |
+| T2 | 64 scheduled and cleared, 64 cycles | owner bytes return to the no-timer baseline exactly; `dropped_total` equals 4,096 |
+| T3 | a chain of 4,096 zero-delay callbacks across boundaries | process footprint growth over the last half no worse than the first half; absolute retention reported, not gated |
+| T4 | navigation with 64 pending | owners return to the one-document baseline and `dropped_total` accounts for every one |
+| T5 | latency | a `target.wait` for a 50 ms timer returns within 50 ms + 20 ms of scheduling, measured host-side; reported, and gated only as an upper bound of 250 ms so a fixed-interval sleep cannot pass it |
+
+## 13. The decisions and hazards for the root
+
+1. **Implement or refuse?** The honest alternative to implementing timers is
+   to make `setTimeout` throw `unsupported_capability`-style in the realm and
+   record it as a loss. Today's shim is worse than either. My recommendation
+   is to implement the bounded slice, because an agent-facing browser that
+   silently runs canceled callbacks is a correctness hazard for every page
+   that uses a debounce.
+2. **Determinism versus monotonic time.** The ruling fixes monotonic host
+   time. It follows that a court run's timing is not reproducible and that a
+   timer's delay is a lower bound tied to when requests arrive. If
+   reproducibility matters more than fidelity, the alternative is a virtual
+   clock that advances to the next due timer at each boundary, which makes
+   runs exact and removes T5 entirely. I have designed for the ruling and I am
+   flagging the cost rather than reopening it.
+3. **The exception policy.** §8 keeps the target alive when a callback throws,
+   which differs from a build-time script. Confirm.
+4. **`target.inspect`'s pending count.** Additive result field, or keep it in
+   `memory.report` only? The rest of this slice is shape-neutral.
+5. **The hazard I would most want reviewed.** Running timers at observation
+   boundaries means `target.snapshot` can change the document it is about to
+   report. The design runs due timers *before* observing, so the snapshot is
+   consistent with itself, but an agent that snapshots twice with no action in
+   between can now see different documents. That is true of any page with
+   timers and it is new to this host, so it belongs in the record and in the
+   README rather than in a surprise.

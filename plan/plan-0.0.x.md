@@ -1162,6 +1162,35 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Proposed, design only, nothing implemented and nothing measured: a
+  bounded timer slice for the native route
+  (`labs/native-dom/timer-design-0.0.1.md`). The audit's finding is that the
+  current shim is worse than an absence: `setTimeout` discards its delay and
+  runs the callback at the next job drain, `clearTimeout` cannot cancel
+  anything, and every handle is `0`, so a page that debounces runs
+  immediately and a page that cancels runs what it canceled — none of it
+  recorded as a loss. The design proposes `setTimeout` and `clearTimeout`
+  only, in the main frame only, with `setInterval`, animation frames, idle
+  callbacks, workers, background threads, child-frame timers and any
+  realm-readable clock all refused rather than approximated. Timers are owned
+  by a realm and destroyed with it, so navigation, reload, traverse and close
+  need no separate teardown; handles are per-realm monotonic integers; due
+  callbacks run only at operation boundaries, bounded at 32 per boundary and
+  64 pending per realm, ordered by due time then handle; `target.wait` sleeps
+  to the next due timer instead of a fixed interval. A due callback's
+  mutations move the existing global revision through the same checked
+  helper, and two consequences are recorded rather than left implicit: the
+  child-counter cache proof holds only because children stay script-free, and
+  the activation preflight's signature comparison stops being theoretical
+  because a due timer is a second way for a document to change between the
+  two phases. A throwing callback is counted and discarded without crashing
+  the target, a callback past the deadline answers `deadline_exceeded`, and
+  `memory.report` gains a timer owner of integers only. A fourteen-group
+  hermetic headless court and five pre-registered memory and latency criteria
+  are frozen in the record. Five decisions wait on the root, including
+  whether to implement at all rather than refuse honestly, and the hazard
+  that observation boundaries can now change the document a snapshot is about
+  to report. No protocol shape moves. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route: frame-aware actions and
   child-local navigation
   (`labs/native-dom/frame-action-design-0.0.1.md`). The record compared two
