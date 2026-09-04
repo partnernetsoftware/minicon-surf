@@ -340,7 +340,11 @@
   // time nor measure it here. A handle is minted once and never reused, and
   // the realm refuses to schedule past its bound or past the safe integer.
   const timers = { next: 1, pending: new Map(), scheduled: [], refused: 0, limit: 64, safe: Number.MAX_SAFE_INTEGER };
-  g.__mcsTimers = timers;
+  // The bridge cannot be replaced, shadowed or enumerated by page script. It
+  // shares this realm, so its contents can still be perturbed by the page
+  // that owns them; the host validates every read and attributes what it
+  // cannot read, so a page can only cost itself its own timers.
+  Object.defineProperty(g, "__mcsTimers", { value: timers, writable: false, configurable: false, enumerable: false });
   g.setTimeout = (fn, ms, ...args) => {
     if (typeof fn !== "function") {
       throw new TypeError("setTimeout takes a function: this host evaluates no string bodies");

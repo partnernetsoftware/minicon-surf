@@ -77,6 +77,28 @@
    "passed": false
   },
   {
+   "check": "[system] a close retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": null,
+    "retired": [
+     null,
+     null
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a reload retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": null,
+    "retired": [
+     null,
+     null
+    ]
+   },
+   "passed": false
+  },
+  {
    "check": "[system] a due callback's mutation advances the target's revision",
    "detail": {
     "revision": [
@@ -115,9 +137,107 @@
    "passed": true
   },
   {
+   "check": "[system] a wait converges on the revision a timer's callback reached",
+   "detail": {
+    "revision": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T5: the wait returns within 250 ms of the fifty-millisecond timer",
+   "detail": {
+    "elapsed_ms": 5001.8
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a callback past the deadline is discarded and the target still answers",
+   "detail": {
+    "reason": "this host has no timer surface to interrupt"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a timer behind one that hit the deadline still runs at the next request",
+   "detail": {
+    "reason": "this host has no timer surface to interrupt"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] Date and performance keep the shape this host inherited",
+   "detail": {
+    "shape_len": 135
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] setInterval, animation frames, idle callbacks and workers stay absent",
+   "detail": {
+    "shape_len": 135
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the timer surface this slice adds is exactly two functions",
+   "detail": {
+    "shape_len": 135
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a page cannot replace or enumerate the timer bridge",
+   "detail": {
+    "observed_len": 36
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T1: sixty-four pending timers cost at most 65,536 live owner bytes",
+   "detail": {
+    "owner_bytes": 1041,
+    "pending": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T4: a navigation with 64 pending retires exactly 64 and the owners return",
+   "detail": {
+    "owner_bytes": 0,
+    "retired": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T2: 64 scheduled and cleared over 64 cycles are exactly 4,096 clears",
+   "detail": {
+    "cleared": 0,
+    "fired": 0,
+    "owner_bytes": 250756,
+    "retired": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T3: a long callback chain does not accelerate the footprint",
+   "detail": {
+    "first_half": 0,
+    "second_half": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a callback that clears a timer in the same due batch is counted once",
+   "detail": {
+    "cleared": 0,
+    "observed_len": 10
+   },
+   "passed": false
+  },
+  {
    "check": "[system] no callback, delay or page text in the ledger",
    "detail": {
-    "audit_bytes": 1608
+    "audit_bytes": 2155
    },
    "passed": true
   },
@@ -194,6 +314,28 @@
    "passed": false
   },
   {
+   "check": "[arena] a close retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": null,
+    "retired": [
+     null,
+     null
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a reload retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": null,
+    "retired": [
+     null,
+     null
+    ]
+   },
+   "passed": false
+  },
+  {
    "check": "[arena] a due callback's mutation advances the target's revision",
    "detail": {
     "revision": [
@@ -232,15 +374,127 @@
    "passed": true
   },
   {
-   "check": "[arena] no callback, delay or page text in the ledger",
+   "check": "[arena] a wait converges on the revision a timer's callback reached",
    "detail": {
-    "audit_bytes": 1608
+    "revision": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T5: the wait returns within 250 ms of the fifty-millisecond timer",
+   "detail": {
+    "elapsed_ms": 5001.9
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a callback past the deadline is discarded and the target still answers",
+   "detail": {
+    "reason": "this host has no timer surface to interrupt"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a timer behind one that hit the deadline still runs at the next request",
+   "detail": {
+    "reason": "this host has no timer surface to interrupt"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] Date and performance keep the shape this host inherited",
+   "detail": {
+    "shape_len": 135
    },
    "passed": true
+  },
+  {
+   "check": "[arena] setInterval, animation frames, idle callbacks and workers stay absent",
+   "detail": {
+    "shape_len": 135
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the timer surface this slice adds is exactly two functions",
+   "detail": {
+    "shape_len": 135
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a page cannot replace or enumerate the timer bridge",
+   "detail": {
+    "observed_len": 36
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T1: sixty-four pending timers cost at most 65,536 live owner bytes",
+   "detail": {
+    "owner_bytes": 1169,
+    "pending": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T4: a navigation with 64 pending retires exactly 64 and the owners return",
+   "detail": {
+    "owner_bytes": 0,
+    "retired": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T2: 64 scheduled and cleared over 64 cycles are exactly 4,096 clears",
+   "detail": {
+    "cleared": 0,
+    "fired": 0,
+    "owner_bytes": 243876,
+    "retired": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T3: a long callback chain does not accelerate the footprint",
+   "detail": {
+    "first_half": 16384,
+    "second_half": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a callback that clears a timer in the same due batch is counted once",
+   "detail": {
+    "cleared": 0,
+    "observed_len": 10
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] no callback, delay or page text in the ledger",
+   "detail": {
+    "audit_bytes": 2155
+   },
+   "passed": true
+  },
+  {
+   "check": "[handle-3] the host accepts the court-only handle seam",
+   "detail": {
+    "reason": "the host refused the knob"
+   },
+   "passed": false
+  },
+  {
+   "check": "[handle-0] the host accepts the court-only handle seam",
+   "detail": {
+    "reason": "the host refused the knob"
+   },
+   "passed": false
   }
  ],
- "checks_passed": 6,
- "checks_total": 32,
+ "checks_passed": 12,
+ "checks_total": 64,
  "court": "native-dom bounded timers (control 0.0.2)",
  "host_sha256": "161357b0ffa54fcd86d22ed9ead611f12d73ff2186abb819dcdbad497ed42a26",
  "limitations": [

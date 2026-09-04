@@ -581,3 +581,37 @@ the timer can fire, and only §12's 250 ms upper bound gates; the elapsed value
 is reported beside it.
 
 No cap moves in any of this.
+
+## 19. A hang I caused against the old build, and what it exposed
+
+Running the extended court against the pushed host wedged it: the
+`/forever.html` fixture's callback reached the **old** shim, which ran it as a
+promise microtask during the document build, and the host spun at full CPU for
+over six minutes without its request deadline interrupting the job. The root
+terminated that one process; a check for residue afterwards found none.
+
+Three things are recorded from it.
+
+**19.1 The court must not be able to do that again.** The deadline and
+stuck-callback groups run only against a host that has this timer surface at
+all, which the court establishes by asking `target.inspect` for its `timers`
+field. Against a host without one they record a fixed reason instead of
+sending a fixture that host cannot survive. The falsification of the three
+defects §14.6 names — delay, cancel, distinct handles — does not depend on
+those groups and still runs.
+
+**19.2 The new build must still prove it, and does.** A callback that never
+returns is interrupted at the request's deadline, discarded, counted in
+`deadline_discarded_total`, and the next request answers; a timer queued
+behind it still runs at that next boundary. Both are court criteria on the new
+build, and they pass there.
+
+**19.3 A shipped gap this exposed, not this slice's to close.** The hang was a
+pending **job** that ran without an effective deadline, not a timer. This
+slice removes the route that reached it — `setTimeout` no longer queues a
+microtask, so a page cannot get a callback into the job queue through it — but
+it does **not** close the general path: a page that writes
+`Promise.resolve().then(loop)` still queues a job of its own, and
+`drain_jobs` checks its deadline only *between* jobs. That is a real defect in
+the shipped host, it predates this work, and it is recorded here for its own
+increment rather than widened into this one.

@@ -1162,8 +1162,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [~] Implemented and qualified on the native route, court 38 of 38: a
-  bounded timer slice
+- [~] Implemented on the native route, court 64 of 64 against the frozen
+  criteria: a bounded timer slice
   (`labs/native-dom/timer-design-0.0.1.md`). The audit's finding is that the
   current shim is worse than an absence: `setTimeout` discards its delay and
   runs the callback at the next job drain, `clearTimeout` cannot cancel
@@ -1201,7 +1201,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   frozen exclusive with the alternative recorded. Seven attribution counters
   replace one bucket. Not qualified here: the timer CDP group, because the
   pinned client is absent from the ignored lab directory in this working copy,
-  which also stops three CDP checks in other courts from running. No protocol
+  which was then restored offline from the local npm cache, verified against
+  the committed qualification, and the four affected courts rerun in full.
+  A second audit found the first court was a subset of what was frozen — the
+  wait, deadline and CDP groups and the T1 to T5 criteria were missing — and
+  five more defects behind it: a deadline discarded the due timers queued
+  behind the callback that hit it, a clear from inside a running callback went
+  uncounted, the build path ran a second unvalidated bridge, a malformed entry
+  inside a well-formed list was skipped, and the bridge was a page-replaceable
+  global. All are fixed, the frozen groups and criteria are implemented, and
+  the design corrects a false claim of its own: the realm has `Date` and
+  `performance`, which are shipped behaviour this slice neither uses nor
+  touches, recorded as a separate gap. A hang the extended court caused on the
+  pushed build is recorded with it, along with the shipped job-drain deadline
+  gap it exposed, which this slice narrows by construction and does not close. No protocol
   shape moves beyond the additive `target.inspect` timers field. G1, G3, P6 and
   G6 stay open.
 - [~] Implemented and qualified on the native route: frame-aware actions and

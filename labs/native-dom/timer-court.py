@@ -69,7 +69,14 @@ def handles(binary, origin, expect, tag, start, expected_more):
             return answer["result"]
 
         try:
-            profile = ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            try:
+                profile = ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            except RuntimeError:
+                # A host that does not know the seam cannot be stood at the
+                # boundary; that is this group's failure, not a crash.
+                expect(tag + "the host accepts the court-only handle seam", False,
+                       {"reason": "the host refused the knob"})
+                return
             session = ok("session.open", {"profile": profile})["session"]
             target = ok("target.open", {"session": session, "url": f"{origin}/handle.html"})["target"]
             observed = ok("target.snapshot", {"target": target, "format": "semantic",
@@ -120,8 +127,21 @@ def main():
 
     class Handler(network.Handler):
         def do_GET(self):
-            path, _, _query = self.path.partition("?")
+            path, _, query = self.path.partition("?")
             network.Handler.hits.append(path)
+            if path == "/bench.html":
+                # The same document either way: the count is two digits and
+                # the clear loop is always present, so the only difference
+                # between the arms is whether any timer exists.
+                # Two characters either way, and both valid: an octal
+                # literal is a syntax error under strict mode.
+                count = "64" if "n=64" in query else " 0"
+                clear = "1" if "clear=1" in query else "0"
+                return self.reply(200, page("Bench",
+                                            "var hs=[];var CLEAR=" + clear + ";"
+                                            "for(var i=0;i<" + count + ";i++){hs.push(setTimeout(function(){},600000));}"
+                                            "if(CLEAR){for(var j=0;j<hs.length;j++){clearTimeout(hs[j]);}}"
+                                            "write('bench '+hs.length);"))
             pages = {
                 # A zero-delay timer and a fifty-millisecond one.
                 "/delay.html": page("Delay",
@@ -177,6 +197,58 @@ def main():
                 "/teardown.html": page("Teardown",
                                        "setTimeout(function(){write('late ran');},60);"),
                 "/landed.html": page("Landed", ""),
+                # The engine's own globals, observed as a shape and never as a
+                # value: this slice must neither replace nor widen them.
+                "/globals.html": page("Globals",
+                                      "var out=[];"
+                                      "out.push('Date='+(typeof Date));"
+                                      "out.push('now='+(typeof Date.now));"
+                                      "out.push('perf='+(typeof performance));"
+                                      "out.push('interval='+(typeof setInterval));"
+                                      "out.push('raf='+(typeof requestAnimationFrame));"
+                                      "out.push('idle='+(typeof requestIdleCallback));"
+                                      "out.push('worker='+(typeof Worker));"
+                                      "out.push('timeout='+(typeof setTimeout));"
+                                      "out.push('clear='+(typeof clearTimeout));"
+                                      "write(out.join(' '));"),
+                # A page that tries to replace or corrupt its own bridge.
+                "/bridge.html": page("Bridge",
+                                     "var replaced=false;"
+                                     "try{window.__mcsTimers={};}catch(e){}"
+                                     "replaced=(typeof window.__mcsTimers.pending==='undefined');"
+                                     "var own=Object.keys(window).indexOf('__mcsTimers')>=0;"
+                                     "setTimeout(function(){write('bridge ran replaced='+replaced+' listed='+own);},0);"),
+                # A callback that never returns, for the deadline.
+                "/forever.html": page("Forever",
+                                      "setTimeout(function(){write('running');"
+                                      "for(;;){}},0);"
+                                      "setTimeout(function(){write('later ran');},0);"),
+                # One timer whose mutation a wait can converge on.
+                # A chain long enough to cross many boundaries.
+                "/long-chain.html": page("Long chain",
+                                         "var n=0;var step=function(){n=n+1;write('step '+n);"
+                                         "if(n<4096){setTimeout(step,0);}};setTimeout(step,0);"),
+                # A first callback that never returns, and a second behind it.
+                "/stuck.html": page("Stuck",
+                                    "setTimeout(function(){for(;;){}},0);"
+                                    "setTimeout(function(){write('second ran');},0);"),
+                # A callback that clears the timer queued behind it.
+                "/inner-clear.html": page("Inner clear",
+                                          "var second=0;"
+                                          "setTimeout(function(){write('first ran');clearTimeout(second);},0);"
+                                          "second=setTimeout(function(){write('second ran');},0);"),
+                "/wait.html": page("Wait",
+                                   "setTimeout(function(){write('wait ran');},50);"),
+                # Sixty-four pending timers that never come due.
+                "/many.html": page("Many",
+                                   "for(var i=0;i<64;i++){setTimeout(function(){},600000);}"
+                                   "write('scheduled');"),
+                # Sixty-four scheduled and every one of them cleared.
+                "/cleared.html": page("Cleared",
+                                      "var hs=[];"
+                                      "for(var i=0;i<64;i++){hs.push(setTimeout(function(){},600000));}"
+                                      "for(var j=0;j<hs.length;j++){clearTimeout(hs[j]);}"
+                                      "write('cleared '+hs.length);"),
                 # Three attempts against a seeded handle boundary.
                 "/handle.html": page("Handle",
                                      "var made=0;"
@@ -398,6 +470,185 @@ def main():
                            child is not None and state == "start",
                            {"observed_len": len(state or "")})
                     ok("target.close", {"target": target})
+
+                    # 9. target.wait converges on a timer's mutation, and does
+                    # not sleep a fixed interval to get there.
+                    target = open_page(session, "/wait.html")
+                    start = ok("target.inspect", {"target": target})["revision"]
+                    began = time.monotonic()
+                    waited = call("target.wait", {"target": target,
+                                                  "condition": {"kind": "revision_at_least",
+                                                                "revision": start + 1}},
+                                  deadline_ms=5000)
+                    elapsed_ms = (time.monotonic() - began) * 1000
+                    expect(tag + "a wait converges on the revision a timer's callback reached",
+                           waited.get("ok") and waited["result"]["matched"] is True
+                           and waited["result"]["revision"] >= start + 1,
+                           {"revision": waited.get("result", {}).get("revision")})
+                    # T5: reported, and gated only as an upper bound so a fixed
+                    # interval cannot pass it.
+                    expect(tag + "T5: the wait returns within 250 ms of the fifty-millisecond timer",
+                           elapsed_ms <= 250, {"elapsed_ms": round(elapsed_ms, 1)})
+                    ok("target.close", {"target": target})
+
+                    # 11. A callback that outlives the deadline. This group and
+                    # the one at 18.1 send a callback that never returns, which
+                    # a host without this timer surface would run as a promise
+                    # job with no effective deadline and would not survive. They
+                    # run only where the surface exists.
+                    surface = open_page(session, "/landed.html")
+                    has_timers = isinstance(
+                        (ok("target.inspect", {"target": surface}) or {}).get("timers"), dict)
+                    ok("target.close", {"target": surface})
+                    if not has_timers:
+                        for name in ("a callback past the deadline is discarded and the target still answers",
+                                     "a timer behind one that hit the deadline still runs at the next request"):
+                            expect(tag + name, False,
+                                   {"reason": "this host has no timer surface to interrupt"})
+                    target = open_page(session, "/forever.html") if has_timers else None
+                    if has_timers:
+                        answer = call("target.snapshot", {"target": target, "format": "semantic",
+                                                          "max_bytes": 65536, "max_nodes": 32},
+                                      deadline_ms=1000)
+                        owners = ok("memory.report", {})["owners"].get("timers") or {}
+                        after = call("target.inspect", {"target": target})
+                        expect(tag + "a callback past the deadline is discarded and the target still answers",
+                               (not answer.get("ok"))
+                               and answer["error"]["code"] == "deadline_exceeded"
+                               and owners.get("deadline_discarded_total", 0) >= 1
+                               and after.get("ok"),
+                               {"code": (answer.get("error") or {}).get("code"),
+                                "discarded": owners.get("deadline_discarded_total")})
+                        ok("target.close", {"target": target})
+
+                    # 15. The engine's own globals are neither replaced nor
+                    # widened, and the absent schedulers stay absent.
+                    target = open_page(session, "/globals.html")
+                    shape = mark(target)
+                    expect(tag + "Date and performance keep the shape this host inherited",
+                           shape is not None
+                           and "Date=function" in shape and "now=function" in shape
+                           and "perf=object" in shape,
+                           {"shape_len": len(shape or "")})
+                    expect(tag + "setInterval, animation frames, idle callbacks and workers stay absent",
+                           shape is not None and "interval=undefined" in shape
+                           and "raf=undefined" in shape and "idle=undefined" in shape
+                           and "worker=undefined" in shape,
+                           {"shape_len": len(shape or "")})
+                    expect(tag + "the timer surface this slice adds is exactly two functions",
+                           shape is not None and "timeout=function" in shape
+                           and "clear=function" in shape, {"shape_len": len(shape or "")})
+                    ok("target.close", {"target": target})
+
+                    # 16. The bridge cannot be replaced, and is not enumerable.
+                    target = open_page(session, "/bridge.html")
+                    time.sleep(0.05)
+                    state = mark(target)
+                    expect(tag + "a page cannot replace or enumerate the timer bridge",
+                           state == "bridge ran replaced=false listed=false",
+                           {"observed_len": len(state or "")})
+                    ok("target.close", {"target": target})
+
+                    # T1, T2, T4: the memory criteria of the design, caps as
+                    # frozen, with the counters that replaced dropped_total.
+                    def owner_bytes():
+                        report = ok("memory.report", {})["owners"]
+                        return (report["script_realms"]["malloc_bytes"]
+                                + report["targets"]["fixture_bytes"])
+
+                    # The empty host, so a "returns to baseline" claim is made
+                    # against a state with no targets rather than one with a
+                    # page still open.
+                    empty_owner_bytes = owner_bytes()
+                    plain = open_page(session, "/bench.html?n=0&clear=0")
+                    baseline = owner_bytes()
+                    empty_pending = (ok("target.inspect", {"target": plain})
+                                     .get("timers") or {}).get("pending")
+                    ok("target.close", {"target": plain})
+                    many = open_page(session, "/bench.html?n=64&clear=0")
+                    with_timers = owner_bytes()
+                    pending = (ok("target.inspect", {"target": many}).get("timers") or {}).get("pending")
+                    expect(tag + "T1: sixty-four pending timers cost at most 65,536 live owner bytes",
+                           empty_pending == 0 and pending == 64
+                           and 0 <= with_timers - baseline <= 65536,
+                           {"owner_bytes": with_timers - baseline, "pending": pending})
+                    before_retire = (ok("memory.report", {})["owners"].get("timers") or {}).get("retired_total", 0)
+                    ok("target.navigate", {"target": many, "url": f"{origin}/landed.html"})
+                    after_retire = (ok("memory.report", {})["owners"].get("timers") or {}).get("retired_total", 0)
+                    ok("target.close", {"target": many})
+                    expect(tag + "T4: a navigation with 64 pending retires exactly 64 and the owners return",
+                           after_retire - before_retire == 64
+                           and abs(owner_bytes() - empty_owner_bytes) <= 65536,
+                           {"retired": after_retire - before_retire,
+                            "owner_bytes": owner_bytes() - empty_owner_bytes})
+                    # T2: 64 scheduled and cleared, 64 cycles, counted as
+                    # clears and as nothing else.
+                    cycles = 64
+                    before_cycle = ok("memory.report", {})["owners"].get("timers") or {}
+                    for _ in range(cycles):
+                        probe = open_page(session, "/bench.html?n=64&clear=1")
+                        pending = (ok("target.inspect", {"target": probe})
+                                   .get("timers") or {}).get("pending")
+                        if pending != 0:
+                            break
+                        ok("target.close", {"target": probe})
+                    after_cycle = ok("memory.report", {})["owners"].get("timers") or {}
+                    cleared = (after_cycle.get("cleared_total", 0)
+                               - before_cycle.get("cleared_total", 0))
+                    retired = (after_cycle.get("retired_total", 0)
+                               - before_cycle.get("retired_total", 0))
+                    fired = after_cycle.get("fired_total", 0) - before_cycle.get("fired_total", 0)
+                    expect(tag + "T2: 64 scheduled and cleared over 64 cycles are exactly 4,096 clears",
+                           cleared == 4096 and retired == 0 and fired == 0
+                           and abs(owner_bytes() - empty_owner_bytes) <= 65536,
+                           {"cleared": cleared, "retired": retired, "fired": fired,
+                            "owner_bytes": owner_bytes() - empty_owner_bytes})
+
+                    # T3: a chain of callbacks across boundaries, reported and
+                    # gated only on not accelerating.
+                    chain = open_page(session, "/long-chain.html")
+                    footprints = []
+                    steps = 128
+                    for step in range(steps):
+                        ok("target.inspect", {"target": chain})
+                        if step % 16 == 15:
+                            footprints.append(
+                                RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"])
+                    half = len(footprints) // 2
+                    first_half = footprints[half - 1] - footprints[0] if half >= 2 else 0
+                    second_half = footprints[-1] - footprints[half - 1] if half >= 2 else 0
+                    fired = ((ok("memory.report", {})["owners"].get("timers") or {})
+                             .get("fired_total", 0))
+                    expect(tag + "T3: a long callback chain does not accelerate the footprint",
+                           second_half <= max(first_half, 0) + 65536 and fired > 0,
+                           {"first_half": first_half, "second_half": second_half})
+                    ok("target.close", {"target": chain})
+
+                    # 18.1: a callback that never returns must not take the
+                    # timers behind it with it.
+                    if has_timers:
+                        stuck = open_page(session, "/stuck.html")
+                        answer = call("target.snapshot", {"target": stuck, "format": "semantic",
+                                                          "max_bytes": 65536, "max_nodes": 32},
+                                      deadline_ms=1000)
+                        later = mark(stuck)
+                        expect(tag + "a timer behind one that hit the deadline still runs at the next request",
+                               (not answer.get("ok")) and later == "second ran",
+                               {"observed_len": len(later or "")})
+                        ok("target.close", {"target": stuck})
+
+                    # 18.2: a clear from inside a running callback is counted.
+                    inner = open_page(session, "/inner-clear.html")
+                    before_inner = ((ok("memory.report", {})["owners"].get("timers") or {})
+                                    .get("cleared_total", 0))
+                    state = mark(inner)
+                    after_inner = ((ok("memory.report", {})["owners"].get("timers") or {})
+                                   .get("cleared_total", 0))
+                    expect(tag + "a callback that clears a timer in the same due batch is counted once",
+                           state == "first ran" and after_inner - before_inner == 1,
+                           {"cleared": after_inner - before_inner,
+                            "observed_len": len(state or "")})
+                    ok("target.close", {"target": inner})
 
                     # 13. Secrecy.
                     audit = ok("session.inspect", {"session": session})

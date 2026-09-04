@@ -116,21 +116,34 @@ impl Timers {
         self.pending.len()
     }
 
-    /// The handles due at `now`, ordered by due time then by handle, bounded
-    /// by one boundary's budget. They are removed from the queue: whether each
-    /// one ran, threw or had been cleared is the realm's answer.
-    fn take_due(&mut self, now: Instant, budget: usize) -> Vec<u64> {
-        let mut due: Vec<(u64, Instant)> = self
-            .pending
-            .iter()
-            .filter(|(_, at)| *at <= now)
-            .copied()
-            .collect();
-        due.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
-        due.truncate(budget);
-        let taken: Vec<u64> = due.iter().map(|(handle, _)| *handle).collect();
-        self.pending.retain(|(handle, _)| !taken.contains(handle));
-        taken
+    /// The next handle due at `now`, by due time then by handle, removed from
+    /// the queue because it is about to be attempted. Taking them one at a
+    /// time is what keeps a deadline from discarding the ones behind it: an
+    /// entry leaves this queue only when the host actually tries it.
+    fn take_next_due(&mut self, now: Instant) -> Option<u64> {
+        let mut best: Option<(usize, (u64, Instant))> = None;
+        for (index, entry) in self.pending.iter().enumerate() {
+            if entry.1 > now {
+                continue;
+            }
+            let better = match best {
+                None => true,
+                Some((_, current)) => (entry.1, entry.0) < (current.1, current.0),
+            };
+            if better {
+                best = Some((index, *entry));
+            }
+        }
+        let (index, entry) = best?;
+        self.pending.remove(index);
+        Some(entry.0)
+    }
+
+    /// Drop one handle if it is still queued, saying whether it was.
+    fn remove(&mut self, handle: u64) -> bool {
+        let before = self.pending.len();
+        self.pending.retain(|(live, _)| *live != handle);
+        self.pending.len() < before
     }
 
     fn next_due(&self) -> Option<Instant> {
@@ -3478,29 +3491,37 @@ impl Host {
         };
         let refused = answer.get("refused").and_then(Value::as_u64).unwrap_or(0);
         let mut cleared = 0u64;
-        for item in answer
+        let moved = answer
             .get("moved")
             .and_then(Value::as_array)
             .cloned()
-            .unwrap_or_default()
-        {
-            let handle = item.get(0).and_then(Value::as_u64);
-            let delay = item.get(1).and_then(Value::as_i64);
-            match (handle, delay) {
-                (Some(handle), Some(delay)) if delay >= 0 => {
-                    let due = now
-                        .checked_add(Duration::from_millis(delay as u64))
-                        .unwrap_or(now);
-                    target.timers.pending.push((handle, due));
-                }
-                (Some(handle), Some(_)) => {
-                    let before = target.timers.pending.len();
-                    target.timers.pending.retain(|(live, _)| *live != handle);
-                    if target.timers.pending.len() < before {
-                        cleared += 1;
-                    }
-                }
-                _ => {}
+            .unwrap_or_default();
+        for item in moved {
+            // A whole bounded tuple or nothing: an entry this host cannot read
+            // is a fault it counts, not one it skips over.
+            let Some(pair) = item.as_array().filter(|pair| pair.len() == 2) else {
+                self.timer_counters.collect_failed =
+                    self.timer_counters.collect_failed.saturating_add(1);
+                break;
+            };
+            let (Some(handle), Some(delay)) = (pair[0].as_u64(), pair[1].as_i64()) else {
+                self.timer_counters.collect_failed =
+                    self.timer_counters.collect_failed.saturating_add(1);
+                break;
+            };
+            if delay >= 0 {
+                let due = now
+                    .checked_add(Duration::from_millis(delay as u64))
+                    .unwrap_or(now);
+                target.timers.pending.push((handle, due));
+            } else {
+                // The realm emits this only when it really removed a pending
+                // callback, so the clear is counted on that authority. Taking
+                // it out of the host queue is a separate, idempotent step: a
+                // callback cleared from inside a running callback has already
+                // left the queue and is still a clear.
+                cleared += 1;
+                target.timers.remove(handle);
             }
         }
         self.timer_counters.refused = self.timer_counters.refused.saturating_add(refused);
@@ -3511,24 +3532,27 @@ impl Host {
     /// runs. Due callbacks run in order, bounded; one that throws or is
     /// interrupted at the deadline is discarded and counted, the target stays
     /// usable, and whatever it completed before that stands.
-    fn run_due_timers(&mut self, id: &str, deadline: Instant) {
+    fn run_due_timers(&mut self, id: &str, deadline: Instant) -> Result<(), ControlError> {
         if !self.targets.contains_key(id) {
-            return;
+            return Ok(());
         }
         self.collect_timers(id, deadline);
         let policy = self.policy_for_target(id);
+        // The snapshot of what is due is taken once, so a zero-delay timer a
+        // callback schedules waits for the next boundary; but the entries are
+        // removed one at a time, as each is attempted.
         let now = Instant::now();
-        let due = match self.target_mut(id) {
-            Ok(target) => target
-                .timers
-                .take_due(now, MAX_TIMER_CALLBACKS_PER_BOUNDARY),
-            Err(_) => return,
-        };
-        for handle in due {
+        for _ in 0..MAX_TIMER_CALLBACKS_PER_BOUNDARY {
+            let Some(handle) = (match self.target_mut(id) {
+                Ok(target) => target.timers.take_next_due(now),
+                Err(_) => return Ok(()),
+            }) else {
+                break;
+            };
             let script = timer_fire_script(handle);
             let outcome = match self.target_mut(id) {
                 Ok(target) => target.eval(&script, deadline, &policy),
-                Err(_) => return,
+                Err(_) => return Ok(()),
             };
             match outcome {
                 Ok(answer) if answer.contains("fired") => {
@@ -3538,18 +3562,32 @@ impl Host {
                     self.timer_counters.threw = self.timer_counters.threw.saturating_add(1);
                 }
                 Ok(_) => {}
-                Err(_) => {
+                Err(error) => {
+                    // The callback was interrupted. It is discarded and
+                    // counted, the target stays usable, and the operation that
+                    // was holding the deadline answers with it, as any long
+                    // evaluation does.
                     self.timer_counters.deadline_discarded =
                         self.timer_counters.deadline_discarded.saturating_add(1);
-                    return;
+                    return Err(if Instant::now() >= deadline {
+                        ControlError::new(
+                            "deadline_exceeded",
+                            "a timer callback did not finish before the deadline",
+                            true,
+                        )
+                        .scoped("target", id)
+                    } else {
+                        error
+                    });
                 }
             }
             // A callback may have scheduled or cleared timers of its own; they
             // are collected here so their due times start from this turn, and
             // a zero-delay one waits for the next boundary because this
-            // boundary's due list was taken before it existed.
+            // boundary's due instant was taken before it existed.
             self.collect_timers(id, deadline);
         }
+        Ok(())
     }
 
     /// The target-global revision: the base plus every live frame's counter.
@@ -3730,7 +3768,7 @@ impl Host {
                 let id = typed_field(object, "target", "target")?.to_owned();
                 // An observation is an operation boundary: what was due has
                 // run, and the revision reported below includes it.
-                self.run_due_timers(&id, deadline);
+                self.run_due_timers(&id, deadline)?;
                 let policy = self.policy_for_target(&id);
                 let https = self.tls_roots.is_some();
                 let surface_id = self
@@ -4193,6 +4231,11 @@ impl Host {
             "network":target_network(&target.budget, self.tls_roots.is_some())
         });
         self.targets.insert(id.clone(), target);
+        // Timers the document's own scripts scheduled are collected the moment
+        // it is committed, through the one validated collect, so their delays
+        // start from this document rather than from whichever operation first
+        // observes it.
+        self.collect_timers(&id, deadline);
         // A target opened at a URL starts its history with that URL.
         if let Some(url) = self
             .targets
@@ -4618,30 +4661,6 @@ impl Host {
         }
         target.eval("__mcsComplete()", deadline, &policy)?;
         target.eval(INSTALL_JS, deadline, &policy)?;
-        // Timers the document's own scripts scheduled are collected here, so
-        // their due times start from the document rather than from whichever
-        // operation happens to observe it first.
-        if let Ok(text) = target.eval(TIMER_COLLECT_JS, deadline, &policy)
-            && let Ok(answer) = serde_json::from_str::<Value>(&text)
-        {
-            let now = Instant::now();
-            for item in answer
-                .get("moved")
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default()
-            {
-                if let Some(handle) = item.get(0).and_then(Value::as_u64)
-                    && let Some(delay) = item.get(1).and_then(Value::as_i64)
-                    && delay >= 0
-                {
-                    let due = now
-                        .checked_add(Duration::from_millis(delay as u64))
-                        .unwrap_or(now);
-                    target.timers.pending.push((handle, due));
-                }
-            }
-        }
         // Court-only seams: they do nothing unless the knobs are given.
         if self.court_frame_counter > 0 {
             let seed = format!(
@@ -5382,6 +5401,9 @@ impl Host {
                     .retired
                     .saturating_add(retired.timers.len() as u64);
                 self.ended_frames = ended_frames.clone();
+                // The replacement's own scripts may have scheduled timers; the
+                // same collect gives them due times from this document.
+                self.collect_timers(id, deadline);
                 // The replaced document's spend leaves the gate and becomes a
                 // lifetime diagnostic; its TLS counters stay attributable.
                 let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
@@ -5458,7 +5480,7 @@ impl Host {
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
         // Due timers run before the observation, so what it reports is
         // consistent with the revision it names.
-        self.run_due_timers(&id, deadline);
+        self.run_due_timers(&id, deadline)?;
         let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
         // A foreign, ended or unknown frame or realm is one and the same
@@ -5728,7 +5750,7 @@ impl Host {
         Self::validate_action(action, &kind)?;
         // A boundary before the preflight, and none between the two phases:
         // what the preflight approves is what the activation re-derives.
-        self.run_due_timers(&id, deadline);
+        self.run_due_timers(&id, deadline)?;
         let index = node
             .strip_prefix("node_")
             .and_then(|s| s.parse::<usize>().ok())
@@ -6085,7 +6107,7 @@ impl Host {
         let policy = self.policy_for_target(&id);
         loop {
             self.pump_surfaces(deadline);
-            self.run_due_timers(&id, deadline);
+            self.run_due_timers(&id, deadline)?;
             let target = self.target_mut(&id)?;
             let revision = Self::revision(target, deadline, &policy)?;
             if revision >= expected {
