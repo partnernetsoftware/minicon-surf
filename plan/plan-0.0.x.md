@@ -1162,6 +1162,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [~] Implemented and measured on the native route: bounded child frames
+  (`labs/native-dom/child-frame-design-0.0.1.md`). The audit found the frame
+  contract already written and already executable on the synthetic host, so
+  the increment added no operation and no request or result shape: a
+  same-origin `<iframe src>` becomes a child frame with its own id,
+  generation and realm, built with its parent under the parent's own budget,
+  at most seven, depth one, script-free, enumerated by `target.inspect` and
+  observed through the `frame`/`realm` narrowing `target.snapshot` already
+  had. Node ids became target-scoped so a reference taken in a child cannot
+  resolve against the main frame, and acting there is refused typed: that
+  hazard was found by auditing the frozen design against the pre-implementation
+  host, before any code. A child costs 247,000 live owner bytes, seven cost
+  1,726,710 with no super-linear term, 64 parent navigations return to the
+  one-child level and retire exactly two realms each, and open-and-close
+  returns every owner byte while retaining 32 KB more than the identical
+  childless arm. The court passes 63 of 63 under both allocators including
+  its CDP group; frame-realm and the CDP court were amended where they
+  encoded the old one-frame limitation and still pass. Three questions are
+  open for the root and none was guessed: whether an action may reach a child
+  frame, whether a `frames[]` entry may carry `url` (a projected child
+  carries its parent's today), and whether the pinned navigation result may
+  carry `ended_frames`. Losses: no acting in a child, no child navigation, no
+  nesting, no cross-origin or `srcdoc` children, no scripts in a child. G1,
+  G3, P6 and G6 stay open.
 - [~] Implemented and measured on the native route: the agent-native form
   interaction slice (`labs/native-dom/form-interaction-design-0.0.1.md`). The
   realm-shim gained exactly the enumerated model, checked with radio grouping,
