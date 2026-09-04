@@ -1162,8 +1162,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [ ] Proposed, open, nothing implemented and nothing measured: an
+- [~] Implemented and measured, one pre-registered cap still failing: the
   agent-native navigation slice (`labs/native-dom/navigation-design-0.0.1.md`).
+  `control-0.0.2` is a separate schema served beside an unchanged `0.0.1`,
+  carrying `target.navigate`, `target.reload` and `target.traverse`; history
+  is metadata only, eight committed URLs and a position, so going back
+  refetches and restores no page state. The native host implements all three
+  by reusing its atomic same-frame navigation, `session.inspect` reports
+  advisory discovery and a bounded 64-record audit ledger, `profile.policy.set`
+  is implemented with the network switch enforced before any name or socket,
+  and the CDP adapter maps navigate and reload while both history methods stay
+  `-32601` because the host is the only history authority. The fetch and byte
+  limits are scoped to one document by ruling, with saturating lifetime
+  diagnostics that never gate. The court reaches 89 of 90 with nothing
+  unverified; the one failure is the 128-navigation differential soak under
+  the default allocator, 1,064,960 bytes against the frozen 1,048,576, after a
+  ledger representation repair had brought it to 983,040. No cap was moved.
+  G1, G3, P6 and G6 stay open.
+- [ ] Superseded description of the same node, kept for the record: proposed,
+  nothing implemented and nothing measured
+  (`labs/native-dom/navigation-design-0.0.1.md`).
   The control operation enum of `0.0.1` is closed and stays closed, so the
   design proposes `target.navigate`, `target.reload` and `target.history`
   under a `control-0.0.2` version bump with discovery through the existing

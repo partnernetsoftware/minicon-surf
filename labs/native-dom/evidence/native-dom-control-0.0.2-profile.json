@@ -14,8 +14,8 @@
     {
       "check": "[system] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
       "detail": {
-        "footprint_delta": 262144,
-        "resident_delta": 802816
+        "footprint_delta": 245760,
+        "resident_delta": 835584
       },
       "passed": true
     },
@@ -41,9 +41,15 @@
         "object_limit": 8,
         "objects": 3,
         "persistent": 2,
+        "policies": {
+          "bytes": 6,
+          "deny_by_default": 0,
+          "offline": 0,
+          "permissions_effect": "recorded_only"
+        },
         "storage_keys": 0,
         "store": "envelope-keychain",
-        "store_bytes_written_total": 1031,
+        "store_bytes_written_total": 1199,
         "store_writes_total": 2,
         "unavailable": 0
       },
@@ -118,6 +124,50 @@
       "passed": true
     },
     {
+      "check": "[system] an offline profile refuses a new target before any socket",
+      "detail": {
+        "code": "permission_denied",
+        "details": {
+          "detail": "the profile's network policy is offline",
+          "reason": "network_offline"
+        },
+        "message": "network policy: network_offline",
+        "retryable": false,
+        "scope": {
+          "id": "target_26",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the other profile is untouched by that switch",
+      "passed": true
+    },
+    {
+      "check": "[system] profile.inspect reports the policy and that the permission grants nothing",
+      "detail": {
+        "network": "offline",
+        "permissions": "deny_by_default",
+        "permissions_effect": "recorded_only"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] the policy is accounted in bounded owner counts",
+      "detail": {
+        "bytes": 6,
+        "deny_by_default": 1,
+        "offline": 1,
+        "permissions_effect": "recorded_only"
+      },
+      "passed": true
+    },
+    {
+      "check": "[system] restoring online works at once under the unchanged allowlist",
+      "passed": true
+    },
+    {
       "check": "[system] a session cookie set in session A is still sent by session B of the same profile",
       "detail": "sent=court=court-alpha-7f3a; hidden=court-hidden; volatile=court-volatile",
       "passed": true
@@ -125,7 +175,7 @@
     {
       "check": "[system] a page mutation is written through (recorded write amplification)",
       "detail": {
-        "bytes": 950,
+        "bytes": 1034,
         "writes": 1
       },
       "passed": true
@@ -156,7 +206,7 @@
       "detail": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_profile_94",
+        "request_id": "req_profile_103",
         "result": {
           "found": false,
           "kind": "profile_storage_get",
@@ -205,6 +255,11 @@
         "kind": "profile",
         "name": "alpha",
         "persistence": "persistent",
+        "policy": {
+          "network": "online",
+          "permissions": "deny_by_default",
+          "permissions_effect": "recorded_only"
+        },
         "profile": "profile_alpha",
         "read_only": true,
         "sessions": 1,
@@ -235,10 +290,16 @@
         "object_limit": 8,
         "objects": 3,
         "persistent": 2,
+        "policies": {
+          "bytes": 6,
+          "deny_by_default": 1,
+          "offline": 0,
+          "permissions_effect": "recorded_only"
+        },
         "storage_keys": 2,
         "store": "envelope-keychain",
-        "store_bytes_written_total": 6471,
-        "store_writes_total": 9,
+        "store_bytes_written_total": 8927,
+        "store_writes_total": 11,
         "unavailable": 0
       },
       "passed": true
@@ -254,7 +315,7 @@
     {
       "check": "[system] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
       "detail": {
-        "live": 6291912,
+        "live": 6422984,
         "profiles": {
           "budgets": {
             "accounted_bytes_per_profile": 131072,
@@ -271,10 +332,16 @@
           "object_limit": 8,
           "objects": 3,
           "persistent": 2,
+          "policies": {
+            "bytes": 6,
+            "deny_by_default": 1,
+            "offline": 0,
+            "permissions_effect": "recorded_only"
+          },
           "storage_keys": 34,
           "store": "envelope-keychain",
-          "store_bytes_written_total": 38747,
-          "store_writes_total": 41,
+          "store_bytes_written_total": 43891,
+          "store_writes_total": 43,
           "unavailable": 0
         }
       },
@@ -333,6 +400,15 @@
       "passed": true
     },
     {
+      "check": "[system] alpha's policy survives the restart inside the sealed record",
+      "detail": {
+        "network": "online",
+        "permissions": "deny_by_default",
+        "permissions_effect": "recorded_only"
+      },
+      "passed": true
+    },
+    {
       "check": "[system] the corrupt sibling fails closed",
       "detail": {
         "code": "not_found",
@@ -374,8 +450,8 @@
     {
       "check": "[arena] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
       "detail": {
-        "footprint_delta": 262144,
-        "resident_delta": 802816
+        "footprint_delta": 229376,
+        "resident_delta": 819200
       },
       "passed": true
     },
@@ -401,9 +477,15 @@
         "object_limit": 8,
         "objects": 3,
         "persistent": 2,
+        "policies": {
+          "bytes": 6,
+          "deny_by_default": 0,
+          "offline": 0,
+          "permissions_effect": "recorded_only"
+        },
         "storage_keys": 0,
         "store": "envelope-keychain",
-        "store_bytes_written_total": 1031,
+        "store_bytes_written_total": 1199,
         "store_writes_total": 2,
         "unavailable": 0
       },
@@ -478,6 +560,50 @@
       "passed": true
     },
     {
+      "check": "[arena] an offline profile refuses a new target before any socket",
+      "detail": {
+        "code": "permission_denied",
+        "details": {
+          "detail": "the profile's network policy is offline",
+          "reason": "network_offline"
+        },
+        "message": "network policy: network_offline",
+        "retryable": false,
+        "scope": {
+          "id": "target_26",
+          "kind": "target"
+        }
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the other profile is untouched by that switch",
+      "passed": true
+    },
+    {
+      "check": "[arena] profile.inspect reports the policy and that the permission grants nothing",
+      "detail": {
+        "network": "offline",
+        "permissions": "deny_by_default",
+        "permissions_effect": "recorded_only"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] the policy is accounted in bounded owner counts",
+      "detail": {
+        "bytes": 6,
+        "deny_by_default": 1,
+        "offline": 1,
+        "permissions_effect": "recorded_only"
+      },
+      "passed": true
+    },
+    {
+      "check": "[arena] restoring online works at once under the unchanged allowlist",
+      "passed": true
+    },
+    {
       "check": "[arena] a session cookie set in session A is still sent by session B of the same profile",
       "detail": "sent=court=court-alpha-7f3a; hidden=court-hidden; volatile=court-volatile",
       "passed": true
@@ -485,7 +611,7 @@
     {
       "check": "[arena] a page mutation is written through (recorded write amplification)",
       "detail": {
-        "bytes": 950,
+        "bytes": 1034,
         "writes": 1
       },
       "passed": true
@@ -516,7 +642,7 @@
       "detail": {
         "ok": true,
         "protocol": "minicon-surf.control",
-        "request_id": "req_profile_94",
+        "request_id": "req_profile_103",
         "result": {
           "found": false,
           "kind": "profile_storage_get",
@@ -565,6 +691,11 @@
         "kind": "profile",
         "name": "alpha",
         "persistence": "persistent",
+        "policy": {
+          "network": "online",
+          "permissions": "deny_by_default",
+          "permissions_effect": "recorded_only"
+        },
         "profile": "profile_alpha",
         "read_only": true,
         "sessions": 1,
@@ -595,10 +726,16 @@
         "object_limit": 8,
         "objects": 3,
         "persistent": 2,
+        "policies": {
+          "bytes": 6,
+          "deny_by_default": 1,
+          "offline": 0,
+          "permissions_effect": "recorded_only"
+        },
         "storage_keys": 2,
         "store": "envelope-keychain",
-        "store_bytes_written_total": 6471,
-        "store_writes_total": 9,
+        "store_bytes_written_total": 8927,
+        "store_writes_total": 11,
         "unavailable": 0
       },
       "passed": true
@@ -614,7 +751,7 @@
     {
       "check": "[arena] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
       "detail": {
-        "live": 5931560,
+        "live": 5816824,
         "profiles": {
           "budgets": {
             "accounted_bytes_per_profile": 131072,
@@ -631,10 +768,16 @@
           "object_limit": 8,
           "objects": 3,
           "persistent": 2,
+          "policies": {
+            "bytes": 6,
+            "deny_by_default": 1,
+            "offline": 0,
+            "permissions_effect": "recorded_only"
+          },
           "storage_keys": 34,
           "store": "envelope-keychain",
-          "store_bytes_written_total": 38747,
-          "store_writes_total": 41,
+          "store_bytes_written_total": 43891,
+          "store_writes_total": 43,
           "unavailable": 0
         }
       },
@@ -693,6 +836,15 @@
       "passed": true
     },
     {
+      "check": "[arena] alpha's policy survives the restart inside the sealed record",
+      "detail": {
+        "network": "online",
+        "permissions": "deny_by_default",
+        "permissions_effect": "recorded_only"
+      },
+      "passed": true
+    },
+    {
       "check": "[arena] the corrupt sibling fails closed",
       "detail": {
         "code": "not_found",
@@ -727,47 +879,47 @@
       "passed": true
     }
   ],
-  "checks_passed": 80,
-  "checks_total": 82,
+  "checks_passed": 92,
+  "checks_total": 94,
   "design": "labs/native-dom/profile-design-0.0.1.md",
   "footprint_bytes": {
     "arena": {
-      "empty": 2376016,
-      "empty_rss": 8241152,
-      "feature_off_empty": 2113872,
-      "feature_off_empty_rss": 7438336,
-      "live_three_profiles": 5685776,
-      "live_with_data": 5931560,
-      "post_close": 5276152,
-      "restart_live_one_target": 3670400,
+      "empty": 2326864,
+      "empty_rss": 8224768,
+      "feature_off_empty": 2097488,
+      "feature_off_empty_rss": 7405568,
+      "live_three_profiles": 5603832,
+      "live_with_data": 5816824,
+      "post_close": 5161416,
+      "restart_live_one_target": 3785088,
       "write_amplification": {
-        "bytes": 950,
+        "bytes": 1034,
         "writes": 1
       }
     },
     "system": {
-      "empty": 2359632,
-      "empty_rss": 8224768,
+      "empty": 2343248,
+      "empty_rss": 8241152,
       "feature_off_empty": 2097488,
-      "feature_off_empty_rss": 7421952,
-      "live_three_profiles": 5521864,
-      "live_with_data": 6291912,
-      "post_close": 6291912,
-      "restart_live_one_target": 4325736,
+      "feature_off_empty_rss": 7405568,
+      "live_three_profiles": 5865928,
+      "live_with_data": 6422984,
+      "post_close": 6422984,
+      "restart_live_one_target": 4407704,
       "write_amplification": {
-        "bytes": 950,
+        "bytes": 1034,
         "writes": 1
       }
     }
   },
-  "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
+  "host_sha256": "720656ce89c14ad7c7d94e5272d71c153db30541eb9a2994fcb8caa27201c3ac",
   "limitations": [
     "fake court values only; no real browser profile is read or migrated",
     "http only: Secure and SameSite=None cookies are refused by design",
     "no public suffix list: Domain attributes other than the request host are refused"
   ],
   "passed": false,
-  "release_binary_bytes": 5474176,
+  "release_binary_bytes": 5591632,
   "schema": "minicon-surf.native-dom-profile-receipt/0.0.1",
   "status": "failed",
   "store_modes": [

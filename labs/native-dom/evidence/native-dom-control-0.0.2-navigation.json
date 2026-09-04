@@ -41,7 +41,7 @@
   },
   {
    "check": "[system] navigate commits the requested URL",
-   "detail": "http://127.0.0.1:54778/about.html",
+   "detail": "http://127.0.0.1:50706/about.html",
    "passed": true
   },
   {
@@ -135,7 +135,7 @@
      "length": 3,
      "position": 1
     },
-    "url": "http://127.0.0.1:54778/about.html"
+    "url": "http://127.0.0.1:50706/about.html"
    },
    "passed": true
   },
@@ -148,7 +148,7 @@
      "length": 3,
      "position": 0
     },
-    "url": "http://127.0.0.1:54778/index.html"
+    "url": "http://127.0.0.1:50706/index.html"
    },
    "passed": true
   },
@@ -161,7 +161,7 @@
      "length": 3,
      "position": 2
     },
-    "url": "http://127.0.0.1:54778/count.html"
+    "url": "http://127.0.0.1:50706/count.html"
    },
    "passed": true
   },
@@ -328,11 +328,11 @@
      "code": "not_found",
      "details": {
       "generation": 20,
-      "href": "http://127.0.0.1:54778/absent.html",
+      "href": "http://127.0.0.1:50706/absent.html",
       "navigation": "failed",
       "realm": "realm_20",
       "status": 404,
-      "url": "http://127.0.0.1:54778/absent.html"
+      "url": "http://127.0.0.1:50706/absent.html"
      },
      "message": "document request was not successful",
      "retryable": false,
@@ -380,11 +380,80 @@
   {
    "check": "[system] an offline profile refuses before any socket and changes nothing",
    "detail": {
-    "error": "unsupported_operation",
-    "reason": "profile.policy.set is reserved by the contract but not offered by this route"
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "the profile's network policy is offline",
+      "generation": 20,
+      "href": "http://127.0.0.1:50706/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "network_offline"
+     },
+     "message": "network policy: network_offline",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
    },
-   "passed": null,
-   "unverified": true
+   "passed": true
+  },
+  {
+   "check": "[system] an offline profile refuses a reload the same way",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "the profile's network policy is offline",
+     "generation": 20,
+     "href": "http://127.0.0.1:50706/index.html",
+     "navigation": "failed",
+     "realm": "realm_20",
+     "reason": "network_offline"
+    },
+    "message": "network policy: network_offline",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] profile.inspect reports the policy and says the permission grants nothing",
+   "detail": {
+    "network": "offline",
+    "permissions": "deny_by_default",
+    "permissions_effect": "recorded_only"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] restoring online re-enables navigation under the unchanged allowlist",
+   "passed": true
+  },
+  {
+   "check": "[system] the allowlist is unchanged by the switch",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "address class refused: private",
+     "generation": 21,
+     "href": "http://10.0.0.1/evil.html",
+     "navigation": "failed",
+     "realm": "realm_21",
+     "reason": "address"
+    },
+    "message": "network policy: address",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
   },
   {
    "check": "[system] an expired deadline is typed and leaves the target whole",
@@ -392,10 +461,10 @@
     "code": "deadline_exceeded",
     "details": {
      "engine_error": "interrupted",
-     "generation": 20,
-     "href": "http://127.0.0.1:54778/index.html",
+     "generation": 21,
+     "href": "http://127.0.0.1:50706/index.html",
      "navigation": "failed",
-     "realm": "realm_20"
+     "realm": "realm_21"
     },
     "message": "script evaluation failed",
     "retryable": true,
@@ -429,6 +498,12 @@
     "object_limit": 8,
     "objects": 1,
     "persistent": 0,
+    "policies": {
+     "bytes": 2,
+     "deny_by_default": 0,
+     "offline": 0,
+     "permissions_effect": "recorded_only"
+    },
     "storage_keys": 0,
     "store": null,
     "store_bytes_written_total": 0,
@@ -451,7 +526,7 @@
   {
    "check": "[system] the ledger records every navigation in order, by origin only, and grants nothing",
    "detail": {
-    "count": 25,
+    "count": 29,
     "limit": 64,
     "outcomes": [
      "committed",
@@ -466,8 +541,8 @@
   {
    "check": "[system] the ledger is accounted and bounded in memory.report",
    "detail": {
-    "audit_bytes": 2192,
-    "audit_entries": 25,
+    "audit_bytes": 5184,
+    "audit_entries": 29,
     "audit_entry_limit": 64
    },
    "passed": true
@@ -494,7 +569,7 @@
    "check": "[system] post-navigation retention stays within its budget",
    "detail": {
     "cap": 262144,
-    "over_steady": 16384
+    "over_steady": 0
    },
    "passed": true
   },
@@ -522,7 +597,7 @@
      "loaderId": ""
     },
     "error": null,
-    "url": "http://127.0.0.1:54778/about.html"
+    "url": "http://127.0.0.1:50706/about.html"
    },
    "passed": true
   },
@@ -587,7 +662,7 @@
    "check": "[system] the navigating arm's excess over the control arm stays within its budget",
    "detail": {
     "cap": 1048576,
-    "excess": 1146880
+    "excess": 1064960
    },
    "passed": false
   },
@@ -595,7 +670,7 @@
    "check": "[system] the excess does not keep growing over the last navigations",
    "detail": {
     "cap": 65536,
-    "tail_excess_slope": 65536
+    "tail_excess_slope": 32768
    },
    "passed": true
   },
@@ -631,7 +706,7 @@
   },
   {
    "check": "[arena] navigate commits the requested URL",
-   "detail": "http://127.0.0.1:54778/about.html",
+   "detail": "http://127.0.0.1:50706/about.html",
    "passed": true
   },
   {
@@ -725,7 +800,7 @@
      "length": 3,
      "position": 1
     },
-    "url": "http://127.0.0.1:54778/about.html"
+    "url": "http://127.0.0.1:50706/about.html"
    },
    "passed": true
   },
@@ -738,7 +813,7 @@
      "length": 3,
      "position": 0
     },
-    "url": "http://127.0.0.1:54778/index.html"
+    "url": "http://127.0.0.1:50706/index.html"
    },
    "passed": true
   },
@@ -751,7 +826,7 @@
      "length": 3,
      "position": 2
     },
-    "url": "http://127.0.0.1:54778/count.html"
+    "url": "http://127.0.0.1:50706/count.html"
    },
    "passed": true
   },
@@ -918,11 +993,11 @@
      "code": "not_found",
      "details": {
       "generation": 20,
-      "href": "http://127.0.0.1:54778/absent.html",
+      "href": "http://127.0.0.1:50706/absent.html",
       "navigation": "failed",
       "realm": "realm_20",
       "status": 404,
-      "url": "http://127.0.0.1:54778/absent.html"
+      "url": "http://127.0.0.1:50706/absent.html"
      },
      "message": "document request was not successful",
      "retryable": false,
@@ -970,11 +1045,80 @@
   {
    "check": "[arena] an offline profile refuses before any socket and changes nothing",
    "detail": {
-    "error": "unsupported_operation",
-    "reason": "profile.policy.set is reserved by the contract but not offered by this route"
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "the profile's network policy is offline",
+      "generation": 20,
+      "href": "http://127.0.0.1:50706/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "network_offline"
+     },
+     "message": "network policy: network_offline",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
    },
-   "passed": null,
-   "unverified": true
+   "passed": true
+  },
+  {
+   "check": "[arena] an offline profile refuses a reload the same way",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "the profile's network policy is offline",
+     "generation": 20,
+     "href": "http://127.0.0.1:50706/index.html",
+     "navigation": "failed",
+     "realm": "realm_20",
+     "reason": "network_offline"
+    },
+    "message": "network policy: network_offline",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] profile.inspect reports the policy and says the permission grants nothing",
+   "detail": {
+    "network": "offline",
+    "permissions": "deny_by_default",
+    "permissions_effect": "recorded_only"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] restoring online re-enables navigation under the unchanged allowlist",
+   "passed": true
+  },
+  {
+   "check": "[arena] the allowlist is unchanged by the switch",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "address class refused: private",
+     "generation": 21,
+     "href": "http://10.0.0.1/evil.html",
+     "navigation": "failed",
+     "realm": "realm_21",
+     "reason": "address"
+    },
+    "message": "network policy: address",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
   },
   {
    "check": "[arena] an expired deadline is typed and leaves the target whole",
@@ -982,10 +1126,10 @@
     "code": "deadline_exceeded",
     "details": {
      "engine_error": "interrupted",
-     "generation": 20,
-     "href": "http://127.0.0.1:54778/index.html",
+     "generation": 21,
+     "href": "http://127.0.0.1:50706/index.html",
      "navigation": "failed",
-     "realm": "realm_20"
+     "realm": "realm_21"
     },
     "message": "script evaluation failed",
     "retryable": true,
@@ -1019,6 +1163,12 @@
     "object_limit": 8,
     "objects": 1,
     "persistent": 0,
+    "policies": {
+     "bytes": 2,
+     "deny_by_default": 0,
+     "offline": 0,
+     "permissions_effect": "recorded_only"
+    },
     "storage_keys": 0,
     "store": null,
     "store_bytes_written_total": 0,
@@ -1041,7 +1191,7 @@
   {
    "check": "[arena] the ledger records every navigation in order, by origin only, and grants nothing",
    "detail": {
-    "count": 25,
+    "count": 29,
     "limit": 64,
     "outcomes": [
      "committed",
@@ -1056,8 +1206,8 @@
   {
    "check": "[arena] the ledger is accounted and bounded in memory.report",
    "detail": {
-    "audit_bytes": 2192,
-    "audit_entries": 25,
+    "audit_bytes": 5184,
+    "audit_entries": 29,
     "audit_entry_limit": 64
    },
    "passed": true
@@ -1084,7 +1234,7 @@
    "check": "[arena] post-navigation retention stays within its budget",
    "detail": {
     "cap": 262144,
-    "over_steady": 16384
+    "over_steady": 32768
    },
    "passed": true
   },
@@ -1108,7 +1258,7 @@
    "check": "[arena] the navigating arm's excess over the control arm stays within its budget",
    "detail": {
     "cap": 1048576,
-    "excess": 720896
+    "excess": 671744
    },
    "passed": true
   },
@@ -1116,17 +1266,17 @@
    "check": "[arena] the excess does not keep growing over the last navigations",
    "detail": {
     "cap": 65536,
-    "tail_excess_slope": 32768
+    "tail_excess_slope": 16384
    },
    "passed": true
   }
  ],
- "checks_passed": 79,
- "checks_total": 82,
- "checks_unverified": 2,
+ "checks_passed": 89,
+ "checks_total": 90,
+ "checks_unverified": 0,
  "control_version": "0.0.2",
  "design": "labs/native-dom/navigation-design-0.0.1.md",
- "host_sha256": "5c650f091678388b93f26574dd7178dcf38bcf76bb83e365ceae90d3ebad2d71",
+ "host_sha256": "720656ce89c14ad7c7d94e5272d71c153db30541eb9a2994fcb8caa27201c3ac",
  "limitations": [
   "history is metadata only: an entry is the final canonical committed URL, so a traverse refetches and no page state is restored",
   "the soak is differential by design: the control-churn court showed every control request grows the host without a plateau, so an absolute cap would fail for reasons unrelated to navigation; the two arms hold the request count, deadline and target identical and differ in the operation under test",
@@ -1140,55 +1290,55 @@
   "arena": {
    "arms": {
     "control": {
-     "8": 81920,
-     "16": 98304,
-     "24": 98304,
-     "32": 114688,
-     "40": 114688,
-     "48": 114688,
-     "56": 114688,
-     "64": 114688,
-     "72": 114688,
-     "80": 114688,
-     "88": 114688,
-     "96": 114688,
-     "104": 114688,
-     "112": 114688,
-     "120": 114688,
-     "128": 114688
+     "8": 98304,
+     "16": 131072,
+     "24": 147456,
+     "32": 147456,
+     "40": 163840,
+     "48": 163840,
+     "56": 163840,
+     "64": 163840,
+     "72": 163840,
+     "80": 163840,
+     "88": 163840,
+     "96": 163840,
+     "104": 163840,
+     "112": 163840,
+     "120": 163840,
+     "128": 163840
     },
     "navigating": {
-     "8": 475136,
-     "16": 606208,
-     "24": 688128,
-     "32": 720896,
-     "40": 737280,
-     "48": 753664,
-     "56": 786432,
-     "64": 802816,
+     "8": 491520,
+     "16": 655360,
+     "24": 737280,
+     "32": 753664,
+     "40": 770048,
+     "48": 802816,
+     "56": 802816,
+     "64": 819200,
      "72": 819200,
      "80": 819200,
      "88": 819200,
      "96": 819200,
-     "104": 819200,
-     "112": 819200,
+     "104": 835584,
+     "112": 835584,
      "120": 835584,
      "128": 835584
     }
    },
-   "excess_at_128": 720896,
-   "tail_excess_slope": 32768
+   "excess_at_128": 671744,
+   "tail_excess_slope": 16384
   },
   "system": {
    "arms": {
     "control": {
-     "8": 49152,
+     "8": 65536,
      "16": 65536,
      "24": 65536,
      "32": 65536,
      "40": 65536,
      "48": 65536,
-     "56": 65536,
+     "56": 81920,
      "64": 81920,
      "72": 81920,
      "80": 81920,
@@ -1197,29 +1347,29 @@
      "104": 81920,
      "112": 81920,
      "120": 81920,
-     "128": 81920
+     "128": 98304
     },
     "navigating": {
-     "8": 868352,
-     "16": 999424,
-     "24": 1064960,
-     "32": 1064960,
-     "40": 1130496,
-     "48": 1130496,
-     "56": 1146880,
-     "64": 1163264,
-     "72": 1179648,
-     "80": 1179648,
-     "88": 1179648,
-     "96": 1196032,
-     "104": 1212416,
-     "112": 1212416,
-     "120": 1212416,
-     "128": 1228800
+     "8": 950272,
+     "16": 1015808,
+     "24": 1032192,
+     "32": 1048576,
+     "40": 1081344,
+     "48": 1081344,
+     "56": 1097728,
+     "64": 1114112,
+     "72": 1114112,
+     "80": 1114112,
+     "88": 1130496,
+     "96": 1130496,
+     "104": 1146880,
+     "112": 1163264,
+     "120": 1163264,
+     "128": 1163264
     }
    },
-   "excess_at_128": 1146880,
-   "tail_excess_slope": 65536
+   "excess_at_128": 1064960,
+   "tail_excess_slope": 32768
   }
  },
  "technology": "native-dom"
