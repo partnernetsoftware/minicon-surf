@@ -634,3 +634,31 @@ wrong; `formmethod` and `formtarget` overrides in both directions; a
 `formaction` that is honoured; a `<base target>` document refusing an
 activation that has no explicit target of its own while allowing one that
 does; and the case-insensitive normalisation of every reserved keyword.
+
+## 24. Findings from the implementation (recorded, not tidied away)
+
+**24.1 A submit that navigates was counting its event twice.** The realm's
+submit path settled — adding one to its frame's counter — and the navigation
+that followed added one of its own, so a GET submit advanced `R` by two while
+a link click advanced it by one. Both have exactly one observable consequence,
+the document that replaces the old one, so the submit path no longer settles
+and both are one. This corrects the main frame as well as a child; no
+committed criterion asserted the old arithmetic, and §23.1's invariant (N) is
+what says which of the two is right.
+
+**24.2 The court's own arithmetic, twice.** A criterion measured a child
+submit's advance from before the action rather than from the pre-navigation
+revision, and another expected a handler that mutates two nodes to advance the
+revision twice when the observer coalesces one batch into one increment. Both
+were the court being wrong about the host. The first is now measured the way
+§23.1 defines it; the second asserts what is actually true — the failed
+submit's handler effects stand and the revision advanced only by them — and
+the multi-step behaviour the ruling asked to preserve stays asserted where it
+was already observed, in the form court, which still passes unchanged.
+
+**24.3 A pre-existing flaky test, unrelated and untouched.**
+`frame_region::tests::map_write_and_unmap_exactly_once` failed once during
+this work and reproduces on unmodified sources: its counters are global and
+another test's mapping can land between its two samples. Three reruns and a
+single-threaded run all pass. It is recorded here rather than fixed, because
+fixing it belongs to the surface slice and not to this increment.

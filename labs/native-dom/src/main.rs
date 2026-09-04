@@ -129,11 +129,66 @@ fn location_script(url: &Url) -> String {
     )
 }
 
-fn snapshot_script(max_nodes: u64) -> String {
+/// The one activation decision, shared by the snapshot that predicts it and
+/// by the scripts that enforce it. `IS_CHILD` and `HAS_BASE_TARGET` are
+/// substituted by the host, which knows both and the realm does not.
+const ACTIVATION_JS: &str = r##"
+  const targetOf = (el, attr) => {
+    const raw = el.hasAttribute(attr) ? String(el.getAttribute(attr) || "").trim() : "";
+    if (raw === "") return HAS_BASE_TARGET ? "base_target_unmodeled" : "allowed";
+    const value = raw.toLowerCase();
+    if (value === "_self") return "allowed";
+    if (value === "_parent" || value === "_top") return IS_CHILD ? "target_cross_frame" : "allowed";
+    return "target_named";
+  };
+  const methodOf = (form, submitter) => {
+    const raw = submitter && submitter.hasAttribute("formmethod")
+      ? submitter.getAttribute("formmethod")
+      : form.getAttribute("method");
+    return String(raw || "get").trim().toLowerCase();
+  };
+  const submitDecision = (form, submitter) => {
+    if (!form) return "allowed";
+    if (methodOf(form, submitter) !== "get") return "form_method_unsupported";
+    if (submitter && submitter.hasAttribute("formtarget")) return targetOf(submitter, "formtarget");
+    return targetOf(form, "target");
+  };
+  const linkDecision = (el) => {
+    if (el.hasAttribute("download")) return "download_unsupported";
+    const href = String(el.getAttribute("href") || "");
+    if (href.startsWith("#")) return "fragment_unsupported";
+    const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(href);
+    if (scheme && !/^https?$/i.test(scheme[1])) return "scheme_unsupported";
+    return targetOf(el, "target");
+  };
+  const activationOf = (el) => {
+    const tag = el.tagName.toLowerCase();
+    const kind = (el.type || "").toLowerCase();
+    if (el.disabled) return "control_disabled";
+    if (tag === "a" && el.hasAttribute("href")) return linkDecision(el);
+    if (tag === "form") return submitDecision(el, null);
+    const submits = (tag === "button" && (kind === "submit" || kind === "")) || (tag === "input" && kind === "submit");
+    if (submits) return submitDecision(el.form, el);
+    return "allowed";
+  };
+"##;
+
+fn activation_js(is_child: bool, has_base_target: bool) -> String {
+    ACTIVATION_JS
+        .replace("IS_CHILD", if is_child { "true" } else { "false" })
+        .replace(
+            "HAS_BASE_TARGET",
+            if has_base_target { "true" } else { "false" },
+        )
+}
+
+fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> String {
+    let activation = activation_js(is_child, has_base_target);
     format!(
         r#"(() => {{
   const s = window.__mcs;
   if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+{activation}
   const role = (el) => {{
     const t = el.tagName.toLowerCase();
     const type = (el.type || "").toLowerCase();
@@ -201,6 +256,10 @@ fn snapshot_script(max_nodes: u64) -> String {
       const control = String(el.getAttribute("name") || "");
       if (control) entry.control_name = control.slice(0, 64);
     }}
+    // What an activation of this node would decide, over a closed
+    // vocabulary, so an agent can see a refusal coming without reading the
+    // target, the href or any other page text.
+    if (r === "link" || r === "button" || r === "form") entry.activation = activationOf(el);
     entry.name = name.slice(0, 256);
     if (el.id) entry.dom_id = String(el.id).slice(0, 64);
     nodes.push(el);
@@ -241,7 +300,14 @@ fn microbench_script(nested: bool) -> String {
 /// authority over form state. The host passes the action as JSON and receives
 /// a bounded outcome: applied, a navigation to perform, or a typed refusal.
 /// A value never comes back.
-fn form_action_script(revision: u64, index: usize, action: &str) -> String {
+fn form_action_script(
+    revision: u64,
+    index: usize,
+    action: &str,
+    is_child: bool,
+    has_base_target: bool,
+) -> String {
+    let activation = activation_js(is_child, has_base_target);
     format!(
         r#"(() => {{
   const s = window.__mcs;
@@ -269,8 +335,15 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
   const isText = t === "textarea" || isLine;
   const isButton = t === "button" || (t === "input" && /^(button|submit|reset)$/.test(type));
   const isSubmitter = (t === "button" && (type === "submit" || type === "")) || (t === "input" && type === "submit");
+{activation}
   // Every refusal happens here, before anything is written.
   if (el.disabled) return refuse("control_disabled");
+  // What the snapshot predicted, enforced: an activation this host does not
+  // model is refused before a single event is dispatched.
+  if (action.kind === "click" || action.kind === "press" || action.kind === "submit") {{
+    const decision = activationOf(el);
+    if (decision !== "allowed") return refuse(decision);
+  }}
   const fire = (name, cancelable) => {{
     const ev = new Event(name, {{ bubbles: true, cancelable: !!cancelable }});
     el.dispatchEvent(ev);
@@ -300,17 +373,24 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
     return pairs.map(([k, v]) => enc(k) + "=" + enc(v)).join("&");
   }};
   const submitForm = (form, submitter) => {{
-    const method = String(form.getAttribute("method") || "get").toLowerCase();
-    if (method !== "get") return refuse("form_method_unsupported");
+    const decision = submitDecision(form, submitter);
+    if (decision !== "allowed") return refuse(decision);
     const ev = new Event("submit", {{ bubbles: true, cancelable: true }});
     form.dispatchEvent(ev);
     // A canceled submit is not applied: no navigation begins. Whatever the
     // handler changed stays, and the revision it moved stays moved.
     if (ev.defaultPrevented) return JSON.stringify({{ applied: false, default_prevented: true, role: "form" }});
     const query = serialize(form, submitter);
-    const target = form.getAttribute("action");
-    const base = target === null || target === "" ? "" : target;
-    return settle({{ navigate: base + (query ? "?" + query : ""), applied: true, role: "form", current: !base }});
+    // A submitter's formaction overrides the form's action and is resolved
+    // under exactly the same rules; ignoring it would submit elsewhere.
+    const declared = submitter && submitter.hasAttribute("formaction")
+      ? submitter.getAttribute("formaction")
+      : form.getAttribute("action");
+    const base = declared === null || declared === "" ? "" : declared;
+    // A submit that navigates has exactly one observable consequence, the
+    // document that replaces this one, and the navigation counts it. Settling
+    // here as well would count the same event twice.
+    return JSON.stringify({{ navigate: base + (query ? "?" + query : ""), applied: true, role: "form", current: !base }});
   }};
   if (action.kind === "set_value") {{
     if (!isText) return refuse("role_mismatch");
@@ -405,7 +485,8 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
     )
 }
 
-fn act_script(revision: u64, index: usize) -> String {
+fn act_script(revision: u64, index: usize, is_child: bool, has_base_target: bool) -> String {
+    let activation = activation_js(is_child, has_base_target);
     format!(
         r#"(() => {{
   const s = window.__mcs;
@@ -414,7 +495,10 @@ fn act_script(revision: u64, index: usize) -> String {
   if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+{activation}
   const t = el.tagName.toLowerCase();
+  const decision = activationOf(el);
+  if (decision !== "allowed") return JSON.stringify({{ unsupported: true, reason: decision }});
   if (t === "a" && el.hasAttribute("href")) {{
     const ev = new Event("click", {{ bubbles: true, cancelable: true }});
     el.dispatchEvent(ev);
@@ -606,6 +690,9 @@ struct AuditEntry {
     /// For a value-carrying action, how many bytes it had. Never the value.
     value_bytes: Option<u64>,
     target: std::rc::Rc<str>,
+    /// The frame the action touched, main or child. Never a URL, a name or
+    /// any other page text: an opaque id this host minted.
+    frame: Option<std::rc::Rc<str>>,
     origin: Option<std::rc::Rc<str>>,
     operation: &'static str,
     outcome: &'static str,
@@ -615,7 +702,7 @@ impl AuditEntry {
     fn to_json(&self, session: &str, profile: &str) -> Value {
         json!({
             "sequence": self.sequence, "session": session, "profile": profile,
-            "target": &*self.target, "operation": self.operation,
+            "target": &*self.target, "frame": self.frame.as_deref(), "operation": self.operation,
             "origin": self.origin.as_deref(), "outcome": self.outcome,
             "deadline_ms": self.deadline_ms, "result_bytes_limit": MAX_RESPONSE_BYTES,
             "value_bytes": self.value_bytes,
@@ -630,6 +717,9 @@ struct Ledger {
     entries: std::collections::VecDeque<AuditEntry>,
     origins: Vec<std::rc::Rc<str>>,
     targets: Vec<std::rc::Rc<str>>,
+    /// Frame ids repeat across records like target ids do, and there are at
+    /// most `MAX_TARGETS * MAX_FRAMES_PER_TARGET` of them in a session.
+    frames: Vec<std::rc::Rc<str>>,
     dropped: u64,
 }
 
@@ -644,6 +734,7 @@ impl Default for Ledger {
 impl Ledger {
     fn new() -> Ledger {
         Ledger {
+            frames: Vec::new(),
             entries: std::collections::VecDeque::with_capacity(MAX_AUDIT_ENTRIES),
             origins: Vec::new(),
             targets: Vec::new(),
@@ -1561,11 +1652,33 @@ struct Session {
 /// generation and realm. It runs no scripts (design §16), so its realm holds
 /// the shim, the seeded tree, its location and the revision instrumentation
 /// and nothing else.
+/// What one frame's last observation authorises. A node index is honoured
+/// only against the record of the frame whose band it lies in, so one frame's
+/// snapshot can never authorise an index in another.
+#[derive(Clone, Copy)]
+struct FrameSnapshot {
+    /// The target-global revision the snapshot reported.
+    reference_revision: u64,
+    /// That frame's own counter when it was observed.
+    frame_revision: u64,
+    nodes: usize,
+}
+
 struct ChildFrame {
     id: String,
     generation: u64,
     realm_id: String,
     realm: Realm,
+    /// This frame's own mutation counter, cached. A child runs no scripts, so
+    /// it can move only under a host evaluation in this realm, and the cache
+    /// is refreshed exactly there.
+    counter: u64,
+    snapshot: Option<FrameSnapshot>,
+    /// Whether this document carries a `<base target>`. That feature decides
+    /// an activation which names no target of its own, and this host does not
+    /// model it, so such an activation fails closed instead of being treated
+    /// as self.
+    base_target: bool,
     /// The final URL of the response that built this frame, after redirects.
     /// It is reported as the optional additive `url` of a `frames[]` entry and
     /// its bytes are owner-accounted like any other document byte.
@@ -1578,10 +1691,11 @@ struct ChildFrame {
 
 /// Why a frame was not built. A closed set of fixed reasons: never a `src`,
 /// a redirect target or any other page text.
-const FRAME_SKIP_REASONS: [&str; 12] = [
+const FRAME_SKIP_REASONS: [&str; 13] = [
     "no_network_origin",
     "no_src",
     "srcdoc",
+    "sandboxed",
     "malformed_src",
     "scheme_not_fetched",
     "cross_origin_src",
@@ -1605,7 +1719,10 @@ struct Target {
     skipped_scripts: Vec<Value>,
     budget: net::Budget,
     realm: Realm,
-    last_snapshot: Option<(u64, usize)>,
+    /// The main frame's last observation. Children keep their own.
+    last_snapshot: Option<FrameSnapshot>,
+    /// Whether the main document carries a `<base target>`.
+    base_target: bool,
     /// The main frame's id: minted with the target and kept for its life.
     frame_id: String,
     /// Document generation of the main frame: 1 for the first document,
@@ -2101,7 +2218,9 @@ impl Host {
         let script = match arm {
             Some("microbench_flat") => microbench_script(false),
             Some("microbench_nested") => microbench_script(true),
-            _ => snapshot_script(64),
+            // The painter observes the main frame, which is the only frame
+            // it paints.
+            _ => snapshot_script(64, false, target.base_target),
         };
         if arm == Some("evaluate_only") {
             let text = target.eval_staged(&script, deadline, policy, stage)?;
@@ -2507,10 +2626,22 @@ impl Host {
                         .and_then(|s| s.parse::<usize>().ok())
                         .filter(|n| *n >= 1)
                 {
+                    // A surface click reaches the main frame only: the
+                    // painter paints that frame's rows and nothing else.
                     let base = target.revision_base;
+                    let children: u64 = target
+                        .children
+                        .iter()
+                        .fold(0u64, |sum, child| sum.saturating_add(child.counter));
+                    let has_base_target = target.base_target;
                     if let Ok(outcome) = Self::eval_json(
                         target,
-                        &act_script(current - base, index - 1),
+                        &act_script(
+                            current.saturating_sub(base).saturating_sub(children),
+                            index - 1,
+                            false,
+                            has_base_target,
+                        ),
                         deadline,
                         &policy,
                     ) && outcome.get("applied").and_then(Value::as_bool) == Some(true)
@@ -3000,16 +3131,29 @@ impl Host {
 
     /// The target's absolute revision: the live realm's count plus the base
     /// carried over every navigation, so it never decreases.
+    /// The target-global revision: the base plus every live frame's counter.
+    /// The main frame's counter is read from its realm, because page scripts
+    /// and queued jobs can move it; a child's is taken from the cache, which
+    /// is sound exactly while children run no scripts.
     fn revision(
         target: &mut Target,
         deadline: Instant,
         policy: &net::Policy,
     ) -> Result<u64, ControlError> {
+        let children: u64 = target
+            .children
+            .iter()
+            .fold(0u64, |sum, child| sum.saturating_add(child.counter));
         let text = target.eval(REVISION_JS, deadline, policy)?;
         text.parse::<i64>()
             .ok()
             .filter(|r| *r >= 0)
-            .map(|r| target.revision_base + r as u64)
+            .map(|r| {
+                target
+                    .revision_base
+                    .saturating_add(r as u64)
+                    .saturating_add(children)
+            })
             .ok_or_else(|| {
                 ControlError::new(
                     "internal",
@@ -3733,6 +3877,11 @@ impl Host {
         let text = String::from_utf8_lossy(&bytes).into_owned();
         let document = Document::from(text.as_str());
         let element_count = document.select("*").nodes().len();
+        let base_target = document
+            .select("base")
+            .nodes()
+            .iter()
+            .any(|node| node.attr("target").is_some());
         let mut tree = Vec::new();
         serialize_children(&document.root(), &mut tree);
         // Embedded documents in document order, collected before the parse is
@@ -3742,6 +3891,14 @@ impl Host {
         for node in document.select("iframe").nodes() {
             if node.attr("srcdoc").is_some() {
                 embedded.push(Err("srcdoc"));
+                continue;
+            }
+            // A sandbox without allow-same-origin means an opaque origin, and
+            // every child here is same-origin by construction. The frame is
+            // not built rather than built with more authority than the page
+            // asked for.
+            if node.attr("sandbox").is_some() {
+                embedded.push(Err("sandboxed"));
                 continue;
             }
             match node.attr("src") {
@@ -3931,6 +4088,11 @@ impl Host {
             let text = String::from_utf8_lossy(&response.body).into_owned();
             let parsed = Document::from(text.as_str());
             let element_count = parsed.select("*").nodes().len();
+            let child_base_target = parsed
+                .select("base")
+                .nodes()
+                .iter()
+                .any(|node| node.attr("target").is_some());
             let mut child_tree = Vec::new();
             serialize_children(&parsed.root(), &mut child_tree);
             drop(parsed);
@@ -3973,6 +4135,9 @@ impl Host {
                 generation: 1,
                 realm_id: format!("realm_{}", self.next_realm),
                 realm,
+                counter: 0,
+                snapshot: None,
+                base_target: child_base_target,
                 url: Some(response.url.clone()),
                 bytes: response.body.len(),
                 element_count,
@@ -3999,6 +4164,7 @@ impl Host {
             scroll_y: 0,
             children,
             frames_skipped,
+            base_target,
         };
         let read_only = self
             .sessions
@@ -4049,6 +4215,7 @@ impl Host {
             deadline_ms,
             value_bytes: None,
             target,
+            frame: None,
             origin,
             operation,
             outcome,
@@ -4123,6 +4290,7 @@ impl Host {
     fn audit_action(
         &mut self,
         target_id: &str,
+        frame_index: Option<usize>,
         kind: &str,
         outcome: &str,
         value_bytes: Option<u64>,
@@ -4130,11 +4298,17 @@ impl Host {
         let Some(session) = self.targets.get(target_id).map(|t| t.session_id.clone()) else {
             return;
         };
+        let frame_id = self.targets.get(target_id).and_then(|t| match frame_index {
+            None => Some(t.frame_id.clone()),
+            Some(child) => t.children.get(child).map(|c| c.id.clone()),
+        });
         let sequence = self.next_audit_sequence;
         self.next_audit_sequence = self.next_audit_sequence.saturating_add(1);
         let deadline_ms = self.current_deadline_ms;
         let ledger = self.audits.entry(session).or_default();
         let target = Ledger::share(&mut ledger.targets, target_id, MAX_TARGETS);
+        let frame = frame_id
+            .map(|id| Ledger::share(&mut ledger.frames, &id, MAX_TARGETS * MAX_FRAMES_PER_TARGET));
         // The action's kind and outcome are fixed vocabularies, so they cost
         // nothing per record and cannot smuggle page data.
         let operation = match kind {
@@ -4161,6 +4335,7 @@ impl Host {
             deadline_ms,
             value_bytes,
             target,
+            frame,
             origin: None,
             operation,
             outcome,
@@ -4408,6 +4583,179 @@ impl Host {
     /// is a form's serialised query. Its failures are diagnosed by their typed
     /// reason and the identity alone: no address, no query, no free text that
     /// could hold either.
+    /// A link or a GET submit inside a child frame replaces **that child's
+    /// document only**. The candidate is fetched, parsed, seeded and
+    /// instrumented in full before anything about the live child changes, so a
+    /// failure leaves the child's identity, document, state and the target's
+    /// revision exactly as they were. It spends the current parent document's
+    /// remaining aggregate allowance and never a fresh one, and it touches
+    /// neither the parent's identity nor the target's history.
+    fn navigate_child(
+        &mut self,
+        id: &str,
+        child: usize,
+        href: &str,
+        deadline: Instant,
+        sensitive: bool,
+    ) -> Result<Value, ControlError> {
+        let policy = self.policy_for_target(id);
+        let now = profile::now_seconds();
+        let allocation = self.realm_allocation;
+        let refuse = |code: &'static str, reason: &'static str| -> ControlError {
+            ControlError::new(code, "the embedded document could not be replaced", false)
+                .scoped("target", id)
+                .details(json!({"navigation":"failed","redacted":sensitive,"reason":reason}))
+        };
+        let target = self.target_mut(id)?;
+        // A child's href resolves against the child's own document, and the
+        // origin it must stay inside is the parent document's.
+        let Some(parent_url) = target.url.clone() else {
+            return Err(refuse("unsupported_capability", "child_has_no_url"));
+        };
+        let Some(child_url) = target.children[child].url.clone() else {
+            return Err(refuse("unsupported_capability", "child_has_no_url"));
+        };
+        let Ok(resolved) = child_url.join(href) else {
+            return Err(refuse("invalid_request", "malformed_href"));
+        };
+        if !matches!(resolved.scheme(), "http" | "https") {
+            return Err(refuse("unsupported_capability", "scheme_not_fetched"));
+        }
+        if !net::same_origin(&parent_url, &resolved) {
+            target.budget.denied += 1;
+            return Err(refuse("permission_denied", "cross_origin_src"));
+        }
+        // The attempt runs on a copy of the jar and against the parent
+        // document's own remaining allowance.
+        let mut jar = target.io.jar.clone();
+        let mut rejections = target.io.cookie_rejections;
+        let document_host = parent_url.host_str().map(|h| h.to_ascii_lowercase());
+        let tls = target.io.tls.clone();
+        let mut budget = std::mem::take(&mut target.budget);
+        let response = {
+            let mut hooks = JarHooks {
+                jar: &mut jar,
+                document_host: document_host.as_deref(),
+                now,
+                rejections: &mut rejections,
+            };
+            net::fetch_with(
+                resolved.as_str(),
+                &policy,
+                &mut budget,
+                deadline,
+                Some(&mut hooks),
+                tls.as_deref(),
+            )
+        };
+        // The spend is a fact whatever the outcome, so the budget goes back
+        // before anything else can fail.
+        self.target_mut(id)?.budget = budget;
+        let response = match response {
+            Ok(response) if response.status >= 400 => {
+                return Err(refuse("not_found", "status_not_ok"));
+            }
+            Ok(response) => response,
+            Err(error) => {
+                return Err(refuse(
+                    if error.code == "resource_limit" {
+                        "resource_limit"
+                    } else {
+                        "permission_denied"
+                    },
+                    "fetch_failed",
+                ));
+            }
+        };
+        if !net::same_origin(&parent_url, &response.url) {
+            self.target_mut(id)?.budget.denied += 1;
+            return Err(refuse("permission_denied", "cross_origin_redirect"));
+        }
+        let html = response
+            .content_type
+            .as_deref()
+            .map(|value| {
+                value
+                    .split(';')
+                    .next()
+                    .unwrap_or_default()
+                    .trim()
+                    .eq_ignore_ascii_case("text/html")
+            })
+            .unwrap_or(false);
+        if !html {
+            return Err(refuse("unsupported_capability", "not_html"));
+        }
+        let text = String::from_utf8_lossy(&response.body).into_owned();
+        let parsed = Document::from(text.as_str());
+        let element_count = parsed.select("*").nodes().len();
+        let base_target = parsed
+            .select("base")
+            .nodes()
+            .iter()
+            .any(|node| node.attr("target").is_some());
+        let mut tree = Vec::new();
+        serialize_children(&parsed.root(), &mut tree);
+        drop(parsed);
+        let built = (|| -> Result<Realm, ControlError> {
+            let realm = Realm::new(allocation)?;
+            realm.eval(DOM_SHIM_JS, deadline, id)?;
+            realm.eval(
+                &format!(
+                    "__mcsSeed({})",
+                    serde_json::to_string(&tree).expect("tree serializes")
+                ),
+                deadline,
+                id,
+            )?;
+            realm.eval(&location_script(&response.url), deadline, id)?;
+            realm.eval("__mcsComplete()", deadline, id)?;
+            realm.eval(INSTALL_JS, deadline, id)?;
+            Ok(realm)
+        })();
+        let Ok(realm) = built else {
+            return Err(refuse("internal", "realm_build_failed"));
+        };
+        // Everything that could fail has succeeded, so the swap is atomic
+        // from here: the old realm retires, the counter it had folds into the
+        // target's base with the one this navigation is worth, and the child
+        // keeps its identity.
+        let target = self.target_mut(id)?;
+        target.io.jar = jar;
+        target.io.cookie_rejections = rejections;
+        let child_frame = &mut target.children[child];
+        let retired_realm = child_frame.realm_id.clone();
+        let folded = child_frame.counter;
+        child_frame.realm = realm;
+        child_frame.generation += 1;
+        child_frame.counter = 0;
+        child_frame.snapshot = None;
+        child_frame.url = Some(response.url.clone());
+        child_frame.bytes = response.body.len();
+        child_frame.element_count = element_count;
+        child_frame.base_target = base_target;
+        self.next_realm += 1;
+        let realm_id = format!("realm_{}", self.next_realm);
+        let target = self.target_mut(id)?;
+        target.children[child].realm_id = realm_id.clone();
+        target.revision_base = target
+            .revision_base
+            .saturating_add(folded)
+            .saturating_add(1);
+        self.realms_retired_total += 1;
+        let policy = self.policy_for_target(id);
+        let target = self.target_mut(id)?;
+        let revision = Self::revision(target, deadline, &policy)?;
+        let child_frame = &target.children[child];
+        Ok(json!({
+            "kind":"action","target":id,"revision":revision,"applied":true,"navigated":true,
+            "frame":child_frame.id,"generation":child_frame.generation,"realm":realm_id,
+            "retired_realm":retired_realm,"ended_frames":[],
+            "url":child_frame.url.as_ref().map(Url::as_str),"fixture":target.fixture,
+            "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied},
+        }))
+    }
+
     fn navigate_with(
         &mut self,
         id: &str,
@@ -4650,25 +4998,41 @@ impl Host {
                     .details(json!({"reason":"realm_not_live_in_target","frame":frame_id})));
             }
         }
-        let base = target.revision_base;
         // The revision a snapshot reports is the target's, whichever frame it
         // observed: a node reference is scoped to (target, revision, node).
-        let raw = match selected {
-            None => Self::eval_json(target, &snapshot_script(max_nodes), deadline, &policy)?,
-            Some(index) => {
+        // Each frame's own counter is kept beside it, because that is what
+        // authorises an action in that frame and nothing else.
+        let (raw, frame_counter, revision) = match selected {
+            None => {
+                let has_base_target = target.base_target;
+                let raw = Self::eval_json(
+                    target,
+                    &snapshot_script(max_nodes, false, has_base_target),
+                    deadline,
+                    &policy,
+                )?;
+                let counter = raw.get("revision").and_then(Value::as_u64).unwrap_or(0);
                 let revision = Self::revision(target, deadline, &policy)?;
-                let child = &target.children[index];
-                let text = child
-                    .realm
-                    .eval(&snapshot_script(max_nodes), deadline, &id)?;
-                let mut value: Value = serde_json::from_str(&text).map_err(|_| {
+                (raw, counter, revision)
+            }
+            Some(index) => {
+                let has_base_target = target.children[index].base_target;
+                let text = target.children[index].realm.eval(
+                    &snapshot_script(max_nodes, true, has_base_target),
+                    deadline,
+                    &id,
+                )?;
+                let value: Value = serde_json::from_str(&text).map_err(|_| {
                     ControlError::new("internal", "engine returned malformed snapshot JSON", false)
                         .scoped("target", &id)
                 })?;
-                // The child counts its own revision from zero and never
-                // mutates; the target's revision is what the caller holds.
-                value["revision"] = json!(revision.saturating_sub(base));
-                value
+                let counter = value.get("revision").and_then(Value::as_u64).unwrap_or(0);
+                // The only place a child's counter can move is under an
+                // evaluation in its realm, so the cache is refreshed here,
+                // before the global revision is read from it.
+                target.children[index].counter = counter;
+                let revision = Self::revision(target, deadline, &policy)?;
+                (value, counter, revision)
             }
         };
         if raw.get("error").is_some() {
@@ -4679,14 +5043,12 @@ impl Host {
             )
             .scoped("target", &id));
         }
-        let revision = raw
-            .get("revision")
-            .and_then(Value::as_u64)
-            .map(|r| base + r)
-            .ok_or_else(|| {
+        if raw.get("revision").and_then(Value::as_u64).is_none() {
+            return Err(
                 ControlError::new("internal", "snapshot lacks a revision", false)
-                    .scoped("target", &id)
-            })?;
+                    .scoped("target", &id),
+            );
+        }
         let mut truncated = raw
             .get("truncated")
             .and_then(Value::as_bool)
@@ -4737,6 +5099,7 @@ impl Host {
                 "disabled",
                 "read_only",
                 "control_name",
+                "activation",
             ] {
                 if let Some(value) = entry.get(fact) {
                     item[fact] = value.clone();
@@ -4753,10 +5116,16 @@ impl Host {
             nodes.push(item);
         }
         let count = nodes.len();
-        self.targets
-            .get_mut(&id)
-            .expect("target exists")
-            .last_snapshot = Some((revision, count));
+        let observed = FrameSnapshot {
+            reference_revision: revision,
+            frame_revision: frame_counter,
+            nodes: count,
+        };
+        let target = self.targets.get_mut(&id).expect("target exists");
+        match selected {
+            None => target.last_snapshot = Some(observed),
+            Some(index) => target.children[index].snapshot = Some(observed),
+        }
         Ok(json!({
             "kind":"semantic_snapshot","target":id,"revision":revision,
             "frame":frame_id,"realm":realm_id,"generation":generation,
@@ -4870,20 +5239,24 @@ impl Host {
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             })?
             - 1;
-        // A node id above the main frame's band belongs to a child frame.
-        // Acting there is refused before any event and without moving the
-        // revision, rather than resolved against the main frame's nodes.
-        if index as u64 >= NODE_BAND {
-            return Err(ControlError::new(
-                "unsupported_capability",
-                "this host does not act inside a child frame",
-                false,
-            )
-            .scoped("target", &id)
-            .details(json!({"reason":"action_in_child_frame_unsupported"})));
-        }
+        // A node id names its frame by the band it lies in. Band 0 is the
+        // main frame; band k is the k-th live child.
+        let band = index as u64 / NODE_BAND;
+        let within = index % NODE_BAND as usize;
         let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
+        let frame: Option<usize> = if band == 0 {
+            None
+        } else {
+            let child = (band - 1) as usize;
+            if child >= target.children.len() {
+                // A band with no live frame behind it is the same refusal a
+                // foreign or ended frame gets.
+                return Err(ControlError::new("not_found", "node does not exist", false)
+                    .scoped("target", &id));
+            }
+            Some(child)
+        };
         let current = Self::revision(target, deadline, &policy)?;
         if current != revision {
             return Err(ControlError::new(
@@ -4894,25 +5267,67 @@ impl Host {
             .scoped("target", &id)
             .details(json!({"reference_revision":revision,"current_revision":current})));
         }
-        if !target
-            .last_snapshot
-            .is_some_and(|(rev, count)| rev == revision && index < count)
-        {
+        // Only the observed frame's own record authorises an index, so a
+        // snapshot of one frame can never authorise a node in another, and a
+        // replaced document cannot inherit its band's authorisation.
+        let observed = match frame {
+            None => target.last_snapshot,
+            Some(child) => target.children[child].snapshot,
+        };
+        let frame_counter = match frame {
+            None => current.saturating_sub(
+                target.revision_base
+                    + target
+                        .children
+                        .iter()
+                        .fold(0u64, |sum, child| sum.saturating_add(child.counter)),
+            ),
+            Some(child) => target.children[child].counter,
+        };
+        if !observed.is_some_and(|observed| {
+            observed.reference_revision == revision
+                && observed.frame_revision == frame_counter
+                && within < observed.nodes
+        }) {
             return Err(
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             );
         }
-        let base = target.revision_base;
+        let (is_child, has_base_target) = match frame {
+            None => (false, target.base_target),
+            Some(child) => (true, target.children[child].base_target),
+        };
         let script = if form_action {
             form_action_script(
-                revision - base,
-                index,
+                frame_counter,
+                within,
                 &serde_json::to_string(&Value::Object(action.clone())).expect("action serializes"),
+                is_child,
+                has_base_target,
             )
         } else {
-            act_script(revision - base, index)
+            act_script(frame_counter, within, is_child, has_base_target)
         };
-        let outcome = Self::eval_json(target, &script, deadline, &policy)?;
+        let outcome = match frame {
+            None => Self::eval_json(target, &script, deadline, &policy)?,
+            Some(child) => {
+                let text = target.children[child].realm.eval(&script, deadline, &id)?;
+                let value: Value = serde_json::from_str(&text).map_err(|_| {
+                    ControlError::new("internal", "engine returned malformed action JSON", false)
+                        .scoped("target", &id)
+                })?;
+                // The child's counter can only have moved here, so the cache
+                // is refreshed at the one place that can move it.
+                let text = target.children[child]
+                    .realm
+                    .eval(REVISION_JS, deadline, &id)?;
+                if let Ok(moved) = text.parse::<u64>() {
+                    target.children[child].counter = moved;
+                }
+                value
+            }
+        };
+        let base = target.revision_base;
         if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
             return Err(ControlError::new(
                 "stale_revision",
@@ -4938,13 +5353,13 @@ impl Host {
             } else {
                 "click requires a button or link node"
             };
-            self.audit_action(&id, &kind, "unsupported_capability", None);
+            self.audit_action(&id, frame, &kind, "unsupported_capability", None);
             return Err(ControlError::new("unsupported_capability", message, false)
                 .scoped("target", &id)
                 .details(json!({"reason": reason})));
         }
         if outcome.get("absent").is_some() {
-            self.audit_action(&id, &kind, "not_found", None);
+            self.audit_action(&id, frame, &kind, "not_found", None);
             return Err(ControlError::new("not_found", "no such option", false)
                 .scoped("target", &id)
                 .details(json!({"reason": outcome.get("reason").and_then(Value::as_str).unwrap_or("absent")})));
@@ -4960,7 +5375,7 @@ impl Host {
                     .unwrap_or(0)
                     > MAX_URL_BYTES
             {
-                self.audit_action(&id, &kind, "resource_limit", None);
+                self.audit_action(&id, frame, &kind, "resource_limit", None);
                 return Err(ControlError::new(
                     "resource_limit",
                     "the submitted URL exceeds its bound",
@@ -4971,9 +5386,13 @@ impl Host {
             }
             // A form's query is page data: this navigation is diagnosed in
             // sensitive mode, so no href, URL or query reaches an error.
-            let navigated = self.navigate_with(&id, &href, deadline, form_action);
+            let navigated = match frame {
+                None => self.navigate_with(&id, &href, deadline, form_action),
+                Some(child) => self.navigate_child(&id, child, &href, deadline, form_action),
+            };
             self.audit_action(
                 &id,
+                frame,
                 &kind,
                 navigated
                     .as_ref()
@@ -4996,7 +5415,7 @@ impl Host {
             // any handler effects stand, so the revision is read again and
             // reported; the action's own effect did not happen.
             let after = Self::revision(target, deadline, &policy)?;
-            self.audit_action(&id, &kind, "default_prevented", value_bytes);
+            self.audit_action(&id, frame, &kind, "default_prevented", value_bytes);
             let mut result = json!({"kind":"action","target":id,"revision":after,
                                     "applied":false,"default_prevented":true});
             if form_action {
@@ -5012,7 +5431,7 @@ impl Host {
             );
         }
         let after = Self::revision(target, deadline, &policy)?;
-        self.audit_action(&id, &kind, "applied", value_bytes);
+        self.audit_action(&id, frame, &kind, "applied", value_bytes);
         let mut result = json!({"kind":"action","target":id,"revision":after,"applied":true});
         if form_action {
             result["action"] = json!(kind);
@@ -5960,6 +6379,7 @@ mod ledger_tests {
                 deadline_ms: 15000,
                 value_bytes: None,
                 target,
+                frame: None,
                 origin: Some(origin),
                 operation: "target.navigate",
                 outcome: "committed",
@@ -5998,10 +6418,11 @@ mod ledger_tests {
         assert_eq!(rendered["outcome"], json!("committed"));
         assert_eq!(rendered["deadline_ms"], json!(15000));
         assert_eq!(rendered["result_bytes_limit"], json!(MAX_RESPONSE_BYTES));
+        assert_eq!(rendered["frame"], json!(null));
         assert_eq!(
             rendered.as_object().map(|fields| fields.len()),
-            Some(10),
-            "the fields are the nine of the navigation record plus the value's byte length"
+            Some(11),
+            "the nine of the navigation record, the value's byte length, and the frame an action touched"
         );
         assert_eq!(
             rendered["value_bytes"],
@@ -6030,6 +6451,7 @@ mod ledger_tests {
                 deadline_ms: 1,
                 value_bytes: None,
                 target,
+                frame: None,
                 origin: Some(origin),
                 operation: "target.traverse",
                 outcome: "not_found",

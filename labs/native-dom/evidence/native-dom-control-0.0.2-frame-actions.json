@@ -1,0 +1,1414 @@
+{
+ "checks": [
+  {
+   "check": "[system] an action in a child is served and advances the revision by exactly one",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] it changes only that child: the parent's identity and history stand",
+   "detail": {
+    "frames": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an action in a child stales a reference held in the main frame",
+   "detail": {
+    "error": {
+     "code": "stale_revision",
+     "details": {
+      "current_revision": 2,
+      "reference_revision": 1
+     },
+     "message": "node reference revision no longer matches the target",
+     "retryable": true,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a main-frame observation cannot authorise a node in a child's band",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "message": "node does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a band with no live frame behind it is the same not_found",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "message": "node does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a wait converges on a revision a child's action reached",
+   "detail": {
+    "revision": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a link in a child replaces that child's document and nothing else",
+   "detail": {
+    "generation": 2,
+    "revision": [
+     3,
+     4
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a reference from the replaced child document is refused, band reuse included",
+   "detail": {
+    "error": {
+     "code": "stale_revision",
+     "details": {
+      "current_revision": 4,
+      "reference_revision": 3
+     },
+     "message": "node reference revision no longer matches the target",
+     "retryable": true,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a GET submit in a child navigates that child with its query",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a failed child navigation keeps the child's identity, document and the revision",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "details": {
+      "navigation": "failed",
+      "reason": "status_not_ok",
+      "redacted": false
+     },
+     "message": "the embedded document could not be replaced",
+     "retryable": false,
+     "scope": {
+      "id": "target_3",
+      "kind": "target"
+     }
+    },
+    "revision": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child navigation spends the parent document's aggregate allowance",
+   "detail": {
+    "error": {
+     "code": "resource_limit",
+     "details": {
+      "navigation": "failed",
+      "reason": "fetch_failed",
+      "redacted": false
+     },
+     "message": "the embedded document could not be replaced",
+     "retryable": false,
+     "scope": {
+      "id": "target_4",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] replacing the parent document resets the allowance for its new frames",
+   "detail": {
+    "fetches": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a parent navigation ends its children and advances the revision by one",
+   "detail": {
+    "revision": [
+     32,
+     33
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ended child is the same not_found afterwards",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "details": {
+      "reason": "frame_not_live_in_target"
+     },
+     "message": "frame does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "frame_9",
+      "kind": "frame"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every action record names the frame it touched",
+   "detail": {
+    "records": 38
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no URL, value, target name or other page text is in the ledger",
+   "detail": {
+    "bytes": 10224
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a plain link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a self link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a empty link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a upper link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a parent link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a top link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a blank link in the main frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a named link in the main frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a down link in the main frame is download_unsupported",
+   "detail": {
+    "activation": "download_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused download_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "download_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a js link in the main frame is scheme_unsupported",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused scheme_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a frag link in the main frame is fragment_unsupported",
+   "detail": {
+    "activation": "fragment_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused fragment_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "fragment_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a plain link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a self link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a empty link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a upper link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a parent link in the child frame is target_cross_frame",
+   "detail": {
+    "activation": "target_cross_frame"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused target_cross_frame and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_cross_frame"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a top link in the child frame is target_cross_frame",
+   "detail": {
+    "activation": "target_cross_frame"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused target_cross_frame and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_cross_frame"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a blank link in the child frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a named link in the child frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a down link in the child frame is download_unsupported",
+   "detail": {
+    "activation": "download_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused download_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "download_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a js link in the child frame is scheme_unsupported",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused scheme_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a frag link in the child frame is fragment_unsupported",
+   "detail": {
+    "activation": "fragment_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] clicking it is refused fragment_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "fragment_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a base target refuses an activation that names no target of its own",
+   "detail": {
+    "own": "allowed",
+    "without": "base_target_unmodeled"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the click is refused with that reason rather than treated as self",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "base_target_unmodeled"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_7",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the plain submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the fmpost submitter is form_method_unsupported",
+   "detail": {
+    "activation": "form_method_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ftblank submitter is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ftself submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the faction submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the pplain submitter is form_method_unsupported",
+   "detail": {
+    "activation": "form_method_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the fmget submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the bplain submitter is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a formmethod that is not GET is refused before any event",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "form_method_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_8",
+      "kind": "target"
+     }
+    },
+    "url_tail": "forms.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a formaction is honoured rather than ignored",
+   "detail": {
+    "url_tail": "child-landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a failed submit keeps its handler's effects and advances only by them",
+   "detail": {
+    "advanced_by": 1,
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a script-free main frame advances by exactly one, like a child",
+   "detail": {
+    "revision": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an action in a child is served and advances the revision by exactly one",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] it changes only that child: the parent's identity and history stand",
+   "detail": {
+    "frames": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an action in a child stales a reference held in the main frame",
+   "detail": {
+    "error": {
+     "code": "stale_revision",
+     "details": {
+      "current_revision": 2,
+      "reference_revision": 1
+     },
+     "message": "node reference revision no longer matches the target",
+     "retryable": true,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a main-frame observation cannot authorise a node in a child's band",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "message": "node does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a band with no live frame behind it is the same not_found",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "message": "node does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a wait converges on a revision a child's action reached",
+   "detail": {
+    "revision": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a link in a child replaces that child's document and nothing else",
+   "detail": {
+    "generation": 2,
+    "revision": [
+     3,
+     4
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a reference from the replaced child document is refused, band reuse included",
+   "detail": {
+    "error": {
+     "code": "stale_revision",
+     "details": {
+      "current_revision": 4,
+      "reference_revision": 3
+     },
+     "message": "node reference revision no longer matches the target",
+     "retryable": true,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a GET submit in a child navigates that child with its query",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a failed child navigation keeps the child's identity, document and the revision",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "details": {
+      "navigation": "failed",
+      "reason": "status_not_ok",
+      "redacted": false
+     },
+     "message": "the embedded document could not be replaced",
+     "retryable": false,
+     "scope": {
+      "id": "target_3",
+      "kind": "target"
+     }
+    },
+    "revision": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child navigation spends the parent document's aggregate allowance",
+   "detail": {
+    "error": {
+     "code": "resource_limit",
+     "details": {
+      "navigation": "failed",
+      "reason": "fetch_failed",
+      "redacted": false
+     },
+     "message": "the embedded document could not be replaced",
+     "retryable": false,
+     "scope": {
+      "id": "target_4",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] replacing the parent document resets the allowance for its new frames",
+   "detail": {
+    "fetches": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a parent navigation ends its children and advances the revision by one",
+   "detail": {
+    "revision": [
+     32,
+     33
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ended child is the same not_found afterwards",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "details": {
+      "reason": "frame_not_live_in_target"
+     },
+     "message": "frame does not exist",
+     "retryable": false,
+     "scope": {
+      "id": "frame_9",
+      "kind": "frame"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every action record names the frame it touched",
+   "detail": {
+    "records": 38
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no URL, value, target name or other page text is in the ledger",
+   "detail": {
+    "bytes": 10224
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a plain link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a self link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a empty link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a upper link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a parent link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a top link in the main frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a blank link in the main frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a named link in the main frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a down link in the main frame is download_unsupported",
+   "detail": {
+    "activation": "download_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused download_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "download_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a js link in the main frame is scheme_unsupported",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused scheme_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a frag link in the main frame is fragment_unsupported",
+   "detail": {
+    "activation": "fragment_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused fragment_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "fragment_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_5",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a plain link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a self link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a empty link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a upper link in the child frame is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a parent link in the child frame is target_cross_frame",
+   "detail": {
+    "activation": "target_cross_frame"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused target_cross_frame and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_cross_frame"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a top link in the child frame is target_cross_frame",
+   "detail": {
+    "activation": "target_cross_frame"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused target_cross_frame and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_cross_frame"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a blank link in the child frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a named link in the child frame is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused target_named and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "target_named"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a down link in the child frame is download_unsupported",
+   "detail": {
+    "activation": "download_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused download_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "download_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a js link in the child frame is scheme_unsupported",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused scheme_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a frag link in the child frame is fragment_unsupported",
+   "detail": {
+    "activation": "fragment_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] clicking it is refused fragment_unsupported and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "fragment_unsupported"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_6",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a base target refuses an activation that names no target of its own",
+   "detail": {
+    "own": "allowed",
+    "without": "base_target_unmodeled"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the click is refused with that reason rather than treated as self",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "base_target_unmodeled"
+     },
+     "message": "click requires a button or link node",
+     "retryable": false,
+     "scope": {
+      "id": "target_7",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the plain submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the fmpost submitter is form_method_unsupported",
+   "detail": {
+    "activation": "form_method_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ftblank submitter is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ftself submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the faction submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the pplain submitter is form_method_unsupported",
+   "detail": {
+    "activation": "form_method_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the fmget submitter is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the bplain submitter is target_named",
+   "detail": {
+    "activation": "target_named"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a formmethod that is not GET is refused before any event",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "form_method_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_8",
+      "kind": "target"
+     }
+    },
+    "url_tail": "forms.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a formaction is honoured rather than ignored",
+   "detail": {
+    "url_tail": "child-landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a failed submit keeps its handler's effects and advances only by them",
+   "detail": {
+    "advanced_by": 1,
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a script-free main frame advances by exactly one, like a child",
+   "detail": {
+    "revision": 1
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 128,
+ "checks_total": 128,
+ "court": "native-dom frame-aware actions (control 0.0.2)",
+ "host_sha256": "9537d3ff05426556a45105174eea772fbe97dd97941399419cb63886d7b00581",
+ "limitations": [
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
+  "children run no scripts, so an action in a child can never be canceled by the page",
+  "the memory criteria live in the child-frame court and are rerun there unchanged",
+  "no pid, path, window or desktop fact is recorded"
+ ],
+ "page_text_in_audit_responses": [],
+ "passed": true
+}

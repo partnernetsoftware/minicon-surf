@@ -59,6 +59,7 @@
   {
    "check": "[system] a form reports its bounded controls and its method",
    "detail": {
+    "activation": "allowed",
     "controls": [
      "node_4",
      "node_6",
@@ -330,8 +331,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -352,8 +353,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -374,8 +375,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -396,8 +397,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -426,8 +427,8 @@
      }
     },
     "revision": [
-     23,
-     23
+     20,
+     20
     ]
    },
    "passed": true
@@ -456,8 +457,8 @@
      }
     },
     "revision": [
-     25,
-     25
+     22,
+     22
     ]
    },
    "passed": true
@@ -478,8 +479,8 @@
      }
     },
     "revision": [
-     25,
-     25
+     22,
+     22
     ]
    },
    "passed": true
@@ -504,8 +505,8 @@
      }
     },
     "revision": [
-     28,
-     28
+     24,
+     24
     ]
    },
    "passed": true
@@ -990,7 +991,7 @@
     ],
     "revision": [
      1,
-     3
+     2
     ]
    },
    "passed": true
@@ -1083,7 +1084,7 @@
      "generation": 1,
      "navigation": "failed",
      "realm": "realm_41",
-     "reason": "navigation_failed",
+     "reason": "read",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -1129,8 +1130,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 865696,
-    "at_8": 865696,
+    "at_128": 865920,
+    "at_8": 865920,
     "cap": 65536,
     "growth": 0
    },
@@ -1139,8 +1140,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 865696,
-    "at_64": 865696,
+    "at_128": 865920,
+    "at_64": 865920,
     "cap": 8192
    },
    "passed": true
@@ -1148,16 +1149,16 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 811440,
-    "fresh": 851664
+    "after_submit": 811552,
+    "fresh": 851776
    },
    "passed": true
   },
   {
    "check": "[system] the audit ring stays capped",
    "detail": {
-    "audit_bytes": 6806,
-    "audit_capacity_bytes": 6144,
+    "audit_bytes": 7830,
+    "audit_capacity_bytes": 7168,
     "audit_dropped_total": 161,
     "audit_entries": 64,
     "audit_entry_limit": 64,
@@ -1243,6 +1244,7 @@
   {
    "check": "[arena] a form reports its bounded controls and its method",
    "detail": {
+    "activation": "allowed",
     "controls": [
      "node_4",
      "node_6",
@@ -1514,8 +1516,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -1536,8 +1538,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -1558,8 +1560,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -1580,8 +1582,8 @@
      }
     },
     "revision": [
-     17,
-     17
+     15,
+     15
     ]
    },
    "passed": true
@@ -1610,8 +1612,8 @@
      }
     },
     "revision": [
-     23,
-     23
+     20,
+     20
     ]
    },
    "passed": true
@@ -1640,8 +1642,8 @@
      }
     },
     "revision": [
-     25,
-     25
+     22,
+     22
     ]
    },
    "passed": true
@@ -1662,8 +1664,8 @@
      }
     },
     "revision": [
-     25,
-     25
+     22,
+     22
     ]
    },
    "passed": true
@@ -1688,8 +1690,8 @@
      }
     },
     "revision": [
-     28,
-     28
+     24,
+     24
     ]
    },
    "passed": true
@@ -2174,7 +2176,7 @@
     ],
     "revision": [
      1,
-     3
+     2
     ]
    },
    "passed": true
@@ -2267,7 +2269,7 @@
      "generation": 1,
      "navigation": "failed",
      "realm": "realm_41",
-     "reason": "connect",
+     "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -2313,18 +2315,18 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 845424,
-    "at_8": 845408,
+    "at_128": 845696,
+    "at_8": 845696,
     "cap": 65536,
-    "growth": 16
+    "growth": 0
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 845424,
-    "at_64": 845360,
+    "at_128": 845696,
+    "at_64": 845744,
     "cap": 8192
    },
    "passed": true
@@ -2332,16 +2334,16 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 790448,
-    "fresh": 830688
+    "after_submit": 790672,
+    "fresh": 830912
    },
    "passed": true
   },
   {
    "check": "[arena] the audit ring stays capped",
    "detail": {
-    "audit_bytes": 6806,
-    "audit_capacity_bytes": 6144,
+    "audit_bytes": 7830,
+    "audit_capacity_bytes": 7168,
     "audit_dropped_total": 161,
     "audit_entries": 64,
     "audit_entry_limit": 64,
@@ -2417,7 +2419,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "0b24e662fb28c8a5f212bdd4d35bfae79d75904c14dcfe4bf6bbd612a0196ca8",
+ "host_sha256": "9537d3ff05426556a45105174eea772fbe97dd97941399419cb63886d7b00581",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

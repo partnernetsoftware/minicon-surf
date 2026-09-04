@@ -1214,7 +1214,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   change behaviour already pushed — a sandboxed iframe stops being built, and
   a non-`_self` link stops navigating — and both are recorded with their
   falsifying criteria before any code. Twelve courts are pre-registered. G1,
-  G3, P6 and G6 stay open.
+  G3, P6 and G6 stay open. **Implemented under that ruling:** the revision is
+  the base plus every live frame's counter with the folds proven, the action
+  gate resolves the frame from the node band and validates that frame's own
+  observation, a child link and GET submit replace that child's document out
+  of the parent document's allowance, sandboxed frames are no longer built,
+  activations this host does not model fail closed with a snapshot fact that
+  predicts them, and every action record names its frame. The frame-action
+  court passes 128 of 128 under both allocators; run against the shipped host
+  it fails 56 checks per arm, 47 of them the target and activation cases,
+  including `_blank` navigating instead of refusing and `formmethod` and
+  `formaction` being ignored. Two findings are recorded: a submit that
+  navigates was advancing the revision twice for one observable consequence,
+  and two of the court's own numbers were wrong where their meanings were
+  right.
 - [~] Implemented and measured on the native route: bounded child frames
   (`labs/native-dom/child-frame-design-0.0.1.md`). The audit found the frame
   contract already written and already executable on the synthetic host, so

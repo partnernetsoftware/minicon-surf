@@ -34,6 +34,15 @@ against the identical childless arm, with the same 1 MiB bound and both
 absolute numbers reported. The cap's number did not move; what it is measured
 against did, and the reason is here rather than erased.
 
+Third extension (the frame-action increment): two criteria here moved with
+the contract they described, both recorded rather than erased. A reference
+taken in a child was refused by the host, and this court asserted the refusal;
+actions in a live script-free child are now served, so the criterion asserts
+what still matters here — that such a reference never reaches the main frame —
+and the acting itself is qualified by the frame-action court. A sandboxed
+embedded document used to be an ordinary child and is now not built at all,
+tallied `sandboxed`, so the court asserts that instead.
+
 Mechanism corrections while implementing §18, recorded in §19: this court
 allowed one origin, so its cross-origin-redirect criterion was refused by the
 allowlist before the origin rule was ever reached and would have passed
@@ -208,6 +217,7 @@ class FrameHandler:
                     "/parent-link.html": page("Parent link", [
                         '<iframe src="/child-a.html"></iframe>',
                         '<a id="go" href="/landed.html">Go</a>']),
+                    "/parent-sandbox.html": page("Parent sandbox", ['<iframe sandbox src="/child-a.html"></iframe>']),
                     "/parent-nested.html": page("Parent nested", ['<iframe src="/child-nested.html"></iframe>']),
                     "/child-nested.html": page("Child nested", ['<iframe src="/child-a.html"></iframe>']),
                     "/child-a.html": page("Child A", ['<p id="ca">embedded alpha</p>']),
@@ -449,14 +459,16 @@ def main():
                             "shared": len(set(child_nodes) & set(main_nodes))})
                     if child_nodes:
                         borrowed = embedded["result"]["nodes"][0]["reference"]
+                        before_main = [n.get("name") for n in parent_snap["result"]["nodes"]]
                         answer = call("target.act", {"target": one, "reference": borrowed,
                                                      "action": {"kind": "click"}})
-                        expect(tag + "a reference from a child is refused rather than acting on the main frame",
-                               refused(answer, "unsupported_capability", None,
-                                       "action_in_child_frame_unsupported"),
-                               {"error": answer.get("error")})
+                        after_main = [n.get("name") for n in snap(one, frame=main_frame)["result"]["nodes"]]
+                        expect(tag + "a reference from a child never reaches the main frame",
+                               after_main == before_main
+                               and (answer.get("ok") or refused(answer, "unsupported_capability")),
+                               {"main_unchanged": after_main == before_main})
                     else:
-                        expect(tag + "a reference from a child is refused rather than acting on the main frame",
+                        expect(tag + "a reference from a child never reaches the main frame",
                                False, {"reason": "the child snapshot produced no nodes"})
 
                     # 2c. A child runs no scripts and fetches none (§16).
@@ -473,6 +485,17 @@ def main():
                            ok("target.inspect", {"target": scripted})["network"]["fetches"] == 2,
                            {"fetches": ok("target.inspect", {"target": scripted})["network"]["fetches"]})
                     ok("target.close", {"target": scripted})
+
+                    # 2d. A sandboxed frame is not built at all.
+                    boxed = open_page(session, "/parent-sandbox.html")
+                    boxed_skipped = {entry["reason"]: entry["count"]
+                                     for entry in ok("target.inspect", {"target": boxed}).get("frames_skipped", [])}
+                    expect(tag + "a sandboxed embedded document is not built at all",
+                           len(frames_of(ok("target.inspect", {"target": boxed}))) == 1
+                           and boxed_skipped == {"sandboxed": 1},
+                           {"frames": len(frames_of(ok("target.inspect", {"target": boxed}))),
+                            "skipped": boxed_skipped})
+                    ok("target.close", {"target": boxed})
 
                     # 3. Refusals, all one refusal.
                     foreign = at(frames_of(ok("target.inspect", {"target": seven})), 1, "frame")

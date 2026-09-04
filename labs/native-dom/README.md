@@ -641,9 +641,48 @@ Child frames (`child-frame-design-0.0.1.md`): a same-origin `<iframe src>`
 becomes a bounded child frame with its own id, generation and realm, built
 with its parent under the parent's own fetch and byte budget, at most 7 of
 them, depth one. `target.snapshot` narrows to one and names what it observed;
-node ids are target-scoped, so a reference taken in a child is refused by
-`target.act` rather than resolved against the main frame. A child runs no
-scripts. A child is fetched only if its `src` is `http(s)`, same-origin
+node ids are target-scoped: band *k* names the *k*-th live child, and an
+action is served only when that frame's **own** last observation authorises
+it — the reference's revision is the one that snapshot reported, the target's
+revision has not moved since, that frame's own counter has not moved, and the
+index is inside what it returned. A child runs no scripts.
+
+The target's observable revision is its base plus every live frame's counter,
+saturating; a frame that ends or is replaced folds its counter into the base,
+so the number never decreases. A committed navigation advances it by exactly
+one from its value at the commit; an applied action advances it by at least
+one and otherwise by whatever the page's handlers really changed; a canceled
+or failed action advances only by those handler effects. In a script-free
+frame — every child is one — an applied action is exactly one and a canceled
+one is nothing. `target.wait` reads the main frame's counter and takes every
+child's from a cache, which is sound because nothing runs in a child between
+host evaluations.
+
+A link or a GET submit inside a child replaces **that child's document only**:
+the child keeps its frame id, its generation increments, its realm is replaced
+and the old one retired, and the parent's identity, URL and history are
+untouched. It spends the current parent document's remaining aggregate
+allowance and never a fresh one, and a failure leaves the child exactly as it
+was. Nothing about it enters the target's history, and neither
+`target.navigate` nor CDP's `Page.navigate` can address a frame.
+
+Activations this host does not model fail closed, before any event, and the
+snapshot says so in advance: every link, button and form carries an
+`activation` fact over the closed vocabulary `allowed`, `target_named`,
+`target_cross_frame`, `base_target_unmodeled`, `download_unsupported`,
+`scheme_unsupported`, `fragment_unsupported`, `control_disabled`,
+`form_method_unsupported`, and it never carries a target name, an href or any
+other page text. The effective target is HTML's — the submitter's
+`formtarget`, else the form's or the link's `target`, else a `<base target>`
+which this host does not model and therefore refuses — normalised
+case-insensitively, with `_parent` and `_top` allowed in the main frame, where
+they are the current context, and refused in a child. The effective method is
+the submitter's `formmethod` else the form's, and only `GET` is honoured; a
+submitter's `formaction` is honoured under the same URL rules. Every action
+record in the audit names the frame it touched, interned and bounded. A sandboxed `<iframe>` is not built at all: a sandbox without
+`allow-same-origin` means an opaque origin, and every child here is
+same-origin by construction. Otherwise a child is fetched only if its `src`
+is `http(s)`, same-origin
 before the fetch and still same-origin after every redirect, and answers
 `text/html`; anything else is refused, and a refused attempt leaves nothing
 behind, its cookies included. A child that cannot be built is skipped, never
@@ -663,10 +702,10 @@ ends its children, and the click path names them in `ended_frames`. One child
 costs about 247 KB of live owner bytes, seven about 1.7 MB, and the whole
 cost returns on close.
 
-Losses, recorded rather than approximated: no acting inside a child frame
-(refused typed, pending a design for what a child's revision means to
-`target.wait` and for whether a navigation inside a child replaces the child
-or the target), no child navigation, no nesting, no cross-origin or `srcdoc`
+Losses, recorded rather than approximated: an action in a child behaves as it
+would in a script-free document, so no page handler can cancel it; a child
+frame cannot be addressed by `target.navigate` or by CDP, only acted in; no
+sandboxed frames, no nesting, no cross-origin or `srcdoc`
 children, no scripts in a child; no capability attenuation on this host, so a request carrying the field
 is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
 of frames or realms here; navigation is a link click only (no
