@@ -1173,12 +1173,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   mutation, one revision per successful action, a GET-only submit that
   serialises inside the realm and navigates atomically, and an audit that
   records the kind, the outcome and a value's byte length and never a value.
-  The frozen court passes 69 of 69 under both allocators including its memory
-  criteria, the plateau over 128 edit and reset cycles among them, and no
-  typed value, option label or query appears in the ledger, the court log or
-  the receipt. `control-0.0.1` is unchanged byte for byte. The slice adds no
-  CDP surface, recorded as a loss and proven with the pinned client. G1, G3,
-  P6 and G6 stay open.
+  Two root audits then found nine defects the first court did not look for,
+  each recorded in the design's sections 13 and 14 before any code moved: a
+  press that claimed to apply what it had not, a byte length counted in the
+  wrong units, a built query inside an error, an impossible rollback claim,
+  events dispatched in the wrong order, a canceled key that activated
+  anyway, four button subtypes treated as one with the submit skipping its
+  click, a radio that toggled off and a canceled change that left its
+  sibling cleared, and a reset that mutated before it asked. All are fixed
+  and the court, extended to them, passes 163 of 163 under both allocators
+  including its memory criteria, the plateau over 128 edit and reset cycles
+  among them, and no typed value, option label or query appears in the
+  ledger, the court log or the receipt. The pre-fix host was rebuilt and run
+  against the extended court to show the new checks bite. `control-0.0.1`
+  request and result shapes are unchanged byte for byte; the behaviour
+  behind a click on a reset control is corrected, recorded as a bug fix.
+  The slice adds no CDP surface, recorded as a loss and proven with the
+  pinned client. G1, G3, P6 and G6 stay open.
 - [ ] Superseded description of the same node, kept for the record: proposed,
   design only, nothing implemented and nothing measured: an
   agent-native form interaction slice
