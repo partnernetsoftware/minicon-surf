@@ -16,6 +16,12 @@ VERSION = "0.0.1"
 VERSION_NEXT = "0.0.2"
 NAVIGATION_OPERATIONS = {"target.navigate", "target.reload", "target.traverse"}
 MAX_HISTORY_ENTRIES = 8
+# 0.0.1 offers exactly one action. 0.0.2 offers five more, each a closed shape
+# with bounded arguments and no script; the version a request names decides
+# which it may use, and nothing is inferred from the shape.
+MAX_VALUE_BYTES = 1024
+MAX_OPTION_INDEX = 63
+ACTIVATION_KEYS = {"enter", "space"}
 MAX_REQUEST_BYTES = 65_536
 MAX_RESPONSE_BYTES = 4_194_304
 MAX_DEPTH = 32
@@ -176,7 +182,7 @@ def validate_request(document):
         object_id("node", reference["node"])
         require(reference["target"] == arguments["target"], "action target differs")
         require(type(reference["revision"]) is int and reference["revision"] >= 0, "action revision differs")
-        require(arguments["action"] == {"kind": "click"}, "initial action differs")
+        validate_action(arguments["action"], document["version"])
     elif document["operation"] in ("target.navigate", "target.reload"):
         arguments = document["arguments"]
         expected = {"target", "url"} if document["operation"] == "target.navigate" else {"target"}
@@ -191,6 +197,34 @@ def validate_request(document):
             type(delta) is int and delta != 0 and abs(delta) <= MAX_HISTORY_ENTRIES,
             "traverse delta differs",
         )
+
+
+def validate_action(action, version):
+    """The action vocabulary of one version. 0.0.1 has click and nothing else."""
+    require(isinstance(action, dict) and "kind" in action, "action is not a kind")
+    kind = action["kind"]
+    if version == VERSION or kind == "click":
+        require(action == {"kind": "click"}, "0.0.1 offers only the click action")
+        return
+    if kind == "set_value":
+        require(set(action) == {"kind", "value"}, "set_value fields differ")
+        value = action["value"]
+        require(isinstance(value, str), "set_value takes a string")
+        require(len(value.encode()) <= MAX_VALUE_BYTES, "set_value exceeds its byte bound")
+    elif kind == "set_checked":
+        require(set(action) == {"kind", "checked"}, "set_checked fields differ")
+        require(type(action["checked"]) is bool, "set_checked takes a boolean")
+    elif kind == "select_option":
+        require(set(action) == {"kind", "index"}, "select_option fields differ")
+        index = action["index"]
+        require(type(index) is int and 0 <= index <= MAX_OPTION_INDEX, "select_option index differs")
+    elif kind == "submit":
+        require(set(action) == {"kind"}, "submit takes no argument")
+    elif kind == "press":
+        require(set(action) == {"kind", "key"}, "press fields differ")
+        require(action["key"] in ACTIVATION_KEYS, "press offers enter and space only")
+    else:
+        require(False, "action kind is not part of the control version it names")
 
 
 URL = re.compile(r"^https?://[!-~]{1,2000}$")
@@ -338,6 +372,14 @@ def main():
         {"navigation", "reload", "traverse", "history entry"} <= set(next_losses),
         "0.0.2 mapping does not record the navigation losses",
     )
+    require(
+        {"form value, checked state and selection", "form submit", "activation keys",
+         "form roles and their bounded facts"} <= set(next_losses),
+        "0.0.2 mapping does not record the form losses",
+    )
+    for native in ("form value, checked state and selection", "form submit", "activation keys"):
+        require("-32601" in next_losses[native]["loss"] or "not projected" in next_losses[native]["loss"],
+                f"{native} must say it is unprojected")
     require("-32601" in next_losses["traverse"]["loss"], "traverse loss must name its refusal")
     require(next_mapping["objects"] == mapping["objects"], "0.0.2 changes the object vocabulary")
     mapped = {item["native"]: item for item in mapping["objects"]}
@@ -507,12 +549,72 @@ def main():
     retained_state = json.loads(json.dumps(navigate_success))
     retained_state["result"]["scroll_y"] = 120
     expect_invalid(retained_state, validate_response)
+    # The form slice: 0.0.2 actions beside the unchanged 0.0.1 click.
+    set_value_request = load_bounded(examples / "target-act-set-value.request.json", MAX_REQUEST_BYTES)
+    set_value_success = load_bounded(examples / "target-act-set-value.success.json", MAX_RESPONSE_BYTES)
+    submit_request = load_bounded(examples / "target-act-submit.request.json", MAX_REQUEST_BYTES)
+    submit_failure = load_bounded(examples / "target-act-submit.failure.json", MAX_RESPONSE_BYTES)
+    for document in (set_value_request, submit_request):
+        validate_request(document)
+        require(document["version"] == VERSION_NEXT, "a form example must name 0.0.2")
+    for document in (set_value_success, submit_failure):
+        validate_response(document)
+    require(set_value_request["request_id"] == set_value_success["request_id"], "set_value does not echo request ID")
+    require(submit_request["request_id"] == submit_failure["request_id"], "submit does not echo request ID")
+    require(
+        set_value_success["result"]["value_bytes"]
+        == len(set_value_request["arguments"]["action"]["value"].encode()),
+        "the result must report the value's byte length",
+    )
+    require(
+        set_value_request["arguments"]["action"]["value"] not in json.dumps(set_value_success),
+        "a result must never echo the value back",
+    )
+    require(submit_failure["error"]["code"] == "unsupported_capability", "an unsupported method is typed")
+
+    # Every 0.0.2 action shape is invalid_request under 0.0.1, and the click
+    # stays valid under both.
+    for action in (
+        {"kind": "set_value", "value": "x"},
+        {"kind": "set_checked", "checked": True},
+        {"kind": "select_option", "index": 0},
+        {"kind": "submit"},
+        {"kind": "press", "key": "enter"},
+    ):
+        request = json.loads(json.dumps(set_value_request))
+        request["version"] = VERSION
+        request["arguments"]["action"] = action
+        expect_invalid(request, validate_request)
+        allowed = json.loads(json.dumps(set_value_request))
+        allowed["arguments"]["action"] = action
+        validate_request(allowed)
+    for version in (VERSION, VERSION_NEXT):
+        click = json.loads(json.dumps(set_value_request))
+        click["version"] = version
+        click["arguments"]["action"] = {"kind": "click"}
+        validate_request(click)
+    long_value = json.loads(json.dumps(set_value_request))
+    long_value["arguments"]["action"]["value"] = "x" * (MAX_VALUE_BYTES + 1)
+    expect_invalid(long_value, validate_request)
+    far_option = json.loads(json.dumps(set_value_request))
+    far_option["arguments"]["action"] = {"kind": "select_option", "index": MAX_OPTION_INDEX + 1}
+    expect_invalid(far_option, validate_request)
+    unknown_key = json.loads(json.dumps(set_value_request))
+    unknown_key["arguments"]["action"] = {"kind": "press", "key": "tab"}
+    expect_invalid(unknown_key, validate_request)
+    unknown_kind = json.loads(json.dumps(set_value_request))
+    unknown_kind["arguments"]["action"] = {"kind": "type", "text": "x"}
+    expect_invalid(unknown_kind, validate_request)
+    submit_with_body = json.loads(json.dumps(submit_request))
+    submit_with_body["arguments"]["action"] = {"kind": "submit", "body": "a=1"}
+    expect_invalid(submit_with_body, validate_request)
+
     older_capability_scope = json.loads(json.dumps(capability_request))
     older_capability_scope["capability"]["scope"].append("target.navigate")
     expect_invalid(older_capability_scope, validate_request)
     print(
-        "control 0.0.1 and 0.0.2: two schemas, two mappings, 18 examples, "
-        "and 24 negative cases passed"
+        "control 0.0.1 and 0.0.2: two schemas, two mappings, 22 examples, "
+        "and 35 negative cases passed"
     )
 
 

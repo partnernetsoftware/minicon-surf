@@ -1,0 +1,19 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.2",
+  "request_id": "req_form_1",
+  "deadline_ms": 5000,
+  "operation": "target.act",
+  "arguments": {
+    "target": "target_court_1",
+    "reference": {
+      "target": "target_court_1",
+      "revision": 4,
+      "node": "node_3"
+    },
+    "action": {
+      "kind": "set_value",
+      "value": "court-fake-entry"
+    }
+  }
+}

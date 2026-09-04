@@ -88,6 +88,26 @@
    "native": "history entry",
    "cdp": "back/forward cache",
    "loss": "an entry is the final canonical committed URL and, at most, a host-minted identity: no document, realm, body, form, scroll, script, cookie or storage state is retained, so a client that expects restored page state after going back gets a fresh document. Recorded, never emulated"
+  },
+  {
+   "native": "form value, checked state and selection",
+   "cdp": "DOM.setNodeValue / Input.dispatchKeyEvent / Runtime.callFunctionOn",
+   "loss": "none of these is a typed form action: CDP either sets a node's text or replays raw key events. The adapter projects none of them and they stay -32601, because mapping a typed action onto raw key replay would claim an input path this host does not have"
+  },
+  {
+   "native": "form submit",
+   "cdp": "Page.navigate after a client-side form serialisation",
+   "loss": "not projected: the adapter would have to serialise the form itself, which would make it a second authority over form state. The native submit serialises inside the realm and navigates through the same atomic path"
+  },
+  {
+   "native": "activation keys",
+   "cdp": "Input.dispatchKeyEvent",
+   "loss": "not projected: only enter and space exist natively, and the CDP method implies a full keyboard, modifiers and key repeat that this host does not model"
+  },
+  {
+   "native": "form roles and their bounded facts",
+   "cdp": "DOM.getDocument attributes",
+   "loss": "the checkbox, radio, select and form roles, their options and controls, and the disabled and read-only flags have no CDP equivalent and are visible only through the native door"
   }
  ]
 }

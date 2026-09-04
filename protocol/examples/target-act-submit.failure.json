@@ -1,0 +1,19 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.2",
+  "request_id": "req_form_2",
+  "ok": false,
+  "error": {
+    "code": "unsupported_capability",
+    "message": "this form's method is not offered",
+    "retryable": false,
+    "scope": {
+      "kind": "target",
+      "id": "target_court_1"
+    },
+    "details": {
+      "reason": "form_method_unsupported",
+      "method": "post"
+    }
+  }
+}
