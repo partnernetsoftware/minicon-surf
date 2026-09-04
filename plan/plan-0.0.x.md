@@ -1162,6 +1162,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Proposed, open, nothing implemented and nothing measured: an
+  agent-native navigation slice (`labs/native-dom/navigation-design-0.0.1.md`).
+  The control operation enum of `0.0.1` is closed and stays closed, so the
+  design proposes `target.navigate`, `target.reload` and `target.history`
+  under a `control-0.0.2` version bump with discovery through the existing
+  `session.inspect`, rather than a negotiation handshake or an overloaded
+  `target.open`; history is proposed as metadata only, capped at eight bounded
+  entries, so going back refetches instead of restoring a cached document, and
+  that loss is recorded rather than emulated. Identity follows the existing
+  rule (same target and frame, new generation and realm, revision advances,
+  prior references stale), a failed navigation rolls back atomically, and the
+  profile's cookies, storage, network policy and pinned-root TLS are reused
+  with no new authority. Memory budgets are pre-registered, with the
+  128-navigation soak defined as the difference between a navigating and a
+  non-navigating arm of identical request count, because the control-churn
+  court showed every request grows the host without a plateau. The multi-route
+  matrix expects the native route to serve it, Lightpanda to need
+  qualification, and Servo to fail the soak on the pinned release. Two
+  decisions wait on the root: how the enum grows, and whether metadata-only
+  history is acceptable. G1, G3, P6 and G6 stay open.
 - [ ] Suggestion for the root's review, not a gate change: read G3 as
   "can the same live target be attached to a real presentation and
   detached again with its state kept", with the presentation-specific
