@@ -444,3 +444,75 @@ fake values in plain, percent-encoded and `+`-encoded form; the
 submit-handler-mutation fixture of §13.4; and cancellation of a click on a
 checkbox and of a submit, asserting `applied` and `default_prevented` exactly
 as §13.5 defines them.
+
+## 14. Corrections after the second audit (sections 1 to 13 stay as written)
+
+Four more defects, each recorded before any code moves. Where this section
+differs from §3, §13.1 or §13.5, this section governs.
+
+### 14.1 A canceled key still activated
+
+The three key events were dispatched and their cancellation ignored, so a page
+that canceled `keydown` still saw the activation happen. The declared model,
+stated plainly because it is simpler than a browser's: **all three phases are
+dispatched, and if any of them is canceled the activation does not happen.**
+The answer is then `applied: false` with `default_prevented: true`; whatever
+the handlers changed stays and the revision reflects it. The court cancels at
+each phase separately.
+
+This model is deliberately coarser than the standard, where canceling `keyup`
+changes nothing and canceling `keydown` suppresses `keypress`. It is declared
+here rather than implied, and no browser fidelity is claimed.
+
+### 14.2 Button subtypes were one lump
+
+`button`, a default `<button>`, a submit button and a reset button behaved as
+one, and the submit path skipped the click entirely. Each is now its own case,
+for both supported keys:
+
+| Subtype | enter and space |
+|---|---|
+| regular button (`type=button`) | dispatch a cancelable `click`; nothing else |
+| default `<button>` and `type=submit` | dispatch a cancelable `click`, then submit its form **only if the click was not canceled** |
+| reset button | dispatch a cancelable `click`, then reset its form **only if the click was not canceled** |
+
+Space on a submit button submits, which it did not before: the submit was
+reachable only through enter. The cross-product the court claims now names the
+subtypes explicitly rather than testing one representative button.
+
+### 14.3 Radio space toggled, and a cancel lost the group
+
+Space on a radio toggled it, so pressing space on an already-checked radio
+turned it off. A radio is set, never toggled: **space on a radio sets it true
+and leaves an already-checked radio checked.**
+
+Worse, a canceled `set_checked` or radio activation restored only the element
+itself, while setting a radio true had already cleared its sibling. The whole
+bounded group's checked state is now captured before the change and restored
+as a whole when the default is canceled, the previously selected sibling
+included. The court proves both, for `set_checked` and for the key.
+
+### 14.4 Reset mutated before it asked
+
+A form's reset restored every control and then dispatched `reset`, so a page
+that canceled the event had already lost its values. The cancelable `reset`
+event is now dispatched **first**, and the controls are restored only if it
+was not canceled; a canceled reset changes nothing and answers `applied:
+false` with `default_prevented: true`. The court proves it through the reset
+button's `press` and through the `click` that 0.0.1 already offers.
+
+**An honest note on 0.0.1.** Its request and result shapes are unchanged, byte
+for byte, and a click still answers `{kind, target, revision, applied}`. The
+behaviour behind a click on a reset control does change: a canceled `reset`
+event now leaves the controls alone, where before it did not. That is a bug
+fix in the realm's model, not a contract change, and it is recorded here
+rather than left for a reader to discover.
+
+### 14.5 Court, extended again
+
+The court adds: cancellation at each of the three key phases, separately, for
+a role that would otherwise activate; each button subtype against each
+supported key, with the click's cancellation deciding whether the submit or
+the reset follows; space on an already-checked radio; a canceled radio change
+restoring the whole group including the sibling that was cleared; and a
+canceled reset through both the key and the click, proving nothing moved.
