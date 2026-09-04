@@ -1177,8 +1177,15 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   diagnostics that never gate. The court reaches 89 of 90 with nothing
   unverified; the one failure is the 128-navigation differential soak under
   the default allocator, 1,064,960 bytes against the frozen 1,048,576, after a
-  ledger representation repair had brought it to 983,040. No cap was moved.
-  G1, G3, P6 and G6 stay open.
+  ledger representation repair had brought it to 983,040. One replication on
+  the same build measured exactly the cap with two of seven runs above it, so
+  the batches disagree rather than agreeing on a pass. One further candidate,
+  sharing the immutable allowlist instead of copying it per operation, was
+  frozen, implemented, measured, and failed every acceptance threshold; it was
+  recorded rejected and reverted, since its allocation proof was true but it
+  bought no measured benefit. Verdict on the soak: **narrow on the default
+  allocator**, with the arena inside every budget and every other check green.
+  No cap was moved at any point. G1, G3, P6 and G6 stay open.
 - [ ] Superseded description of the same node, kept for the record: proposed,
   nothing implemented and nothing measured
   (`labs/native-dom/navigation-design-0.0.1.md`).

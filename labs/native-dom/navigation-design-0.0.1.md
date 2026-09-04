@@ -395,7 +395,7 @@ cross-batch unstable, and the original failure stands. No cap moved, no arm
 was retuned, no further run was taken and no candidate was pre-registered,
 since that was permitted only had the replication exceeded the cap again.
 
-## 16. Immutable-policy sharing repair (pre-registered before the code)
+## 16. Immutable-policy sharing repair (pre-registered, then rejected and reverted)
 
 One repair candidate, frozen before it is written. The status it addresses is
 cross-batch unstable: the original batch measured 1,064,960 bytes over 128
@@ -449,7 +449,7 @@ These are stricter conditions on the repair and they do not rewrite the
 original gate. If any of them fails the outcome is recorded rejected or
 narrow and the work stops there: no second optimisation, no moved cap.
 
-## 17. Result of the sharing repair: rejected
+## 17. Result of the sharing repair: rejected and reverted
 
 The repair of §16 was implemented exactly as frozen and measured on one
 post-fix batch, stored separately as
@@ -477,3 +477,12 @@ something other than the allowlist copy, and it moves more between builds
 than the repair could plausibly shift. Naming that cause needs its own
 read-only attribution, not another optimisation. No cap moved, no arm was
 retuned, and the work stops here as the ruling requires.
+
+**The change was reverted.** Its allocation proof is true, but it failed
+every pre-registered product metric, and memory-first does not keep a change
+that shows no measured benefit; the tree holds no unadopted optimisation. The
+freeze and this record stay as the provenance of a candidate that was tried
+and did not earn its place. The navigation slice is therefore **narrow on the
+default allocator**: the original failure and the cross-batch disagreement
+both remain binding, no further repair candidate is proposed in this
+increment, and no cap moves.
