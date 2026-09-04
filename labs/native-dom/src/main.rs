@@ -1764,6 +1764,42 @@ impl Host {
         Ok((nodes, revision))
     }
 
+    /// Court-only navigation stage sample: the process sample plus the owners
+    /// that separate a navigation's own live bytes from what is merely
+    /// resident. Same gate as every other court-only stage, so it is absent
+    /// unless a court asks for it, and it changes nothing the host does.
+    fn navigation_stage(&self, label: &str, target_id: &str) {
+        if !self.surface_stages {
+            return;
+        }
+        let Some(log) = &self.surface_court else {
+            return;
+        };
+        let mut event = surface::self_sample();
+        event["event"] = json!("stage");
+        event["stage"] = json!(label);
+        event["operation"] = json!("navigation");
+        let empty = net::Budget::default();
+        let target = self.targets.get(target_id);
+        let budget = target.map_or(&empty, |target| &target.budget);
+        let lifetime = self.lifetimes.get(target_id).copied().unwrap_or_default();
+        event["owners"] = json!({
+            "history_entries": self.histories.values().map(|h| h.entries.len()).sum::<usize>(),
+            "history_bytes": self.histories.values().map(History::bytes).sum::<usize>(),
+            "audit_entries": self.audits.values().map(|l| l.entries.len()).sum::<usize>(),
+            "audit_bytes": self.audits.values().map(Ledger::bytes).sum::<usize>(),
+            "audit_capacity_bytes": self.audits.values().map(Ledger::capacity_bytes).sum::<usize>(),
+            "realm_malloc_bytes": self.targets.values().map(|t| t.realm.malloc_bytes()).sum::<usize>(),
+            "realms": self.targets.len(),
+            "document_fetches": budget.fetches,
+            "document_bytes": budget.bytes,
+            "generation": target.map(|target| target.generation),
+            "lifetime": lifetime.to_json(budget),
+            "arena": target.and_then(|target| target.realm.arena_statistics()),
+        });
+        log.append(event);
+    }
+
     /// Court-only request stage sample with the operation name, for the
     /// control-plane churn court. Same gate as `surface_stage`.
     fn request_stage(&self, label: &str, operation: Option<&str>) {
@@ -3277,6 +3313,9 @@ impl Host {
             }
         };
 
+        // Court-only: the boundary between the candidate's bytes arriving and
+        // its document existing.
+        self.navigation_stage("candidate_fetched", id);
         let text = String::from_utf8_lossy(&bytes).into_owned();
         let document = Document::from(text.as_str());
         let element_count = document.select("*").nodes().len();
@@ -3663,7 +3702,10 @@ impl Host {
                 self.histories.insert(id.clone(), History::new(&committed));
             }
         }
-        self.navigation_result(&id, deadline)
+        self.navigation_stage("after_history_audit", &id);
+        let result = self.navigation_result(&id, deadline);
+        self.navigation_stage("result_built", &id);
+        result
     }
 
     /// `target.reload`: the same document address again. It appends no entry
@@ -3739,6 +3781,7 @@ impl Host {
             let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
             lifetime.navigation_attempts = lifetime.navigation_attempts.saturating_add(1);
         }
+        self.navigation_stage("navigation_entry", id);
         let prepared = {
             let target = self.target_mut(id)?;
             let current = Self::revision(target, deadline, &policy)?;
@@ -3791,6 +3834,7 @@ impl Host {
         };
         // The new document's writes commit before the swap; if the disk
         // refuses them the navigation fails and the old target stays.
+        self.navigation_stage("candidate_built", id);
         let built = match built {
             Ok(mut replacement) => {
                 let profile_id = self.target_profile_id(id);
@@ -3858,6 +3902,7 @@ impl Host {
                 self.tls_retired.absorb_tls(&retired.budget);
                 self.realms_retired_total += 1;
                 self.navigations_total += 1;
+                self.navigation_stage("after_swap", id);
                 let target = self.target_mut(id)?;
                 let revision = Self::revision(target, deadline, &policy)?;
                 Ok(json!({
