@@ -1162,6 +1162,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Proposed, design only, nothing implemented and nothing measured: an
+  agent-native form interaction slice
+  (`labs/native-dom/form-interaction-design-0.0.1.md`). `target.act` offers
+  exactly one action today, a click on a link, a button or a button-like
+  input, and the semantic snapshot cannot even name a checkbox, a radio, a
+  select or a form. The design proposes five typed action shapes beside the
+  existing click, in `0.0.2` alone, with `0.0.1` unchanged byte for byte: set
+  value, set checked, choose option, submit and press, each a closed shape
+  with bounded arguments and no script. It states the exact event order for
+  each, refuses disabled and read-only controls typed, excludes constraint
+  validation, input methods, contenteditable, files, autofill, password
+  managers, arbitrary keys and POST, keeps the node revision and stale rules,
+  and forbids the audit ledger from ever recording a value. It adds no CDP
+  surface and records that as a deliberate loss rather than inventing an
+  adapter-side form model. Four decisions wait on the root, the first being
+  that the slice needs the document shim and the snapshot's roles extended
+  before any action vocabulary can mean anything. The memory court is
+  pre-registered as a reported differential rather than a gated cap, because
+  the navigation increment showed that instrument counts page-granular
+  allocator retention that moved 114 KB between builds. G1, G3, P6 and G6
+  stay open.
 - [~] Implemented and measured, one pre-registered cap still failing: the
   agent-native navigation slice (`labs/native-dom/navigation-design-0.0.1.md`).
   `control-0.0.2` is a separate schema served beside an unchanged `0.0.1`,

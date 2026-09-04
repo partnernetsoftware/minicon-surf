@@ -1,0 +1,227 @@
+# Agent-native form interaction 0.0.1 (design only, nothing implemented)
+
+Status: **proposed.** No code, no court run, no measurement. This freezes the
+slice, the honest semantics, the exclusions, the budgets and the court before
+anything is written, and it names the decisions the root must make first.
+`control-0.0.1` does not change: only `0.0.2` gains action shapes.
+
+## 1. Where the contract stands
+
+`target.act` takes exactly `{target, reference, action}` and the action is
+exactly `{"kind": "click"}`, in the schema, in the checker and in the host. A
+click is honoured on three things: an anchor with an `href`, a `button`, and
+an `input` whose type is `button`, `submit` or `reset`. Anything else is
+refused. A click on an anchor dispatches a cancelable `click` and, if the page
+does not prevent it, navigates through the same atomic path a
+`target.navigate` uses.
+
+The semantic snapshot names six roles: `heading`, `button`, `link`,
+`textbox`, `label`, `text`. A `textbox` entry carries a bounded `value`. So an
+Agent can see a text field and cannot change it, and cannot see a checkbox, a
+radio, a select or a form at all.
+
+**This is the honest starting point, and it is smaller than it looks.** The
+document shim behind the realm models `value`, `type`, `name`, `click()` and
+event dispatch. It does **not** model `checked`, `selected`, `selectedIndex`,
+`form`, `submit()`, `disabled`, `readOnly` or constraint validation. None of
+those exist to be driven yet. A form slice is therefore not only an action
+vocabulary: it needs the snapshot to name new roles and the shim to model the
+state those roles imply. That is product code, and §9 asks the root to
+authorise it explicitly rather than letting it arrive as a side effect.
+
+## 2. The smallest typed set (0.0.2 only)
+
+Five action kinds beside the existing `click`. Each is a closed shape with
+bounded arguments, and none carries script.
+
+| Action | Shape | Valid on |
+|---|---|---|
+| set value | `{"kind":"set_value","value":"<≤1024 bytes>"}` | `textbox` |
+| set checked | `{"kind":"set_checked","checked":true\|false}` | `checkbox`, `radio` |
+| choose option | `{"kind":"select_option","index":<0..63>}` | `select` |
+| submit | `{"kind":"submit"}` | `form` |
+| press | `{"kind":"press","key":"enter"\|"space"}` | `button`, `link`, `textbox`, `checkbox`, `radio`, `select` |
+
+`click` keeps its exact current meaning and its exact current shape.
+
+New snapshot roles, each with bounded facts: `checkbox` and `radio` carry
+`checked` and the radio's `group`; `select` carries its `options[]` as
+`{index, label}` with at most 64 entries and the `selected` index; `form`
+carries its `controls[]` as node ids with at most 64 entries, and its
+`method` and whether it has an `action`. Every control of any role carries
+`disabled` and `read_only` so an Agent can see a refusal coming rather than
+discover it.
+
+**Why five and not fewer.** Value, checked state and chosen option are three
+different state changes with three different events; submit is a document
+transition rather than a state change; and keyboard activation is a distinct
+standard behaviour an Agent needs because many controls are reachable only
+that way. Folding any pair together would either hide which state changed or
+smuggle a second meaning into one kind.
+
+## 3. Event semantics, stated honestly
+
+What the host will do, exactly, and nothing implied beyond it:
+
+| Action | Events, in order | State |
+|---|---|---|
+| set value | `input`, then `change` | the element's value becomes the argument, verbatim, with no formatting, coercion or masking |
+| set checked | `click`, then `change` | the element's checked state becomes the argument; setting a radio true clears the others of its group first |
+| choose option | `change` | the select's selected index becomes the argument |
+| submit | `submit`, cancelable | if not prevented, the form navigates through the same atomic path as `target.navigate`, `GET` only in this slice |
+| press enter | `keydown`, `keypress`, `keyup`, then the activation behaviour of the element: a button or link activates as a click; a single-line textbox submits its form if it has one | as the activation implies |
+| press space | `keydown`, `keypress`, `keyup`, then activation: a button activates, a checkbox or radio toggles | as the activation implies |
+
+- A `disabled` control refuses every action typed, and so does a `read_only`
+  one for `set_value`. Neither silently no-ops.
+- **Constraint validation is not implemented.** `required`, `pattern`, `min`,
+  `max` and `type=email` are neither enforced nor reported, and a submit is
+  not blocked by them. The snapshot says so per control rather than implying
+  a validity the host does not compute.
+- Every applied action advances the target revision, because it changes
+  observable state. Filling three fields therefore costs three snapshots.
+  That cost is real and is stated rather than hidden; a bounded batch action
+  is deliberately **not** proposed here and is a separate decision.
+- A submit that navigates is atomic in the existing sense: the replacement
+  document is built completely before anything live changes, and a failure
+  leaves the form, its values, the generation, the realm and the revision
+  exactly as they were.
+
+## 4. Explicit exclusions
+
+Each is excluded because honouring it would need behaviour this host does not
+have, and each would need its own justification to enter later:
+
+- input methods and composition events, and any non-Latin input path;
+- `contenteditable` and rich text;
+- file inputs, drag and drop, and the clipboard;
+- autofill, password managers and any credential source;
+- arbitrary key sequences, key repeat, modifiers and pointer coordinates:
+  the only keys are `enter` and `space`, and there is no coordinate anywhere
+  in the vocabulary;
+- `POST` and multipart submission, and any request body the Agent composes;
+- generic JavaScript evaluation, which this route has never offered through
+  the control door and which this slice does not introduce.
+
+## 5. Bounds
+
+| Thing | Bound |
+|---|---|
+| a value argument | 1,024 bytes of UTF-8 |
+| options reported per select | 64 |
+| controls reported per form | 64 |
+| forms reported per document | 16 |
+| option label and control name in a snapshot | 256 bytes each, as today |
+| actions per request | one; there is no batch |
+
+Anything beyond a bound is a typed `resource_limit` or `invalid_request`, not
+a truncation.
+
+## 6. Identity, capability, audit and budgets
+
+- The node reference stays `(target, revision, node)`. An action against an
+  older revision is `stale_revision`, exactly as a click is today, and the
+  revision an action produces is returned so `target.wait` settles
+  deterministically.
+- The request's deadline bounds the whole action including any navigation a
+  submit causes; the result stays inside the response budget.
+- Capability attenuation stays unsupported and fail-closed on this route, as
+  `session.inspect` already reports.
+- **The audit ledger never records a value.** A record names the operation,
+  the action kind, the node's role, and for `set_value` the byte length of
+  the argument and nothing else. No value, no option label, no field name, no
+  form action URL beyond the origin the ledger already records. That rule is
+  stronger than the navigation ledger's and is the reason a form slice can be
+  audited at all.
+
+## 7. CDP mapping, losses recorded
+
+| Native | CDP | Loss |
+|---|---|---|
+| `set_value`, `set_checked`, `select_option` | `DOM.setNodeValue`, `Input.dispatchKeyEvent`, `Runtime.callFunctionOn` | none of these is a typed form action: CDP either sets a node's text or replays raw key events. The adapter does not project them and they stay `-32601`, because mapping a typed action onto raw key replay would claim an input path this host does not have |
+| `submit` | `Page.navigate` after a form serialisation | not projected: the adapter would have to serialise the form itself, which would make it a second authority over form state |
+| `press` | `Input.dispatchKeyEvent` | not projected: only two keys exist here and the CDP method implies the full keyboard |
+| snapshot roles | `DOM.getDocument` attributes | the new roles and their bounded facts have no CDP equivalent and are visible only through the native door |
+
+The slice therefore adds **no** CDP surface. That is a deliberate loss, and
+the mapping records it rather than inventing an adapter-side form model.
+
+## 8. Multi-backend loss matrix (design expectation, not measurement)
+
+| Route | Text value | Checkbox, radio | Select | Submit | Keys |
+|---|---|---|---|---|---|
+| native bounded route | implementable, but needs the shim to model value events and the snapshot to name the role | needs `checked` and radio grouping in the shim, neither of which exists | needs `selected`, `options` and `selectedIndex`, none of which exists | needs `form`, control association and `submit`, none of which exists | needs the activation rules above; no key model exists today |
+| Lightpanda 0.4.0 | a real engine, so the behaviour exists, but nothing in this repository has driven a form through its control host | same | same | same | same |
+| Servo 0.5.0 | a real engine, so the behaviour exists; its route is already narrow and its G1 recovery dependency red, so a form court would measure a route that is not a memory candidate | same | same | same | same |
+
+Only the native route is proposed for implementation. The other two rows stay
+`unsupported_operation` or unverified until each passes the same court, and no
+row changes on inherited evidence.
+
+## 9. Decisions the root must make before any code
+
+1. **Product-code scope.** The slice cannot exist without extending the
+   document shim (checked, radio groups, select and options, form and its
+   controls, `disabled`, `read_only`, `submit`) and the snapshot's roles. That
+   is more than an action vocabulary. Authorise it explicitly or narrow the
+   slice to what today's shim can already honour, which is `set_value` and
+   `press enter` on a textbox and nothing else.
+2. **Revision per action.** Every applied action advancing the revision means
+   one snapshot per field. Accept that cost, or open a separate decision on a
+   bounded batch action.
+3. **Option addressing.** `select_option` by index within the snapshot's
+   bounded option list is proposed. By label would be friendlier and
+   ambiguous; by node reference would need options to be addressable nodes.
+4. **Submit scope.** `GET` only, no body composition. Confirm, or exclude
+   submit from this slice entirely until a body-carrying request has its own
+   authority review.
+
+## 10. Contract compatibility, to be proven not asserted
+
+`control-0.0.1` keeps `action` as exactly `{"kind":"click"}`: the same schema
+file, the same checker branch, the same examples, byte for byte. `0.0.2`
+alone gains the five shapes. The proof obligations are the ones the navigation
+slice already met: the two schemas differ only in identity, version constant
+and the action shapes; a `0.0.2` action sent under `0.0.1` is
+`invalid_request` and is never inferred; each version keeps its own examples;
+and the checker validates the action shape against the version the request
+names.
+
+## 11. Pre-registered court criteria
+
+`form-court.py`, strictly headless, hermetic loopback only, no surface, no
+window, no AppKit, both allocators, fresh host per run, one warm-up plus
+seven runs.
+
+1. **Typed vocabulary**: each action applies on its own roles and is refused
+   typed on every other role; a `disabled` and a `read_only` control refuse;
+   an over-long value, an out-of-range option index and an unknown key are
+   refused before any state changes.
+2. **Events and state**: the ordered events of §3 are observed for each
+   action, the state afterwards is what the action asked for, and a radio set
+   true clears its group.
+3. **Identity**: every applied action advances the revision, an older
+   reference is `stale_revision`, and the returned revision settles
+   `target.wait` without polling.
+4. **Submit**: a form submit navigates atomically with the same identity
+   rules as `target.navigate`; a prevented submit changes nothing; a failed
+   submit leaves values, generation, realm and revision exactly as they were.
+5. **Audit**: one record per applied action, naming the kind and the role,
+   with the value's byte length and never the value, the label, the field
+   name or anything beyond the origin already recorded. The court asserts the
+   ledger's text contains none of the values it typed.
+6. **Memory**: a repeated cycle of edit, reset and submit, and a cycle that
+   replaces the realm, measured as a **differential** against a control arm of
+   identical request count, deadline and target. The navigation increment
+   showed why an absolute cap is the wrong instrument here: what such a soak
+   counts is page-granular allocator retention of a realm built and destroyed
+   per navigation, which moved 114 KB between builds. The form court's
+   pre-registered figures are therefore: the live owners after 128 cycles
+   (values, options and form state the host holds) stay bounded and return to
+   zero at close, and the differential's excess is **reported with its per-run
+   distribution and its observer effect** rather than gated, until a stable
+   instrument exists for it.
+7. **CDP**: the methods of §7 stay `-32601`, proven with the pinned client.
+
+No criterion here is a gate. The slice's verdict follows the same vocabulary
+as the others: keep, narrow, reject.
