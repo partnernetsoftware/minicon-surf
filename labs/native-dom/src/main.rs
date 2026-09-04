@@ -31,6 +31,14 @@ mod surface;
 
 const PROTOCOL: &str = "minicon-surf.control";
 const VERSION: &str = "0.0.1";
+/// 0.0.2 adds the navigation slice and nothing else. Both versions are served
+/// side by side: a request names its version exactly and that version decides
+/// which operations it may use. Nothing is inferred from a request's shape.
+const VERSION_NEXT: &str = "0.0.2";
+const NAVIGATION_OPERATIONS: &[&str] = &["target.navigate", "target.reload", "target.traverse"];
+/// The history window: eight bounded entries, each a committed URL.
+const MAX_HISTORY_ENTRIES: usize = 8;
+const MAX_URL_BYTES: usize = 2000;
 const MAX_REQUEST_BYTES: usize = 65_536;
 const MAX_RESPONSE_BYTES: usize = 4_194_304;
 const MAX_DEADLINE_MS: u64 = 120_000;
@@ -280,9 +288,66 @@ fn unsupported_operation(operation: &str) -> ControlError {
 
 struct Request {
     request_id: String,
+    version: String,
     deadline: Duration,
     operation: String,
     arguments: Value,
+}
+
+/// Whether an operation exists in the version that named it.
+fn operation_available(operation: &str, version: &str) -> bool {
+    OPERATIONS.contains(&operation)
+        || (version == VERSION_NEXT && NAVIGATION_OPERATIONS.contains(&operation))
+}
+
+/// A target's bounded history: committed URLs and a position, nothing else.
+/// No document, realm, body, form, scroll, script, cookie or storage state is
+/// kept, so going back refetches rather than restoring a page.
+#[derive(Debug, Clone)]
+struct History {
+    entries: Vec<String>,
+    position: usize,
+}
+
+impl History {
+    fn new(url: &str) -> History {
+        History {
+            entries: vec![url.to_owned()],
+            position: 0,
+        }
+    }
+
+    /// A navigation commits the final URL: the forward entries are dropped and
+    /// the oldest entry is evicted once the window is full.
+    fn commit(&mut self, url: &str) {
+        self.entries.truncate(self.position + 1);
+        self.entries.push(url.to_owned());
+        while self.entries.len() > MAX_HISTORY_ENTRIES {
+            self.entries.remove(0);
+        }
+        self.position = self.entries.len() - 1;
+    }
+
+    fn at(&self, delta: i64) -> Option<(usize, String)> {
+        let position = i64::try_from(self.position).ok()?.checked_add(delta)?;
+        let position = usize::try_from(position).ok()?;
+        self.entries
+            .get(position)
+            .map(|url| (position, url.clone()))
+    }
+
+    fn bytes(&self) -> usize {
+        self.entries.iter().map(String::len).sum()
+    }
+
+    fn to_json(&self) -> Value {
+        json!({
+            "position": self.position,
+            "length": self.entries.len(),
+            "can_go_back": self.position > 0,
+            "can_go_forward": self.position + 1 < self.entries.len(),
+        })
+    }
 }
 
 fn valid_id(prefix: &str, value: &str) -> bool {
@@ -337,9 +402,12 @@ fn parse_request(bytes: &[u8]) -> Result<Request, Box<(String, ControlError)>> {
     if object.get("protocol").and_then(Value::as_str) != Some(PROTOCOL) {
         return Err(fail("protocol differs"));
     }
-    if object.get("version").and_then(Value::as_str) != Some(VERSION) {
-        return Err(fail("version differs"));
-    }
+    let version = object
+        .get("version")
+        .and_then(Value::as_str)
+        .filter(|value| *value == VERSION || *value == VERSION_NEXT)
+        .ok_or_else(|| fail("version differs"))?
+        .to_owned();
     let deadline_ms = object
         .get("deadline_ms")
         .and_then(Value::as_u64)
@@ -348,8 +416,8 @@ fn parse_request(bytes: &[u8]) -> Result<Request, Box<(String, ControlError)>> {
     let operation = object
         .get("operation")
         .and_then(Value::as_str)
-        .filter(|op| OPERATIONS.contains(op))
-        .ok_or_else(|| fail("operation is not part of control 0.0.1"))?
+        .filter(|op| operation_available(op, &version))
+        .ok_or_else(|| fail("operation is not part of the control version it names"))?
         .to_owned();
     let arguments = object
         .get("arguments")
@@ -358,6 +426,7 @@ fn parse_request(bytes: &[u8]) -> Result<Request, Box<(String, ControlError)>> {
         .ok_or_else(|| fail("arguments must be a bounded object"))?;
     Ok(Request {
         request_id,
+        version,
         deadline: Duration::from_millis(deadline_ms),
         operation,
         arguments,
@@ -428,19 +497,20 @@ fn bounded_u64(
         .ok_or_else(|| invalid(&format!("{key} must be an integer in {min}..={max}")))
 }
 
-fn envelope(request_id: &str, body: Result<Value, ControlError>) -> Vec<u8> {
+fn envelope(request_id: &str, version: &str, body: Result<Value, ControlError>) -> Vec<u8> {
     let response = match body {
         Ok(result) => {
-            json!({"protocol":PROTOCOL,"version":VERSION,"request_id":request_id,"ok":true,"result":result})
+            json!({"protocol":PROTOCOL,"version":version,"request_id":request_id,"ok":true,"result":result})
         }
         Err(error) => {
-            json!({"protocol":PROTOCOL,"version":VERSION,"request_id":request_id,"ok":false,"error":error.to_json()})
+            json!({"protocol":PROTOCOL,"version":version,"request_id":request_id,"ok":false,"error":error.to_json()})
         }
     };
     let bytes = serde_json::to_vec(&response).expect("response serializes");
     if bytes.len() > MAX_RESPONSE_BYTES {
         return envelope(
             request_id,
+            version,
             Err(ControlError::new(
                 "internal",
                 "response exceeds byte limit",
@@ -1305,6 +1375,9 @@ struct Host {
     next_realm: u64,
     realms_retired_total: u64,
     navigations_total: u64,
+    /// One bounded history per target with a URL, kept beside the targets so
+    /// it survives the document swap a navigation performs.
+    histories: BTreeMap<String, History>,
     /// Adapters (today: CDP sessions) registered against live targets. A
     /// record holds names only; the target owns its state and the record is
     /// removed when the target closes.
@@ -1881,6 +1954,7 @@ impl Host {
                 self.next_bridge_request += 1;
                 let request = Request {
                     request_id: format!("req_cdp_{}", self.next_bridge_request),
+                    version: VERSION_NEXT.to_owned(),
                     deadline: Duration::from_millis(5000),
                     operation: operation.to_owned(),
                     arguments,
@@ -2281,7 +2355,13 @@ impl Host {
         // operation's typed failure.
         let target_scoped = matches!(
             request.operation.as_str(),
-            "target.inspect" | "target.snapshot" | "target.act" | "target.wait"
+            "target.inspect"
+                | "target.snapshot"
+                | "target.act"
+                | "target.wait"
+                | "target.navigate"
+                | "target.reload"
+                | "target.traverse"
         );
         let target_id = if target_scoped {
             a.get("target").and_then(Value::as_str).map(str::to_owned)
@@ -2395,9 +2475,13 @@ impl Host {
                     "frame_limit":1,
                     "network":target_network(&target.budget, https),
                     "surface":surface_id,
-                    "scroll_y":target.scroll_y
+                    "scroll_y":target.scroll_y,
+                    "history":self.histories.get(&id).map(History::to_json)
                 }))
             }
+            "target.navigate" => self.target_navigate(a, deadline),
+            "target.reload" => self.target_reload(a, deadline),
+            "target.traverse" => self.target_traverse(a, deadline),
             "target.close" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?;
@@ -2407,6 +2491,7 @@ impl Host {
                 let detached = self.detach_adapters_of(id);
                 let released = self.release_surfaces_of(id);
                 let closed = self.targets.remove(id).expect("checked above");
+                self.histories.remove(id);
                 self.retire_target(&closed);
                 Ok(
                     json!({"kind":"target_closed","target":id,"teardown":{"adapters_detached":detached,"surfaces_released":released,"order":["adapters","surfaces","target"]}}),
@@ -2669,6 +2754,7 @@ impl Host {
             detached += self.detach_adapters_of(&id);
             released += self.release_surfaces_of(&id);
             if let Some(closed) = self.targets.remove(&id) {
+                self.histories.remove(&id);
                 self.retire_target(&closed);
             }
         }
@@ -2817,6 +2903,15 @@ impl Host {
             "network":target_network(&target.budget, self.tls_roots.is_some())
         });
         self.targets.insert(id.clone(), target);
+        // A target opened at a URL starts its history with that URL.
+        if let Some(url) = self
+            .targets
+            .get(&id)
+            .and_then(|target| target.url.as_ref())
+            .map(Url::to_string)
+        {
+            self.histories.insert(id.clone(), History::new(&url));
+        }
         // The page's writes during load reach the profile now; a failed
         // commit keeps the target (its document is real) but reports the
         // failure with the target id, and its storage is read-only.
@@ -3052,6 +3147,152 @@ impl Host {
         target.eval("__mcsComplete()", deadline, &policy)?;
         target.eval(INSTALL_JS, deadline, &policy)?;
         Ok(target)
+    }
+
+    /// The result every navigation operation returns: the identity after the
+    /// swap, the committed URL and the bounded history state.
+    fn navigation_result(&mut self, id: &str, deadline: Instant) -> Result<Value, ControlError> {
+        let policy = self.policy.clone();
+        let target = self.target_mut(id)?;
+        let revision = Self::revision(target, deadline, &policy)?;
+        let history = self
+            .histories
+            .get(id)
+            .ok_or_else(|| {
+                ControlError::new("internal", "target has no history", false).scoped("target", id)
+            })?
+            .to_json();
+        let target = self.targets.get(id).expect("target exists");
+        let url = target
+            .url
+            .as_ref()
+            .map(Url::as_str)
+            .ok_or_else(|| {
+                ControlError::new("internal", "navigated target has no URL", false)
+                    .scoped("target", id)
+            })?;
+        Ok(json!({
+            "kind":"navigation","target":id,"frame":target.frame_id,"generation":target.generation,
+            "realm":target.realm_id,"revision":revision,"url":url,"history":history,
+        }))
+    }
+
+    /// A URL a navigation may address: absolute, `http` or `https`, bounded.
+    /// Whether policy allows reaching it is the fetch's decision, not this one.
+    fn navigation_url(value: &str, id: &str) -> Result<Url, ControlError> {
+        if value.len() > MAX_URL_BYTES {
+            return Err(
+                ControlError::new("invalid_request", "url exceeds its byte bound", false)
+                    .scoped("target", id),
+            );
+        }
+        let url = Url::parse(value).map_err(|_| {
+            ControlError::new("invalid_request", "url is not absolute", false).scoped("target", id)
+        })?;
+        if !matches!(url.scheme(), "http" | "https") {
+            return Err(ControlError::new(
+                "invalid_request",
+                "url scheme is not http or https",
+                false,
+            )
+            .scoped("target", id));
+        }
+        Ok(url)
+    }
+
+    /// The target's current URL; a fixture target has none and cannot be
+    /// navigated by URL in this slice.
+    fn current_url(&self, id: &str) -> Result<String, ControlError> {
+        self.targets
+            .get(id)
+            .ok_or_else(|| not_found("target", id))?
+            .url
+            .as_ref()
+            .map(Url::to_string)
+            .ok_or_else(|| {
+                ControlError::new(
+                    "unsupported_capability",
+                    "this target was opened from a fixture and has no URL to navigate",
+                    false,
+                )
+                .scoped("target", id)
+                .details(json!({"reason":"target_has_no_url"}))
+            })
+    }
+
+    /// `target.navigate`: the document is replaced atomically and the final
+    /// committed URL becomes the newest history entry, dropping any forward
+    /// entries and evicting the oldest once the window is full.
+    fn target_navigate(
+        &mut self,
+        arguments: &Value,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["target", "url"])?;
+        let id = typed_field(object, "target", "target")?.to_owned();
+        let requested = object
+            .get("url")
+            .and_then(Value::as_str)
+            .ok_or_else(|| invalid("url must be a string"))?;
+        let url = Self::navigation_url(requested, &id)?;
+        self.current_url(&id)?;
+        self.navigate(&id, url.as_str(), deadline)?;
+        let committed = self.current_url(&id)?;
+        match self.histories.get_mut(&id) {
+            Some(history) => history.commit(&committed),
+            None => {
+                self.histories.insert(id.clone(), History::new(&committed));
+            }
+        }
+        self.navigation_result(&id, deadline)
+    }
+
+    /// `target.reload`: the same document address again. It appends no entry
+    /// and does not move the position.
+    fn target_reload(
+        &mut self,
+        arguments: &Value,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["target"])?;
+        let id = typed_field(object, "target", "target")?.to_owned();
+        let url = self.current_url(&id)?;
+        self.navigate(&id, &url, deadline)?;
+        self.navigation_result(&id, deadline)
+    }
+
+    /// `target.traverse`: refetch the entry at a signed offset under the
+    /// profile's current policy. No page state is restored, because none was
+    /// kept; only the position moves.
+    fn target_traverse(
+        &mut self,
+        arguments: &Value,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
+        let object = exact_object(arguments, &["target", "delta"])?;
+        let id = typed_field(object, "target", "target")?.to_owned();
+        let delta = object
+            .get("delta")
+            .and_then(Value::as_i64)
+            .filter(|delta| {
+                *delta != 0 && usize::try_from(delta.unsigned_abs()).unwrap_or(usize::MAX) <= MAX_HISTORY_ENTRIES
+            })
+            .ok_or_else(|| invalid("delta must be a non-zero offset within the history window"))?;
+        self.current_url(&id)?;
+        let (position, url) = self
+            .histories
+            .get(&id)
+            .and_then(|history| history.at(delta))
+            .ok_or_else(|| {
+                ControlError::new("not_found", "no history entry at that offset", false)
+                    .scoped("target", &id)
+                    .details(json!({"reason":"history_offset_out_of_window"}))
+            })?;
+        self.navigate(&id, &url, deadline)?;
+        if let Some(history) = self.histories.get_mut(&id) {
+            history.position = position;
+        }
+        self.navigation_result(&id, deadline)
     }
 
     /// Same-frame navigation after a link click: the new document is built
@@ -3485,7 +3726,10 @@ impl Host {
                     "budgets":profile_budgets(),
                 },
                 "sessions":{"objects":self.sessions.len(),"object_limit":MAX_SESSIONS},
-                "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements},
+                "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements,
+                    "history_entries":self.histories.values().map(|h| h.entries.len()).sum::<usize>(),
+                    "history_entry_limit":MAX_HISTORY_ENTRIES,
+                    "history_bytes":self.histories.values().map(History::bytes).sum::<usize>()},
                 "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
                 "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
@@ -3723,6 +3967,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_realm: 0,
         realms_retired_total: 0,
         navigations_total: 0,
+        histories: BTreeMap::new(),
         adapters: BTreeMap::new(),
         next_adapter: 0,
         adapters_detached_total: 0,
@@ -3810,9 +4055,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         let mut operation: Option<String> = None;
         let response = match line {
             Line::Eof => break,
-            Line::Oversized => envelope("req_invalid", Err(invalid("request exceeds byte limit"))),
+            Line::Oversized => envelope(
+                "req_invalid",
+                VERSION,
+                Err(invalid("request exceeds byte limit")),
+            ),
             Line::Bytes(bytes) if bytes.is_empty() => {
-                envelope("req_invalid", Err(invalid("request is empty")))
+                envelope("req_invalid", VERSION, Err(invalid("request is empty")))
             }
             Line::Bytes(bytes) => match parse_request(&bytes) {
                 Ok(request) => {
@@ -3822,11 +4071,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                     host.request_stage("request_parsed", operation.as_deref());
                     let body = host.execute(&request);
                     host.request_stage("after_execute", operation.as_deref());
-                    let serialized = envelope(&request.request_id, body);
+                    let serialized = envelope(&request.request_id, &request.version, body);
                     host.request_stage("response_serialized", operation.as_deref());
                     serialized
                 }
-                Err(error) => envelope(&error.0, Err(error.1)),
+                Err(error) => envelope(&error.0, VERSION, Err(error.1)),
             },
         };
         host.request_stage("request_dropped", operation.as_deref());
