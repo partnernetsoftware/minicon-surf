@@ -814,3 +814,48 @@ leave the parent's origin, refused `cross_origin_action` before dispatch; and,
 unchanged, the existing case where a valid preflight is followed by a fetch
 failure and the handler's mark **is** present. Every reason stays in the fixed
 vocabulary and no URL, query or page text enters any receipt.
+
+## 27. The first hard limit is the realm's, not the host's
+
+§25.1 reasoned about `u64`. That is the second limit. A frame's counter lives
+in a JavaScript realm as a Number, so it stops representing exact increments
+at **2^53 − 1**, far below anything `u64` cares about. Above that the realm
+would answer a counter that did not really advance, and staleness would fail
+silently — the same failure §14 exists to prevent, reached much earlier.
+
+The model therefore has **two** limits, and they are not the same kind:
+
+- **Per frame, `MAX_SAFE_COUNTER = 2^53 − 1`.** Before any action is
+  dispatched in a frame whose counter cannot represent one more exact
+  increment, the action is refused `resource_limit` with reason
+  `revision_saturated`: no event, no write, no counter movement, no identity
+  or history change.
+- **Per target, `u64`, checked.** The aggregate `base + main + Σ children` is
+  computed with checked arithmetic in one helper. A read that is not
+  representable answers `resource_limit`; a read *at* the maximum is a real
+  answer and stays observable.
+
+A navigation folds a **safe** local counter into the base with `checked_add`,
+and preflights room for its own `+1` — and for the generation's `+1` — before
+it fetches a document or builds a realm. A fold that would not be
+representable refuses before the network is touched.
+
+Every place that reports a revision goes through the one helper, the
+`stale_revision` details included, so a child's counter is never omitted from
+a number a caller compares against. No `BigInt`, and no protocol shape moves
+in this increment.
+
+**Court and unit seams.** A court-only knob seeds a frame's counter and a
+target's base, so the boundary is reachable: at `MAX_SAFE − 1` an action still
+applies and advances by one; at `MAX_SAFE` it is refused with no event
+dispatched and nothing moved; at the `u64` aggregate boundary a read still
+answers while an action and a navigation are refused. Unit tests cover the
+helper directly, including a parent replacement folding several children.
+
+§26.3's falsifiers are extended with the whitespace forms the third blocker
+named: a link href and a form `action` and a submitter `formaction` whose
+value carries leading or trailing ASCII whitespace before a mixed-case
+`JavaScript:` scheme, or before a `#fragment`, are refused with the existing
+closed reasons — `scheme_unsupported` and `fragment_unsupported` — before any
+event. This is whitespace normalisation for the values this host already
+judges, not a claim about URL compatibility in general.
