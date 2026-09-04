@@ -475,6 +475,8 @@ fn dispatch(
         "Target.attachToTarget" => target_attach(&params, bridge, connection),
         "Target.detachFromTarget" => target_detach(&params, bridge, connection),
         "Page.getFrameTree" => page_get_frame_tree(session_id, bridge, connection),
+        "Page.navigate" => page_navigate(session_id, &params, bridge, connection),
+        "Page.reload" => page_reload(session_id, &params, bridge, connection),
         "DOM.getDocument" => dom_get_document(session_id, bridge, connection),
         "DOM.querySelector" => dom_query_selector(session_id, &params, bridge, connection),
         "DOM.resolveNode" => dom_resolve_node(session_id, &params, bridge, connection),
@@ -625,6 +627,67 @@ fn snapshot(bridge: &Sender<BridgeRequest>, target: &str) -> CdpResult {
         "target.snapshot",
         json!({"target":target,"format":"semantic","max_bytes":65536,"max_nodes":128}),
     )
+}
+
+/// `Page.navigate` maps onto `target.navigate`. The frame id is projected the
+/// way the frame tree projects it; there is no `loaderId` and no
+/// `frameNavigated` event, because this version projects no events.
+fn page_navigate(
+    session_id: Option<&str>,
+    params: &Value,
+    bridge: &Sender<BridgeRequest>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
+    let target = live_target(session_id, bridge, connection)?;
+    let url = params
+        .get("url")
+        .and_then(Value::as_str)
+        .ok_or((-32602, "url is required"))?;
+    // Arguments this host cannot honour are refused, never ignored.
+    for unsupported in ["referrer", "transitionType", "frameId", "referrerPolicy"] {
+        if params.get(unsupported).is_some() {
+            return Err((-32602, "this host supports only url"));
+        }
+    }
+    let navigated = native(
+        bridge,
+        "target.navigate",
+        json!({"target":target,"url":url}),
+    )?;
+    Ok(navigation_result(&navigated, connection))
+}
+
+/// `Page.reload` maps onto `target.reload`. `ignoreCache` and
+/// `scriptToEvaluateOnLoad` have no native meaning and are refused typed
+/// rather than silently ignored.
+fn page_reload(
+    session_id: Option<&str>,
+    params: &Value,
+    bridge: &Sender<BridgeRequest>,
+    connection: &mut ConnectionState,
+) -> CdpResult {
+    let target = live_target(session_id, bridge, connection)?;
+    for unsupported in [
+        "ignoreCache",
+        "scriptToEvaluateOnLoad",
+        "scriptToEvaluateOnLoadIdentifier",
+    ] {
+        if params.get(unsupported).is_some() {
+            return Err((
+                -32602,
+                "this host supports neither cache control nor load scripts",
+            ));
+        }
+    }
+    let reloaded = native(bridge, "target.reload", json!({"target":target}))?;
+    Ok(navigation_result(&reloaded, connection))
+}
+
+/// The bounded projection of a navigation result: the adapter's frame id and
+/// nothing the native result does not already say.
+fn navigation_result(native_result: &Value, connection: &mut ConnectionState) -> Value {
+    let frame = connection.frame_id(native_result["frame"].as_str().unwrap_or(""));
+    json!({"frameId": frame, "loaderId": ""})
 }
 
 fn page_get_frame_tree(
@@ -828,9 +891,12 @@ mod tests {
         let mut connection = ConnectionState::default();
         for method in [
             "Page.enable",
-            "Page.navigate",
             "Runtime.enable",
             "Network.enable",
+            // History stays unmapped: projecting it would need adapter-scoped
+            // entry ids, and the host is the only history authority.
+            "Page.getNavigationHistory",
+            "Page.navigateToHistoryEntry",
         ] {
             let response = dispatch(
                 json!({"id":1,"method":method,"params":{}}),
@@ -839,5 +905,26 @@ mod tests {
             );
             assert_eq!(response["error"]["code"], -32601, "{method}");
         }
+        // The two navigation methods are mapped now, so they are no longer
+        // "method not found"; without a session they fail on that instead.
+        for method in ["Page.navigate", "Page.reload"] {
+            let response = dispatch(
+                json!({"id":1,"method":method,"params":{"url":"http://127.0.0.1/a"}}),
+                &bridge,
+                &mut connection,
+            );
+            assert_ne!(response["error"]["code"], -32601, "{method} is mapped");
+            assert_eq!(
+                response["error"]["code"], -32602,
+                "{method} needs a session"
+            );
+        }
+        // An argument this host cannot honour is refused, never ignored.
+        let response = dispatch(
+            json!({"id":1,"method":"Page.reload","params":{"ignoreCache":true}}),
+            &bridge,
+            &mut connection,
+        );
+        assert_eq!(response["error"]["code"], -32602, "ignoreCache is refused");
     }
 }

@@ -2036,7 +2036,9 @@ impl Host {
             "adapter.detach" => self.adapter_detach(&arguments),
             "adapter.inspect" => self.adapter_inspect(&arguments),
             _ => {
-                if !OPERATIONS.contains(&operation) {
+                // The bridge speaks the newest version, so the navigation
+                // operations it maps are available to it.
+                if !operation_available(operation, VERSION_NEXT) {
                     return Err("invalid_request".into());
                 }
                 self.next_bridge_request += 1;

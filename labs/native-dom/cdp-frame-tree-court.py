@@ -264,8 +264,22 @@ def main():
                 expect(tag + "a session on B sees B's frame with a different adapter id and never A's",
                        attached_b.get("ok") and tree_b.get("ok") and frame_b_cdp not in (cdp_frame, frame_a, frame_b) and frame_b_cdp != cdp_frame, {"b": frame_b_cdp})
                 expect(tag + "four adapters are registered while both explicit sessions and both auto-attached sessions live", host.ok("memory.report", {})["owners"]["adapters"]["objects"] == 4)
+                # Court amendment, recorded when control 0.0.2 added the
+                # navigation slice: Page.navigate and Page.reload are mapped
+                # now, so they are no longer method-not-found. These targets
+                # are fixtures with no URL, so the mapped call fails typed on
+                # that instead, and the history methods stay unmapped because
+                # the host remains the only history authority.
                 navigate = client.send("A", "Page.navigate", {"url": "https://example.com/"})
-                expect(tag + "Page.navigate is an explicit -32601", cdp_failed(navigate, -32601), navigate)
+                expect(tag + "Page.navigate is mapped and fails typed on a fixture target, not -32601",
+                       not navigate.get("ok") and not cdp_failed(navigate, -32601), navigate)
+                reload_answer = client.send("A", "Page.reload", {})
+                expect(tag + "Page.reload is mapped and fails typed on a fixture target, not -32601",
+                       not reload_answer.get("ok") and not cdp_failed(reload_answer, -32601), reload_answer)
+                for method in ("Page.getNavigationHistory", "Page.navigateToHistoryEntry"):
+                    unmapped = client.send("A", method, {})
+                    expect(tag + f"{method} is an explicit -32601: the host is the only history authority",
+                           cdp_failed(unmapped, -32601), unmapped)
                 enable = client.send("A", "Runtime.enable")
                 expect(tag + "Runtime.enable is an explicit -32601 (no realm projection)", cdp_failed(enable, -32601), enable)
 
