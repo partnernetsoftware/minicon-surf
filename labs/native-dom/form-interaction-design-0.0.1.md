@@ -225,3 +225,132 @@ seven runs.
 
 No criterion here is a gate. The slice's verdict follows the same vocabulary
 as the others: keep, narrow, reject.
+
+## 12. Amendment after the ruling (sections 1 to 11 stay as the proposal)
+
+The root accepted the slice with rulings. Where this section differs from
+what was proposed above, this section governs; the proposal is left intact as
+the record of what was asked.
+
+### 12.1 Scope of the product change
+
+The bounded realm-shim and semantic-snapshot extension needed for all five
+actions is authorised. Two limits on it:
+
+- **The QuickJS realm stays the sole DOM and form authority.** The host mirrors
+  no form state: it reads what the realm reports and writes through the realm.
+  Nothing about a control's value, checked state or selection is remembered
+  outside the realm, so nothing can disagree with it.
+- Only the enumerated properties, roles, associations and event behaviour are
+  added, each with its bound, and every gap stays a recorded loss rather than
+  an approximation. The shim gains `checked` with radio grouping, `selected`,
+  `selectedIndex` and `options`, `disabled` and `readOnly` reflection, the
+  form association of a control and a form's `elements`, and `submit`. It
+  gains nothing else.
+
+### 12.2 One revision per action
+
+Accepted as proposed: every successful action advances the revision, there is
+no batch action in this slice, and the deterministic contract is the returned
+revision together with `stale_revision` on anything older. Batch or
+transaction semantics are a future Agent optimisation, not a gap here.
+
+### 12.3 Choosing an option
+
+`select_option` addresses an option by the numeric index the snapshot gave in
+that revision, and nothing else. An option is **not** a separately addressable
+node, and selection by label is not offered because labels are ambiguous. The
+snapshot reports each option as `{index, label, selected, disabled}`, bounded
+at 64 per select, where the label is informative and never a selector. The
+option's `value` attribute is not exposed in the snapshot; the realm uses it
+internally when a submit serialises, and the audit never records it.
+
+### 12.4 Submit, GET only, and exactly how it serialises
+
+A submit builds a bounded `application/x-www-form-urlencoded` UTF-8 form data
+set from the form's **successful controls** and puts it in the query of the
+resolved action URL.
+
+- **Successful controls** are, in document order within the form: a text input
+  or textarea with a name; a checkbox or radio with a name that is checked; a
+  select's selected option, contributing that option's value; and the explicit
+  submitter when the submit came from a named submit control. A control that
+  is disabled, or has no name, contributes nothing.
+- **Hidden inputs** contribute only because they are modelled explicitly, with
+  a name and a value, and they count against the same per-form control bound.
+- **A checkbox with no value attribute** contributes `on`, as the standard
+  requires.
+- **Encoding**: each name and value is percent-encoded, a space becomes `+`,
+  and pairs are joined with `&` in the order above. The set is UTF-8.
+- **The action URL**: an empty or absent action means the document's current
+  URL. For `GET` the form data set **replaces** any existing query on that
+  URL entirely, and any fragment is dropped, as the standard requires. The
+  result is resolved against the document's URL exactly as a link href is.
+- **Hard limit**: the encoded URL, query included, is at most 2,000 bytes,
+  which is the host's existing URL bound and is smaller than every network
+  bound it passes through. Beyond it the submit is a typed `resource_limit`
+  **before** any state or navigation changes.
+- **`POST`, multipart and file** are refused typed as `unsupported_capability`
+  before any mutation or navigation, and are never simulated by turning them
+  into a `GET`.
+- The navigation a submit performs is the existing atomic one, under the same
+  address, TLS, redirect, byte, deadline and profile policy rules, with the
+  same rollback: a refused or failed submit changes no value, no generation,
+  no realm and no revision.
+
+### 12.5 Values never leave the realm and the page
+
+A form value, an option value and a built query string are page data. They may
+not appear in the audit ledger, the court-only log, an error's details, a
+receipt, or any diagnostic. A record of a submit names the operation, the
+role, the origin of the resolved URL and nothing more. `target.inspect` may
+still report the committed URL, query included, because that is the browser
+state an Agent must be able to read; every diagnostic path uses the origin or
+a redacted URL instead. Court fixtures use fake values only, and the court
+asserts that none of the values it typed appears anywhere in the ledger, the
+court log or the receipt.
+
+### 12.6 Refusals happen before mutation
+
+A disabled or read-only control, an unsupported method, an out-of-range
+index, an over-long value and an over-long resulting URL are all refused
+before anything changes. Reset needs no new action: a click on a reset control
+is already supported and restores the form through the realm.
+
+### 12.7 Memory criteria, numeric and pre-registered
+
+Diagnostics are not a substitute for these. Each is a live-owner fact:
+
+| Criterion | Threshold |
+|---|---|
+| a semantic snapshot of the form fixture | within the caller's `max_bytes`, and the response within its existing bound |
+| forms, controls and options reported | ≤ 16 forms, ≤ 64 controls per form, ≤ 64 options per select |
+| realm live bytes, plateau | after 128 edit-and-reset cycles on the same bounded control, no more than 65,536 bytes above the value after 8 cycles. Linear growth of a 1,024-byte value over 128 cycles would exceed 131,072, so this separates a plateau from linear growth |
+| realm live bytes, tail | the last 64 cycles add no more than 8,192 bytes |
+| audit ring | capped at 64 records, and no value, label or query anywhere in it |
+| after a submit replaces the realm | the new realm's live bytes are within 65,536 of a freshly opened document's |
+| after target and session close | every form, option, control and audit owner reads zero |
+| arena counters | blocks leaked stays zero and arenas unmapped equals arenas retired |
+
+The default and arena footprint differential, its per-run distribution and its
+observer effect are reported as **diagnostics only**. They are never a pass,
+never a substitute for the criteria above, and no cap is set on them, for the
+reason the navigation increment recorded.
+
+### 12.8 Unchanged by this ruling
+
+The CDP methods of §7 stay explicitly `-32601`; the slice adds no adapter
+surface. Lightpanda and Servo stay unverified and change only on their own
+measured evidence. `control-0.0.1` keeps `action` as exactly
+`{"kind":"click"}`, byte for byte, and only `0.0.2` gains the five shapes.
+
+### 12.9 Order of work, frozen
+
+1. This amendment.
+2. The `0.0.2` schema, contract checker and examples, and the CDP mapping
+   entries with their losses.
+3. The court, frozen before the host changes.
+4. The shim and host implementation.
+5. One measurement pass against §12.7.
+
+Work stops on any failed frozen semantic or live-memory criterion.
