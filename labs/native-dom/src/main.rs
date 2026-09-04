@@ -331,15 +331,17 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
     if (!allowed) return refuse("key_role_unsupported");
     if (enter && isLine && !el.form) return refuse("key_role_unsupported");
     const keyRole = isCheck ? type : (isButton ? "button" : (t === "a" ? "link" : "form"));
-    // The declared model: all three phases are dispatched and any cancellation
-    // stops the activation. Only what the handlers changed remains.
-    let canceled = false;
-    for (const name of ["keydown", "keypress", "keyup"]) {{
+    // The ruled sequence: a canceled keydown suppresses keypress, keyup is
+    // dispatched in every case, and the activation waits for all of it.
+    const phase = (name) => {{
       const ev = new Event(name, {{ bubbles: true, cancelable: true }});
       ev.key = enter ? "Enter" : " ";
       el.dispatchEvent(ev);
-      if (ev.defaultPrevented) canceled = true;
-    }}
+      return ev.defaultPrevented;
+    }};
+    let canceled = phase("keydown");
+    if (!canceled) canceled = phase("keypress");
+    if (phase("keyup")) canceled = true;
     if (canceled) return JSON.stringify({{ applied: false, default_prevented: true, role: keyRole }});
     if (!enter && isCheck) {{
       // A radio is set, never toggled, and the whole group is captured so a
