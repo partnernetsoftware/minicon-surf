@@ -908,3 +908,41 @@ from the closed vocabulary, which is all a caller learns.
 main-frame falsifier: a page whose queued microtask rewrites a control's value
 between the phases, proving that no event is dispatched, nothing navigates and
 nothing moves, while the same page without the rewrite activates normally.
+
+## 30. Three more from the code audit, amended before the fix
+
+### 30.1 A stale detail reported a frame-local number as if it were global
+
+Both stale paths in `target_act` — the one the preflight takes and the one the
+activation takes — write `current_revision` straight from the counter the
+realm answered. That number is one frame's, so for a main action it omits
+every child's counter and for a child action it omits the main frame's and its
+siblings'. It also bypasses the checked helper the rest of the host uses,
+which the previous report claimed it did not.
+
+Both paths now compute the same value the same way. The host already holds the
+global revision it validated against and the frame counter it expected, so the
+true global is `validated − expected + reported`, in checked arithmetic; a
+result that is not representable refuses `resource_limit` rather than
+reporting a number. A falsifier makes another frame's counter non-zero first,
+so a local number and a global one cannot coincide by accident.
+
+### 30.2 A scroll changed observable state before it checked it could
+
+`apply_surface_input` assigns `scroll_y`, then evaluates the increment, and
+only afterwards drops the report if the global revision does not fit. At the
+boundary it therefore moves the page and advances the realm's counter while
+telling the court the input was dropped, and the increment is lost from the
+host's view either way. Both limits are checked **before** `scroll_y` is
+touched and before anything is evaluated; a refusal leaves the scroll offset
+and the revision exactly as they were.
+
+### 30.3 The surface click derived the main counter by hand
+
+It folded the children with saturating adds and subtracted them from the
+global, duplicating arithmetic that now exists once. There is one way to get a
+frame's counter from the global — a checked helper — and both surface paths
+use it.
+
+The regressions are unit seams on the helpers. Nothing here runs a surface
+process, and no visual path is exercised.
