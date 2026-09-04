@@ -143,7 +143,7 @@
   {
    "check": "[system] the parent still committed and the refusals were charged as denied",
    "detail": {
-    "denied": 2
+    "denied": 1
    },
    "passed": true
   },
@@ -167,24 +167,96 @@
    "passed": true
   },
   {
+   "check": "[system] a same-origin redirect still becomes a child, reported at its final URL",
+   "detail": {
+    "final": "child-a.html",
+    "frames": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a redirect that leaves the origin does not become a child",
+   "detail": {
+    "frames": 1,
+    "skipped": {
+     "cross_origin_redirect": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a refused redirect's cookie never reaches the profile, a kept one's does",
+   "detail": {
+    "kept": true,
+    "leaked": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a response that is not text/html is refused before any parse",
+   "detail": {
+    "skipped": {
+     "not_html": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a refused frame is never reported as a refused script",
+   "detail": {
+    "scripts_skipped": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every refusal class is tallied under its own fixed reason",
+   "detail": {
+    "skipped": {
+     "cross_origin_src": 1,
+     "malformed_src": 1,
+     "no_src": 1,
+     "scheme_not_fetched": 1,
+     "srcdoc": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] children over the bound are tallied as limit skips, not as refusals",
+   "detail": {
+    "skipped": {
+     "frame_limit": 2
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the frame owner counts the live targets' skips and releases them on close",
+   "detail": {
+    "after_close": 5,
+    "live": 7
+   },
+   "passed": true
+  },
+  {
    "check": "[system] M1: one child costs at most 262144 live owner bytes",
    "detail": {
-    "owner_bytes": 247000
+    "owner_bytes": 247034
    },
    "passed": true
   },
   {
    "check": "[system] M2: seven children cost at most 1835008 live owner bytes",
    "detail": {
-    "owner_bytes": 1726710
+    "owner_bytes": 1726956
    },
    "passed": true
   },
   {
    "check": "[system] M3: repeated parent navigation returns to the one-child level",
    "detail": {
-    "one_child": 247000,
-    "owner_bytes": 247000
+    "one_child": 247034,
+    "owner_bytes": 247034
    },
    "passed": true
   },
@@ -199,7 +271,7 @@
    "check": "[system] M4: the footprint's growth does not accelerate over the cycles",
    "detail": {
     "first_half": 0,
-    "second_half": 32768
+    "second_half": 0
    },
    "passed": true
   },
@@ -215,9 +287,9 @@
    "check": "[system] M5: the children's arm retains at most 1048576 more than the identical childless arm",
    "detail": {
     "allocator": "system",
-    "children_bytes": 16384,
+    "children_bytes": 32768,
     "control_bytes": 0,
-    "excess_bytes": 16384
+    "excess_bytes": 32768
    },
    "passed": true
   },
@@ -363,7 +435,7 @@
   {
    "check": "[arena] the parent still committed and the refusals were charged as denied",
    "detail": {
-    "denied": 2
+    "denied": 1
    },
    "passed": true
   },
@@ -387,24 +459,96 @@
    "passed": true
   },
   {
+   "check": "[arena] a same-origin redirect still becomes a child, reported at its final URL",
+   "detail": {
+    "final": "child-a.html",
+    "frames": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a redirect that leaves the origin does not become a child",
+   "detail": {
+    "frames": 1,
+    "skipped": {
+     "cross_origin_redirect": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a refused redirect's cookie never reaches the profile, a kept one's does",
+   "detail": {
+    "kept": true,
+    "leaked": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a response that is not text/html is refused before any parse",
+   "detail": {
+    "skipped": {
+     "not_html": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a refused frame is never reported as a refused script",
+   "detail": {
+    "scripts_skipped": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every refusal class is tallied under its own fixed reason",
+   "detail": {
+    "skipped": {
+     "cross_origin_src": 1,
+     "malformed_src": 1,
+     "no_src": 1,
+     "scheme_not_fetched": 1,
+     "srcdoc": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] children over the bound are tallied as limit skips, not as refusals",
+   "detail": {
+    "skipped": {
+     "frame_limit": 2
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the frame owner counts the live targets' skips and releases them on close",
+   "detail": {
+    "after_close": 5,
+    "live": 7
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] M1: one child costs at most 262144 live owner bytes",
    "detail": {
-    "owner_bytes": 240152
+    "owner_bytes": 240170
    },
    "passed": true
   },
   {
    "check": "[arena] M2: seven children cost at most 1835008 live owner bytes",
    "detail": {
-    "owner_bytes": 1677398
+    "owner_bytes": 1677564
    },
    "passed": true
   },
   {
    "check": "[arena] M3: repeated parent navigation returns to the one-child level",
    "detail": {
-    "one_child": 240152,
-    "owner_bytes": 240136
+    "one_child": 240170,
+    "owner_bytes": 240170
    },
    "passed": true
   },
@@ -418,7 +562,7 @@
   {
    "check": "[arena] M4: the footprint's growth does not accelerate over the cycles",
    "detail": {
-    "first_half": 32768,
+    "first_half": 65536,
     "second_half": 0
    },
    "passed": true
@@ -435,8 +579,8 @@
    "check": "[arena] M5: the children's arm retains at most 1048576 more than the identical childless arm",
    "detail": {
     "allocator": "arena",
-    "children_bytes": 81920,
-    "control_bytes": 49152,
+    "children_bytes": 49152,
+    "control_bytes": 16384,
     "excess_bytes": 32768
    },
    "passed": true
@@ -445,6 +589,16 @@
    "check": "[arena] no child URL, path or document text appears in the audit",
    "detail": {
     "audit_bytes": 17653
+   },
+   "passed": true
+  },
+  {
+   "check": "[failure] a child that cannot be built is skipped and the parent still commits",
+   "detail": {
+    "frames": 1,
+    "skipped": {
+     "realm_build_failed": 1
+    }
    },
    "passed": true
   },
@@ -463,20 +617,22 @@
    "passed": true
   },
   {
-   "check": "[cdp] recorded loss: a projected child carries its parent's url until \u00a712.2 is ruled",
+   "check": "[cdp] a projected child carries its own url, never its parent's",
    "detail": {
-    "same_url": true
+    "differs": true
    },
    "passed": true
   }
  ],
- "checks_passed": 63,
- "checks_total": 63,
+ "checks_passed": 80,
+ "checks_total": 80,
  "child_document_text_in_responses": [
-  "embedded alpha"
+  "embedded alpha",
+  "child-a.html",
+  "child-nested"
  ],
  "court": "native-dom child frames (control 0.0.2)",
- "host_sha256": "5f8d068084da814056559f468dbfd8a3458e24eae8d459ec6d67010ea35610d5",
+ "host_sha256": "45e1d1a0291cee563165e987d2f2f73b4a98929163fe3e392c5fd3e1ee6aae55",
  "limitations": [
   "design-frozen court: it fails until bounded child frames exist on the native route",
   "observation only: acting inside a child needs a node reference that can name a frame, which is unruled",

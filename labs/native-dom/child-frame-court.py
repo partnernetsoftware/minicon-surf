@@ -34,6 +34,17 @@ against the identical childless arm, with the same 1 MiB bound and both
 absolute numbers reported. The cap's number did not move; what it is measured
 against did, and the reason is here rather than erased.
 
+Mechanism corrections while implementing §18, recorded in §19: this court
+allowed one origin, so its cross-origin-redirect criterion was refused by the
+allowlist before the origin rule was ever reached and would have passed
+against a host with no post-redirect check at all. Both origins are now
+allowed. Two frozen numbers were also wrong rather than the meanings behind
+them: nine embedded documents skip two over the bound of seven, not one, and the
+owner's skip total is a live-owner ledger like every other number in the
+report, so it counts what the live targets skipped rather than everything the
+run ever skipped. The criterion now says so and proves it falls when a target
+is closed.
+
 Second extension (the root's ruling and its blockers, §18): the court now
 proves that a same-origin redirect still becomes a child and is reported at
 its final URL, that a redirect leaving the origin does not become a child,
@@ -224,7 +235,7 @@ def qualify_build_failure(binary, origin, expect, tag):
         process = subprocess.Popen(
             [binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
              "--config-dir", str(Path(directory) / "config"), "--allow-origin", origin,
-             "--court-child-build-failure"],
+             "--court-child-build-failure", "1"],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             text=True, env=environment)
         counter = [0]
@@ -318,6 +329,23 @@ def main():
         for allocator in ("system", "arena"):
             with tempfile.TemporaryDirectory(prefix="minicon-surf-child-court-") as directory:
                 host = RETENTION.Host(args.binary, directory, origin, allocator)
+                # Both loopback origins are allowed, so a refused redirect is
+                # refused for leaving the origin and not for the allowlist.
+                host.process.stdin.close()
+                host.process.wait(timeout=15)
+                environment = {k: v for k, v in os.environ.items() if k != VISIBLE_ENV}
+                for knob in RETENTION.ALLOCATOR_KNOBS.values():
+                    if knob:
+                        environment.pop(knob, None)
+                if RETENTION.ALLOCATOR_KNOBS[allocator]:
+                    environment[RETENTION.ALLOCATOR_KNOBS[allocator]] = "1"
+                host.process = subprocess.Popen(
+                    [args.binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+                     "--config-dir", str(Path(directory) / "config2"),
+                     "--allow-origin", origin, "--allow-origin", other_origin],
+                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                    text=True, env=environment)
+                host.counter = 0
                 tag = f"[{allocator}] "
 
                 def call(operation, arguments, version="0.0.2", deadline_ms=30000):
@@ -559,16 +587,21 @@ def main():
                     policy_tally = tally(policy_target)
                     expect(tag + "every refusal class is tallied under its own fixed reason",
                            policy_tally == {"cross_origin_src": 1, "srcdoc": 1, "malformed_src": 1,
-                                            "no_src": 1},
+                                            "no_src": 1, "scheme_not_fetched": 1},
                            {"skipped": policy_tally})
-                    expect(tag + "the ninth child is tallied as a limit skip, not as a refusal",
-                           tally(nine) == {"frame_limit": 1}, {"skipped": tally(nine)})
-                    expect(tag + "the frame owner counts every skip",
-                           ok("memory.report", {})["owners"]["frames"]["skipped_total"] >= 8,
-                           {"skipped_total": ok("memory.report", {})["owners"]["frames"].get("skipped_total")})
+                    expect(tag + "children over the bound are tallied as limit skips, not as refusals",
+                           tally(nine) == {"frame_limit": 2}, {"skipped": tally(nine)})
+                    # The tally is a live-owner ledger like every other number
+                    # in the report: it counts what the live targets skipped and
+                    # it falls when one of them is closed.
+                    live_total = ok("memory.report", {})["owners"]["frames"]["skipped_total"]
+                    ok("target.close", {"target": nine})
+                    after_close = ok("memory.report", {})["owners"]["frames"]["skipped_total"]
+                    expect(tag + "the frame owner counts the live targets' skips and releases them on close",
+                           live_total == 7 and after_close == 5,
+                           {"live": live_total, "after_close": after_close})
 
                     # 7. Memory, pre-registered.
-                    ok("target.close", {"target": nine})
                     ok("target.close", {"target": policy_target})
                     ok("target.close", {"target": one})
                     ok("target.close", {"target": none})

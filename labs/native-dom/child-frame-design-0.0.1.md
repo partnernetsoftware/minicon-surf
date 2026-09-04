@@ -511,3 +511,33 @@ tallied under its own fixed reason and none of them appears in
 `scripts_skipped`; and the frame owner's `skipped_total` counts them. The
 memory criteria are rerun unchanged, with URL bytes now inside the owner
 accounting and the caps where they were frozen.
+
+## 19. Amendment while implementing §18: one more reason, and two court arithmetic errors
+
+Running the court §18 froze exposed three things. Recorded in order; §§1–18
+stay as written.
+
+**19.1 `about:blank` was being reported as cross-origin.** The closed set of
+§18.8 had no reason for a scheme that is never fetched, so `about:blank`
+resolved, failed the same-origin test and was tallied `cross_origin_src`.
+That is the same class of mislabelling §18.8 exists to remove: the frame was
+not refused for its origin, it was refused for its scheme. The closed set
+gains a twelfth reason, **`scheme_not_fetched`**, tested before the origin so
+each refusal carries the reason that is actually true of it.
+
+**19.2 The court's own arithmetic.** Two frozen criteria carried wrong
+numbers, not wrong meanings. A page with nine embedded documents skips **two**
+over the bound of seven, where the criterion said one. And the frame owner's
+`skipped_total` is a live-owner ledger, like every other number in that
+report: it counts what the live targets skipped, not everything a run ever
+skipped, so the criterion now says that and proves it falls when a target is
+closed. Both are corrected as mechanism, the meanings unchanged.
+
+**19.3 The cross-origin-redirect criterion was not testing what it claims.**
+The court allowed one origin, so the refused redirect never reached the
+origin rule: the fetch refused it first for being outside the allowlist and
+tallied `fetch_failed`. The ruling is explicit that a same-origin URL
+redirecting to **another allowlisted origin** must not become a child, so the
+court now allows both of its origins and the criterion exercises the rule it
+names. This one mattered: as frozen, it would have passed against a host with
+no post-redirect origin check at all.
