@@ -38,6 +38,11 @@ freshly opened form page. No criterion moved.
 Completion, not a movement: group 7 was frozen in the design and missing from
 the first implementation of this file. It is implemented now against the
 pinned client.
+
+Third amendment (mechanism): three checks put whole option objects into their
+details, so the fixture's labels reached the receipt. A label is page text and
+a receipt carries none, so the details now report the shape of the options and
+not their labels. No criterion moved.
 """
 
 import argparse
@@ -163,6 +168,16 @@ def node(snap, role, name=None, index=0):
     return found[index]["reference"] if len(found) > index else None
 
 
+def shape(options):
+    """What a check may say about options: their shape, never their text."""
+    if not isinstance(options, list):
+        return {"options": type(options).__name__}
+    return {"count": len(options),
+            "fields": sorted({key for option in options for key in option}),
+            "selected_index": next((o.get("index") for o in options if o.get("selected")), None),
+            "disabled_count": sum(1 for o in options if o.get("disabled"))}
+
+
 def act(host, target, reference, action, deadline_ms=15000, validate=True):
     return host.call("target.act", {"target": target, "reference": reference, "action": action},
                      deadline_ms, validate=validate)
@@ -223,9 +238,9 @@ def run(binary, allocator, origin, expect, tag):
             expect(tag + "a select reports bounded options with index, label, selected and disabled",
                    isinstance(options, list) and 0 < len(options) <= CAPS["max_options_per_select"]
                    and all({"index", "label", "selected", "disabled"} <= set(o) for o in options),
-                   options)
+                   shape(options))
             expect(tag + "the snapshot reports no option value",
-                   all("value" not in o for o in (options or [])), options)
+                   all("value" not in o for o in (options or [])), shape(options))
             forms = [n for n in snap.get("nodes", []) if n.get("role") == "form"]
             expect(tag + "a form reports its bounded controls and its method",
                    forms and isinstance(forms[0].get("controls"), list)
@@ -270,7 +285,7 @@ def run(binary, allocator, origin, expect, tag):
             snap = snapshot(host, target)
             options = next(n for n in snap["nodes"] if n.get("role") == "select")["options"]
             expect(tag + "select_option chooses by the snapshot's index",
-                   chosen.get("ok") and options[1]["selected"] is True, options)
+                   chosen.get("ok") and options[1]["selected"] is True, shape(options))
 
             # 2b. Every other role is refused typed, before any change.
             wrong = act(host, target, node(snap, "select"), {"kind": "set_value", "value": "x"})

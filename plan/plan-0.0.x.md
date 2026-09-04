@@ -1162,7 +1162,25 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [ ] Proposed, design only, nothing implemented and nothing measured: an
+- [~] Implemented and measured on the native route: the agent-native form
+  interaction slice (`labs/native-dom/form-interaction-design-0.0.1.md`). The
+  realm-shim gained exactly the enumerated model, checked with radio grouping,
+  selection and options, disabled and read-only reflection, form association
+  and submit, and the realm stays the only authority: the host keeps no form
+  state. The snapshot names checkbox, radio, select and form with bounded
+  facts and excludes credential and file sources. `target.act` takes the five
+  0.0.2 actions beside the unchanged click, with every refusal before any
+  mutation, one revision per successful action, a GET-only submit that
+  serialises inside the realm and navigates atomically, and an audit that
+  records the kind, the outcome and a value's byte length and never a value.
+  The frozen court passes 69 of 69 under both allocators including its memory
+  criteria, the plateau over 128 edit and reset cycles among them, and no
+  typed value, option label or query appears in the ledger, the court log or
+  the receipt. `control-0.0.1` is unchanged byte for byte. The slice adds no
+  CDP surface, recorded as a loss and proven with the pinned client. G1, G3,
+  P6 and G6 stay open.
+- [ ] Superseded description of the same node, kept for the record: proposed,
+  design only, nothing implemented and nothing measured: an
   agent-native form interaction slice
   (`labs/native-dom/form-interaction-design-0.0.1.md`). `target.act` offers
   exactly one action today, a click on a link, a button or a button-like

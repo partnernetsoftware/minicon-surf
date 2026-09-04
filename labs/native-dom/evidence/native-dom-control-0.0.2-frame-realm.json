@@ -70,7 +70,7 @@
         "navigated": true,
         "network": {
           "bytes": 0,
-          "denied": 1,
+          "denied": 0,
           "fetches": 0
         },
         "realm": "realm_3",
@@ -115,20 +115,24 @@
         "kind": "action",
         "navigated": true,
         "network": {
-          "bytes": 827,
+          "bytes": 341,
           "denied": 0,
-          "fetches": 2
+          "fetches": 1
         },
         "realm": "realm_5",
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:49487/about.html"
+        "url": "http://127.0.0.1:49204/about.html"
       },
       "passed": true
     },
     {
-      "check": "[system] the navigation fetch is charged to the target's own budget",
+      "check": "[system] the committed document owns a fresh budget and the lifetime total still counts the fetch",
+      "detail": {
+        "after": 2,
+        "before": 1
+      },
       "passed": true
     },
     {
@@ -187,7 +191,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:49487/notfound"
+          "url": "http://127.0.0.1:49204/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -312,7 +316,7 @@
         "navigated": true,
         "network": {
           "bytes": 0,
-          "denied": 1,
+          "denied": 0,
           "fetches": 0
         },
         "realm": "realm_3",
@@ -357,20 +361,24 @@
         "kind": "action",
         "navigated": true,
         "network": {
-          "bytes": 827,
+          "bytes": 341,
           "denied": 0,
-          "fetches": 2
+          "fetches": 1
         },
         "realm": "realm_5",
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:49487/about.html"
+        "url": "http://127.0.0.1:49204/about.html"
       },
       "passed": true
     },
     {
-      "check": "[arena] the navigation fetch is charged to the target's own budget",
+      "check": "[arena] the committed document owns a fresh budget and the lifetime total still counts the fetch",
+      "detail": {
+        "after": 2,
+        "before": 1
+      },
       "passed": true
     },
     {
@@ -429,7 +437,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:49487/notfound"
+          "url": "http://127.0.0.1:49204/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -489,17 +497,17 @@
   "checks_total": 62,
   "footprint_bytes": {
     "arena": {
-      "empty": 1966416,
-      "post_close": 2752848,
-      "two_fixture_targets_live": 2916736
+      "empty": 1999208,
+      "post_close": 2802024,
+      "two_fixture_targets_live": 3015064
     },
     "system": {
       "empty": 1966416,
-      "post_close": 4407632,
-      "two_fixture_targets_live": 3621200
+      "post_close": 4538704,
+      "two_fixture_targets_live": 3637584
     }
   },
-  "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
+  "host_sha256": "de84558db6609d704de3eb056169350631472cf7d3cacd8dc587c19af48239b0",
   "losses": [
     "no child frames: every native-dom target is one main frame; frame_limit is 1",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",

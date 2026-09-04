@@ -1,0 +1,819 @@
+{
+ "caps": {
+  "audit_entries": 64,
+  "max_controls_per_form": 64,
+  "max_forms": 16,
+  "max_options_per_select": 64,
+  "max_url_bytes": 2000,
+  "max_value_bytes": 1024,
+  "realm_after_submit_bytes": 65536,
+  "realm_plateau_bytes": 65536,
+  "realm_tail_bytes": 8192
+ },
+ "checks": [
+  {
+   "check": "[system] the snapshot names checkbox, radio, select and form",
+   "detail": [
+    "button",
+    "checkbox",
+    "form",
+    "heading",
+    "label",
+    "radio",
+    "select",
+    "textbox"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] a select reports bounded options with index, label, selected and disabled",
+   "detail": {
+    "count": 3,
+    "disabled_count": 1,
+    "fields": [
+     "disabled",
+     "index",
+     "label",
+     "selected"
+    ],
+    "selected_index": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the snapshot reports no option value",
+   "detail": {
+    "count": 3,
+    "disabled_count": 1,
+    "fields": [
+     "disabled",
+     "index",
+     "label",
+     "selected"
+    ],
+    "selected_index": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a form reports its bounded controls and its method",
+   "detail": {
+    "controls": [
+     "node_4",
+     "node_6",
+     "node_7",
+     "node_8",
+     "node_9",
+     "node_11",
+     "node_12",
+     "node_13",
+     "node_15",
+     "node_5",
+     "node_10",
+     "node_14"
+    ],
+    "dom_id": "f",
+    "has_action": true,
+    "method": "get",
+    "name": "f",
+    "reference": {
+     "node": "node_2",
+     "revision": 0,
+     "target": "target_1"
+    },
+    "role": "form"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every control reports disabled and read_only",
+   "detail": [
+    "heading",
+    "form",
+    "label",
+    "textbox",
+    "textbox",
+    "checkbox",
+    "checkbox",
+    "radio",
+    "radio",
+    "select",
+    "textbox",
+    "textbox",
+    "textbox",
+    "button",
+    "button"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] set_value applies to a textbox and reports only the byte length",
+   "passed": true
+  },
+  {
+   "check": "[system] the applied action advanced the revision",
+   "detail": {
+    "after": 1,
+    "before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the same reference is stale after its own action",
+   "detail": {
+    "code": "stale_revision",
+    "details": {
+     "current_revision": 1,
+     "reference_revision": 0
+    },
+    "message": "node reference revision no longer matches the target",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] set_checked applies to a checkbox",
+   "passed": true
+  },
+  {
+   "check": "[system] the snapshot shows the checkbox checked",
+   "passed": true
+  },
+  {
+   "check": "[system] setting one radio of a group clears the others",
+   "detail": [
+    false,
+    true
+   ],
+   "passed": true
+  },
+  {
+   "check": "[system] select_option chooses by the snapshot's index",
+   "detail": {
+    "count": 3,
+    "disabled_count": 1,
+    "fields": [
+     "disabled",
+     "index",
+     "label",
+     "selected"
+    ],
+    "selected_index": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] set_value on a select is refused typed",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "role_mismatch"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] set_checked on a textbox is refused typed",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "role_mismatch"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a disabled control refuses before any change",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "control_disabled"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a read-only control refuses set_value",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "control_read_only"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an over-long value is refused before any change",
+   "detail": {
+    "code": "invalid_request",
+    "message": "value exceeds its byte bound",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an option index outside the list is refused typed",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "option_out_of_range"
+    },
+    "message": "no such option",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space toggles a checkbox",
+   "detail": {
+    "after": [
+     false,
+     false
+    ],
+    "before": [
+     true,
+     false
+    ],
+    "error": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] submit navigates with the serialised query",
+   "detail": {
+    "query_bytes": 71
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the query excludes disabled and unnamed controls",
+   "detail": {
+    "query_bytes": 71
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the submit replaced the document",
+   "passed": true
+  },
+  {
+   "check": "[system] the committed URL stays inside its bound",
+   "passed": true
+  },
+  {
+   "check": "[system] a post form is refused typed before any mutation or navigation",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "form_method_unsupported"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_2",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ledger records the actions without any value, label or query",
+   "detail": {
+    "count": 18,
+    "limit": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the court-only log holds no typed value",
+   "passed": true
+  },
+  {
+   "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
+   "detail": {
+    "at_128": 539616,
+    "at_8": 539616,
+    "cap": 65536,
+    "growth": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the last cycles add almost nothing",
+   "detail": {
+    "at_128": 539616,
+    "at_64": 539616,
+    "cap": 8192
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the realm after a submit is close to a freshly opened one",
+   "detail": {
+    "after_submit": 487936,
+    "fresh": 525584
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the audit ring stays capped",
+   "detail": {
+    "audit_bytes": 6190,
+    "audit_capacity_bytes": 6144,
+    "audit_dropped_total": 83,
+    "audit_entries": 64,
+    "audit_entry_limit": 64,
+    "object_limit": 8,
+    "objects": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every owner returns to zero after the closes",
+   "detail": {
+    "elements": 0,
+    "fixture_bytes": 0,
+    "history_bytes": 0,
+    "history_entries": 0,
+    "history_entry_limit": 8,
+    "lifetime": [],
+    "object_limit": 8,
+    "objects": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the arena counters hold",
+   "detail": {
+    "dedicated_arenas": [],
+    "dedicated_zones": [],
+    "malloc_bytes": 0,
+    "memory_limit_bytes": 16777216,
+    "objects": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[arena] the snapshot names checkbox, radio, select and form",
+   "detail": [
+    "button",
+    "checkbox",
+    "form",
+    "heading",
+    "label",
+    "radio",
+    "select",
+    "textbox"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] a select reports bounded options with index, label, selected and disabled",
+   "detail": {
+    "count": 3,
+    "disabled_count": 1,
+    "fields": [
+     "disabled",
+     "index",
+     "label",
+     "selected"
+    ],
+    "selected_index": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the snapshot reports no option value",
+   "detail": {
+    "count": 3,
+    "disabled_count": 1,
+    "fields": [
+     "disabled",
+     "index",
+     "label",
+     "selected"
+    ],
+    "selected_index": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a form reports its bounded controls and its method",
+   "detail": {
+    "controls": [
+     "node_4",
+     "node_6",
+     "node_7",
+     "node_8",
+     "node_9",
+     "node_11",
+     "node_12",
+     "node_13",
+     "node_15",
+     "node_5",
+     "node_10",
+     "node_14"
+    ],
+    "dom_id": "f",
+    "has_action": true,
+    "method": "get",
+    "name": "f",
+    "reference": {
+     "node": "node_2",
+     "revision": 0,
+     "target": "target_1"
+    },
+    "role": "form"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every control reports disabled and read_only",
+   "detail": [
+    "heading",
+    "form",
+    "label",
+    "textbox",
+    "textbox",
+    "checkbox",
+    "checkbox",
+    "radio",
+    "radio",
+    "select",
+    "textbox",
+    "textbox",
+    "textbox",
+    "button",
+    "button"
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] set_value applies to a textbox and reports only the byte length",
+   "passed": true
+  },
+  {
+   "check": "[arena] the applied action advanced the revision",
+   "detail": {
+    "after": 1,
+    "before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the same reference is stale after its own action",
+   "detail": {
+    "code": "stale_revision",
+    "details": {
+     "current_revision": 1,
+     "reference_revision": 0
+    },
+    "message": "node reference revision no longer matches the target",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] set_checked applies to a checkbox",
+   "passed": true
+  },
+  {
+   "check": "[arena] the snapshot shows the checkbox checked",
+   "passed": true
+  },
+  {
+   "check": "[arena] setting one radio of a group clears the others",
+   "detail": [
+    false,
+    true
+   ],
+   "passed": true
+  },
+  {
+   "check": "[arena] select_option chooses by the snapshot's index",
+   "detail": {
+    "count": 3,
+    "disabled_count": 1,
+    "fields": [
+     "disabled",
+     "index",
+     "label",
+     "selected"
+    ],
+    "selected_index": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] set_value on a select is refused typed",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "role_mismatch"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] set_checked on a textbox is refused typed",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "role_mismatch"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a disabled control refuses before any change",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "control_disabled"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a read-only control refuses set_value",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "control_read_only"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an over-long value is refused before any change",
+   "detail": {
+    "code": "invalid_request",
+    "message": "value exceeds its byte bound",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an option index outside the list is refused typed",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "option_out_of_range"
+    },
+    "message": "no such option",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space toggles a checkbox",
+   "detail": {
+    "after": [
+     false,
+     false
+    ],
+    "before": [
+     true,
+     false
+    ],
+    "error": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] submit navigates with the serialised query",
+   "detail": {
+    "query_bytes": 71
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the query excludes disabled and unnamed controls",
+   "detail": {
+    "query_bytes": 71
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the submit replaced the document",
+   "passed": true
+  },
+  {
+   "check": "[arena] the committed URL stays inside its bound",
+   "passed": true
+  },
+  {
+   "check": "[arena] a post form is refused typed before any mutation or navigation",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "reason": "form_method_unsupported"
+    },
+    "message": "this action does not apply to that control",
+    "retryable": false,
+    "scope": {
+     "id": "target_2",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ledger records the actions without any value, label or query",
+   "detail": {
+    "count": 18,
+    "limit": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the court-only log holds no typed value",
+   "passed": true
+  },
+  {
+   "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
+   "detail": {
+    "at_128": 525744,
+    "at_8": 525744,
+    "cap": 65536,
+    "growth": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the last cycles add almost nothing",
+   "detail": {
+    "at_128": 525744,
+    "at_64": 525680,
+    "cap": 8192
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the realm after a submit is close to a freshly opened one",
+   "detail": {
+    "after_submit": 473360,
+    "fresh": 511088
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the audit ring stays capped",
+   "detail": {
+    "audit_bytes": 6190,
+    "audit_capacity_bytes": 6144,
+    "audit_dropped_total": 83,
+    "audit_entries": 64,
+    "audit_entry_limit": 64,
+    "object_limit": 8,
+    "objects": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every owner returns to zero after the closes",
+   "detail": {
+    "elements": 0,
+    "fixture_bytes": 0,
+    "history_bytes": 0,
+    "history_entries": 0,
+    "history_entry_limit": 8,
+    "lifetime": [],
+    "object_limit": 8,
+    "objects": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the arena counters hold",
+   "detail": {
+    "dedicated_arenas": [],
+    "dedicated_zones": [],
+    "malloc_bytes": 0,
+    "memory_limit_bytes": 16777216,
+    "objects": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[cdp] DOM.setNodeValue stays an explicit -32601: the slice adds no CDP form surface",
+   "detail": {
+    "error": {
+     "message": "Protocol error (DOM.setNodeValue): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Input.dispatchKeyEvent stays an explicit -32601: the slice adds no CDP form surface",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Input.dispatchKeyEvent): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Input.insertText stays an explicit -32601: the slice adds no CDP form surface",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Input.insertText): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 69,
+ "checks_total": 69,
+ "control_version": "0.0.2",
+ "design": "labs/native-dom/form-interaction-design-0.0.1.md",
+ "host_sha256": "de84558db6609d704de3eb056169350631472cf7d3cacd8dc587c19af48239b0",
+ "limitations": [
+  "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
+  "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",
+  "constraint validation is not implemented and is not tested: the design excludes it",
+  "the footprint differential is a diagnostic elsewhere and is not a criterion here",
+  "no pid, path, window or desktop fact is recorded"
+ ],
+ "passed": true,
+ "schema": "minicon-surf.native-dom-form-receipt/0.0.1",
+ "technology": "native-dom"
+}
