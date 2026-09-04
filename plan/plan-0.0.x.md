@@ -1177,13 +1177,22 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   1,726,710 with no super-linear term, 64 parent navigations return to the
   one-child level and retire exactly two realms each, and open-and-close
   returns every owner byte while retaining 32 KB more than the identical
-  childless arm. The court passes 63 of 63 under both allocators including
-  its CDP group; frame-realm and the CDP court were amended where they
-  encoded the old one-frame limitation and still pass. Three questions are
-  open for the root and none was guessed: whether an action may reach a child
-  frame, whether a `frames[]` entry may carry `url` (a projected child
-  carries its parent's today), and whether the pinned navigation result may
-  carry `ended_frames`. Losses: no acting in a child, no child navigation, no
+  childless arm. The root then ruled: no actions in a child, the two
+  questions that keep it refused recorded for a later design (what a child's
+  own revision means to `target.wait`, and whether a navigation inside a
+  child replaces the child or the target); every frame stores and reports the
+  final URL of the response that built it as an optional additive
+  `frames[]` field, so CDP projects a child's own address; and the pinned
+  navigation result keeps its field set. Its review also found five blockers,
+  each fixed: same-origin now holds after the redirects as well as before,
+  only `text/html` is parsed, a refused child rolls back the cookies its
+  attempt set, a child that cannot be built is skipped rather than failing
+  its parent, and a refused frame is no longer reported as a refused script
+  but as a bounded tally over a closed set of fixed reasons that never
+  carries a URL. The court passes 80 of 80 under both allocators including
+  its CDP group and a court-only forced construction failure; frame-realm and
+  the CDP court were amended where they encoded the old one-frame limitation
+  and still pass. Losses: no acting in a child, no child navigation, no
   nesting, no cross-origin or `srcdoc` children, no scripts in a child. G1,
   G3, P6 and G6 stay open.
 - [~] Implemented and measured on the native route: the agent-native form
