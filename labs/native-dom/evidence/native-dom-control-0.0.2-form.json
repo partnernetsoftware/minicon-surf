@@ -19,6 +19,7 @@
     "form",
     "heading",
     "label",
+    "link",
     "radio",
     "select",
     "textbox"
@@ -102,7 +103,8 @@
     "textbox",
     "textbox",
     "button",
-    "button"
+    "button",
+    "link"
    ],
    "passed": true
   },
@@ -309,22 +311,408 @@
    "passed": true
   },
   {
+   "check": "[system] press enter on a textbox is served",
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a checkbox is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a radio is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a select is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a form is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a button is served",
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on a link is served",
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a textbox is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     23,
+     23
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a checkbox is served",
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a radio is served",
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a select is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     25,
+     25
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a form is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     25,
+     25
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a button is served",
+   "passed": true
+  },
+  {
+   "check": "[system] press space on a link is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     27,
+     27
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled click leaves the checkbox as it was and is not applied",
+   "detail": {
+    "checked": [
+     false
+    ],
+    "result": {
+     "action": "set_checked",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 0,
+     "role": "checkbox",
+     "target": "target_3"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a canceled submit does not navigate and is not applied",
+   "detail": {
+    "action": "submit",
+    "applied": false,
+    "default_prevented": true,
+    "kind": "action",
+    "revision": 0,
+    "role": "form",
+    "target": "target_3"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a failed submit keeps the target, frame, generation, realm and URL",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "details": {
+      "generation": 1,
+      "navigation": "failed",
+      "realm": "realm_14",
+      "reason": "navigation_failed",
+      "redacted": true
+     },
+     "message": "the form submission did not navigate",
+     "retryable": false,
+     "scope": {
+      "id": "target_4",
+      "kind": "target"
+     }
+    },
+    "generation": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the submit handler's own effect stays and the revision shows it",
+   "detail": {
+    "marks": [
+     "handler ran"
+    ],
+    "revision": [
+     1,
+     3
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a denied origin refuses the submit and says so without its address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_15",
+     "reason": "address",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_5",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a missing document refuses the submit and says so without its address",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_16",
+     "reason": "navigation_failed",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_6",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unqualified scheme refuses the submit and says so without its address",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_17",
+     "reason": "tls_no_pinned_roots",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_7",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offline profile refuses the submit without its address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_18",
+     "reason": "network_offline",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_8",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an expired deadline refuses the submit without its address",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_18",
+     "reason": "navigation_failed",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": true,
+    "scope": {
+     "id": "target_8",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a non-ASCII value is counted in UTF-8 bytes, not code units",
+   "detail": {
+    "code_units": 13,
+    "reported": 17,
+    "utf8": 17
+   },
+   "passed": true
+  },
+  {
    "check": "[system] the ledger records the actions without any value, label or query",
    "detail": {
-    "count": 18,
+    "count": 50,
     "limit": 64
    },
    "passed": true
   },
   {
-   "check": "[system] the court-only log holds no typed value",
+   "check": "[system] the court-only log exists and holds no typed value",
+   "detail": {
+    "log_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no typed value reaches a refusal, the ledger or the log, encoded or not",
+   "detail": {
+    "leaked": []
+   },
    "passed": true
   },
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 539616,
-    "at_8": 539616,
+    "at_128": 856736,
+    "at_8": 856736,
     "cap": 65536,
     "growth": 0
    },
@@ -333,8 +721,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 539616,
-    "at_64": 539616,
+    "at_128": 856736,
+    "at_64": 856736,
     "cap": 8192
    },
    "passed": true
@@ -342,17 +730,17 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 487936,
-    "fresh": 525584
+    "after_submit": 802480,
+    "fresh": 842704
    },
    "passed": true
   },
   {
    "check": "[system] the audit ring stays capped",
    "detail": {
-    "audit_bytes": 6190,
+    "audit_bytes": 6806,
     "audit_capacity_bytes": 6144,
-    "audit_dropped_total": 83,
+    "audit_dropped_total": 115,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -397,6 +785,7 @@
     "form",
     "heading",
     "label",
+    "link",
     "radio",
     "select",
     "textbox"
@@ -480,7 +869,8 @@
     "textbox",
     "textbox",
     "button",
-    "button"
+    "button",
+    "link"
    ],
    "passed": true
   },
@@ -687,32 +1077,418 @@
    "passed": true
   },
   {
+   "check": "[arena] press enter on a textbox is served",
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a checkbox is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a radio is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a select is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a form is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     17,
+     17
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a button is served",
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on a link is served",
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a textbox is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     23,
+     23
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a checkbox is served",
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a radio is served",
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a select is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     25,
+     25
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a form is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     25,
+     25
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a button is served",
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on a link is refused typed and moves nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "key_role_unsupported"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    },
+    "revision": [
+     27,
+     27
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled click leaves the checkbox as it was and is not applied",
+   "detail": {
+    "checked": [
+     false
+    ],
+    "result": {
+     "action": "set_checked",
+     "applied": false,
+     "default_prevented": true,
+     "kind": "action",
+     "revision": 0,
+     "role": "checkbox",
+     "target": "target_3"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a canceled submit does not navigate and is not applied",
+   "detail": {
+    "action": "submit",
+    "applied": false,
+    "default_prevented": true,
+    "kind": "action",
+    "revision": 0,
+    "role": "form",
+    "target": "target_3"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a failed submit keeps the target, frame, generation, realm and URL",
+   "detail": {
+    "error": {
+     "code": "not_found",
+     "details": {
+      "generation": 1,
+      "navigation": "failed",
+      "realm": "realm_14",
+      "reason": "navigation_failed",
+      "redacted": true
+     },
+     "message": "the form submission did not navigate",
+     "retryable": false,
+     "scope": {
+      "id": "target_4",
+      "kind": "target"
+     }
+    },
+    "generation": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the submit handler's own effect stays and the revision shows it",
+   "detail": {
+    "marks": [
+     "handler ran"
+    ],
+    "revision": [
+     1,
+     3
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a denied origin refuses the submit and says so without its address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_15",
+     "reason": "address",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_5",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a missing document refuses the submit and says so without its address",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_16",
+     "reason": "navigation_failed",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_6",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unqualified scheme refuses the submit and says so without its address",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_17",
+     "reason": "tls_no_pinned_roots",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_7",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offline profile refuses the submit without its address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_18",
+     "reason": "network_offline",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_8",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an expired deadline refuses the submit without its address",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_18",
+     "reason": "navigation_failed",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": true,
+    "scope": {
+     "id": "target_8",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a non-ASCII value is counted in UTF-8 bytes, not code units",
+   "detail": {
+    "code_units": 13,
+    "reported": 17,
+    "utf8": 17
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] the ledger records the actions without any value, label or query",
    "detail": {
-    "count": 18,
+    "count": 50,
     "limit": 64
    },
    "passed": true
   },
   {
-   "check": "[arena] the court-only log holds no typed value",
+   "check": "[arena] the court-only log exists and holds no typed value",
+   "detail": {
+    "log_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no typed value reaches a refusal, the ledger or the log, encoded or not",
+   "detail": {
+    "leaked": []
+   },
    "passed": true
   },
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 525744,
-    "at_8": 525744,
+    "at_128": 836768,
+    "at_8": 836752,
     "cap": 65536,
-    "growth": 0
+    "growth": 16
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 525744,
-    "at_64": 525680,
+    "at_128": 836768,
+    "at_64": 836752,
     "cap": 8192
    },
    "passed": true
@@ -720,17 +1496,17 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 473360,
-    "fresh": 511088
+    "after_submit": 781856,
+    "fresh": 822112
    },
    "passed": true
   },
   {
    "check": "[arena] the audit ring stays capped",
    "detail": {
-    "audit_bytes": 6190,
+    "audit_bytes": 6806,
     "audit_capacity_bytes": 6144,
-    "audit_dropped_total": 83,
+    "audit_dropped_total": 115,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -801,11 +1577,11 @@
    "passed": true
   }
  ],
- "checks_passed": 69,
- "checks_total": 69,
+ "checks_passed": 119,
+ "checks_total": 119,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "de84558db6609d704de3eb056169350631472cf7d3cacd8dc587c19af48239b0",
+ "host_sha256": "9370cc31a0e6ec5ae116453a8ae6541713bdee971d22da8897bcc0ff1b2dd154",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

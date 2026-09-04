@@ -87,6 +87,7 @@ VERSION = "0.0.2"
 TYPED = {
     "text": "court-fake-entry",
     "area": "court-fake-area",
+    "wide": "courtfake-\u00e9\u4f8b\u00fc",
     "long": "x" * 1024,
 }
 CYCLES = 128
@@ -124,14 +125,46 @@ class FormHandler(PROFILE.ProfileHandler):
             b"<input id=\"nameless\" type=\"text\" value=\"\">"
             b"<button id=\"go\" name=\"submitter\" value=\"go\" type=\"submit\">Send</button>"
             b"<input id=\"rst\" type=\"reset\" value=\"Reset\">"
-            b"</form></main></body></html>")
+            b"</form><a id=\"lnk\" href=\"/landed.html\">Go</a></main></body></html>")
     POST_FORM = (b"<!doctype html><html><body><main><h1>Post form</h1>"
                  b"<form id=\"p\" method=\"post\" action=\"/landed.html\">"
                  b"<input id=\"pt\" name=\"text\" type=\"text\" value=\"\">"
                  b"<button id=\"pgo\" type=\"submit\">Send</button></form></main></body></html>")
 
+    CANCEL_FORM = (b"<!doctype html><html><body><main><h1>Cancel form</h1>"
+                   b"<form id=\"cf\" method=\"get\" action=\"/landed.html\">"
+                   b"<input id=\"cc\" name=\"agree\" type=\"checkbox\">"
+                   b"<button id=\"cgo\" type=\"submit\">Send</button></form></main>"
+                   b"<script>document.getElementById('cc').addEventListener('click',(e)=>e.preventDefault());"
+                   b"document.getElementById('cf').addEventListener('submit',(e)=>e.preventDefault());</script>"
+                   b"</body></html>")
+    HANDLER_FORM = (b"<!doctype html><html><body><main><h1>Handler form</h1>"
+                    b"<form id=\"hf\" method=\"get\" action=\"/absent.html\">"
+                    b"<input id=\"ht\" name=\"text\" type=\"text\" value=\"\">"
+                    b"<button id=\"hgo\" type=\"submit\">Send</button></form>"
+                    b"<p id=\"mark\">before</p></main>"
+                    b"<script>document.getElementById('hf').addEventListener('submit',()=>{"
+                    b"document.getElementById('mark').textContent='handler ran';});</script>"
+                    b"</body></html>")
+    DENIED_FORM = (b"<!doctype html><html><body><main><h1>Denied form</h1>"
+                   b"<form id=\"df\" method=\"get\" action=\"http://10.0.0.1/x.html\">"
+                   b"<input id=\"dt\" name=\"text\" type=\"text\" value=\"\">"
+                   b"<button id=\"dgo\" type=\"submit\">Send</button></form></main></body></html>")
+    SCHEME_FORM = (b"<!doctype html><html><body><main><h1>Scheme form</h1>"
+                   b"<form id=\"sf\" method=\"get\" action=\"https://127.0.0.1:1/x.html\">"
+                   b"<input id=\"st\" name=\"text\" type=\"text\" value=\"\">"
+                   b"<button id=\"sgo\" type=\"submit\">Send</button></form></main></body></html>")
+
     def do_GET(self):
         path, _, _query = self.path.partition("?")
+        if path == "/cancel-form.html":
+            return self.reply(200, self.CANCEL_FORM, "text/html")
+        if path == "/handler-form.html":
+            return self.reply(200, self.HANDLER_FORM, "text/html")
+        if path == "/denied-form.html":
+            return self.reply(200, self.DENIED_FORM, "text/html")
+        if path == "/scheme-form.html":
+            return self.reply(200, self.SCHEME_FORM, "text/html")
         if path == "/form.html":
             return self.reply(200, self.FORM, "text/html")
         if path == "/post-form.html":
@@ -143,7 +176,34 @@ class FormHandler(PROFILE.ProfileHandler):
 
 
 class Host(NAV.Host):
-    pass
+    """The navigation court's host plus the court-only log, so the secrecy
+    group greps something real rather than an absent file."""
+
+    def __init__(self, binary, directory, allocator, origin, court_file=None):
+        super().__init__(binary, directory, allocator, origin)
+        if court_file is None:
+            return
+        self.process.stdin.close()
+        self.process.wait(timeout=15)
+        environment = dict(os.environ)
+        for knob in ("MINICON_SURF_NATIVE_REALM_ZONE", "MINICON_SURF_NATIVE_REALM_ARENA",
+                     "MINICON_SURF_PROFILE_STORE", VISIBLE_ENV, "http_proxy", "https_proxy", "all_proxy"):
+            environment.pop(knob, None)
+        if allocator == "arena":
+            environment["MINICON_SURF_NATIVE_REALM_ARENA"] = "1"
+        command = [binary, "serve", "--stdio", "--fixture-root", str(FIXTURE_ROOT),
+                   "--config-dir", str(Path(directory) / "config2"), "--allow-origin", origin,
+                   "--surface-court-file", str(court_file)]
+        self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL, text=True, env=environment)
+        self.counter = 0
+
+
+def encodings(value):
+    """A value as it could appear: plain, percent-encoded, and with + for space."""
+    import urllib.parse
+    return {value, urllib.parse.quote(value), urllib.parse.quote_plus(value),
+            urllib.parse.quote(value, safe=""), value.replace(" ", "+")}
 
 
 def refused(response, code, reason=None):
@@ -222,7 +282,7 @@ def qualify_cdp(binary, origin, client_modules, expect, tag):
 def run(binary, allocator, origin, expect, tag):
     with tempfile.TemporaryDirectory(prefix="minicon-surf-form-court-") as directory:
         court_file = Path(directory) / "court-only.ndjson"
-        host = Host(binary, directory, allocator, origin)
+        host = Host(binary, directory, allocator, origin, court_file)
         try:
             profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
             session = host.ok("session.open", {"profile": profile})["session"]
@@ -365,6 +425,126 @@ def run(binary, allocator, origin, expect, tag):
                    refusal.get("error"))
             host.ok("target.close", {"target": post})
 
+            # 4c. The activation matrix, in full. Every pair outside it is
+            # refused typed, and a refusal never moves the revision.
+            host.ok("target.navigate", {"target": target, "url": f"{origin}/form.html"})
+            allowed = {("enter", "link"), ("enter", "button"), ("enter", "textbox"),
+                       ("space", "button"), ("space", "checkbox"), ("space", "radio")}
+            for key in ("enter", "space"):
+                for role in ("textbox", "checkbox", "radio", "select", "form", "button", "link"):
+                    snap = snapshot(host, target)
+                    reference = node(snap, role)
+                    if reference is None:
+                        continue
+                    before = host.ok("target.inspect", {"target": target})["revision"]
+                    answer = act(host, target, reference, {"kind": "press", "key": key})
+                    after = host.ok("target.inspect", {"target": target})["revision"]
+                    if (key, role) in allowed:
+                        expect(tag + f"press {key} on a {role} is served",
+                               answer.get("ok"), answer.get("error"))
+                        if role in ("textbox", "button", "link"):
+                            # Those three navigate; start over.
+                            host.ok("target.navigate", {"target": target, "url": f"{origin}/form.html"})
+                    else:
+                        expect(tag + f"press {key} on a {role} is refused typed and moves nothing",
+                               refused(answer, "unsupported_capability", "key_role_unsupported")
+                               and after == before,
+                               {"error": answer.get("error"), "revision": [before, after]})
+
+            # 4d. Cancellation: the page's preventDefault is respected.
+            cancel = NAV.open_target(host, session, origin, "/cancel-form.html")
+            snap = snapshot(host, cancel)
+            answer = act(host, cancel, node(snap, "checkbox"), {"kind": "set_checked", "checked": True})
+            snap = snapshot(host, cancel)
+            still = [n.get("checked") for n in snap["nodes"] if n.get("role") == "checkbox"]
+            expect(tag + "a canceled click leaves the checkbox as it was and is not applied",
+                   answer.get("ok") and answer["result"]["applied"] is False
+                   and answer["result"]["default_prevented"] is True and still == [False],
+                   {"result": answer.get("result"), "checked": still})
+            state = host.ok("target.inspect", {"target": cancel})
+            answer = act(host, cancel, node(snap, "form"), {"kind": "submit"})
+            after = host.ok("target.inspect", {"target": cancel})
+            expect(tag + "a canceled submit does not navigate and is not applied",
+                   answer.get("ok") and answer["result"]["applied"] is False
+                   and answer["result"]["default_prevented"] is True
+                   and after["url"] == state["url"]
+                   and after["frames"][0]["generation"] == state["frames"][0]["generation"],
+                   answer.get("result"))
+            host.ok("target.close", {"target": cancel})
+
+            # 4e. A failed submit keeps identity and history; the handler's own
+            # effect stays, because no browser rolls that back.
+            handler = NAV.open_target(host, session, origin, "/handler-form.html")
+            snap = snapshot(host, handler)
+            act(host, handler, node(snap, "textbox"), {"kind": "set_value", "value": TYPED["text"]})
+            before = host.ok("target.inspect", {"target": handler})
+            snap = snapshot(host, handler)
+            failed = act(host, handler, node(snap, "form"), {"kind": "submit"})
+            after = host.ok("target.inspect", {"target": handler})
+            marks = [n.get("name") for n in snapshot(host, handler)["nodes"] if n.get("role") == "text"]
+            expect(tag + "a failed submit keeps the target, frame, generation, realm and URL",
+                   not failed.get("ok")
+                   and after["frames"][0]["generation"] == before["frames"][0]["generation"]
+                   and after["frames"][0]["realm"] == before["frames"][0]["realm"]
+                   and after["url"] == before["url"] and after["history"] == before["history"],
+                   {"error": failed.get("error"), "generation": after["frames"][0]["generation"]})
+            expect(tag + "the submit handler's own effect stays and the revision shows it",
+                   any("handler ran" in (m or "") for m in marks) and after["revision"] > before["revision"],
+                   {"marks": marks, "revision": [before["revision"], after["revision"]]})
+
+            # 4f. Every submit failure is diagnosed without its address.
+            failures = [("a denied origin", "/denied-form.html", None),
+                        ("a missing document", "/handler-form.html", None),
+                        ("an unqualified scheme", "/scheme-form.html", None)]
+            responses = []
+            for name, page, _ in failures:
+                probe = NAV.open_target(host, session, origin, page)
+                snap = snapshot(host, probe)
+                textbox = node(snap, "textbox")
+                if textbox is not None:
+                    act(host, probe, textbox, {"kind": "set_value", "value": TYPED["text"]})
+                    snap = snapshot(host, probe)
+                answer = act(host, probe, node(snap, "form"), {"kind": "submit"})
+                responses.append(json.dumps(answer))
+                expect(tag + f"{name} refuses the submit and says so without its address",
+                       not answer.get("ok")
+                       and answer["error"].get("details", {}).get("redacted") is True
+                       and "href" not in json.dumps(answer["error"])
+                       and "10.0.0.1" not in json.dumps(answer)
+                       and "127.0.0.1" not in json.dumps(answer),
+                       answer.get("error"))
+                host.ok("target.close", {"target": probe})
+            offline_probe = NAV.open_target(host, session, origin, "/form.html")
+            host.ok("profile.policy.set", {"session": session, "network": "offline",
+                                           "permissions": "allow_by_default"})
+            snap = snapshot(host, offline_probe)
+            answer = act(host, offline_probe, node(snap, "form"), {"kind": "submit"})
+            responses.append(json.dumps(answer))
+            expect(tag + "an offline profile refuses the submit without its address",
+                   not answer.get("ok") and answer["error"].get("details", {}).get("redacted") is True
+                   and "?" not in json.dumps(answer), answer.get("error"))
+            host.ok("profile.policy.set", {"session": session, "network": "online",
+                                           "permissions": "allow_by_default"})
+            snap = snapshot(host, offline_probe)
+            answer = act(host, offline_probe, node(snap, "form"), {"kind": "submit"}, deadline_ms=1)
+            responses.append(json.dumps(answer))
+            expect(tag + "an expired deadline refuses the submit without its address",
+                   not answer.get("ok") and "?" not in json.dumps(answer), answer.get("error"))
+            host.ok("target.close", {"target": offline_probe})
+
+            # 4g. A non-ASCII value is audited by its UTF-8 byte length.
+            wide = NAV.open_target(host, session, origin, "/form.html")
+            snap = snapshot(host, wide)
+            answer = act(host, wide, node(snap, "textbox", "Text"),
+                         {"kind": "set_value", "value": TYPED["wide"]})
+            expect(tag + "a non-ASCII value is counted in UTF-8 bytes, not code units",
+                   answer.get("ok")
+                   and answer["result"]["value_bytes"] == len(TYPED["wide"].encode())
+                   and answer["result"]["value_bytes"] != len(TYPED["wide"]),
+                   {"reported": (answer.get("result") or {}).get("value_bytes"),
+                    "utf8": len(TYPED["wide"].encode()), "code_units": len(TYPED["wide"])})
+            host.ok("target.close", {"target": wide})
+
             # 5. Secrecy: nothing the court typed may leave the page.
             ledger = host.ok("session.inspect", {"session": session}).get("audit", {})
             text = json.dumps(ledger)
@@ -374,7 +554,13 @@ def run(binary, allocator, origin, expect, tag):
                    and "pick=" not in text and "Alpha" not in text,
                    {"count": ledger.get("count"), "limit": ledger.get("limit")})
             log = court_file.read_text() if court_file.exists() else ""
-            expect(tag + "the court-only log holds no typed value", all(v not in log for v in TYPED.values()))
+            expect(tag + "the court-only log exists and holds no typed value",
+                   court_file.exists() and not any(form in log for v in TYPED.values() for form in encodings(v)),
+                   {"log_bytes": len(log)})
+            everything = " ".join(responses) + text + log
+            leaked = sorted({form for v in TYPED.values() for form in encodings(v) if form in everything})
+            expect(tag + "no typed value reaches a refusal, the ledger or the log, encoded or not",
+                   not leaked, {"leaked": leaked[:3]})
 
             # 6. Memory: the numeric live-owner criteria.
             target2 = NAV.open_target(host, session, origin, "/form.html")
