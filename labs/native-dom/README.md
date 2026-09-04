@@ -731,8 +731,20 @@ frame cannot be addressed by `target.navigate` or by CDP, only acted in; no
 sandboxed frames, no nesting, no cross-origin or `srcdoc`
 children, no scripts in a child; no capability attenuation on this host, so a request carrying the field
 is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
-of frames or realms here; navigation is a link click only (no
-`target.navigate`, history or form submission).
+of frames or realms here.
+
+The navigating surface is bounded and typed, and it is no longer one action:
+`target.navigate`, `target.reload` and `target.traverse` replace the main
+document under the bounded history; a click or an `enter` press on an
+`<a href>` navigates the frame it is in; and a GET form submission navigates
+with the query serialised inside the realm. What is refused, typed and before
+any event, is everything this host does not model: POST and any other method,
+a target that is not the current frame, a `<base target>` that would decide
+the activation, `download`, a non-`http(s)` scheme, a fragment-only href, an
+action whose resolved URL is malformed or over its bound, and, in a child, one
+that would leave the parent's origin. `target.navigate` and CDP's
+`Page.navigate` address the main frame only; a child is navigated from inside
+itself.
 
 Reproduction:
 
@@ -1877,6 +1889,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
+| **current, `161357b0ffa5…`** — `native-dom-control-0.0.2-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64), `-navigation` (90/90) | the host with frame-aware actions, child-local navigation, the two checked revision limits and the activation preflight | every one of these six was rerun on this build and carries its hash. The navigation court passed 90 of 90 **in this batch**; its differential soak criterion has failed in earlier batches on the same code, so the route stays **cross-batch narrow on the default allocator** and this row is not a repair. `-profile` stays 90 of 94, its four D6 footprint checks narrow, and was not rerun here. G1, G3, P6 and G6 stay open |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 | `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
 | `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, `native-dom-control-0.0.2-surface-snapshot-attribution` | the host with the G3 surface process, the surface-owned mmap frame region and the court-only stage log, host `32343eb5…` (`surface_sha256` names the child binary); these three are visual runs recorded before the headless rule and are not rerun | builds, newest first. `3089ab5d…` (the court-only navigation stage samples) carries `-navigation-attribution`, which has no pass or fail by design. `17f5284f…` (the allowlist sharing candidate, since reverted) carries `-navigation-repair`, recorded rejected. `720656ce…` carries `-navigation` (89 of 90, the differential soak narrow on the default allocator), `-navigation-replication` (cross-batch unstable, not a pass), `-profile` and `-cdp-frame-tree` (64 of 64, its pinned `puppeteer-core 24.15.0` client restored offline from the local npm cache under the ignored `target/labs/d4`, integrity equal to `cdp-qualification-0.0.1.json`, on Node.js v26.7.0). `925d062b…` with child `8e9e51e2…` carries `-surface-headless` (17 of 17) and `-surface-paired-causal` (arm B only). `69778384…` carries `-frame-realm`, `-https` and `-secure-cookie`, which are older-build evidence and are not presented as current. The surface court is visual and waits for a by-hand opted-in run | the journeys (27/27, 35/35 under both allocators) were rerun on the headless rule build |
@@ -1926,7 +1939,10 @@ target by footprint. Every later slice is measured against this row.
   It is not a Web-compatibility claim: unsupported selectors throw, and any
   page relying on layout, `XMLHttpRequest`, `localStorage` or timing fails
   explicitly (`localStorage` exists only with `--profile-root`). Navigation
-  is a link click on an `<a href>` only.
+  is `target.navigate`, `target.reload`, `target.traverse`, a link
+  activation, or a GET form submission, each bounded and each refusing what
+  it does not model with a fixed reason before any event; a child frame is
+  navigated only from inside itself and runs no scripts.
 - One fixture set, one platform, summed RSS and physical footprint only.
 - Public-address negatives are refused before any connection, so they
   exercise policy rather than reachability; the `.invalid` negative depends

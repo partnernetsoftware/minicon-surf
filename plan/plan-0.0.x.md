@@ -1162,72 +1162,39 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [ ] Proposed, design only, nothing implemented and nothing measured:
-  frame-aware actions and child navigation
-  (`labs/native-dom/frame-action-design-0.0.1.md`). A live child frame can be
-  observed and not acted in, and the record compares two coherent models for
-  changing that. Model A keeps one target-global observable revision, defined
-  as the base plus the sum of every live frame's counter with an ending
-  frame's counter folded into the base, so it stays monotonic; the node band
-  already says which frame a reference belongs to, so `target.act` needs no
-  request change and `0.0.2` is untouched. Model B introduces frame-local
-  versioned references and waits in a `0.0.3` beside the two existing
-  schemas, buying precise staleness and a per-frame wait at the cost of a
-  version and a second failure axis. The record analyses why the node bands
-  alone are insufficient — they say where a node is, never when; band *k* is
-  reused by a replaced child's document; they cannot say whether a link in a
-  child navigates the child or the target; and they reach neither the audit
-  ledger nor CDP — and it fixes the semantics both models must share: child
-  link and GET submit navigate the child, a child never replaces its parent's
-  document, parent navigation teardown is unchanged, a child navigation
-  advances that child's generation and replaces its realm, history stays the
-  main frame's, a child navigation's cookies commit only if it commits,
-  frames are still never capability owners, and a foreign, ended or unknown
-  frame stays one `not_found`. Per-frame bookkeeping is 8 bytes per frame
-  under A and 40 under B, against a measured 247,034 live owner bytes per
-  child, so bookkeeping is not the memory question; child scripts are, and
-  they stay excluded, with the new argument that model A's affordability
-  depends on it: a script-free child's counter can change only when the host
-  acts in it, so the revision stays one evaluation to read. The consequence
-  to record is that an action in a child behaves as it would in a script-free
-  document, where nothing can cancel it. The recommendation is model A; six
-  decisions wait on the root, the first being A or B. The root then ruled all
-  six: model A now with B preserved as the later precise shape; the existing
-  typed actions allowed in a live same-origin script-free child, but only
-  after the frame is resolved from the node band and that frame's own snapshot
-  is validated; child scripts still excluded; a child navigation never
-  entering or moving history; an interned frame id on every action audit
-  record; and `target.navigate` and CDP `Page.navigate` staying
-  main-frame-only with any `frameId` typed-refused. Part II of the record
-  fixes the design the ruling asked for: the global revision defined as the
-  base plus every live frame's counter, with monotonicity and one-per-applied
-  proven over child mutation, child replacement, child end, parent mutation
-  and parent navigation, and saturation refused rather than wrapped; a bounded
-  per-frame snapshot record replacing the single target one, so a snapshot of
-  one frame can never authorise an index in another; a proof that caching
-  child counters is sound precisely while child scripts are excluded, with
-  that dependency stated; child link and GET submit replacing the child
-  document atomically out of the parent document's remaining aggregate budget;
-  and failing closed on sandbox, non-`_self` targets, `download`, `javascript:`
-  and fragment activations, with a fixed-vocabulary `activation` fact so an
-  agent can see a refusal coming without reading page text. Two of those
-  change behaviour already pushed — a sandboxed iframe stops being built, and
-  a non-`_self` link stops navigating — and both are recorded with their
-  falsifying criteria before any code. Twelve courts are pre-registered. G1,
-  G3, P6 and G6 stay open. **Implemented under that ruling:** the revision is
-  the base plus every live frame's counter with the folds proven, the action
-  gate resolves the frame from the node band and validates that frame's own
-  observation, a child link and GET submit replace that child's document out
-  of the parent document's allowance, sandboxed frames are no longer built,
-  activations this host does not model fail closed with a snapshot fact that
-  predicts them, and every action record names its frame. The frame-action
-  court passes 128 of 128 under both allocators; run against the shipped host
-  it fails 56 checks per arm, 47 of them the target and activation cases,
-  including `_blank` navigating instead of refusing and `formmethod` and
-  `formaction` being ignored. Two findings are recorded: a submit that
-  navigates was advancing the revision twice for one observable consequence,
-  and two of the court's own numbers were wrong where their meanings were
-  right.
+- [~] Implemented and qualified on the native route: frame-aware actions and
+  child-local navigation
+  (`labs/native-dom/frame-action-design-0.0.1.md`). The record compared two
+  models and the root ruled model A: one target-global observable revision,
+  the node band naming the frame, and no protocol expansion — no schema,
+  mapping, example, request or result shape moved. A live same-origin
+  script-free child is now actionable; an action is served only when that
+  frame's own last observation authorises it; a link or a GET submit inside a
+  child replaces that child's document out of the parent document's remaining
+  aggregate allowance, keeping the parent's identity and the target's history;
+  activations this host does not model fail closed before any event with a
+  closed-vocabulary `activation` fact that predicts them; a sandboxed iframe is
+  no longer built; and every action record names its frame. Five audit
+  blockers were found against the first implementation and each was recorded
+  before its fix: the saturation rule was specified and never implemented, and
+  the first limit turned out to be the realm's Number at 2^53−1 rather than
+  `u64`; the two surface paths computed a second revision that omitted the
+  cached child counters; an explicitly empty `target` was conflated with an
+  absent one under a `<base target>`; the effective action was never
+  preflighted, so a scheme, a bound or a cross-origin child action was judged
+  only after the page's handlers had run; and the preflight had a
+  time-of-check gap, because a queued job can rewrite a control between two
+  host evaluations without moving the revision, which is now closed by
+  re-deriving and comparing the whole effective activation before dispatch.
+  Two later findings were fixed the same way: both stale paths reported one
+  frame's counter as the target's revision, and a scroll changed the offset
+  and advanced the realm's counter before checking either limit. The court
+  passes 182 of 182 under both allocators including three revision-boundary
+  groups; against the shipped host it fails 155 of 173. A submit that
+  navigates was also found to advance the revision twice for one observable
+  consequence and now advances once. This is qualification of a bounded typed
+  surface, not a gate: G1, G3, P6 and G6 stay open, the navigation route stays
+  cross-batch narrow on the default allocator, and profile stays 90 of 94.
 - [~] Implemented and measured on the native route: bounded child frames
   (`labs/native-dom/child-frame-design-0.0.1.md`). The audit found the frame
   contract already written and already executable on the synthetic host, so
