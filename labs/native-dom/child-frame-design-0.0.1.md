@@ -570,3 +570,28 @@ Corrected, without implying that evidence transferred between hosts:
   occur, and the live-owner total.
 
 No code and no criterion moved.
+
+## 21. Two amendments coming from the frame-action ruling (not yet implemented)
+
+Recorded here, in this record, because they change behaviour that shipped at
+`eac33da`. Neither is implemented yet; both are specified with the criterion
+that falsifies them in
+`labs/native-dom/frame-action-design-0.0.1.md` §19, and both will land with
+that increment rather than on their own.
+
+1. **A sandboxed iframe will not be built.** A same-origin
+   `<iframe sandbox src=…>` is an ordinary child today. It becomes a skip,
+   tallied `sandboxed`, the thirteenth reason in the closed vocabulary of
+   §18.8. A sandbox without `allow-same-origin` means an opaque origin, and
+   this record's whole child model — the shared jar, the absent storage
+   partition, the same-origin invariant — rests on a child being same-origin
+   by construction. Skipping is the fail-closed answer; observation-only
+   sandboxed frames stay available as a strictly additive grant later.
+2. **A link whose `target` is not absent or `_self` will not navigate.** It
+   becomes a typed refusal rather than a navigation of the current target.
+   This one is not specific to child frames — it is wrong in the main frame
+   too — and it is listed here so this record does not keep describing a
+   behaviour that is about to change.
+
+Until they land, this record describes the host as it is. §10's loss list
+gains nothing yet, because nothing has moved.

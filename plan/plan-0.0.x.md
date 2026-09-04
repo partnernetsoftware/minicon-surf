@@ -1191,8 +1191,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   acts in it, so the revision stays one evaluation to read. The consequence
   to record is that an action in a child behaves as it would in a script-free
   document, where nothing can cancel it. The recommendation is model A; six
-  decisions wait on the root, the first being A or B. G1, G3, P6 and G6 stay
-  open.
+  decisions wait on the root, the first being A or B. The root then ruled all
+  six: model A now with B preserved as the later precise shape; the existing
+  typed actions allowed in a live same-origin script-free child, but only
+  after the frame is resolved from the node band and that frame's own snapshot
+  is validated; child scripts still excluded; a child navigation never
+  entering or moving history; an interned frame id on every action audit
+  record; and `target.navigate` and CDP `Page.navigate` staying
+  main-frame-only with any `frameId` typed-refused. Part II of the record
+  fixes the design the ruling asked for: the global revision defined as the
+  base plus every live frame's counter, with monotonicity and one-per-applied
+  proven over child mutation, child replacement, child end, parent mutation
+  and parent navigation, and saturation refused rather than wrapped; a bounded
+  per-frame snapshot record replacing the single target one, so a snapshot of
+  one frame can never authorise an index in another; a proof that caching
+  child counters is sound precisely while child scripts are excluded, with
+  that dependency stated; child link and GET submit replacing the child
+  document atomically out of the parent document's remaining aggregate budget;
+  and failing closed on sandbox, non-`_self` targets, `download`, `javascript:`
+  and fragment activations, with a fixed-vocabulary `activation` fact so an
+  agent can see a refusal coming without reading page text. Two of those
+  change behaviour already pushed — a sandboxed iframe stops being built, and
+  a non-`_self` link stops navigating — and both are recorded with their
+  falsifying criteria before any code. Twelve courts are pre-registered. G1,
+  G3, P6 and G6 stay open.
 - [~] Implemented and measured on the native route: bounded child frames
   (`labs/native-dom/child-frame-design-0.0.1.md`). The audit found the frame
   contract already written and already executable on the synthetic host, so

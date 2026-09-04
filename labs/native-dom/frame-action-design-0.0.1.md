@@ -244,3 +244,281 @@ one proposed and open node.
    in the main frame.
 6. **Under A, does `target.navigate` stay main-frame-only**, leaving CDP's
    `frameId` refused? Under B it would not.
+
+---
+
+# Part II — the root's rulings, and the design they fix
+
+Still design only: no product code, no court run, no protocol change, and no
+receipt touched. §§1–12 stay as written; where Part II differs from them, Part
+II governs.
+
+## 13. The six rulings
+
+1. **Model A**, now. Model B stays the preferred later protocol shape and is
+   reachable from A because its frame-local reference is additive.
+2. **Existing typed actions are allowed in a live, same-origin, script-free
+   child**, and only after the frame is resolved from the node band *and* that
+   frame's own observed snapshot is validated (§16).
+3. **Child scripts stay excluded.**
+4. **A child navigation never enters or moves the target's history.**
+5. **Every action audit entry carries an interned frame id**, main or child,
+   bounded, with no page data.
+6. **`target.navigate` and CDP `Page.navigate` stay main-frame-only.** Any
+   `frameId` stays typed-refused.
+
+## 14. The global revision, defined
+
+For a target `T` at any instant let `F(T)` be its live frames, the main frame
+`m` first, then children `c₁…c_k`. Each live frame `f` has a realm counter
+`n_f ∈ ℕ`, which its realm only ever increments. `B(T) ∈ ℕ` is the target's
+revision base. The observable revision is
+
+> **R(T) = B(T) + Σ_{f ∈ F(T)} n_f**
+
+with every addition saturating in `u64`.
+
+Two invariants:
+
+- **(M) Monotonic.** No host operation decreases `R`.
+- **(S) One per application.** Every applied action and every committed
+  navigation increases `R` by exactly one; nothing else increases it.
+
+### 14.1 Every event, and its effect
+
+| # | Event | Rule | ΔR |
+|---|---|---|---|
+| 1 | mutation in a child `c` (only a host-initiated action can cause one) | `n_c ← n_c + 1` | **+1** |
+| 2 | mutation in the main frame | `n_m ← n_m + 1` | **+1** |
+| 3 | child `c` replaced by its own navigation | fold `B ← B + n_c + 1`, new realm starts at `n_c = 0`, `F` unchanged | **+1** |
+| 4 | child `c` ends | fold `B ← B + n_c`, remove `c` from `F` | **0** |
+| 5 | parent navigation | every child ends by rule 4, then fold `B ← B + n_m + 1` and the new main realm starts at `n_m = 0` | **+1** |
+| 6 | a child is built with its parent's document | it joins `F` with `n = 0` | **0** |
+| 7 | any failed operation | nothing is folded, no counter moves, `F` unchanged | **0** |
+
+**Proof of (M).** `R` changes only through counter increments, which are
+non-negative; through folds, each of which adds to `B` exactly the counter it
+is about to remove from the sum, plus a non-negative constant; and through
+membership changes, each of which is accompanied by its own fold (rules 3, 4,
+5, and rule 6 which adds a zero). No rule subtracts from `B` and no counter
+decreases, so `ΔR ≥ 0` for every rule and, by composition, for every sequence
+of them. ∎
+
+**Proof of (S).** Rules 1 and 2 add one by the settle rule already proven in
+the form slice. Rule 3: `R_after = (B + n_c + 1) + Σ_{f≠c} n_f + 0 =
+R_before + 1`. Rule 5: each rule-4 fold leaves `R` fixed, then
+`R_after = (B' + n_m + 1) + 0 = R_before + 1`. Rules 4, 6 and 7 add nothing
+and are the only rules that change `F` or fail. ∎
+
+**Saturation.** At `u64::MAX` the sum stops discriminating and staleness would
+silently stop working, so the host does not wrap and does not pretend: once
+`R` saturates, every action and navigation on that target is refused
+`resource_limit` with a fixed reason. It is unreachable in practice and it is
+specified rather than left to overflow.
+
+## 15. `target.wait`, and why one evaluation is sound
+
+`target.wait` reads `n_m` from the main realm on every poll and takes every
+`n_c` from a cache. It never polls a child's realm.
+
+**Claim.** While child scripts are excluded, `n_c` can change only during a
+host-initiated evaluation in `c`'s realm.
+
+**Proof.** `n_c` is incremented by exactly two mechanisms: the
+`MutationObserver` installed by the instrumentation, which fires only on a
+mutation of `c`'s document, and the explicit settle in the action script. A
+child's realm is seeded with the shim, the tree, its location and the
+instrumentation, and **no page script is ever evaluated in it** (ruling 3), so
+no timer, microtask, event source or fetch continuation exists inside it.
+A QuickJS realm executes only while the host is inside an `eval` on it.
+Therefore, between two host evaluations in `c`, no code runs in `c`, no
+mutation occurs, and `n_c` is unchanged. ∎
+
+**Consequence and dependency.** The host caches `n_c` when it builds the child
+and refreshes it only after an operation that evaluated in that child. The
+main frame is different — it runs page scripts and can have queued jobs and
+fetch settlements — so `n_m` is re-read every poll, exactly as today. The
+steady-state cost of reading `R` is therefore one evaluation, unchanged.
+
+**This proof is a dependency, not a convenience.** It holds only while ruling 3
+holds. Seeding any script, timer or job source into a child invalidates it and
+forces `target.wait` back to one evaluation per live frame. Any future
+proposal to enable child scripts must reopen this section first.
+
+## 16. The action gate, and per-frame snapshots
+
+Today one `last_snapshot: (revision, count)` per target authorises a node
+index. With frames that record would let a snapshot of one frame authorise an
+index in another, because the index is only compared against a count. It is
+replaced by **one bounded record per frame**:
+
+```
+FrameSnapshot { reference_revision: u64, frame_revision: u64, nodes: u32 }
+```
+
+`reference_revision` is the global `R` the snapshot reported,
+`frame_revision` is that frame's own `n_f` at the time, and `nodes` is how
+many entries it returned. An action is served only when **all** of these hold,
+each checked before anything is dispatched and none of them able to move a
+revision:
+
+1. the node id lies in a band that belongs to a **live** frame of this target
+   (otherwise `not_found`, the same refusal a foreign or ended frame gets);
+2. that frame has a `FrameSnapshot` (otherwise `not_found`: nothing observed
+   it);
+3. `reference.revision == FrameSnapshot.reference_revision` — the reference
+   came from *that* observation;
+4. `reference.revision == R(T)` now — nothing has happened since
+   (otherwise `stale_revision`);
+5. `n_f == FrameSnapshot.frame_revision` — that frame's document has not been
+   replaced under an unchanged global revision, which rules 3 and 4 of §14.1
+   already make impossible but which is checked rather than assumed;
+6. the index is below `FrameSnapshot.nodes`.
+
+Check 5 is the one that closes band reuse: a band names the *k*-th live child,
+so without it a replaced child could inherit an authorisation. A frame's record
+is dropped when its document is replaced or its frame ends.
+
+## 17. Child link and GET submit
+
+A link click or a GET submit inside a child **replaces that child's document
+only**. The child's frame id survives, its generation increments, a new realm
+is minted and the old one retired, and `R` advances by exactly one (§14.1
+rule 3) — all of it atomically: the candidate child document is fetched,
+parsed, seeded and instrumented in full before anything about the live child
+changes, exactly as a target's own navigation already works.
+
+A failure leaves the child's identity, its document, its state and `R`
+untouched, save for handler effects explicitly dispatched before the failure —
+of which a script-free child has none, so in this slice the rollback is total.
+The parent's identity, URL, generation, realm and history are untouched in
+both outcomes, and no frame ends.
+
+**Budget.** A child navigation spends the **current parent document's**
+remaining aggregate allowance — the same 32 fetches and 4 MiB that already
+cover the parent, its scripts and its children. It is never given a fresh
+budget. Exhaustion refuses the navigation with `resource_limit` and leaves the
+child exactly as it was. Replacing the parent's document or closing the target
+ends the allowance with it; the replacement's own budget is what the new
+children and their navigations spend.
+
+**History.** Nothing about a child navigation enters or moves the target's
+history (ruling 4), and `target.traverse` continues to refetch the main URL and
+rebuild children from scratch.
+
+## 18. Failing closed on what is not modelled
+
+Each of these is refused typed, before any event, with a fixed reason, rather
+than approximated:
+
+| Feature | Decision |
+|---|---|
+| `<iframe sandbox>` | **the frame is not built at all**, tallied `sandboxed` (§19) |
+| link or form `target` other than absent or `_self` | activation refused, `unsupported_capability`, reason `target_not_self` |
+| `_top`, `_parent`, `_blank` | the same refusal; they are not special cases, they are simply not `_self` |
+| `<a download>` | refused, reason `download_unsupported` |
+| a `javascript:` href or form action | refused, reason `scheme_unsupported` |
+| a fragment-only href | refused, reason `fragment_unsupported`; no navigation, no revision movement |
+
+**Why sandboxed frames are skipped rather than observed.** A sandbox without
+`allow-same-origin` gives the child an opaque origin. This host's entire child
+model rests on a child being *same-origin by construction*: that is what lets
+it share the parent's jar, skip a storage partition, and be actionable at all.
+A sandboxed child would need an opaque-origin model that does not exist here,
+and building one anyway would grant the agent more than the page asked for
+while the host models none of the `allow-*` tokens. Skipping is the fail-closed
+answer, and it keeps the invariant that every live child is same-origin.
+Observation-only sandboxed frames can be granted later, once opaque origins
+are modelled; that is strictly additive to this decision.
+
+## 19. Amendments to the already-pushed child-frame contract
+
+Two of §18's decisions change behaviour shipped at `eac33da`. Both are
+recorded here before implementation, with the criterion that falsifies each,
+as the ruling requires.
+
+**19.1 A sandboxed iframe is no longer built.** Today a same-origin
+`<iframe sandbox src=…>` becomes an ordinary child frame. It will not be built,
+and `sandboxed` joins the closed skip vocabulary as its thirteenth reason.
+*Falsifying criterion:* a page whose only embedded document carries `sandbox`
+enumerates one frame and tallies exactly `{"sandboxed": 1}`; the criterion
+fails against the host at `eac33da`, which builds two frames and tallies
+nothing.
+
+**19.2 A link whose target is not `_self` no longer navigates.** Today a click
+or an enter press on `<a href target="_blank">` navigates the current target,
+which is neither what the page asked for nor something this host models. It
+becomes a typed refusal. *Falsifying criterion:* a click on a link with
+`target="_blank"` is refused `unsupported_capability` with reason
+`target_not_self`, the URL, generation, realm and revision all unchanged; the
+criterion fails against `eac33da`, which navigates.
+
+Both apply to the main frame as well as to children, because the reason they
+are wrong does not depend on which frame they are in.
+
+## 20. Fixed-vocabulary state so an agent can anticipate a refusal
+
+An agent must be able to see that an activation will be refused without
+reading page text. The semantic snapshot's activatable nodes gain one bounded
+fact, over a closed vocabulary and never a URL, a target name or any other
+page text:
+
+- `activation`: `"allowed"`, or one of `"target_not_self"`,
+  `"download_unsupported"`, `"scheme_unsupported"`, `"fragment_unsupported"`,
+  `"control_disabled"`, `"form_method_unsupported"`.
+
+It is a host-level additive diagnostic, described normatively in
+`labs/native-dom/README.md` beside `frames_skipped`, and the protocol obliges
+no host to report it. `frames_skipped` gains `sandboxed`. Nothing else about
+the snapshot changes.
+
+## 21. The courts, pre-registered
+
+Frozen here before any code, to be written into the court files and run in the
+implementation round.
+
+1. **Identity.** An action in a child changes only that child; the parent's
+   URL, generation, realm and history are untouched; no frame ends.
+2. **The revision, over every event of §14.1.** A child mutation, a child
+   replacement, a child end, a parent mutation and a parent navigation each
+   move `R` by exactly the table's amount, and `R` never decreases across the
+   whole sequence.
+3. **Stale references.** After an action in any frame, a reference taken
+   before it is `stale_revision` in **every** frame; a reference from a
+   child's snapshot is refused after that child navigates, even though its
+   band is reused by the replacement.
+4. **Per-frame snapshot isolation.** A node index valid in one frame's
+   snapshot is `not_found` when presented in another frame's band, and a frame
+   with no snapshot cannot be acted in.
+5. **Wait convergence.** `target.wait` returns for a revision reached by a
+   child's mutation, and the host reads no child realm while waiting.
+6. **Child link and GET submit.** Each replaces the child's document, keeps
+   its frame id, increments its generation, retires and replaces its realm,
+   advances `R` by one, and leaves the parent and the history untouched.
+7. **Rollback.** A child navigation that fails leaves identity, document,
+   state and `R` exactly as they were, and its cookies never reach the
+   profile.
+8. **Aggregate budget.** A parent document whose allowance is spent refuses a
+   child navigation with `resource_limit` and leaves the child untouched; a
+   parent navigation resets the allowance for the new document's frames.
+9. **Audit secrecy.** Every action record carries its frame id and no URL,
+   value, target name or other page text; the interned frame ids stay bounded.
+10. **Teardown.** A parent navigation still ends every child in reverse order
+    and retires every realm exactly once, with the new global revision correct
+    afterwards.
+11. **Fail-closed vocabulary.** Sandbox, non-`_self` targets, `download`,
+    `javascript:` and fragment hrefs each refuse typed with their fixed
+    reason, move nothing, and are visible in the snapshot's `activation` fact
+    beforehand.
+12. **Memory.** The child-frame court's criteria are rerun unchanged, with the
+    per-frame bookkeeping inside the same caps: one child ≤ 262,144 live owner
+    bytes, seven ≤ 1,835,008, owners returning to the baseline on close.
+
+## 22. What is unchanged
+
+Same-origin before the fetch and after every redirect, `text/html` only, the
+transactional jar for every child fetch including a child navigation's, URL
+bytes in owner accounting, `frames_skipped` with its fixed vocabulary,
+`scripts_skipped` untouched, frames never capability owners, one `not_found`
+for a foreign, ended or unknown frame, the pinned navigation result, and no
+protocol expansion of any kind.
