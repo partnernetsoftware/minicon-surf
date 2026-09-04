@@ -1181,11 +1181,16 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   anyway, four button subtypes treated as one with the submit skipping its
   click, a radio that toggled off and a canceled change that left its
   sibling cleared, and a reset that mutated before it asked. All are fixed
-  and the court, extended to them, passes 163 of 163 under both allocators
+  and the court, extended to them, passes 179 of 179 under both allocators
   including its memory criteria, the plateau over 128 edit and reset cycles
   among them, and no typed value, option label or query appears in the
   ledger, the court log or the receipt. The pre-fix host was rebuilt and run
-  against the extended court to show the new checks bite. `control-0.0.1`
+  against the extended court to show the new checks bite. A ruling then
+  moved the declared press model one step toward a browser, recorded as
+  section 15 before the code: a canceled keydown suppresses keypress, keyup
+  arrives in every case, activation waits for the whole sequence, and the
+  court now observes the order rather than inferring it, with the section
+  still saying plainly that this is no hardware timing model. `control-0.0.1`
   request and result shapes are unchanged byte for byte; the behaviour
   behind a click on a reset control is corrected, recorded as a bug fix.
   The slice adds no CDP surface, recorded as a loss and proven with the
