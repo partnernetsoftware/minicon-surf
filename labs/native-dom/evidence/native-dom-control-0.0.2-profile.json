@@ -14,8 +14,8 @@
     {
       "check": "[system] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
       "detail": {
-        "footprint_delta": 311296,
-        "resident_delta": 851968
+        "footprint_delta": 262144,
+        "resident_delta": 802816
       },
       "passed": true
     },
@@ -254,7 +254,7 @@
     {
       "check": "[system] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
       "detail": {
-        "live": 6209992,
+        "live": 6291912,
         "profiles": {
           "budgets": {
             "accounted_bytes_per_profile": 131072,
@@ -374,8 +374,8 @@
     {
       "check": "[arena] D6: keychain-backed store enabled costs at most 512 KiB of empty footprint and 1 MiB of empty RSS over feature-off",
       "detail": {
-        "footprint_delta": 311296,
-        "resident_delta": 851968
+        "footprint_delta": 262144,
+        "resident_delta": 802816
       },
       "passed": true
     },
@@ -614,7 +614,7 @@
     {
       "check": "[arena] D6: live footprint with profiles, targets and data stays well below the Lightpanda single-server empty footprint",
       "detail": {
-        "live": 5702136,
+        "live": 5931560,
         "profiles": {
           "budgets": {
             "accounted_bytes_per_profile": 131072,
@@ -734,33 +734,33 @@
     "arena": {
       "empty": 2376016,
       "empty_rss": 8241152,
-      "feature_off_empty": 2064720,
-      "feature_off_empty_rss": 7389184,
-      "live_three_profiles": 5505528,
-      "live_with_data": 5702136,
-      "post_close": 5046728,
-      "restart_live_one_target": 3686784,
+      "feature_off_empty": 2113872,
+      "feature_off_empty_rss": 7438336,
+      "live_three_profiles": 5685776,
+      "live_with_data": 5931560,
+      "post_close": 5276152,
+      "restart_live_one_target": 3670400,
       "write_amplification": {
         "bytes": 950,
         "writes": 1
       }
     },
     "system": {
-      "empty": 2376016,
-      "empty_rss": 8241152,
-      "feature_off_empty": 2064720,
-      "feature_off_empty_rss": 7389184,
-      "live_three_profiles": 5505480,
-      "live_with_data": 6209992,
-      "post_close": 6209992,
-      "restart_live_one_target": 4309352,
+      "empty": 2359632,
+      "empty_rss": 8224768,
+      "feature_off_empty": 2097488,
+      "feature_off_empty_rss": 7421952,
+      "live_three_profiles": 5521864,
+      "live_with_data": 6291912,
+      "post_close": 6291912,
+      "restart_live_one_target": 4325736,
       "write_amplification": {
         "bytes": 950,
         "writes": 1
       }
     }
   },
-  "host_sha256": "a69992be8d1efe8c9f73b8d3ed9351a183f912cd24d924a185186aef40762cff",
+  "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
   "limitations": [
     "fake court values only; no real browser profile is read or migrated",
     "http only: Secure and SameSite=None cookies are refused by design",

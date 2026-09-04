@@ -3,7 +3,7 @@
   {
    "check": "baseline: no on-screen window owned by the surface child and no surface process",
    "detail": {
-    "on_screen_windows": 23,
+    "on_screen_windows": 24,
     "owner_windows": 0
    },
    "passed": true
@@ -22,7 +22,7 @@
    "check": "default court: the surface child ran (at least one child seen by the watch)",
    "detail": {
     "children_seen": 9,
-    "samples": 51
+    "samples": 53
    },
    "passed": true
   },
@@ -30,7 +30,7 @@
    "check": "default court: no window owned by the surface child at any of the samples",
    "detail": {
     "max_owner_windows": 0,
-    "samples": 51
+    "samples": 53
    },
    "passed": true
   },
@@ -45,8 +45,8 @@
   {
    "check": "default court: the window list after equals the window list before (owner counts)",
    "detail": {
-    "after_total": 23,
-    "before_total": 23,
+    "after_total": 24,
+    "before_total": 24,
     "owner_after": 0
    },
    "passed": true
@@ -142,15 +142,15 @@
   {
    "check": "end: the window list equals the baseline and no experiment process remains",
    "detail": {
-    "before_total": 23,
-    "final_total": 23
+    "before_total": 24,
+    "final_total": 24
    },
    "passed": true
   }
  ],
  "checks_passed": 17,
  "checks_total": 17,
- "host_sha256": "a69992be8d1efe8c9f73b8d3ed9351a183f912cd24d924a185186aef40762cff",
+ "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
  "limitations": [
   "macOS only; the window list is CGWindowListCopyWindowInfo on-screen windows by owner name; framework mapping is read with lsof",
   "the drain child is the surface binary in its no-AppKit mode: a separate process that maps no AppKit; a court that spawns no child at all would have no show/hide path to measure",
@@ -159,6 +159,6 @@
  "passed": true,
  "rule": "automated courts, regressions and default commands are strictly headless; a real window needs --visual plus MINICON_SURF_ALLOW_VISIBLE_COURT=1 in the same run and never steals focus",
  "schema": "minicon-surf.native-dom-surface-headless-receipt/0.0.1",
- "surface_sha256": "d55e44cb8275ef672fa4081a03cc2d25a89eee1172d9c198554f11bb481b1650",
+ "surface_sha256": "8e9e51e297599d0019ec8b8d34d63f832490a893f56c72e1e993f3866f6e9d2a",
  "technology": "native-dom"
 }

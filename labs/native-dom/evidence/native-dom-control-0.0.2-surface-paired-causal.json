@@ -38,8 +38,8 @@
         },
         "show_ms": {
          "maximum": 10,
-         "median": 9,
-         "minimum": 8
+         "median": 10,
+         "minimum": 7
         }
        },
        "owners_post_hide_bytes": {
@@ -49,31 +49,31 @@
        },
        "post_hide_over_headless": {
         "maximum": 327680,
-        "median": 294912,
-        "minimum": 245760
+        "median": 278528,
+        "minimum": 229376
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 1,
        "shown_over_headless": {
-        "maximum": 1376256,
-        "median": 1327128,
-        "minimum": 1294336
+        "maximum": 1359872,
+        "median": 1327104,
+        "minimum": 1277976
        },
        "stage_deltas": {
         "after_close_reap_join->after_frame_drop": -1032192,
         "after_command_spawn->after_reader_thread": 16384,
-        "after_first_frame_ack->shown": 32768,
+        "after_first_frame_ack->shown": 16384,
         "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 32768,
+        "after_painter->after_command_spawn": 65536,
         "after_reader_thread->after_hello_ready": 0,
         "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 49152,
-        "shown->hide_entry": 147456
+        "show_entry->after_snapshot": 32768,
+        "shown->hide_entry": 180224
        },
        "stage_retained_over_show_entry": {
         "maximum": 327680,
-        "median": 262144,
+        "median": 278528,
         "minimum": 229376
        },
        "teardown_exits": [
@@ -110,33 +110,33 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 540672,
-        "median": 475136,
-        "minimum": 442368
+        "maximum": 507904,
+        "median": 442368,
+        "minimum": 409600
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 2,
        "shown_over_headless": {
-        "maximum": 1589248,
-        "median": 1540096,
-        "minimum": 1474584
+        "maximum": 1572888,
+        "median": 1490944,
+        "minimum": 1474560
        },
        "stage_deltas": {
         "after_close_reap_join->after_frame_drop": -1032192,
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 65536,
+        "after_painter->after_command_spawn": 32768,
         "after_reader_thread->after_hello_ready": 0,
         "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
         "show_entry->after_snapshot": 16384,
-        "shown->hide_entry": 49152
+        "shown->hide_entry": 81920
        },
        "stage_retained_over_show_entry": {
-        "maximum": 262144,
-        "median": 147456,
-        "minimum": 131072
+        "maximum": 180224,
+        "median": 131072,
+        "minimum": 98304
        },
        "teardown_exits": [
         "protocol"
@@ -162,8 +162,8 @@
         },
         "show_ms": {
          "maximum": 9,
-         "median": 8,
-         "minimum": 7
+         "median": 9,
+         "minimum": 8
         }
        },
        "owners_post_hide_bytes": {
@@ -174,14 +174,14 @@
        "post_hide_over_headless": {
         "maximum": 606208,
         "median": 524288,
-        "minimum": 491520
+        "minimum": 507904
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 3,
        "shown_over_headless": {
-        "maximum": 1638400,
-        "median": 1589248,
-        "minimum": 1540096
+        "maximum": 1654808,
+        "median": 1572864,
+        "minimum": 1556480
        },
        "stage_deltas": {
         "after_close_reap_join->after_frame_drop": -1032192,
@@ -189,16 +189,16 @@
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
         "after_painter->after_command_spawn": 0,
-        "after_reader_thread->after_hello_ready": 0,
+        "after_reader_thread->after_hello_ready": 16384,
         "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
         "show_entry->after_snapshot": 16384,
         "shown->hide_entry": 32768
        },
        "stage_retained_over_show_entry": {
-        "maximum": 98304,
-        "median": 32768,
-        "minimum": 32768
+        "maximum": 114688,
+        "median": 81920,
+        "minimum": 49152
        },
        "teardown_exits": [
         "protocol"
@@ -206,7 +206,7 @@
       }
      ],
      "runs": 7,
-     "slope_post_hide": 229376,
+     "slope_post_hide": 245760,
      "valid_runs": 7
     },
     "system": {
@@ -236,12 +236,12 @@
         "ready_ms": {
          "maximum": 3,
          "median": 3,
-         "minimum": 3
+         "minimum": 2
         },
         "show_ms": {
          "maximum": 9,
          "median": 9,
-         "minimum": 8
+         "minimum": 7
         }
        },
        "owners_post_hide_bytes": {
@@ -250,33 +250,33 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 344064,
-        "median": 294912,
-        "minimum": 262144
+        "maximum": 409600,
+        "median": 344064,
+        "minimum": 344064
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 1,
        "shown_over_headless": {
-        "maximum": 1392664,
-        "median": 1343488,
-        "minimum": 1327128
+        "maximum": 1441792,
+        "median": 1409048,
+        "minimum": 1359872
        },
        "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1048600,
+        "after_close_reap_join->after_frame_drop": -1032192,
         "after_command_spawn->after_reader_thread": 16384,
-        "after_first_frame_ack->shown": 16384,
+        "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 16384,
+        "after_painter->after_command_spawn": 32768,
         "after_reader_thread->after_hello_ready": 0,
-        "after_snapshot->after_painter": 1048600,
+        "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 49152,
-        "shown->hide_entry": 196608
+        "show_entry->after_snapshot": 81920,
+        "shown->hide_entry": 245760
        },
        "stage_retained_over_show_entry": {
-        "maximum": 344064,
-        "median": 294912,
-        "minimum": 262144
+        "maximum": 393216,
+        "median": 344064,
+        "minimum": 327680
        },
        "teardown_exits": [
         "protocol"
@@ -312,33 +312,33 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 425984,
-        "median": 409600,
-        "minimum": 376832
+        "maximum": 524288,
+        "median": 491520,
+        "minimum": 475136
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 2,
        "shown_over_headless": {
-        "maximum": 1490968,
-        "median": 1458200,
-        "minimum": 1425408
+        "maximum": 1572864,
+        "median": 1540120,
+        "minimum": 1523712
        },
        "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1048600,
+        "after_close_reap_join->after_frame_drop": -1032192,
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
         "after_painter->after_command_spawn": 16384,
-        "after_reader_thread->after_hello_ready": 0,
-        "after_snapshot->after_painter": 1048600,
+        "after_reader_thread->after_hello_ready": 16384,
+        "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 16384,
+        "show_entry->after_snapshot": 32768,
         "shown->hide_entry": 49152
        },
        "stage_retained_over_show_entry": {
-        "maximum": 114688,
+        "maximum": 131072,
         "median": 114688,
-        "minimum": 65536
+        "minimum": 81920
        },
        "teardown_exits": [
         "protocol"
@@ -374,33 +374,33 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 458752,
-        "median": 442368,
-        "minimum": 409600
+        "maximum": 524288,
+        "median": 507904,
+        "minimum": 475136
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 3,
        "shown_over_headless": {
-        "maximum": 1523736,
-        "median": 1507352,
-        "minimum": 1458176
+        "maximum": 1572864,
+        "median": 1556504,
+        "minimum": 1523712
        },
        "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1048600,
+        "after_close_reap_join->after_frame_drop": -1032192,
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
         "after_painter->after_command_spawn": 0,
         "after_reader_thread->after_hello_ready": 0,
-        "after_snapshot->after_painter": 1048600,
+        "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 16384,
-        "shown->hide_entry": 16384
+        "show_entry->after_snapshot": 0,
+        "shown->hide_entry": 0
        },
        "stage_retained_over_show_entry": {
-        "maximum": 65536,
-        "median": 32768,
-        "minimum": 16384
+        "maximum": 32768,
+        "median": 16384,
+        "minimum": 0
        },
        "teardown_exits": [
         "protocol"
@@ -408,7 +408,7 @@
       }
      ],
      "runs": 7,
-     "slope_post_hide": 147456,
+     "slope_post_hide": 163840,
      "valid_runs": 7
     }
    },
@@ -465,7 +465,7 @@
   "checks_total": 110,
   "host_sha256_prefix": "32343eb5cb3ee4a0"
  },
- "host_sha256": "a69992be8d1efe8c9f73b8d3ed9351a183f912cd24d924a185186aef40762cff",
+ "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
  "hygiene": {
   "after": {
    "owner_windows": 0,
@@ -502,7 +502,7 @@
   "memory.report"
  ],
  "status": "unverified-headless-counterfactual",
- "surface_sha256": "d55e44cb8275ef672fa4081a03cc2d25a89eee1172d9c198554f11bb481b1650",
+ "surface_sha256": "8e9e51e297599d0019ec8b8d34d63f832490a893f56c72e1e993f3866f6e9d2a",
  "thresholds": {
   "D_owner_bytes": 0,
   "D_post_hide_footprint_bytes_max": 65536,

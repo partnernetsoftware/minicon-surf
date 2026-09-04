@@ -111,7 +111,7 @@
     "details": {
      "detail": "server certificate does not match the URL host",
      "generation": 1,
-     "href": "https://127.0.0.1:63522/cookie/set?name=neg3&value=court-neg3&attrs=Secure",
+     "href": "https://127.0.0.1:49708/cookie/set?name=neg3&value=court-neg3&attrs=Secure",
      "navigation": "failed",
      "realm": "realm_13",
      "reason": "tls_hostname_mismatch"
@@ -433,7 +433,7 @@
     "details": {
      "detail": "server certificate does not match the URL host",
      "generation": 1,
-     "href": "https://127.0.0.1:63522/cookie/set?name=neg3&value=court-neg3&attrs=Secure",
+     "href": "https://127.0.0.1:49708/cookie/set?name=neg3&value=court-neg3&attrs=Secure",
      "navigation": "failed",
      "realm": "realm_13",
      "reason": "tls_hostname_mismatch"
@@ -649,46 +649,46 @@
  "checks_total": 78,
  "design": "labs/native-dom/https-design-0.0.1.md (section 2, cookies) and profile-design-0.0.1.md (D1-D5)",
  "fixtures": {
-  "generation_seconds": 0.088,
+  "generation_seconds": 0.086,
   "mode": "generated-disposable",
   "public_certificates": {
    "court-ca.pem": {
-    "not_after": "Oct  3 11:05:42 2026 GMT",
-    "not_before": "Sep  3 11:05:42 2026 GMT",
+    "not_after": "Oct  4 02:22:22 2026 GMT",
+    "not_before": "Sep  4 02:22:22 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "B3:B5:EB:7A:4E:27:33:CF:BF:67:72:47:89:7C:BD:AF:74:3F:7F:0E:4D:E3:7B:00:E4:B9:2B:C4:4B:13:53:BC",
+    "sha256_fingerprint": "15:A4:5D:22:31:EB:CC:A5:E0:60:83:61:83:53:39:E5:FA:CD:B8:13:4A:A0:D0:F7:3F:BE:F2:55:08:76:F3:8F",
     "subject": "CN=MiniCon Surf disposable court CA",
     "subject_alt_name": null
    },
    "loopback.pem": {
-    "not_after": "Oct  3 11:05:42 2026 GMT",
-    "not_before": "Sep  3 11:05:42 2026 GMT",
+    "not_after": "Oct  4 02:22:22 2026 GMT",
+    "not_before": "Sep  4 02:22:22 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "D2:BA:E4:7F:F1:DE:4E:03:E3:BF:05:B1:BD:D0:F3:34:91:60:A5:EC:6B:66:AF:13:3B:87:AA:FB:4A:40:BC:49",
+    "sha256_fingerprint": "5C:DA:2F:3A:14:9A:A9:9B:F9:20:21:E2:E1:E0:00:10:20:B3:CA:95:AA:31:AC:4E:E8:89:3F:1C:09:80:12:58",
     "subject": "CN=loopback",
     "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
    },
    "other-ca-loopback.pem": {
-    "not_after": "Oct  3 11:05:43 2026 GMT",
-    "not_before": "Sep  3 11:05:43 2026 GMT",
+    "not_after": "Oct  4 02:22:22 2026 GMT",
+    "not_before": "Sep  4 02:22:22 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "57:4E:A0:60:9E:F8:71:AD:E9:BB:AB:E5:A6:69:3A:0B:99:20:C7:AE:54:DB:4B:08:B6:A1:91:EE:87:86:EF:D4",
+    "sha256_fingerprint": "19:C0:9C:D4:49:E0:A6:7E:C6:93:4E:C8:02:93:30:1E:EB:C8:94:7B:4F:97:AD:5C:2D:C3:03:63:A8:6A:A3:7F",
     "subject": "CN=other-ca-loopback",
     "subject_alt_name": "IP Address:127.0.0.1, DNS:localhost"
    },
    "other-ca.pem": {
-    "not_after": "Oct  3 11:05:42 2026 GMT",
-    "not_before": "Sep  3 11:05:42 2026 GMT",
+    "not_after": "Oct  4 02:22:22 2026 GMT",
+    "not_before": "Sep  4 02:22:22 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "76:AC:39:56:B8:E4:CD:87:C5:59:92:A0:6B:92:67:67:C8:7C:32:71:6E:BA:BC:F7:2E:EC:97:14:04:C0:F6:3B",
+    "sha256_fingerprint": "0F:CA:8E:EE:CE:EE:B3:A9:55:0B:8B:AA:F0:F6:7F:A7:2F:5D:85:14:33:37:F1:EB:99:4C:2D:03:9A:A8:C5:20",
     "subject": "CN=MiniCon Surf disposable OTHER CA (not pinned)",
     "subject_alt_name": null
    },
    "wrong-name.pem": {
-    "not_after": "Oct  3 11:05:43 2026 GMT",
-    "not_before": "Sep  3 11:05:43 2026 GMT",
+    "not_after": "Oct  4 02:22:22 2026 GMT",
+    "not_before": "Sep  4 02:22:22 2026 GMT",
     "public_key": "id-ecPublicKey",
-    "sha256_fingerprint": "3E:16:3A:7B:EC:D8:B1:2F:75:78:17:9E:60:FC:90:1B:CB:51:8E:F6:5D:38:4D:69:9B:81:37:02:11:13:9F:2A",
+    "sha256_fingerprint": "F7:64:59:78:96:A6:D2:B5:F9:98:34:E5:FE:29:29:BE:22:7B:90:76:A2:EE:48:72:0F:6D:D4:62:1A:57:B6:BB",
     "subject": "CN=wrong-name",
     "subject_alt_name": "DNS:wrong.invalid"
    }
@@ -696,15 +696,15 @@
  },
  "footprint_bytes": {
   "arena": {
-   "host_a_live": 4932040,
-   "host_b_live": 4047208
+   "host_a_live": 4948424,
+   "host_b_live": 3981672
   },
   "system": {
-   "host_a_live": 5587400,
-   "host_b_live": 4800872
+   "host_a_live": 5734856,
+   "host_b_live": 4620648
   }
  },
- "host_sha256": "a69992be8d1efe8c9f73b8d3ed9351a183f912cd24d924a185186aef40762cff",
+ "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
  "keychain_items_deleted": 2,
  "limitations": [
   "pinned test roots on loopback only; no system roots, no public web",
