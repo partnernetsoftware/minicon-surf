@@ -296,11 +296,12 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
   }}
   if (action.kind === "set_checked") {{
     if (!isCheck) return refuse("role_mismatch");
-    const before = !!el.checked;
+    // The whole group is captured, because setting a radio true clears its
+    // sibling and a canceled default must put that back too.
+    const before = el.__groupState ? el.__groupState() : [[el, !!el.checked]];
     el.checked = action.checked;
     if (fire("click", true)) {{
-      // Canceled: the state goes back and no change is fired.
-      el.checked = before;
+      if (el.__restoreGroup) el.__restoreGroup(before); else el.checked = before[0][1];
       return JSON.stringify({{ applied: false, default_prevented: true, role: type }});
     }}
     fire("change", false);
@@ -329,25 +330,38 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
       : (isButton || isCheck);
     if (!allowed) return refuse("key_role_unsupported");
     if (enter && isLine && !el.form) return refuse("key_role_unsupported");
+    const keyRole = isCheck ? type : (isButton ? "button" : (t === "a" ? "link" : "form"));
+    // The declared model: all three phases are dispatched and any cancellation
+    // stops the activation. Only what the handlers changed remains.
+    let canceled = false;
     for (const name of ["keydown", "keypress", "keyup"]) {{
       const ev = new Event(name, {{ bubbles: true, cancelable: true }});
       ev.key = enter ? "Enter" : " ";
       el.dispatchEvent(ev);
+      if (ev.defaultPrevented) canceled = true;
     }}
+    if (canceled) return JSON.stringify({{ applied: false, default_prevented: true, role: keyRole }});
     if (!enter && isCheck) {{
-      const before = !!el.checked;
-      el.checked = !before;
+      // A radio is set, never toggled, and the whole group is captured so a
+      // canceled default puts back the sibling this would clear.
+      const was = !!el.checked;
+      const before = el.__groupState ? el.__groupState() : [[el, was]];
+      el.checked = type === "radio" ? true : !was;
       if (fire("click", true)) {{
-        el.checked = before;
+        if (el.__restoreGroup) el.__restoreGroup(before); else el.checked = was;
         return JSON.stringify({{ applied: false, default_prevented: true, role: type }});
       }}
       fire("change", false);
       return settle({{ applied: true, role: type }});
     }}
     if (isButton) {{
-      if (enter && isSubmitter && el.form) return submitForm(el.form, el);
+      // Every subtype clicks first; only an uncanceled click reaches the
+      // submit or the reset behind it.
       if (fire("click", true)) return JSON.stringify({{ applied: false, default_prevented: true, role: "button" }});
-      if (type === "reset" && el.form) el.form.reset();
+      if (isSubmitter && el.form) return submitForm(el.form, el);
+      if (type === "reset" && el.form && !el.form.reset()) {{
+        return JSON.stringify({{ applied: false, default_prevented: true, role: "button" }});
+      }}
       return settle({{ applied: true, role: "button" }});
     }}
     if (enter && t === "a") {{

@@ -134,6 +134,14 @@
       }
       this.__checked = on;
     }
+    // The bounded checked state of a radio's whole group, so a canceled
+    // change can put back the sibling that was cleared, not just this one.
+    __groupState() {
+      const group = this.__radioGroup();
+      const whole = group.includes(this) ? group : [this, ...group];
+      return whole.map((el) => [el, !!el.checked]);
+    }
+    __restoreGroup(state) { for (const [el, was] of state) el.__checked = was; }
     __radioGroup() {
       const name = this.getAttribute("name");
       if (!name) return [this];
@@ -164,20 +172,25 @@
         .concat([...this.querySelectorAll("button")]);
     }
     get elements() { return this.localName === "form" ? this.__controls() : []; }
-    // A reset restores every control to the document's own defaults.
+    // A reset asks before it mutates: the cancelable event goes first and the
+    // controls are restored only if the page did not cancel it. Returns
+    // whether anything was restored.
     reset() {
+      const ev = new Event("reset", { bubbles: true, cancelable: true });
+      this.dispatchEvent(ev);
+      if (ev.defaultPrevented) return false;
       for (const el of this.__controls()) {
         el.__value = null;
         el.__checked = undefined;
         el.__selected = undefined;
       }
-      this.dispatchEvent(new Event("reset", { bubbles: true, cancelable: true }));
+      return true;
     }
     submit() { return this.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); }
     get innerText() { return this.textContent; }
     matches(selector) { return matchChain(this, parseSelector(selector), null); }
     click() {
-      if (this.localName === "input" && this.type === "reset") {
+      if (this.type === "reset" && (this.localName === "input" || this.localName === "button")) {
         const form = this.form;
         const ev = new Event("click", { bubbles: true, cancelable: true });
         this.dispatchEvent(ev);
