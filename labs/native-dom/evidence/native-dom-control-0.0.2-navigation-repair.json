@@ -1,0 +1,1903 @@
+{
+ "batch": {
+  "candidate": "immutable-policy sharing: Arc<[AllowedOrigin]> instead of a per-operation deep clone",
+  "compared_with": "native-dom-control-0.0.2-navigation-replication",
+  "extra_runs": 0,
+  "identity": "repair-1",
+  "of": "native-dom-control-0.0.2-navigation",
+  "reading": "Every frozen repair criterion failed. The default-allocator median rose to 1,163,264 bytes against a required 983,040 and against 1,064,960 in the original batch and 1,048,576 in the replication; one run reached 1,179,648, above the original cap; the arena median rose to 786,432 against a permitted 720,896. Tail slopes held. The repair is behaviourally sound and every other court stayed green, but it does not meet its acceptance and is recorded rejected. No cap moved, no arm was retuned, no second optimisation was attempted.",
+  "runs": 7,
+  "status": "rejected",
+  "warmup": 1
+ },
+ "caps": {
+  "history_entry_bytes": 1024,
+  "history_total_bytes": 8192,
+  "post_navigation_retention_bytes": 262144,
+  "soak_excess_bytes_per_navigation": 8192,
+  "soak_navigations": 128,
+  "soak_tail": 64,
+  "soak_tail_slope_bytes_per_navigation": 1024
+ },
+ "checks": [
+  {
+   "check": "[system] navigate is served under 0.0.2",
+   "passed": true
+  },
+  {
+   "check": "[system] navigate keeps the target and its main frame",
+   "detail": {
+    "frame_after": "frame_1",
+    "frame_before": "frame_1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigate increments the document generation by exactly one",
+   "detail": {
+    "after": 2,
+    "before": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigate mints a new realm and advances the revision",
+   "detail": {
+    "realm_after": "realm_2",
+    "realm_before": "realm_1",
+    "revision_after": 1,
+    "revision_before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigate commits the requested URL",
+   "detail": "http://127.0.0.1:61238/about.html",
+   "passed": true
+  },
+  {
+   "check": "[system] the replaced realm is not_found with realm scope",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "frame": "frame_1",
+     "reason": "realm_not_live_in_target"
+    },
+    "message": "realm does not exist",
+    "retryable": false,
+    "scope": {
+     "id": "realm_1",
+     "kind": "realm"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a node reference from before the navigation is stale_revision",
+   "detail": {
+    "code": "stale_revision",
+    "details": {
+     "current_revision": 1,
+     "reference_revision": 0
+    },
+    "message": "node reference revision no longer matches the target",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] target.inspect carries the bounded history state",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 2,
+    "position": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] reload replaces the document and keeps the URL",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     3,
+     "realm_3",
+     2
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     2,
+     "realm_2",
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] reload appends no entry and does not move the position",
+   "detail": {
+    "after": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    },
+    "before": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] traverse -1 lands on the previous entry and refetches it",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 1
+    },
+    "url": "http://127.0.0.1:61238/about.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] traverse reaches the first entry and reports no further back",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 0
+    },
+    "url": "http://127.0.0.1:61238/index.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] traverse +2 returns to the newest entry",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 3,
+     "position": 2
+    },
+    "url": "http://127.0.0.1:61238/count.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offset past the newest entry is not_found and changes nothing",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offset before the oldest entry is not_found",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigating from a back position truncates the forward entries",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 3,
+    "position": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the history window never exceeds its cap",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 8,
+    "position": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an evicted entry is not_found, not silently clamped",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a denied origin is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "address class refused: private",
+      "generation": 20,
+      "href": "http://10.0.0.1/evil.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "address"
+     },
+     "message": "network policy: address",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unqualified scheme is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "detail": "https needs an explicitly pinned root; no system roots are consulted",
+      "generation": 20,
+      "href": "https://127.0.0.1:1/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "tls_no_pinned_roots"
+     },
+     "message": "network policy: tls_no_pinned_roots",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a missing document is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "not_found",
+     "details": {
+      "generation": 20,
+      "href": "http://127.0.0.1:61238/absent.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "status": 404,
+      "url": "http://127.0.0.1:61238/absent.html"
+     },
+     "message": "document request was not successful",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a malformed URL is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "invalid_request",
+     "message": "url is not absolute",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a node reference survives every failed navigation",
+   "passed": true
+  },
+  {
+   "check": "[system] an offline profile refuses before any socket and changes nothing",
+   "detail": {
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "the profile's network policy is offline",
+      "generation": 20,
+      "href": "http://127.0.0.1:61238/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "network_offline"
+     },
+     "message": "network policy: network_offline",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offline profile refuses a reload the same way",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "the profile's network policy is offline",
+     "generation": 20,
+     "href": "http://127.0.0.1:61238/index.html",
+     "navigation": "failed",
+     "realm": "realm_20",
+     "reason": "network_offline"
+    },
+    "message": "network policy: network_offline",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] profile.inspect reports the policy and says the permission grants nothing",
+   "detail": {
+    "network": "offline",
+    "permissions": "deny_by_default",
+    "permissions_effect": "recorded_only"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] restoring online re-enables navigation under the unchanged allowlist",
+   "passed": true
+  },
+  {
+   "check": "[system] the allowlist is unchanged by the switch",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "address class refused: private",
+     "generation": 21,
+     "href": "http://10.0.0.1/evil.html",
+     "navigation": "failed",
+     "realm": "realm_21",
+     "reason": "address"
+    },
+    "message": "network policy: address",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an expired deadline is typed and leaves the target whole",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "engine_error": "interrupted",
+     "generation": 21,
+     "href": "http://127.0.0.1:61238/index.html",
+     "navigation": "failed",
+     "realm": "realm_21"
+    },
+    "message": "script evaluation failed",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a cookie set before the navigation is sent on the next one",
+   "detail": "Echo sent=court=one",
+   "passed": true
+  },
+  {
+   "check": "[system] the navigation's cookie reached the profile jar",
+   "detail": {
+    "budgets": {
+     "accounted_bytes_per_profile": 131072,
+     "cookie_bytes": 4096,
+     "cookies_per_host": 32,
+     "cookies_per_profile": 256,
+     "record_bytes": 4194304,
+     "storage_keys_per_origin": 32,
+     "storage_value_bytes": 1024
+    },
+    "bytes": 34,
+    "cookie_rejections_total": 0,
+    "cookies": 1,
+    "object_limit": 8,
+    "objects": 1,
+    "persistent": 0,
+    "policies": {
+     "bytes": 2,
+     "deny_by_default": 0,
+     "offline": 0,
+     "permissions_effect": "recorded_only"
+    },
+    "storage_keys": 0,
+    "store": null,
+    "store_bytes_written_total": 0,
+    "store_writes_total": 0,
+    "unavailable": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] session.inspect advertises both versions and their exact operations",
+   "detail": {
+    "discovery": "advisory",
+    "versions": [
+     "0.0.1",
+     "0.0.2"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ledger records every navigation in order, by origin only, and grants nothing",
+   "detail": {
+    "count": 29,
+    "limit": 64,
+    "outcomes": [
+     "committed",
+     "deadline_exceeded",
+     "not_found",
+     "permission_denied",
+     "unsupported_capability"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ledger is accounted and bounded in memory.report",
+   "detail": {
+    "audit_bytes": 5184,
+    "audit_entries": 29,
+    "audit_entry_limit": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the same operation under 0.0.1 is invalid_request, never inferred",
+   "detail": {
+    "code": "invalid_request",
+    "message": "operation is not part of the control version it names",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unsupported reload argument is refused typed, not ignored",
+   "detail": {
+    "code": "invalid_request",
+    "message": "expected exactly the fields [\"target\"]",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] post-navigation retention stays within its budget",
+   "detail": {
+    "cap": 262144,
+    "over_steady": 16384
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the history owner reports bounded bytes",
+   "detail": {
+    "cap": 8192,
+    "history_bytes": 301
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every owner returns to zero after the closes",
+   "passed": true
+  },
+  {
+   "check": "[system] the host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[cdp] the client navigates the target through Page.navigate",
+   "detail": {
+    "cdp": {
+     "frameId": "cdp_frame_1",
+     "loaderId": ""
+    },
+    "error": null,
+    "url": "http://127.0.0.1:61238/about.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] the projected frame id is the adapter's, never the native one",
+   "detail": {
+    "frameId": "cdp_frame_1",
+    "loaderId": ""
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] the client reloads through Page.reload without moving the history",
+   "detail": {
+    "cdp": {
+     "frameId": "cdp_frame_1",
+     "loaderId": ""
+    },
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] an argument this host cannot honour is refused typed, not ignored",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Page.reload): this host supports neither cache control nor load scripts",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Page.getNavigationHistory stays an explicit -32601: the host is the only history authority",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Page.getNavigationHistory): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Page.navigateToHistoryEntry stays an explicit -32601: the host is the only history authority",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Page.navigateToHistoryEntry): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the navigating arm's excess over the control arm stays within its budget",
+   "detail": {
+    "cap": 1048576,
+    "excess": 1163264
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the excess does not keep growing over the last navigations",
+   "detail": {
+    "cap": 65536,
+    "tail_excess_slope": 32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate is served under 0.0.2",
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate keeps the target and its main frame",
+   "detail": {
+    "frame_after": "frame_1",
+    "frame_before": "frame_1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate increments the document generation by exactly one",
+   "detail": {
+    "after": 2,
+    "before": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate mints a new realm and advances the revision",
+   "detail": {
+    "realm_after": "realm_2",
+    "realm_before": "realm_1",
+    "revision_after": 1,
+    "revision_before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate commits the requested URL",
+   "detail": "http://127.0.0.1:61238/about.html",
+   "passed": true
+  },
+  {
+   "check": "[arena] the replaced realm is not_found with realm scope",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "frame": "frame_1",
+     "reason": "realm_not_live_in_target"
+    },
+    "message": "realm does not exist",
+    "retryable": false,
+    "scope": {
+     "id": "realm_1",
+     "kind": "realm"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a node reference from before the navigation is stale_revision",
+   "detail": {
+    "code": "stale_revision",
+    "details": {
+     "current_revision": 1,
+     "reference_revision": 0
+    },
+    "message": "node reference revision no longer matches the target",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] target.inspect carries the bounded history state",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 2,
+    "position": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] reload replaces the document and keeps the URL",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     3,
+     "realm_3",
+     2
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     2,
+     "realm_2",
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] reload appends no entry and does not move the position",
+   "detail": {
+    "after": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    },
+    "before": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] traverse -1 lands on the previous entry and refetches it",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 1
+    },
+    "url": "http://127.0.0.1:61238/about.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] traverse reaches the first entry and reports no further back",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 0
+    },
+    "url": "http://127.0.0.1:61238/index.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] traverse +2 returns to the newest entry",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 3,
+     "position": 2
+    },
+    "url": "http://127.0.0.1:61238/count.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offset past the newest entry is not_found and changes nothing",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offset before the oldest entry is not_found",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigating from a back position truncates the forward entries",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 3,
+    "position": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the history window never exceeds its cap",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 8,
+    "position": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an evicted entry is not_found, not silently clamped",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a denied origin is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "address class refused: private",
+      "generation": 20,
+      "href": "http://10.0.0.1/evil.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "address"
+     },
+     "message": "network policy: address",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unqualified scheme is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "detail": "https needs an explicitly pinned root; no system roots are consulted",
+      "generation": 20,
+      "href": "https://127.0.0.1:1/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "tls_no_pinned_roots"
+     },
+     "message": "network policy: tls_no_pinned_roots",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a missing document is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "not_found",
+     "details": {
+      "generation": 20,
+      "href": "http://127.0.0.1:61238/absent.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "status": 404,
+      "url": "http://127.0.0.1:61238/absent.html"
+     },
+     "message": "document request was not successful",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a malformed URL is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "invalid_request",
+     "message": "url is not absolute",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a node reference survives every failed navigation",
+   "passed": true
+  },
+  {
+   "check": "[arena] an offline profile refuses before any socket and changes nothing",
+   "detail": {
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "the profile's network policy is offline",
+      "generation": 20,
+      "href": "http://127.0.0.1:61238/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "network_offline"
+     },
+     "message": "network policy: network_offline",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offline profile refuses a reload the same way",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "the profile's network policy is offline",
+     "generation": 20,
+     "href": "http://127.0.0.1:61238/index.html",
+     "navigation": "failed",
+     "realm": "realm_20",
+     "reason": "network_offline"
+    },
+    "message": "network policy: network_offline",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] profile.inspect reports the policy and says the permission grants nothing",
+   "detail": {
+    "network": "offline",
+    "permissions": "deny_by_default",
+    "permissions_effect": "recorded_only"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] restoring online re-enables navigation under the unchanged allowlist",
+   "passed": true
+  },
+  {
+   "check": "[arena] the allowlist is unchanged by the switch",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "detail": "address class refused: private",
+     "generation": 21,
+     "href": "http://10.0.0.1/evil.html",
+     "navigation": "failed",
+     "realm": "realm_21",
+     "reason": "address"
+    },
+    "message": "network policy: address",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an expired deadline is typed and leaves the target whole",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "engine_error": "interrupted",
+     "generation": 21,
+     "href": "http://127.0.0.1:61238/index.html",
+     "navigation": "failed",
+     "realm": "realm_21"
+    },
+    "message": "script evaluation failed",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a cookie set before the navigation is sent on the next one",
+   "detail": "Echo sent=court=one",
+   "passed": true
+  },
+  {
+   "check": "[arena] the navigation's cookie reached the profile jar",
+   "detail": {
+    "budgets": {
+     "accounted_bytes_per_profile": 131072,
+     "cookie_bytes": 4096,
+     "cookies_per_host": 32,
+     "cookies_per_profile": 256,
+     "record_bytes": 4194304,
+     "storage_keys_per_origin": 32,
+     "storage_value_bytes": 1024
+    },
+    "bytes": 34,
+    "cookie_rejections_total": 0,
+    "cookies": 1,
+    "object_limit": 8,
+    "objects": 1,
+    "persistent": 0,
+    "policies": {
+     "bytes": 2,
+     "deny_by_default": 0,
+     "offline": 0,
+     "permissions_effect": "recorded_only"
+    },
+    "storage_keys": 0,
+    "store": null,
+    "store_bytes_written_total": 0,
+    "store_writes_total": 0,
+    "unavailable": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] session.inspect advertises both versions and their exact operations",
+   "detail": {
+    "discovery": "advisory",
+    "versions": [
+     "0.0.1",
+     "0.0.2"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ledger records every navigation in order, by origin only, and grants nothing",
+   "detail": {
+    "count": 29,
+    "limit": 64,
+    "outcomes": [
+     "committed",
+     "deadline_exceeded",
+     "not_found",
+     "permission_denied",
+     "unsupported_capability"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ledger is accounted and bounded in memory.report",
+   "detail": {
+    "audit_bytes": 5184,
+    "audit_entries": 29,
+    "audit_entry_limit": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the same operation under 0.0.1 is invalid_request, never inferred",
+   "detail": {
+    "code": "invalid_request",
+    "message": "operation is not part of the control version it names",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unsupported reload argument is refused typed, not ignored",
+   "detail": {
+    "code": "invalid_request",
+    "message": "expected exactly the fields [\"target\"]",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] post-navigation retention stays within its budget",
+   "detail": {
+    "cap": 262144,
+    "over_steady": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the history owner reports bounded bytes",
+   "detail": {
+    "cap": 8192,
+    "history_bytes": 301
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every owner returns to zero after the closes",
+   "passed": true
+  },
+  {
+   "check": "[arena] the host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[arena] the navigating arm's excess over the control arm stays within its budget",
+   "detail": {
+    "cap": 1048576,
+    "excess": 786432
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the excess does not keep growing over the last navigations",
+   "detail": {
+    "cap": 65536,
+    "tail_excess_slope": 0
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 89,
+ "checks_total": 90,
+ "checks_unverified": 0,
+ "control_version": "0.0.2",
+ "design": "labs/native-dom/navigation-design-0.0.1.md",
+ "host_sha256": "17f5284fecf31e4ae4e2ace8d5c0a047f1bedd8a76124b6f49ff3096eaf9703b",
+ "limitations": [
+  "history is metadata only: an entry is the final canonical committed URL, so a traverse refetches and no page state is restored",
+  "the soak is differential by design: the control-churn court showed every control request grows the host without a plateau, so an absolute cap would fail for reasons unrelated to navigation; the two arms hold the request count, deadline and target identical and differ in the operation under test",
+  "one hermetic origin on loopback, one page set, macOS only; no surface, no window, no AppKit",
+  "a target opened from a fixture has no URL and the three operations refuse it as unsupported_capability",
+  "no pid, path, window or desktop fact is recorded"
+ ],
+ "passed": false,
+ "schema": "minicon-surf.native-dom-navigation-receipt/0.0.1",
+ "soak": {
+  "arena": {
+   "arms": {
+    "control": {
+     "104": 98304,
+     "112": 98304,
+     "120": 98304,
+     "128": 98304,
+     "16": 81920,
+     "24": 98304,
+     "32": 98304,
+     "40": 98304,
+     "48": 98304,
+     "56": 98304,
+     "64": 98304,
+     "72": 98304,
+     "8": 65536,
+     "80": 98304,
+     "88": 98304,
+     "96": 98304
+    },
+    "navigating": {
+     "104": 884736,
+     "112": 884736,
+     "120": 884736,
+     "128": 884736,
+     "16": 688128,
+     "24": 753664,
+     "32": 786432,
+     "40": 819200,
+     "48": 851968,
+     "56": 851968,
+     "64": 884736,
+     "72": 884736,
+     "8": 491520,
+     "80": 884736,
+     "88": 884736,
+     "96": 884736
+    }
+   },
+   "excess_at_128": 786432,
+   "per_run": {
+    "control": [
+     {
+      "104": 65536,
+      "112": 65536,
+      "120": 65536,
+      "128": 65536,
+      "16": 49152,
+      "24": 49152,
+      "32": 49152,
+      "40": 65536,
+      "48": 65536,
+      "56": 65536,
+      "64": 65536,
+      "72": 65536,
+      "8": 49152,
+      "80": 65536,
+      "88": 65536,
+      "96": 65536
+     },
+     {
+      "104": 114688,
+      "112": 114688,
+      "120": 114688,
+      "128": 114688,
+      "16": 81920,
+      "24": 114688,
+      "32": 114688,
+      "40": 114688,
+      "48": 114688,
+      "56": 114688,
+      "64": 114688,
+      "72": 114688,
+      "8": 65536,
+      "80": 114688,
+      "88": 114688,
+      "96": 114688
+     },
+     {
+      "104": 163840,
+      "112": 163840,
+      "120": 163840,
+      "128": 163840,
+      "16": 131072,
+      "24": 163840,
+      "32": 163840,
+      "40": 163840,
+      "48": 163840,
+      "56": 163840,
+      "64": 163840,
+      "72": 163840,
+      "8": 81920,
+      "80": 163840,
+      "88": 163840,
+      "96": 163840
+     },
+     {
+      "104": 81920,
+      "112": 81920,
+      "120": 81920,
+      "128": 81920,
+      "16": 65536,
+      "24": 81920,
+      "32": 81920,
+      "40": 81920,
+      "48": 81920,
+      "56": 81920,
+      "64": 81920,
+      "72": 81920,
+      "8": 65536,
+      "80": 81920,
+      "88": 81920,
+      "96": 81920
+     },
+     {
+      "104": 98304,
+      "112": 98304,
+      "120": 98304,
+      "128": 98304,
+      "16": 81920,
+      "24": 98304,
+      "32": 98304,
+      "40": 98304,
+      "48": 98304,
+      "56": 98304,
+      "64": 98304,
+      "72": 98304,
+      "8": 49152,
+      "80": 98304,
+      "88": 98304,
+      "96": 98304
+     },
+     {
+      "104": 131072,
+      "112": 131072,
+      "120": 131072,
+      "128": 131072,
+      "16": 98304,
+      "24": 114688,
+      "32": 131072,
+      "40": 131072,
+      "48": 131072,
+      "56": 131072,
+      "64": 131072,
+      "72": 131072,
+      "8": 65536,
+      "80": 131072,
+      "88": 131072,
+      "96": 131072
+     },
+     {
+      "104": 65536,
+      "112": 65536,
+      "120": 65536,
+      "128": 65536,
+      "16": 49152,
+      "24": 65536,
+      "32": 65536,
+      "40": 65536,
+      "48": 65536,
+      "56": 65536,
+      "64": 65536,
+      "72": 65536,
+      "8": 49152,
+      "80": 65536,
+      "88": 65536,
+      "96": 65536
+     }
+    ],
+    "navigating": [
+     {
+      "104": 868352,
+      "112": 868352,
+      "120": 868352,
+      "128": 868352,
+      "16": 704512,
+      "24": 786432,
+      "32": 786432,
+      "40": 835584,
+      "48": 835584,
+      "56": 851968,
+      "64": 851968,
+      "72": 851968,
+      "8": 589824,
+      "80": 851968,
+      "88": 868352,
+      "96": 868352
+     },
+     {
+      "104": 868352,
+      "112": 884736,
+      "120": 884736,
+      "128": 884736,
+      "16": 704512,
+      "24": 753664,
+      "32": 786432,
+      "40": 802816,
+      "48": 851968,
+      "56": 851968,
+      "64": 851968,
+      "72": 851968,
+      "8": 442368,
+      "80": 868352,
+      "88": 868352,
+      "96": 868352
+     },
+     {
+      "104": 901120,
+      "112": 901120,
+      "120": 901120,
+      "128": 901120,
+      "16": 737280,
+      "24": 802816,
+      "32": 819200,
+      "40": 851968,
+      "48": 884736,
+      "56": 901120,
+      "64": 901120,
+      "72": 901120,
+      "8": 524288,
+      "80": 901120,
+      "88": 901120,
+      "96": 901120
+     },
+     {
+      "104": 868352,
+      "112": 868352,
+      "120": 884736,
+      "128": 884736,
+      "16": 671744,
+      "24": 737280,
+      "32": 786432,
+      "40": 819200,
+      "48": 835584,
+      "56": 835584,
+      "64": 835584,
+      "72": 835584,
+      "8": 475136,
+      "80": 851968,
+      "88": 868352,
+      "96": 868352
+     },
+     {
+      "104": 884736,
+      "112": 884736,
+      "120": 884736,
+      "128": 884736,
+      "16": 671744,
+      "24": 753664,
+      "32": 786432,
+      "40": 835584,
+      "48": 851968,
+      "56": 884736,
+      "64": 884736,
+      "72": 884736,
+      "8": 442368,
+      "80": 884736,
+      "88": 884736,
+      "96": 884736
+     },
+     {
+      "104": 901120,
+      "112": 901120,
+      "120": 901120,
+      "128": 901120,
+      "16": 688128,
+      "24": 770048,
+      "32": 802816,
+      "40": 819200,
+      "48": 851968,
+      "56": 884736,
+      "64": 901120,
+      "72": 901120,
+      "8": 540672,
+      "80": 901120,
+      "88": 901120,
+      "96": 901120
+     },
+     {
+      "104": 884736,
+      "112": 884736,
+      "120": 884736,
+      "128": 884736,
+      "16": 638976,
+      "24": 720896,
+      "32": 753664,
+      "40": 770048,
+      "48": 802816,
+      "56": 835584,
+      "64": 884736,
+      "72": 884736,
+      "8": 491520,
+      "80": 884736,
+      "88": 884736,
+      "96": 884736
+     }
+    ]
+   },
+   "tail_excess_slope": 0
+  },
+  "system": {
+   "arms": {
+    "control": {
+     "104": 49152,
+     "112": 49152,
+     "120": 65536,
+     "128": 65536,
+     "16": 32768,
+     "24": 32768,
+     "32": 32768,
+     "40": 32768,
+     "48": 32768,
+     "56": 32768,
+     "64": 32768,
+     "72": 32768,
+     "8": 32768,
+     "80": 32768,
+     "88": 49152,
+     "96": 49152
+    },
+    "navigating": {
+     "104": 1196032,
+     "112": 1196032,
+     "120": 1228800,
+     "128": 1228800,
+     "16": 999424,
+     "24": 1032192,
+     "32": 1081344,
+     "40": 1114112,
+     "48": 1130496,
+     "56": 1130496,
+     "64": 1163264,
+     "72": 1179648,
+     "8": 851968,
+     "80": 1179648,
+     "88": 1179648,
+     "96": 1179648
+    }
+   },
+   "excess_at_128": 1163264,
+   "per_run": {
+    "control": [
+     {
+      "104": 32768,
+      "112": 32768,
+      "120": 49152,
+      "128": 49152,
+      "16": 32768,
+      "24": 32768,
+      "32": 32768,
+      "40": 32768,
+      "48": 32768,
+      "56": 32768,
+      "64": 32768,
+      "72": 32768,
+      "8": 32768,
+      "80": 32768,
+      "88": 32768,
+      "96": 32768
+     },
+     {
+      "104": 98304,
+      "112": 98304,
+      "120": 98304,
+      "128": 98304,
+      "16": 49152,
+      "24": 81920,
+      "32": 81920,
+      "40": 98304,
+      "48": 98304,
+      "56": 98304,
+      "64": 98304,
+      "72": 98304,
+      "8": 49152,
+      "80": 98304,
+      "88": 98304,
+      "96": 98304
+     },
+     {
+      "104": 65536,
+      "112": 65536,
+      "120": 65536,
+      "128": 65536,
+      "16": 65536,
+      "24": 65536,
+      "32": 65536,
+      "40": 65536,
+      "48": 65536,
+      "56": 65536,
+      "64": 65536,
+      "72": 65536,
+      "8": 65536,
+      "80": 65536,
+      "88": 65536,
+      "96": 65536
+     },
+     {
+      "104": 32768,
+      "112": 32768,
+      "120": 65536,
+      "128": 65536,
+      "16": 16384,
+      "24": 32768,
+      "32": 32768,
+      "40": 32768,
+      "48": 32768,
+      "56": 32768,
+      "64": 32768,
+      "72": 32768,
+      "8": 16384,
+      "80": 32768,
+      "88": 32768,
+      "96": 32768
+     },
+     {
+      "104": 49152,
+      "112": 49152,
+      "120": 49152,
+      "128": 49152,
+      "16": 32768,
+      "24": 32768,
+      "32": 32768,
+      "40": 32768,
+      "48": 32768,
+      "56": 32768,
+      "64": 32768,
+      "72": 32768,
+      "8": 32768,
+      "80": 32768,
+      "88": 49152,
+      "96": 49152
+     },
+     {
+      "104": 32768,
+      "112": 32768,
+      "120": 49152,
+      "128": 49152,
+      "16": 32768,
+      "24": 32768,
+      "32": 32768,
+      "40": 32768,
+      "48": 32768,
+      "56": 32768,
+      "64": 32768,
+      "72": 32768,
+      "8": 32768,
+      "80": 32768,
+      "88": 32768,
+      "96": 32768
+     },
+     {
+      "104": 81920,
+      "112": 81920,
+      "120": 81920,
+      "128": 81920,
+      "16": 65536,
+      "24": 65536,
+      "32": 65536,
+      "40": 65536,
+      "48": 65536,
+      "56": 65536,
+      "64": 65536,
+      "72": 65536,
+      "8": 65536,
+      "80": 65536,
+      "88": 65536,
+      "96": 65536
+     }
+    ],
+    "navigating": [
+     {
+      "104": 1163264,
+      "112": 1163264,
+      "120": 1196032,
+      "128": 1196032,
+      "16": 983040,
+      "24": 1015808,
+      "32": 1048576,
+      "40": 1081344,
+      "48": 1114112,
+      "56": 1114112,
+      "64": 1114112,
+      "72": 1130496,
+      "8": 819200,
+      "80": 1130496,
+      "88": 1130496,
+      "96": 1130496
+     },
+     {
+      "104": 1212416,
+      "112": 1212416,
+      "120": 1228800,
+      "128": 1228800,
+      "16": 1032192,
+      "24": 1048576,
+      "32": 1097728,
+      "40": 1146880,
+      "48": 1163264,
+      "56": 1163264,
+      "64": 1163264,
+      "72": 1179648,
+      "8": 884736,
+      "80": 1179648,
+      "88": 1179648,
+      "96": 1179648
+     },
+     {
+      "104": 1196032,
+      "112": 1196032,
+      "120": 1245184,
+      "128": 1245184,
+      "16": 999424,
+      "24": 1048576,
+      "32": 1081344,
+      "40": 1130496,
+      "48": 1163264,
+      "56": 1163264,
+      "64": 1163264,
+      "72": 1179648,
+      "8": 868352,
+      "80": 1179648,
+      "88": 1179648,
+      "96": 1179648
+     },
+     {
+      "104": 1048576,
+      "112": 1048576,
+      "120": 1048576,
+      "128": 1048576,
+      "16": 868352,
+      "24": 901120,
+      "32": 933888,
+      "40": 966656,
+      "48": 983040,
+      "56": 983040,
+      "64": 1015808,
+      "72": 1015808,
+      "8": 704512,
+      "80": 1015808,
+      "88": 1015808,
+      "96": 1048576
+     },
+     {
+      "104": 1212416,
+      "112": 1212416,
+      "120": 1228800,
+      "128": 1228800,
+      "16": 950272,
+      "24": 1048576,
+      "32": 1081344,
+      "40": 1114112,
+      "48": 1179648,
+      "56": 1179648,
+      "64": 1179648,
+      "72": 1196032,
+      "8": 753664,
+      "80": 1196032,
+      "88": 1196032,
+      "96": 1196032
+     },
+     {
+      "104": 1163264,
+      "112": 1179648,
+      "120": 1212416,
+      "128": 1212416,
+      "16": 999424,
+      "24": 1015808,
+      "32": 1048576,
+      "40": 1097728,
+      "48": 1130496,
+      "56": 1130496,
+      "64": 1130496,
+      "72": 1146880,
+      "8": 851968,
+      "80": 1146880,
+      "88": 1146880,
+      "96": 1146880
+     },
+     {
+      "104": 1196032,
+      "112": 1196032,
+      "120": 1245184,
+      "128": 1245184,
+      "16": 999424,
+      "24": 1032192,
+      "32": 1081344,
+      "40": 1114112,
+      "48": 1130496,
+      "56": 1130496,
+      "64": 1163264,
+      "72": 1179648,
+      "8": 868352,
+      "80": 1179648,
+      "88": 1179648,
+      "96": 1179648
+     }
+    ]
+   },
+   "tail_excess_slope": 32768
+  }
+ },
+ "technology": "native-dom"
+}

@@ -448,3 +448,32 @@ Measured on one post-fix batch, no cherry-picking and no second attempt:
 These are stricter conditions on the repair and they do not rewrite the
 original gate. If any of them fails the outcome is recorded rejected or
 narrow and the work stops there: no second optimisation, no moved cap.
+
+## 17. Result of the sharing repair: rejected
+
+The repair of §16 was implemented exactly as frozen and measured on one
+post-fix batch, stored separately as
+`native-dom-control-0.0.2-navigation-repair`. It **fails every acceptance
+criterion** and is recorded rejected.
+
+| Criterion | Required | Measured |
+|---|---|---|
+| default median excess | ≤ 983,040 | 1,163,264 |
+| any default run | ≤ 1,048,576 | 1,179,648 at the highest |
+| arena median excess | ≤ 720,896 | 786,432 |
+| tail slopes | ≤ 65,536 | 32,768 and 0 |
+
+The sharing itself works and is proven by test: eight clones of a policy add
+eight references to one allowlist and allocate none, and the per-profile
+switch never touches that sharing. Every other court stayed green: the
+profile court at 92 of 94 with its known narrow, the network court at 36 of
+36, the CDP frame-tree court at 64 of 64, and the navigation court's
+mechanics unchanged. So the change is behaviourally sound and simply does not
+buy what it was meant to buy.
+
+Three batches on three builds now read 1,064,960, 1,048,576 and 1,163,264
+under the default allocator. The differential is evidently dominated by
+something other than the allowlist copy, and it moves more between builds
+than the repair could plausibly shift. Naming that cause needs its own
+read-only attribution, not another optimisation. No cap moved, no arm was
+retuned, and the work stops here as the ruling requires.
