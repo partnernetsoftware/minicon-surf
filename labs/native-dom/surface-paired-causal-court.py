@@ -307,7 +307,7 @@ def main():
     if args.visual:
         print(json.dumps({"passed": None, "unverified": "arm A (real window) is not implemented in this revision and needs the owner's permission for the run; nothing was started"}))
         return 3
-    before = HEADLESS.windows_by_owner().get(OWNER, 0), len(HEADLESS.processes(OWNER))
+    before = HEADLESS.surface_windows(), len(HEADLESS.processes(OWNER))
     live = []
 
     def handler(signum, _frame):
@@ -340,7 +340,7 @@ def main():
                   "inputs ok runs", [r["inputs_applied_runs"] for r in s["rounds"]])
     finally:
         server.shutdown()
-    after = HEADLESS.windows_by_owner().get(OWNER, 0), len(HEADLESS.processes(OWNER))
+    after = HEADLESS.surface_windows(), len(HEADLESS.processes(OWNER))
     receipt = {
         "schema": "minicon-surf/native-dom-surface-paired-causal/0.0.1",
         "design": "labs/native-dom/surface-paired-causal-court-0.0.1.md",

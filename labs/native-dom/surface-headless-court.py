@@ -8,15 +8,16 @@ headless; a real window needs the double opt-in `--visual` plus
 This court proves the default with checks that can fail:
 
 1. Baseline: no on-screen window owned by `native-dom-surface`, no such
-   process.
+   process. Only that owner is ever counted: the court never builds or
+   compares an inventory of the desktop's other windows.
 2. The default snapshot attribution court runs (a subset, one run per
    cell) while this court polls the window list every 50 ms and inspects
    every surface child it sees: the count of windows owned by the child
    stays 0 at every sample, the child never maps AppKit or CoreGraphics,
    the court-only log reports window number 0, and the child count seen is
    at least one (the show/hide path really ran).
-3. After the court: exit 0, the window list is unchanged, no residual
-   `native-dom-surface` or `native-dom-control` process.
+3. After the court: exit 0, the surface child still owns no window, no
+   residual `native-dom-surface` or `native-dom-control` process.
 4. Fail closed: the visual surface court without the opt-in exits 3 with
    an `unverified` line and writes no receipt; `--visual` without the
    environment exits 3 on every court; the host with `--visual 1` and no
@@ -69,11 +70,17 @@ _CF.CFStringGetCString.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_lo
 _CF.CFRelease.argtypes = [ctypes.c_void_p]
 
 
-def windows_by_owner():
-    """On-screen window count per owner name (kCGWindowListOptionOnScreenOnly)."""
+def surface_windows():
+    """How many on-screen windows the surface child owns, and nothing else.
+
+    Every other window belongs to the person using this machine. Their names
+    and their number are none of this court's business, so each entry is
+    compared against the one owner that is and then discarded: no inventory of
+    the desktop is built, kept, compared or reported.
+    """
     key = _CF.CFStringCreateWithCString(None, b"kCGWindowOwnerName", K_CF_STRING_UTF8)
     info = _CG.CGWindowListCopyWindowInfo(1, 0)
-    counts = {}
+    ours = 0
     try:
         for index in range(_CF.CFArrayGetCount(info)):
             entry = _CF.CFArrayGetValueAtIndex(info, index)
@@ -82,12 +89,12 @@ def windows_by_owner():
                 continue
             buffer = ctypes.create_string_buffer(256)
             _CF.CFStringGetCString(name_ref, buffer, 256, K_CF_STRING_UTF8)
-            name = buffer.value.decode(errors="replace")
-            counts[name] = counts.get(name, 0) + 1
+            if buffer.value.decode(errors="replace") == OWNER:
+                ours += 1
     finally:
         _CF.CFRelease(info)
         _CF.CFRelease(key)
-    return counts
+    return ours
 
 
 def processes(name):
@@ -115,7 +122,7 @@ class Watch:
     def run(self):
         while not self.stop.is_set():
             self.samples += 1
-            self.max_owner_windows = max(self.max_owner_windows, windows_by_owner().get(OWNER, 0))
+            self.max_owner_windows = max(self.max_owner_windows, surface_windows())
             for pid in processes(OWNER):
                 if pid not in self.children_seen:
                     self.children_seen.add(pid)
@@ -179,9 +186,9 @@ def main():
 
     python = sys.executable
     court = str(HERE / "surface-snapshot-attribution-court.py")
-    before = windows_by_owner()
-    expect("baseline: no on-screen window owned by the surface child and no surface process", before.get(OWNER, 0) == 0 and not processes(OWNER),
-           {"owner_windows": before.get(OWNER, 0), "on_screen_windows": sum(before.values())})
+    before = surface_windows()
+    expect("baseline: no on-screen window owned by the surface child and no surface process", before == 0 and not processes(OWNER),
+           {"owner_windows": before})
 
     # 2. The default court under the watch.
     with tempfile.TemporaryDirectory(prefix="minicon-surf-headless-court-") as directory:
@@ -190,7 +197,7 @@ def main():
             run = subprocess.run([python, "-W", "ignore", court, "--binary", binary, "--surface-binary", surface_binary, "--receipt", str(receipt_path),
                                   "--repetitions", "1", "--warmup", "0", "--cells", "current-full,static-parse_drop,plateau-idle"],
                                  capture_output=True, text=True, env=headless_env(), timeout=600)
-        after = windows_by_owner()
+        after = surface_windows()
         receipt = json.loads(receipt_path.read_text()) if receipt_path.exists() else {}
         expect("default court: exits 0 and records the headless drain child", run.returncode == 0 and receipt.get("visual") is False and receipt.get("child_mode") == "drain",
                {"returncode": run.returncode, "visual": receipt.get("visual"), "child_mode": receipt.get("child_mode"), "stderr_tail": run.stderr[-300:]})
@@ -200,8 +207,8 @@ def main():
                {"samples": watch.samples, "max_owner_windows": watch.max_owner_windows})
         expect("default court: no surface child ever mapped AppKit, CoreGraphics or QuartzCore", watch.children_seen and all(not f for f in watch.frameworks.values()),
                {"children": len(watch.children_seen), "mapped": sorted({name for f in watch.frameworks.values() for name in f})})
-        expect("default court: the window list after equals the window list before (owner counts)", after.get(OWNER, 0) == 0 and after == before,
-               {"before_total": sum(before.values()), "after_total": sum(after.values()), "owner_after": after.get(OWNER, 0)})
+        expect("default court: the surface child owns no window afterwards, as before", after == 0 and after == before,
+               {"owner_windows_before": before, "owner_windows_after": after})
         expect("default court: no residual surface or host process", not processes(OWNER) and not processes("native-dom-control"))
 
     # 4. Fail closed.
@@ -278,12 +285,12 @@ def main():
             court_run.wait()
         time.sleep(0.5)
         expect("court interrupted with SIGINT while its host is alive: exit 130, no residual process, no window, no receipt",
-               alive and court_run.returncode == 130 and not processes(OWNER) and not processes("native-dom-control") and windows_by_owner().get(OWNER, 0) == 0 and not receipt_path.exists(),
+               alive and court_run.returncode == 130 and not processes(OWNER) and not processes("native-dom-control") and surface_windows() == 0 and not receipt_path.exists(),
                {"host_alive_at_interrupt": alive, "returncode": court_run.returncode, "residual_children": len(processes(OWNER)), "residual_hosts": len(processes("native-dom-control"))})
 
-    final = windows_by_owner()
-    expect("end: the window list equals the baseline and no experiment process remains", final == before and not processes(OWNER) and not processes("native-dom-control"),
-           {"before_total": sum(before.values()), "final_total": sum(final.values())})
+    final = surface_windows()
+    expect("end: the surface child owns no window and no experiment process remains", final == 0 and final == before and not processes(OWNER) and not processes("native-dom-control"),
+           {"owner_windows_before": before, "owner_windows_final": final})
     receipt = {
         "schema": "minicon-surf.native-dom-surface-headless-receipt/0.0.1",
         "technology": "native-dom",
@@ -294,7 +301,7 @@ def main():
         "checks_passed": sum(1 for c in checks if c["passed"]),
         "checks_total": len(checks),
         "passed": all(c["passed"] for c in checks),
-        "limitations": ["macOS only; the window list is CGWindowListCopyWindowInfo on-screen windows by owner name; framework mapping is read with lsof",
+        "limitations": ["macOS only; only windows owned by the surface child are counted, from CGWindowListCopyWindowInfo on-screen windows, and no other owner's windows are counted, compared or recorded; framework mapping is read with lsof",
                         "the drain child is the surface binary in its no-AppKit mode: a separate process that maps no AppKit; a court that spawns no child at all would have no show/hide path to measure",
                         "no pid, path or command line is recorded"],
     }

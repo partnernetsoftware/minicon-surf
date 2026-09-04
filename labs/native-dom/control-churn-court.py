@@ -300,7 +300,7 @@ def summarize_arm(runs):
 
 
 def surface_hygiene():
-    return {"owner_windows": HEADLESS.windows_by_owner().get(OWNER, 0), "surface_processes": len(HEADLESS.processes(OWNER)),
+    return {"owner_windows": HEADLESS.surface_windows(), "surface_processes": len(HEADLESS.processes(OWNER)),
             "host_processes": len(HEADLESS.processes("native-dom-control"))}
 
 
