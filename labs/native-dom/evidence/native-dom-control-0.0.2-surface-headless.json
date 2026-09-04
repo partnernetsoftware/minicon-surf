@@ -3,7 +3,6 @@
   {
    "check": "baseline: no on-screen window owned by the surface child and no surface process",
    "detail": {
-    "on_screen_windows": 24,
     "owner_windows": 0
    },
    "passed": true
@@ -21,8 +20,8 @@
   {
    "check": "default court: the surface child ran (at least one child seen by the watch)",
    "detail": {
-    "children_seen": 9,
-    "samples": 53
+    "children_seen": 6,
+    "samples": 65
    },
    "passed": true
   },
@@ -30,24 +29,23 @@
    "check": "default court: no window owned by the surface child at any of the samples",
    "detail": {
     "max_owner_windows": 0,
-    "samples": 53
+    "samples": 65
    },
    "passed": true
   },
   {
    "check": "default court: no surface child ever mapped AppKit, CoreGraphics or QuartzCore",
    "detail": {
-    "children": 9,
+    "children": 6,
     "mapped": []
    },
    "passed": true
   },
   {
-   "check": "default court: the window list after equals the window list before (owner counts)",
+   "check": "default court: the surface child owns no window afterwards, as before",
    "detail": {
-    "after_total": 24,
-    "before_total": 24,
-    "owner_after": 0
+    "owner_windows_after": 0,
+    "owner_windows_before": 0
    },
    "passed": true
   },
@@ -140,19 +138,19 @@
    "passed": true
   },
   {
-   "check": "end: the window list equals the baseline and no experiment process remains",
+   "check": "end: the surface child owns no window and no experiment process remains",
    "detail": {
-    "before_total": 24,
-    "final_total": 24
+    "owner_windows_before": 0,
+    "owner_windows_final": 0
    },
    "passed": true
   }
  ],
  "checks_passed": 17,
  "checks_total": 17,
- "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
+ "host_sha256": "925d062bffd16d7c6dc28e16fc59c5e0548f5ca35f093abfe11f00ee9eec4e95",
  "limitations": [
-  "macOS only; the window list is CGWindowListCopyWindowInfo on-screen windows by owner name; framework mapping is read with lsof",
+  "macOS only; only windows owned by the surface child are counted, from CGWindowListCopyWindowInfo on-screen windows, and no other owner's windows are counted, compared or recorded; framework mapping is read with lsof",
   "the drain child is the surface binary in its no-AppKit mode: a separate process that maps no AppKit; a court that spawns no child at all would have no show/hide path to measure",
   "no pid, path or command line is recorded"
  ],

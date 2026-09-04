@@ -33,12 +33,12 @@
         },
         "ready_ms": {
          "maximum": 3,
-         "median": 3,
+         "median": 2,
          "minimum": 2
         },
         "show_ms": {
          "maximum": 10,
-         "median": 10,
+         "median": 9,
          "minimum": 7
         }
        },
@@ -49,32 +49,32 @@
        },
        "post_hide_over_headless": {
         "maximum": 327680,
-        "median": 278528,
-        "minimum": 229376
+        "median": 311296,
+        "minimum": 278528
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 1,
        "shown_over_headless": {
-        "maximum": 1359872,
-        "median": 1327104,
-        "minimum": 1277976
+        "maximum": 1376280,
+        "median": 1343488,
+        "minimum": 1310720
        },
        "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_close_reap_join->after_frame_drop": -1048600,
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 16384,
         "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 65536,
+        "after_painter->after_command_spawn": 49152,
         "after_reader_thread->after_hello_ready": 0,
-        "after_snapshot->after_painter": 1032192,
+        "after_snapshot->after_painter": 1048600,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 32768,
+        "show_entry->after_snapshot": 16384,
         "shown->hide_entry": 180224
        },
        "stage_retained_over_show_entry": {
         "maximum": 327680,
         "median": 278528,
-        "minimum": 229376
+        "minimum": 245760
        },
        "teardown_exits": [
         "protocol"
@@ -110,33 +110,33 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 507904,
-        "median": 442368,
+        "maximum": 475136,
+        "median": 425984,
         "minimum": 409600
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 2,
        "shown_over_headless": {
-        "maximum": 1572888,
-        "median": 1490944,
-        "minimum": 1474560
+        "maximum": 1507328,
+        "median": 1474584,
+        "minimum": 1458176
        },
        "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_close_reap_join->after_frame_drop": -1048600,
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
         "after_painter->after_command_spawn": 32768,
         "after_reader_thread->after_hello_ready": 0,
-        "after_snapshot->after_painter": 1032192,
+        "after_snapshot->after_painter": 1048600,
         "hide_entry->after_close_reap_join": -16384,
         "show_entry->after_snapshot": 16384,
-        "shown->hide_entry": 81920
+        "shown->hide_entry": 49152
        },
        "stage_retained_over_show_entry": {
-        "maximum": 180224,
-        "median": 131072,
-        "minimum": 98304
+        "maximum": 147456,
+        "median": 98304,
+        "minimum": 65536
        },
        "teardown_exits": [
         "protocol"
@@ -161,9 +161,9 @@
          "minimum": 2
         },
         "show_ms": {
-         "maximum": 9,
+         "maximum": 10,
          "median": 9,
-         "minimum": 8
+         "minimum": 7
         }
        },
        "owners_post_hide_bytes": {
@@ -172,31 +172,31 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 606208,
+        "maximum": 573440,
         "median": 524288,
-        "minimum": 507904
+        "minimum": 475136
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 3,
        "shown_over_headless": {
-        "maximum": 1654808,
-        "median": 1572864,
-        "minimum": 1556480
+        "maximum": 1605632,
+        "median": 1556480,
+        "minimum": 1540096
        },
        "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_close_reap_join->after_frame_drop": -1048600,
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 0,
-        "after_reader_thread->after_hello_ready": 16384,
-        "after_snapshot->after_painter": 1032192,
+        "after_painter->after_command_spawn": 16384,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1048600,
         "hide_entry->after_close_reap_join": -16384,
         "show_entry->after_snapshot": 16384,
-        "shown->hide_entry": 32768
+        "shown->hide_entry": 49152
        },
        "stage_retained_over_show_entry": {
-        "maximum": 114688,
+        "maximum": 98304,
         "median": 81920,
         "minimum": 49152
        },
@@ -206,7 +206,7 @@
       }
      ],
      "runs": 7,
-     "slope_post_hide": 245760,
+     "slope_post_hide": 212992,
      "valid_runs": 7
     },
     "system": {
@@ -235,7 +235,7 @@
         },
         "ready_ms": {
          "maximum": 3,
-         "median": 3,
+         "median": 2,
          "minimum": 2
         },
         "show_ms": {
@@ -250,15 +250,77 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 409600,
-        "median": 344064,
-        "minimum": 344064
+        "maximum": 344064,
+        "median": 294912,
+        "minimum": 212992
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 1,
        "shown_over_headless": {
-        "maximum": 1441792,
-        "median": 1409048,
+        "maximum": 1409072,
+        "median": 1327104,
+        "minimum": 1261568
+       },
+       "stage_deltas": {
+        "after_close_reap_join->after_frame_drop": -1032192,
+        "after_command_spawn->after_reader_thread": 16384,
+        "after_first_frame_ack->shown": 0,
+        "after_hello_ready->after_first_frame_ack": 0,
+        "after_painter->after_command_spawn": 16384,
+        "after_reader_thread->after_hello_ready": 0,
+        "after_snapshot->after_painter": 1048576,
+        "hide_entry->after_close_reap_join": -16384,
+        "show_entry->after_snapshot": 65536,
+        "shown->hide_entry": 180224
+       },
+       "stage_retained_over_show_entry": {
+        "maximum": 344064,
+        "median": 294912,
+        "minimum": 212992
+       },
+       "teardown_exits": [
+        "protocol"
+       ]
+      },
+      {
+       "frame_touched_shown": {
+        "maximum": 1032192,
+        "median": 1032192,
+        "minimum": 1032192
+       },
+       "inputs_applied_runs": 7,
+       "latency": {
+        "first_frame_ms": {
+         "maximum": 0,
+         "median": 0,
+         "minimum": 0
+        },
+        "ready_ms": {
+         "maximum": 3,
+         "median": 3,
+         "minimum": 2
+        },
+        "show_ms": {
+         "maximum": 9,
+         "median": 8,
+         "minimum": 8
+        }
+       },
+       "owners_post_hide_bytes": {
+        "maximum": 0,
+        "median": 0,
+        "minimum": 0
+       },
+       "post_hide_over_headless": {
+        "maximum": 491520,
+        "median": 409600,
+        "minimum": 311296
+       },
+       "revision_advanced_by_inputs_runs": 7,
+       "round": 2,
+       "shown_over_headless": {
+        "maximum": 1572912,
+        "median": 1458176,
         "minimum": 1359872
        },
        "stage_deltas": {
@@ -266,17 +328,17 @@
         "after_command_spawn->after_reader_thread": 16384,
         "after_first_frame_ack->shown": 0,
         "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 32768,
+        "after_painter->after_command_spawn": 16384,
         "after_reader_thread->after_hello_ready": 0,
         "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 81920,
-        "shown->hide_entry": 245760
+        "show_entry->after_snapshot": 0,
+        "shown->hide_entry": 65536
        },
        "stage_retained_over_show_entry": {
-        "maximum": 393216,
-        "median": 344064,
-        "minimum": 327680
+        "maximum": 131072,
+        "median": 98304,
+        "minimum": 65536
        },
        "teardown_exits": [
         "protocol"
@@ -312,78 +374,16 @@
         "minimum": 0
        },
        "post_hide_over_headless": {
-        "maximum": 524288,
-        "median": 491520,
-        "minimum": 475136
-       },
-       "revision_advanced_by_inputs_runs": 7,
-       "round": 2,
-       "shown_over_headless": {
-        "maximum": 1572864,
-        "median": 1540120,
-        "minimum": 1523712
-       },
-       "stage_deltas": {
-        "after_close_reap_join->after_frame_drop": -1032192,
-        "after_command_spawn->after_reader_thread": 16384,
-        "after_first_frame_ack->shown": 0,
-        "after_hello_ready->after_first_frame_ack": 0,
-        "after_painter->after_command_spawn": 16384,
-        "after_reader_thread->after_hello_ready": 16384,
-        "after_snapshot->after_painter": 1032192,
-        "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 32768,
-        "shown->hide_entry": 49152
-       },
-       "stage_retained_over_show_entry": {
-        "maximum": 131072,
-        "median": 114688,
-        "minimum": 81920
-       },
-       "teardown_exits": [
-        "protocol"
-       ]
-      },
-      {
-       "frame_touched_shown": {
-        "maximum": 1032192,
-        "median": 1032192,
-        "minimum": 1032192
-       },
-       "inputs_applied_runs": 7,
-       "latency": {
-        "first_frame_ms": {
-         "maximum": 0,
-         "median": 0,
-         "minimum": 0
-        },
-        "ready_ms": {
-         "maximum": 3,
-         "median": 3,
-         "minimum": 2
-        },
-        "show_ms": {
-         "maximum": 8,
-         "median": 8,
-         "minimum": 7
-        }
-       },
-       "owners_post_hide_bytes": {
-        "maximum": 0,
-        "median": 0,
-        "minimum": 0
-       },
-       "post_hide_over_headless": {
-        "maximum": 524288,
-        "median": 507904,
-        "minimum": 475136
+        "maximum": 507904,
+        "median": 458752,
+        "minimum": 344064
        },
        "revision_advanced_by_inputs_runs": 7,
        "round": 3,
        "shown_over_headless": {
-        "maximum": 1572864,
-        "median": 1556504,
-        "minimum": 1523712
+        "maximum": 1589296,
+        "median": 1507328,
+        "minimum": 1392640
        },
        "stage_deltas": {
         "after_close_reap_join->after_frame_drop": -1032192,
@@ -394,13 +394,13 @@
         "after_reader_thread->after_hello_ready": 0,
         "after_snapshot->after_painter": 1032192,
         "hide_entry->after_close_reap_join": -16384,
-        "show_entry->after_snapshot": 0,
-        "shown->hide_entry": 0
+        "show_entry->after_snapshot": 16384,
+        "shown->hide_entry": 16384
        },
        "stage_retained_over_show_entry": {
-        "maximum": 32768,
+        "maximum": 81920,
         "median": 16384,
-        "minimum": 0
+        "minimum": 16384
        },
        "teardown_exits": [
         "protocol"
@@ -465,7 +465,7 @@
   "checks_total": 110,
   "host_sha256_prefix": "32343eb5cb3ee4a0"
  },
- "host_sha256": "69778384d0eae98f78330b99dff98557a2345d4718185a5369bcdfdffe626894",
+ "host_sha256": "925d062bffd16d7c6dc28e16fc59c5e0548f5ca35f093abfe11f00ee9eec4e95",
  "hygiene": {
   "after": {
    "owner_windows": 0,
