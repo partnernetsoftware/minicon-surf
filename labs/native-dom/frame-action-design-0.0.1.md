@@ -522,3 +522,115 @@ bytes in owner accounting, `frames_skipped` with its fixed vocabulary,
 `scripts_skipped` untouched, frames never capability owners, one `not_found`
 for a foreign, ended or unknown frame, the pinned navigation result, and no
 protocol expansion of any kind.
+
+## 23. Two corrections from the sign-off (Parts I and II stay as written)
+
+### 23.1 The revision invariant was too strong, and the court already knew
+
+§14's invariant (S) claimed every applied action advances `R` by exactly one.
+That is false for the main frame and the evidence was already committed: the
+form court records a failed submit moving the revision from 1 to 3, because
+the page's own submit handler mutated the document. The algebra of §14.1 is
+unaffected — the folds and the membership rules are right — but the claim made
+about it was not.
+
+The realm's settle rule is: on an applied outcome, if the counter has not
+moved during the action, add one; if handlers already moved it, add nothing.
+Writing `h` for the mutations the realm honestly counted during an action,
+the corrected invariants are:
+
+- **(M) Monotonic.** No host operation decreases `R`. Unchanged and still
+  proven by §14.1.
+- **(N) Committed navigation.** `R` advances by **exactly one** from the
+  **pre-navigation** `R`, that is from its value at the moment of commit,
+  after any handler the action ran. Measured from before the triggering
+  action the advance is `h + 1`, and the difference between those two
+  readings is exactly the handler's own effect.
+- **(A) Applied non-navigation action.** `ΔR = max(h, 1)`, so at least one and
+  otherwise exactly what the realm counted. Not `h + 1`: the settle rule does
+  not add a second increment on top of a handler's.
+- **(C) Canceled or failed action.** `ΔR = h ≥ 0`. Only handler effects, which
+  is precisely the 1 → 3 the form court observed.
+- **(F) Script-free frames.** In a child, `h = 0` always, so an applied action
+  advances exactly one and a canceled one advances nothing. **This is a
+  property of script-free frames, not a target-wide invariant**, and it must
+  not be written into any criterion that a main-frame action can reach.
+
+A regression criterion is added to preserve the existing behaviour rather than
+tidy it away: a main-frame submit whose handler mutates advances `R` by the
+handler's count, the answer still reports `applied: false`, and the revision
+the caller reads afterwards is the one that includes those mutations.
+
+### 23.2 Effective targets, context-aware
+
+§18's single "not `_self`" rule was too blunt. The rule is the effective
+target computed the way HTML computes it, judged against the frame the
+activation happens in.
+
+**Computing it.** For a link, the element's `target`. For a submit, the
+submitter's `formtarget` if it has one, otherwise the form's `target`. In both
+cases, if the element carries no target of its own **and the document has a
+`<base target>`**, the effective target is decided by a feature this host does
+not model, so the activation is refused `base_target_unmodeled` rather than
+silently treated as self. An explicit element target overrides a base target,
+as in HTML, so a document with a `<base target>` does not poison activations
+that name their own.
+
+**Normalising it.** Trim, then compare ASCII-case-insensitively against the
+reserved keywords, so `_SELF`, `_Blank` and `_top` are recognised as keywords
+rather than as names.
+
+**Judging it.**
+
+| Effective target | Main frame | Child frame |
+|---|---|---|
+| absent, empty, `_self` | allowed | allowed |
+| `_parent`, `_top` | allowed — in the main frame they *are* the current context | refused `target_cross_frame`: they name a context this slice does not act on |
+| `_blank` | refused `target_named` | refused `target_named` |
+| any other name | refused `target_named` | refused `target_named` |
+
+This replaces §18's `target_not_self` with two reasons, because an agent that
+sees `target_cross_frame` learns something different from one that sees
+`target_named`, and §19.2's falsifying criterion is restated in those terms.
+
+**Form submission, fully audited.** Before any event is dispatched:
+
+- **method.** The effective method is the submitter's `formmethod` if present,
+  otherwise the form's `method`, normalised case-insensitively. Only `GET` is
+  honoured; anything else is refused `form_method_unsupported`. A POST form
+  with a `formmethod="get"` submitter is therefore allowed, which is what HTML
+  says, and a GET form with a `formmethod="post"` submitter is refused, which
+  it did not used to be.
+- **target.** The effective target above, refused before dispatch rather than
+  after.
+- **action.** A submitter's `formaction` overrides the form's `action` and is
+  resolved under exactly the same origin, scheme and budget rules. Honouring
+  it is not an approximation — it is the same URL machinery — and silently
+  ignoring it would submit to the wrong address, which is worse than either
+  refusing or honouring.
+- **`formenctype` and `formnovalidate`** have no meaning here: an enctype only
+  matters for a method this host refuses, and this host implements no
+  constraint validation. They are recorded as inert rather than obeyed.
+
+`download`, unsupported schemes and fragment-only hrefs stay fail-closed as
+§18 has them.
+
+### 23.3 The activation fact, restated
+
+The closed vocabulary becomes: `"allowed"`, `"target_named"`,
+`"target_cross_frame"`, `"base_target_unmodeled"`, `"download_unsupported"`,
+`"scheme_unsupported"`, `"fragment_unsupported"`, `"control_disabled"`,
+`"form_method_unsupported"`. It carries the decision and never the target's
+name, the href, the action or any other page text. For a form node it reflects
+the form's own method and target; a submitter's overrides are the submitter's
+own fact, so an agent reading a form and its buttons sees which button it may
+press.
+
+### 23.4 Court, extended
+
+Added to §21: the regression criterion of 23.1; every cell of 23.2's table in
+both a main frame and a child, with the old host falsifying the cases it gets
+wrong; `formmethod` and `formtarget` overrides in both directions; a
+`formaction` that is honoured; a `<base target>` document refusing an
+activation that has no explicit target of its own while allowing one that
+does; and the case-insensitive normalisation of every reserved keyword.
