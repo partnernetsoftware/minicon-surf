@@ -537,6 +537,17 @@ impl ReplayScript {
     pub fn for_frame(&self, frame: u32) -> impl Iterator<Item = &ReplayEvent> {
         self.events.iter().filter(move |e| e.frame == frame)
     }
+
+    /// Every event lies inside a frame of this size. `parse` can only check
+    /// the protocol's maximum; the size that matters is the one `HELLO`
+    /// negotiates, and an event outside it would be dropped by the host
+    /// without applying, which would silently make the counterfactual arm's
+    /// sequence differ from the real arm's.
+    pub fn fits_frame(&self, width: u16, height: u16) -> bool {
+        self.events
+            .iter()
+            .all(|event| event.x < width && event.y < height)
+    }
 }
 
 #[cfg(test)]
@@ -762,6 +773,21 @@ mod tests {
         ] {
             assert!(ReplayScript::parse(bad).is_err(), "{bad}");
         }
+        // The protocol's maximum is not the negotiated frame: an event
+        // inside 1024 x 768 but outside 640 x 400 must not be sent.
+        let outside = ReplayScript::parse("1:click:60:500:0").unwrap();
+        assert!(!outside.fits_frame(640, 400));
+        assert!(outside.fits_frame(1024, 768));
+        assert!(
+            !ReplayScript::parse("1:click:700:70:0")
+                .unwrap()
+                .fits_frame(640, 400)
+        );
+        assert!(script.fits_frame(640, 400));
+        assert!(
+            ReplayScript::default().fits_frame(1, 1),
+            "no events fit any frame"
+        );
         let many = (1..=17)
             .map(|i| format!("{i}:click:1:1:0"))
             .collect::<Vec<_>>()

@@ -56,6 +56,13 @@ fn headless_mode_with(generation: u32, keep_frames: bool, script: ReplayScript) 
         match reader.read_message() {
             Ok(message) => match message.body {
                 Body::Hello { width, height, .. } => {
+                    // Fail closed rather than send events the host would
+                    // drop: a scripted event outside the negotiated frame
+                    // would leave the counterfactual arm's sequence short of
+                    // the real arm's without any error.
+                    if !script.fits_frame(width, height) {
+                        break EXIT_REPLAY_SCRIPT;
+                    }
                     if writer
                         .send(Body::Ready {
                             window_number: 0,
