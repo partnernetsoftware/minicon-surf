@@ -1162,8 +1162,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [~] Implemented on the native route, court 64 of 64 against the frozen
-  criteria: a bounded timer slice
+- [~] Implemented and fully qualified on the native route, court 68 of 68
+  against every frozen group and criterion: a bounded timer slice
   (`labs/native-dom/timer-design-0.0.1.md`). The audit's finding is that the
   current shim is worse than an absence: `setTimeout` discards its delay and
   runs the callback at the next job drain, `clearTimeout` cannot cancel
@@ -1214,7 +1214,14 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   `performance`, which are shipped behaviour this slice neither uses nor
   touches, recorded as a separate gap. A hang the extended court caused on the
   pushed build is recorded with it, along with the shipped job-drain deadline
-  gap it exposed, which this slice narrows by construction and does not close. No protocol
+  gap it exposed, which this slice narrows by construction and does not close.
+  The last frozen group, the CDP one, is closed with the restored pinned
+  client, and it corrected an assumption of the record's own: `Runtime.evaluate`
+  and `Emulation.setVirtualTimePolicy` are absent methods and answer `-32601`,
+  while `Runtime.callFunctionOn` exists and is qualified for exactly one
+  declaration, so a timer declaration is refused as an unaccepted parameter
+  rather than a missing method. Both mappings record that split, and no source
+  text is parsed to choose a code. No protocol
   shape moves beyond the additive `target.inspect` timers field. G1, G3, P6 and
   G6 stay open.
 - [~] Implemented and qualified on the native route: frame-aware actions and

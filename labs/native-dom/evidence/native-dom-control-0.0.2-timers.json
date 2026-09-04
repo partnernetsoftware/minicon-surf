@@ -152,7 +152,7 @@
   {
    "check": "[system] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 49.0
+    "elapsed_ms": 49.5
    },
    "passed": true
   },
@@ -221,8 +221,8 @@
   {
    "check": "[system] T3: a long callback chain does not accelerate the footprint",
    "detail": {
-    "first_half": 0,
-    "second_half": 0
+    "first_half": 16384,
+    "second_half": 16384
    },
    "passed": true
   },
@@ -396,7 +396,7 @@
   {
    "check": "[arena] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 49.7
+    "elapsed_ms": 48.9
    },
    "passed": true
   },
@@ -493,6 +493,42 @@
    "passed": true
   },
   {
+   "check": "[cdp] Runtime.evaluate is an absent method and stays -32601",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Runtime.evaluate): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Emulation.setVirtualTimePolicy is an absent method and stays -32601",
+   "detail": {
+    "error": {
+     "message": "Protocol error (Emulation.setVirtualTimePolicy): Method not found",
+     "protocol_code": null
+    },
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] a timer declaration reaches the qualified method and is refused as a parameter",
+   "detail": {
+    "refused_as_parameter": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] and so is a clearTimeout declaration: the method exists, the argument does not",
+   "detail": {
+    "refused_as_parameter": true
+   },
+   "passed": true
+  },
+  {
    "check": "[handle-3] exactly 3 more handles can be minted at the boundary",
    "detail": {
     "observed_len": 6
@@ -507,8 +543,8 @@
    "passed": true
   }
  ],
- "checks_passed": 64,
- "checks_total": 64,
+ "checks_passed": 68,
+ "checks_total": 68,
  "court": "native-dom bounded timers (control 0.0.2)",
  "host_sha256": "3b47966ece35e48729998875f814b8b1f89072ad746e22f14ca8c3b7e79ec58f",
  "limitations": [

@@ -406,10 +406,9 @@ integrity `sha512-2iy0iBeW…` of the committed qualification, on Node.js
 v26.7.0, all three matching `cdp-qualification-0.0.1.json` exactly. Those four
 courts were rerun in full on the same host build and their CDP groups pass.
 
-The timer slice's own CDP group is still **not written**, and that is a gap
-rather than a result: the timer-adjacent methods are unimplemented and
-therefore already answer `-32601` through the same default every unqualified
-method takes, but this record does not claim it until a court asserts it.
+The timer slice's own CDP group is now written and passes with that client;
+§20 records the boundary it asserts, which is not the single `-32601` this
+section first assumed.
 
 ### 15.7 Reconciling the seventh counter with §14.1
 
@@ -615,3 +614,26 @@ it does **not** close the general path: a page that writes
 `drain_jobs` checks its deadline only *between* jobs. That is a real defect in
 the shipped host, it predates this work, and it is recorded here for its own
 increment rather than widened into this one.
+
+## 20. The CDP boundary, corrected before the group is written
+
+§10 said the timer-adjacent CDP methods "stay unimplemented and are recorded
+as losses", which flattens two different refusals into one. The honest
+boundary, checked against the code:
+
+| Method | Answer | Why |
+|---|---|---|
+| `Runtime.evaluate` | **-32601**, method not found | this adapter implements no such method at all |
+| `Emulation.setVirtualTimePolicy` | **-32601**, method not found | the same: the domain is not implemented |
+| `Runtime.callFunctionOn` with a timer declaration | **-32602**, invalid parameter | the **method exists and is qualified**, for exactly one declaration — `function(){this.click();}` — so any other declaration, timer or not, is refused as a parameter this adapter does not accept |
+
+The difference matters: `-32601` says the adapter has no such method,
+`-32602` says it has the method and will not accept that argument. Nothing is
+added to make a timer declaration answer `-32601` instead. Recognising timer
+source text would mean parsing a page's function body to choose an error
+code — brittle, and a new dependency on page text for a diagnostic — and it is
+deliberately not done.
+
+So the timer losses are recorded in both CDP mappings with that split, and
+§11's group 14 asserts all three outcomes with the pinned client rather than
+asserting one code for all of them.

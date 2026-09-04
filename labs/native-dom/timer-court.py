@@ -104,6 +104,69 @@ def load_module(name, path):
 
 
 RETENTION = load_module("retention_court", Path(__file__).with_name("retention-court.py"))
+NAV = load_module("navigation_court", Path(__file__).with_name("navigation-court.py"))
+
+
+def qualify_cdp(binary, origin, client_modules, expect, tag):
+    """Group 14: the timer boundary as it really is. An absent method answers
+    -32601; a qualified method handed a declaration it does not accept answers
+    -32602. Nothing here reads a function's source to choose a code."""
+    if not (Path(client_modules) / "node_modules").exists():
+        expect(tag + "the timer methods keep their typed boundary", False,
+               {"reason": "the pinned client package is absent from the ignored lab directory"})
+        return
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-timer-cdp-") as directory:
+        host = NAV.Host(binary, directory, "system", origin, cdp=True)
+        client = None
+        try:
+            profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = host.ok("session.open", {"profile": profile})["session"]
+            target = NAV.open_target(host, session, origin, "/cdp.html")
+            client = NAV.CDP.Client(client_modules)
+            client.command("connect", endpoint=host.endpoint())
+            client.command("waitForTarget", id=target)
+            client.command("attach", name="A", id=target)
+            for method, params in (("Runtime.evaluate", {"expression": "setTimeout(function(){},0)"}),
+                                   ("Emulation.setVirtualTimePolicy", {"policy": "advance"})):
+                answer = client.send("A", method, params)
+                expect(tag + f"{method} is an absent method and stays -32601",
+                       NAV.cdp_failed(answer, -32601), answer)
+            # A qualified method, handed a declaration it does not accept.
+            document = client.send("A", "DOM.getDocument")
+            root = ((document.get("result") or {}).get("root") or {}).get("nodeId")
+            found = client.send("A", "DOM.querySelector", {"nodeId": root, "selector": "a"})
+            resolved = client.send("A", "DOM.resolveNode",
+                                   {"nodeId": (found.get("result") or {}).get("nodeId")})
+            object_id = ((resolved.get("result") or {}).get("object") or {}).get("objectId")
+            # This client reports the server's message rather than the numeric
+            # code, so the two boundaries are told apart by what it does show:
+            # the qualified method answers its own parameter refusal and never
+            # the method-not-found text an absent method answers.
+            def parameter_refusal(answer):
+                message = str(((answer or {}).get("error") or {}).get("message", ""))
+                return ((not (answer or {}).get("ok"))
+                        and "only the qualified click function is supported" in message
+                        and "Method not found" not in message)
+
+            timer_call = client.send("A", "Runtime.callFunctionOn",
+                                     {"objectId": object_id,
+                                      "functionDeclaration": "function(){setTimeout(function(){},0);}"})
+            expect(tag + "a timer declaration reaches the qualified method and is refused as a parameter",
+                   bool(object_id) and parameter_refusal(timer_call),
+                   {"refused_as_parameter": parameter_refusal(timer_call)})
+            clear_call = client.send("A", "Runtime.callFunctionOn",
+                                     {"objectId": object_id,
+                                      "functionDeclaration": "function(){clearTimeout(1);}"})
+            expect(tag + "and so is a clearTimeout declaration: the method exists, the argument does not",
+                   parameter_refusal(clear_call),
+                   {"refused_as_parameter": parameter_refusal(clear_call)})
+            host.ok("target.close", {"target": target})
+            host.ok("session.close", {"session": session})
+        finally:
+            if client is not None:
+                client.command("disconnect")
+                client.finish()
+            host.finish()
 
 
 def page(title, script):
@@ -118,6 +181,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True)
     parser.add_argument("--receipt", required=True)
+    parser.add_argument("--client-modules", default=str(ROOT / "target" / "labs" / "d4"))
     args = parser.parse_args()
     if os.environ.get(VISIBLE_ENV):
         print(json.dumps({"passed": False, "reason": "the visible-court variable is set"}))
@@ -197,6 +261,11 @@ def main():
                 "/teardown.html": page("Teardown",
                                        "setTimeout(function(){write('late ran');},60);"),
                 "/landed.html": page("Landed", ""),
+                # A resolvable node for the CDP group, on the path that court
+                # already proves: querySelector('a') then resolveNode.
+                "/cdp.html": ("<!doctype html><html><body><main><h1>Cdp</h1>"
+                              "<a id=\"go\" href=\"/landed.html\">Go</a>"
+                              "</main></body></html>").encode(),
                 # The engine's own globals, observed as a shape and never as a
                 # value: this slice must neither replace nor widen them.
                 "/globals.html": page("Globals",
@@ -658,6 +727,7 @@ def main():
                            {"audit_bytes": len(blob)})
                 finally:
                     host.finish()
+        qualify_cdp(args.binary, origin, args.client_modules, expect, "[cdp] ")
         handles(args.binary, origin, expect, "[handle-3] ", MAX_SAFE - 3, 3)
         handles(args.binary, origin, expect, "[handle-0] ", MAX_SAFE, 0)
     finally:

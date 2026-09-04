@@ -108,6 +108,11 @@
    "native": "form roles and their bounded facts",
    "cdp": "DOM.getDocument attributes",
    "loss": "the checkbox, radio, select and form roles, their options and controls, and the disabled and read-only flags have no CDP equivalent and are visible only through the native door"
+  },
+  {
+   "native": "timers",
+   "cdp": "Runtime.evaluate, Runtime.callFunctionOn, Emulation.setVirtualTimePolicy",
+   "loss": "setTimeout and clearTimeout exist natively in the main frame and are not projected: Runtime.evaluate and Emulation.setVirtualTimePolicy are absent methods and answer -32601, while Runtime.callFunctionOn exists and is qualified for exactly one declaration, so a timer declaration answers -32602 as an unaccepted parameter rather than a missing method; setInterval, animation frames, idle callbacks and workers do not exist natively either"
   }
  ]
 }

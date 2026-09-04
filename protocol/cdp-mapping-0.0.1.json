@@ -73,6 +73,11 @@
       "native": "world",
       "cdp": "Runtime.ExecutionContextDescription.auxData.isDefault",
       "loss": "only the main world exists on the synthetic host; isolated worlds are unprojected"
+    },
+    {
+      "native": "timers",
+      "cdp": "Runtime.evaluate, Runtime.callFunctionOn, Emulation.setVirtualTimePolicy",
+      "loss": "setTimeout and clearTimeout exist natively in the main frame and are not projected: Runtime.evaluate and Emulation.setVirtualTimePolicy are absent methods and answer -32601, while Runtime.callFunctionOn exists and is qualified for exactly one declaration, so a timer declaration answers -32602 as an unaccepted parameter rather than a missing method; setInterval, animation frames, idle callbacks and workers do not exist natively either"
     }
   ]
 }
