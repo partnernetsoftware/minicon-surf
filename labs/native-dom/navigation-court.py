@@ -68,6 +68,10 @@ Amendments after the freeze, in order, none of them moving a criterion:
    identity is re-read after it. The group also lands on a page that has a
    button first, and says so explicitly when it cannot find one, rather than
    skipping the criterion in silence as the first attempt did.
+ 8 Completion, not a movement. Group 8 was frozen in the design and missing
+   from the first implementation of this file. It is implemented now, against
+   the pinned client over the loopback edge, and qualifies the mapping on a
+   real URL target rather than by inspection.
 """
 
 import argparse
@@ -100,6 +104,7 @@ def load_module(name, path):
     return module
 
 
+CDP = load_module("cdp_frame_tree_court", Path(__file__).with_name("cdp-frame-tree-court.py"))
 PROFILE = load_module("profile_court", Path(__file__).with_name("profile-court.py"))
 RETENTION = PROFILE.RETENTION
 NETWORK = PROFILE.NETWORK
@@ -124,7 +129,7 @@ CAPS = {
 class Host:
     """Speaks 0.0.2 by default; `version` lets one check prove the boundary."""
 
-    def __init__(self, binary, directory, allocator, origin, pinned_root=None):
+    def __init__(self, binary, directory, allocator, origin, pinned_root=None, cdp=False):
         environment = dict(os.environ)
         for knob in ("MINICON_SURF_NATIVE_REALM_ZONE", "MINICON_SURF_NATIVE_REALM_ARENA",
                      "MINICON_SURF_PROFILE_STORE", VISIBLE_ENV, "http_proxy", "https_proxy", "all_proxy"):
@@ -135,6 +140,9 @@ class Host:
                    "--config-dir", str(Path(directory) / "config"), "--allow-origin", origin]
         if pinned_root:
             command += ["--pinned-root", str(pinned_root)]
+        self.ready = Path(directory) / "ready.json"
+        if cdp:
+            command += ["--cdp-port", "0", "--ready-file", str(self.ready)]
         self.process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.DEVNULL, text=True, env=environment)
         self.counter = 0
@@ -161,6 +169,12 @@ class Host:
         if not response["ok"]:
             raise RuntimeError(f"{operation} failed: {response['error']}")
         return response["result"]
+
+    def endpoint(self):
+        deadline = time.time() + 10
+        while time.time() < deadline and not self.ready.exists():
+            time.sleep(0.01)
+        return json.loads(self.ready.read_text())["browser_websocket_url"]
 
     def footprint(self):
         time.sleep(0.02)
@@ -452,6 +466,76 @@ def run(binary, allocator, origin, expect, unverified, tag):
                 host.process.wait()
 
 
+# puppeteer-core 24.15.0 does not populate a CDP error's numeric code, so a
+# typed failure is matched on the edge's message, as the frame-tree court does.
+EDGE_MESSAGES = {-32601: "Method not found", -32602: "this host supports"}
+
+
+def cdp_failed(answer, code):
+    """A CDP answer that failed with this protocol code, by code or by text."""
+    if (answer or {}).get("ok"):
+        return False
+    error = (answer or {}).get("error") or {}
+    reported = error.get("protocol_code")
+    if reported is not None:
+        return reported == code
+    return EDGE_MESSAGES[code] in str(error.get("message", ""))
+
+
+def qualify_cdp(binary, origin, client_modules, expect, unverified, tag):
+    """Group 8: the named client drives the mapping on a real URL target."""
+    if not (Path(client_modules) / "node_modules").exists():
+        unverified(tag + "the named client drives Page.navigate and Page.reload",
+                   {"reason": "the pinned client package is absent from the ignored lab directory"})
+        return
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-navigation-cdp-") as directory:
+        host = Host(binary, directory, "system", origin, cdp=True)
+        client = None
+        try:
+            profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = host.ok("session.open", {"profile": profile})["session"]
+            target = open_target(host, session, origin, "/index.html")
+            before = state(host, target)
+            client = CDP.Client(client_modules)
+            client.command("connect", endpoint=host.endpoint())
+            client.command("waitForTarget", id=target)
+            client.command("attach", name="A", id=target)
+            navigated = client.send("A", "Page.navigate", {"url": f"{origin}/about.html"})
+            after = state(host, target)
+            expect(tag + "the client navigates the target through Page.navigate",
+                   navigated.get("ok") and after["url"] == f"{origin}/about.html"
+                   and after["generation"] == before["generation"] + 1
+                   and after["realm"] != before["realm"],
+                   {"cdp": navigated.get("result"), "error": navigated.get("error"), "url": after["url"]})
+            expect(tag + "the projected frame id is the adapter's, never the native one",
+                   (navigated.get("result") or {}).get("frameId") not in (None, after["frame"]),
+                   navigated.get("result"))
+            reloaded = client.send("A", "Page.reload", {})
+            settled = state(host, target)
+            expect(tag + "the client reloads through Page.reload without moving the history",
+                   reloaded.get("ok") and settled["generation"] == after["generation"] + 1
+                   and settled["url"] == after["url"] and settled["history"] == after["history"],
+                   {"cdp": reloaded.get("result"), "history": settled["history"]})
+            refused_argument = client.send("A", "Page.reload", {"ignoreCache": True})
+            expect(tag + "an argument this host cannot honour is refused typed, not ignored",
+                   cdp_failed(refused_argument, -32602), refused_argument)
+            for method in ("Page.getNavigationHistory", "Page.navigateToHistoryEntry"):
+                response = client.send("A", method, {})
+                expect(tag + f"{method} stays an explicit -32601: the host is the only history authority",
+                       cdp_failed(response, -32601), response)
+            host.ok("target.close", {"target": target})
+            host.ok("session.close", {"session": session})
+        finally:
+            if client is not None:
+                try:
+                    client.command("disconnect")
+                except Exception:  # noqa: BLE001
+                    pass
+                client.process.wait(timeout=10)
+            if host.process.poll() is None:
+                host.finish()
+
+
 def soak(binary, allocator, origin, navigating):
     """One arm of the differential soak: the same request count either way."""
     with tempfile.TemporaryDirectory(prefix="minicon-surf-navigation-soak-") as directory:
@@ -486,6 +570,7 @@ def main():
     parser.add_argument("--receipt", required=True)
     parser.add_argument("--repetitions", type=int, default=7)
     parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--client-modules", default=str(ROOT / "target" / "labs" / "d4"))
     parser.add_argument("--skip-soak", action="store_true", help="mechanics only; the soak is reported unverified")
     args = parser.parse_args()
     if VISIBLE_ENV in os.environ:
@@ -508,6 +593,8 @@ def main():
     try:
         for allocator in ("system", "arena"):
             run(args.binary, allocator, origin, expect, unverified, f"[{allocator}] ")
+            if allocator == "system":
+                qualify_cdp(args.binary, origin, args.client_modules, expect, unverified, "[cdp] ")
             if args.skip_soak:
                 continue
             arms = {}
