@@ -1,0 +1,1157 @@
+{
+ "caps": {
+  "history_entry_bytes": 1024,
+  "history_total_bytes": 8192,
+  "post_navigation_retention_bytes": 262144,
+  "soak_excess_bytes_per_navigation": 8192,
+  "soak_navigations": 128,
+  "soak_tail": 64,
+  "soak_tail_slope_bytes_per_navigation": 1024
+ },
+ "checks": [
+  {
+   "check": "[system] navigate is served under 0.0.2",
+   "passed": true
+  },
+  {
+   "check": "[system] navigate keeps the target and its main frame",
+   "detail": {
+    "frame_after": "frame_1",
+    "frame_before": "frame_1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigate increments the document generation by exactly one",
+   "detail": {
+    "after": 2,
+    "before": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigate mints a new realm and advances the revision",
+   "detail": {
+    "realm_after": "realm_2",
+    "realm_before": "realm_1",
+    "revision_after": 1,
+    "revision_before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigate commits the requested URL",
+   "detail": "http://127.0.0.1:65459/about.html",
+   "passed": true
+  },
+  {
+   "check": "[system] the replaced realm is not_found with realm scope",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "frame": "frame_1",
+     "reason": "realm_not_live_in_target"
+    },
+    "message": "realm does not exist",
+    "retryable": false,
+    "scope": {
+     "id": "realm_1",
+     "kind": "realm"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a node reference from before the navigation is stale_revision",
+   "detail": {
+    "code": "stale_revision",
+    "details": {
+     "current_revision": 1,
+     "reference_revision": 0
+    },
+    "message": "node reference revision no longer matches the target",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] target.inspect carries the bounded history state",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 2,
+    "position": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] reload replaces the document and keeps the URL",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     3,
+     "realm_3",
+     2
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     2,
+     "realm_2",
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] reload appends no entry and does not move the position",
+   "detail": {
+    "after": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    },
+    "before": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] traverse -1 lands on the previous entry and refetches it",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 1
+    },
+    "url": "http://127.0.0.1:65459/about.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] traverse reaches the first entry and reports no further back",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 0
+    },
+    "url": "http://127.0.0.1:65459/index.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] traverse +2 returns to the newest entry",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 3,
+     "position": 2
+    },
+    "url": "http://127.0.0.1:65459/count.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offset past the newest entry is not_found and changes nothing",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offset before the oldest entry is not_found",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] navigating from a back position truncates the forward entries",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 3,
+    "position": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the history window never exceeds its cap",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 8,
+    "position": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an evicted entry is not_found, not silently clamped",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a denied origin is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "address class refused: private",
+      "generation": 20,
+      "href": "http://10.0.0.1/evil.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "address"
+     },
+     "message": "network policy: address",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unqualified scheme is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "detail": "https needs an explicitly pinned root; no system roots are consulted",
+      "generation": 20,
+      "href": "https://127.0.0.1:1/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "tls_no_pinned_roots"
+     },
+     "message": "network policy: tls_no_pinned_roots",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a missing document is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "not_found",
+     "details": {
+      "generation": 20,
+      "href": "http://127.0.0.1:65459/absent.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "status": 404,
+      "url": "http://127.0.0.1:65459/absent.html"
+     },
+     "message": "document request was not successful",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a malformed URL is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "invalid_request",
+     "message": "url is not absolute",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a node reference survives every failed navigation",
+   "passed": true
+  },
+  {
+   "check": "[system] an offline profile refuses before any socket and changes nothing",
+   "detail": {
+    "error": "unsupported_operation",
+    "reason": "profile.policy.set is reserved by the contract but not offered by this route"
+   },
+   "passed": null,
+   "unverified": true
+  },
+  {
+   "check": "[system] an expired deadline is typed and leaves the target whole",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "engine_error": "interrupted",
+     "generation": 20,
+     "href": "http://127.0.0.1:65459/index.html",
+     "navigation": "failed",
+     "realm": "realm_20"
+    },
+    "message": "script evaluation failed",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a cookie set before the navigation is sent on the next one",
+   "detail": "Echo sent=court=one",
+   "passed": true
+  },
+  {
+   "check": "[system] the navigation's cookie reached the profile jar",
+   "detail": {
+    "budgets": {
+     "accounted_bytes_per_profile": 131072,
+     "cookie_bytes": 4096,
+     "cookies_per_host": 32,
+     "cookies_per_profile": 256,
+     "record_bytes": 4194304,
+     "storage_keys_per_origin": 32,
+     "storage_value_bytes": 1024
+    },
+    "bytes": 34,
+    "cookie_rejections_total": 0,
+    "cookies": 1,
+    "object_limit": 8,
+    "objects": 1,
+    "persistent": 0,
+    "storage_keys": 0,
+    "store": null,
+    "store_bytes_written_total": 0,
+    "store_writes_total": 0,
+    "unavailable": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] session.inspect advertises both versions and their exact operations",
+   "detail": {
+    "discovery": "advisory",
+    "versions": [
+     "0.0.1",
+     "0.0.2"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ledger records every navigation in order, by origin only, and grants nothing",
+   "detail": {
+    "count": 25,
+    "limit": 64,
+    "outcomes": [
+     "committed",
+     "deadline_exceeded",
+     "not_found",
+     "permission_denied",
+     "unsupported_capability"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ledger is accounted and bounded in memory.report",
+   "detail": {
+    "audit_bytes": 2192,
+    "audit_entries": 25,
+    "audit_entry_limit": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the same operation under 0.0.1 is invalid_request, never inferred",
+   "detail": {
+    "code": "invalid_request",
+    "message": "operation is not part of the control version it names",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unsupported reload argument is refused typed, not ignored",
+   "detail": {
+    "code": "invalid_request",
+    "message": "expected exactly the fields [\"target\"]",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] post-navigation retention stays within its budget",
+   "detail": {
+    "cap": 262144,
+    "over_steady": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the history owner reports bounded bytes",
+   "detail": {
+    "cap": 8192,
+    "history_bytes": 301
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every owner returns to zero after the closes",
+   "passed": true
+  },
+  {
+   "check": "[system] the host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[system] the navigating arm's excess over the control arm stays within its budget",
+   "detail": {
+    "cap": 1048576,
+    "excess": 917504
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the excess does not keep growing over the last navigations",
+   "detail": {
+    "cap": 65536,
+    "tail_excess_slope": 32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate is served under 0.0.2",
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate keeps the target and its main frame",
+   "detail": {
+    "frame_after": "frame_1",
+    "frame_before": "frame_1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate increments the document generation by exactly one",
+   "detail": {
+    "after": 2,
+    "before": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate mints a new realm and advances the revision",
+   "detail": {
+    "realm_after": "realm_2",
+    "realm_before": "realm_1",
+    "revision_after": 1,
+    "revision_before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigate commits the requested URL",
+   "detail": "http://127.0.0.1:65459/about.html",
+   "passed": true
+  },
+  {
+   "check": "[arena] the replaced realm is not_found with realm scope",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "frame": "frame_1",
+     "reason": "realm_not_live_in_target"
+    },
+    "message": "realm does not exist",
+    "retryable": false,
+    "scope": {
+     "id": "realm_1",
+     "kind": "realm"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a node reference from before the navigation is stale_revision",
+   "detail": {
+    "code": "stale_revision",
+    "details": {
+     "current_revision": 1,
+     "reference_revision": 0
+    },
+    "message": "node reference revision no longer matches the target",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] target.inspect carries the bounded history state",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 2,
+    "position": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] reload replaces the document and keeps the URL",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     3,
+     "realm_3",
+     2
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     2,
+     "realm_2",
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] reload appends no entry and does not move the position",
+   "detail": {
+    "after": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    },
+    "before": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 2,
+     "position": 1
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] traverse -1 lands on the previous entry and refetches it",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 1
+    },
+    "url": "http://127.0.0.1:65459/about.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] traverse reaches the first entry and reports no further back",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": true,
+     "length": 3,
+     "position": 0
+    },
+    "url": "http://127.0.0.1:65459/index.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] traverse +2 returns to the newest entry",
+   "detail": {
+    "history": {
+     "can_go_back": true,
+     "can_go_forward": false,
+     "length": 3,
+     "position": 2
+    },
+    "url": "http://127.0.0.1:65459/count.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offset past the newest entry is not_found and changes nothing",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offset before the oldest entry is not_found",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] navigating from a back position truncates the forward entries",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 3,
+    "position": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the history window never exceeds its cap",
+   "detail": {
+    "can_go_back": true,
+    "can_go_forward": false,
+    "length": 8,
+    "position": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an evicted entry is not_found, not silently clamped",
+   "detail": {
+    "code": "not_found",
+    "details": {
+     "reason": "history_offset_out_of_window"
+    },
+    "message": "no history entry at that offset",
+    "retryable": false,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a denied origin is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "permission_denied",
+     "details": {
+      "detail": "address class refused: private",
+      "generation": 20,
+      "href": "http://10.0.0.1/evil.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "address"
+     },
+     "message": "network policy: address",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unqualified scheme is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "detail": "https needs an explicitly pinned root; no system roots are consulted",
+      "generation": 20,
+      "href": "https://127.0.0.1:1/index.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "reason": "tls_no_pinned_roots"
+     },
+     "message": "network policy: tls_no_pinned_roots",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a missing document is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "not_found",
+     "details": {
+      "generation": 20,
+      "href": "http://127.0.0.1:65459/absent.html",
+      "navigation": "failed",
+      "realm": "realm_20",
+      "status": 404,
+      "url": "http://127.0.0.1:65459/absent.html"
+     },
+     "message": "document request was not successful",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a malformed URL is refused typed and changes nothing",
+   "detail": {
+    "after": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "before": [
+     "target_1",
+     "frame_1",
+     20,
+     "realm_20",
+     19
+    ],
+    "error": {
+     "code": "invalid_request",
+     "message": "url is not absolute",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a node reference survives every failed navigation",
+   "passed": true
+  },
+  {
+   "check": "[arena] an offline profile refuses before any socket and changes nothing",
+   "detail": {
+    "error": "unsupported_operation",
+    "reason": "profile.policy.set is reserved by the contract but not offered by this route"
+   },
+   "passed": null,
+   "unverified": true
+  },
+  {
+   "check": "[arena] an expired deadline is typed and leaves the target whole",
+   "detail": {
+    "code": "deadline_exceeded",
+    "details": {
+     "engine_error": "interrupted",
+     "generation": 20,
+     "href": "http://127.0.0.1:65459/index.html",
+     "navigation": "failed",
+     "realm": "realm_20"
+    },
+    "message": "script evaluation failed",
+    "retryable": true,
+    "scope": {
+     "id": "target_1",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a cookie set before the navigation is sent on the next one",
+   "detail": "Echo sent=court=one",
+   "passed": true
+  },
+  {
+   "check": "[arena] the navigation's cookie reached the profile jar",
+   "detail": {
+    "budgets": {
+     "accounted_bytes_per_profile": 131072,
+     "cookie_bytes": 4096,
+     "cookies_per_host": 32,
+     "cookies_per_profile": 256,
+     "record_bytes": 4194304,
+     "storage_keys_per_origin": 32,
+     "storage_value_bytes": 1024
+    },
+    "bytes": 34,
+    "cookie_rejections_total": 0,
+    "cookies": 1,
+    "object_limit": 8,
+    "objects": 1,
+    "persistent": 0,
+    "storage_keys": 0,
+    "store": null,
+    "store_bytes_written_total": 0,
+    "store_writes_total": 0,
+    "unavailable": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] session.inspect advertises both versions and their exact operations",
+   "detail": {
+    "discovery": "advisory",
+    "versions": [
+     "0.0.1",
+     "0.0.2"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ledger records every navigation in order, by origin only, and grants nothing",
+   "detail": {
+    "count": 25,
+    "limit": 64,
+    "outcomes": [
+     "committed",
+     "deadline_exceeded",
+     "not_found",
+     "permission_denied",
+     "unsupported_capability"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ledger is accounted and bounded in memory.report",
+   "detail": {
+    "audit_bytes": 2192,
+    "audit_entries": 25,
+    "audit_entry_limit": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the same operation under 0.0.1 is invalid_request, never inferred",
+   "detail": {
+    "code": "invalid_request",
+    "message": "operation is not part of the control version it names",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unsupported reload argument is refused typed, not ignored",
+   "detail": {
+    "code": "invalid_request",
+    "message": "expected exactly the fields [\"target\"]",
+    "retryable": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] post-navigation retention stays within its budget",
+   "detail": {
+    "cap": 262144,
+    "over_steady": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the history owner reports bounded bytes",
+   "detail": {
+    "cap": 8192,
+    "history_bytes": 301
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every owner returns to zero after the closes",
+   "passed": true
+  },
+  {
+   "check": "[arena] the host exits cleanly",
+   "passed": true
+  },
+  {
+   "check": "[arena] the navigating arm's excess over the control arm stays within its budget",
+   "detail": {
+    "cap": 1048576,
+    "excess": 671744
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the excess does not keep growing over the last navigations",
+   "detail": {
+    "cap": 65536,
+    "tail_excess_slope": 32768
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 74,
+ "checks_total": 76,
+ "checks_unverified": 2,
+ "control_version": "0.0.2",
+ "design": "labs/native-dom/navigation-design-0.0.1.md",
+ "host_sha256": "38866cd314d8190935e02b1190e639ea8ea117bc28932470b0932a96e22edb60",
+ "limitations": [
+  "history is metadata only: an entry is the final canonical committed URL, so a traverse refetches and no page state is restored",
+  "the soak is differential by design: the control-churn court showed every control request grows the host without a plateau, so an absolute cap would fail for reasons unrelated to navigation; the two arms hold the request count, deadline and target identical and differ in the operation under test",
+  "one hermetic origin on loopback, one page set, macOS only; no surface, no window, no AppKit",
+  "a target opened from a fixture has no URL and the three operations refuse it as unsupported_capability",
+  "no pid, path, window or desktop fact is recorded"
+ ],
+ "passed": false,
+ "schema": "minicon-surf.native-dom-navigation-receipt/0.0.1",
+ "soak": {
+  "arena": {
+   "arms": {
+    "control": {
+     "8": 114688,
+     "16": 147456,
+     "24": 180224,
+     "32": 196608,
+     "40": 196608,
+     "48": 196608,
+     "56": 196608,
+     "64": 196608,
+     "72": 196608,
+     "80": 196608,
+     "88": 196608,
+     "96": 196608,
+     "104": 196608,
+     "112": 196608,
+     "120": 196608,
+     "128": 196608
+    },
+    "navigating": {
+     "8": 524288,
+     "16": 688128,
+     "24": 737280,
+     "32": 737280,
+     "40": 819200,
+     "48": 819200,
+     "56": 835584,
+     "64": 835584,
+     "72": 851968,
+     "80": 851968,
+     "88": 851968,
+     "96": 868352,
+     "104": 868352,
+     "112": 868352,
+     "120": 868352,
+     "128": 868352
+    }
+   },
+   "excess_at_128": 671744,
+   "tail_excess_slope": 32768
+  },
+  "system": {
+   "arms": {
+    "control": {
+     "8": 49152,
+     "16": 49152,
+     "24": 49152,
+     "32": 49152,
+     "40": 49152,
+     "48": 49152,
+     "56": 49152,
+     "64": 49152,
+     "72": 49152,
+     "80": 65536,
+     "88": 65536,
+     "96": 65536,
+     "104": 65536,
+     "112": 65536,
+     "120": 81920,
+     "128": 81920
+    },
+    "navigating": {
+     "8": 753664,
+     "16": 851968,
+     "24": 868352,
+     "32": 868352,
+     "40": 901120,
+     "48": 901120,
+     "56": 933888,
+     "64": 933888,
+     "72": 950272,
+     "80": 966656,
+     "88": 983040,
+     "96": 983040,
+     "104": 983040,
+     "112": 983040,
+     "120": 983040,
+     "128": 999424
+    }
+   },
+   "excess_at_128": 917504,
+   "tail_excess_slope": 32768
+  }
+ },
+ "technology": "native-dom"
+}
