@@ -146,8 +146,7 @@ Two consequences must be stated rather than discovered:
 ```
 "timers": { "objects": <live pending across realms>,
             "object_limit": MAX_PENDING_TIMERS_PER_REALM * live realms,
-            "fired_total": <saturating>, "dropped_total": <saturating>,
-            "threw_total": <saturating> }
+            ... the six attribution counters of §14.1 ... }
 ```
 
 All counters are host-minted integers. No callback source, no delay
@@ -249,3 +248,91 @@ slices, and never moved afterwards:
    between can now see different documents. That is true of any page with
    timers and it is new to this host, so it belongs in the record and in the
    README rather than in a surprise.
+
+## 14. The root's rulings, and the refinements they came with
+
+§§1–13 stay as written; where this section differs it governs.
+
+**D1 — implement.** Today's silent zero-delay, no-cancel shim is
+unacceptable, so the bounded slice is built rather than refused.
+
+**D2 — monotonic host `Instant`, not virtual time.** The consequence is
+recorded as a loss rather than smoothed over: a timer runs at the first
+operation boundary **at or after** its due time, so its delay is a lower
+bound, and with no requests arriving nothing fires.
+
+**D3 — a throwing or deadline-interrupted callback is discarded and the
+target stays usable.** Whatever that callback completed **before** it threw
+stands, and the revision reports it: the observer already counted those
+mutations and nothing rolls them back.
+
+**D4 — `target.inspect` carries `timers: {pending, limit}`** and nothing
+else. No callback, no source, no arguments, no delay and no next-due time:
+those are page data or a timing channel.
+
+**D5 — two observations may differ**, because a timer is page activity. Due
+timers run **before** an observation and the observation returns the global
+revision that results, so an agent's staleness and wait stay deterministic
+against the number it was given.
+
+### 14.1 Attribution, not one bucket
+
+§9's `dropped_total` conflated outcomes that mean different things. The timer
+owner reports six separate saturating integers, and no other:
+
+| counter | means |
+|---|---|
+| `fired_total` | a callback ran to completion |
+| `cleared_total` | removed by `clearTimeout` |
+| `retired_total` | destroyed with its realm by navigation, reload, traverse or close |
+| `threw_total` | the callback threw and the timer was discarded |
+| `deadline_discarded_total` | the callback was interrupted at the request deadline and discarded |
+| `refused_total` | `setTimeout` was refused because the pending bound was full |
+
+`pending` and `limit` are the live figures; every one of these is a host-minted
+integer.
+
+### 14.2 Handles fail closed before the safe integer
+
+A handle is a per-realm monotonic integer starting at 1 and **never reused**,
+including after `clearTimeout`. It is also a JavaScript Number, so the same
+limit that binds a frame's counter binds it: when the next handle would exceed
+`MAX_SAFE_COUNTER`, `setTimeout` is refused rather than wrapping or repeating,
+and the refusal is counted in `refused_total`. A realm that exhausts handles
+keeps its existing timers and schedules no new ones.
+
+### 14.3 Only a callable callback
+
+`setTimeout(string)` is **not** evaluated: string bodies, and any other
+coercion HTML performs that this host does not model, throw in the realm
+rather than being approximated. A first argument that is not callable throws.
+This is a refusal, not a compatibility claim.
+
+### 14.4 Cancellation is synchronous
+
+`clearTimeout(handle)` removes the timer inside the same realm turn and
+releases its callback immediately, so a callback cleared in one turn cannot
+run in the next drain. An unknown handle, an already-fired one and an
+already-cleared one are each a no-op, as in HTML.
+
+### 14.5 A callback's own zero-delay timer waits for the next drain
+
+A drain takes its snapshot of what is due when it starts. A zero-delay timer
+scheduled *by* a callback is due immediately but is not in that snapshot, so
+it runs at the next boundary. That is what keeps the 32-per-boundary bound
+meaningful: a chain of zero-delay timers advances one boundary at a time
+rather than filling a single drain.
+
+### 14.6 The court must fail meaningfully first
+
+Before any host change, the frozen court is run against `ac1ece9` and its
+failures recorded. The three that matter are the ones that describe today's
+defect rather than an absent feature: **the delay is honoured**, **`clearTimeout`
+cancels**, and **handles are distinct**. Each must fail there, because each is
+false of the current shim rather than merely unimplemented.
+
+### 14.7 Unchanged
+
+Child frames have no timer surface, no clock is readable from a realm, no
+schema, request or result shape moves beyond D4's additive
+`target.inspect` field, no background thread exists, and nothing visual runs.
