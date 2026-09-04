@@ -170,13 +170,27 @@ def main():
                     frame_c, realm_c = inspect_c["frames"][0]["frame"], inspect_c["frames"][0]["realm"]
                     nav = ok("target.snapshot", snapshot_arguments(c))
                     by_name = {n["name"]: n for n in nav["nodes"] if n["role"] == "link"}
-                    fetches_before = ok("memory.report", {})["owners"]["network"]["fetches"]
+                    # Court amendment, recorded when the form slice was
+                    # implemented: these two assertions still counted fetches
+                    # cumulatively across a target's life, which the
+                    # per-document budget ruling replaced. This court had not
+                    # been rerun since that ruling. The limits and the fetch
+                    # itself are unchanged; only what the count is scoped to is
+                    # now explicit, and the cumulative fact moved to the
+                    # lifetime diagnostic that never gates.
+                    def lifetime_of(target):
+                        rows = ok("memory.report", {})["owners"]["targets"].get("lifetime", [])
+                        row = next((r for r in rows if r["target"] == target), None)
+                        return row["network"]["fetches_total"] if row else None
+
+                    lifetime_before = lifetime_of(c)
                     moved = ok("target.act", {"target": c, "reference": by_name["About this court"]["reference"], "action": {"kind": "click"}})
                     expect(tag + "a same-origin link navigates over the bounded network",
                            moved.get("navigated") is True and moved["url"].endswith("/about.html") and moved["generation"] == 2 and moved["frame"] == frame_c
-                           and moved["retired_realm"] == realm_c and moved["network"]["fetches"] == 2, moved)
-                    expect(tag + "the navigation fetch is charged to the target's own budget",
-                           ok("memory.report", {})["owners"]["network"]["fetches"] == fetches_before + 1)
+                           and moved["retired_realm"] == realm_c and moved["network"]["fetches"] == 1, moved)
+                    expect(tag + "the committed document owns a fresh budget and the lifetime total still counts the fetch",
+                           lifetime_of(c) == lifetime_before + 1,
+                           {"before": lifetime_before, "after": lifetime_of(c)})
                     about = ok("target.snapshot", snapshot_arguments(c))
                     back = next(n for n in about["nodes"] if n["role"] == "link")
                     returned = ok("target.act", {"target": c, "reference": back["reference"], "action": {"kind": "click"}})

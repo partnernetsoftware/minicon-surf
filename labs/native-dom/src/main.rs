@@ -43,6 +43,9 @@ const MAX_HISTORY_ENTRIES: usize = 8;
 /// is never an authorization, and this host implements no capability
 /// attenuation.
 const MAX_AUDIT_ENTRIES: usize = 64;
+/// A form value's byte bound, and the highest option index an action may name.
+const MAX_FORM_VALUE_BYTES: usize = 1024;
+const MAX_OPTION_INDEX: u64 = 63;
 const MAX_URL_BYTES: usize = 2000;
 const MAX_REQUEST_BYTES: usize = 65_536;
 const MAX_RESPONSE_BYTES: usize = 4_194_304;
@@ -105,28 +108,70 @@ fn snapshot_script(max_nodes: u64) -> String {
   if (!s) return JSON.stringify({{ error: "uninstrumented" }});
   const role = (el) => {{
     const t = el.tagName.toLowerCase();
+    const type = (el.type || "").toLowerCase();
     if (/^h[1-6]$/.test(t)) return "heading";
-    if (t === "button" || (t === "input" && /^(button|submit|reset)$/.test(el.type))) return "button";
+    if (t === "button" || (t === "input" && /^(button|submit|reset)$/.test(type))) return "button";
     if (t === "a" && el.hasAttribute("href")) return "link";
-    if (t === "input" || t === "textarea") return "textbox";
+    if (t === "form") return "form";
+    if (t === "select") return "select";
+    if (t === "input" && type === "checkbox") return "checkbox";
+    if (t === "input" && type === "radio") return "radio";
+    // Credential and file sources are excluded by design, and so are hidden
+    // controls: they are serialised by the realm but never offered as nodes.
+    if (t === "textarea") return "textbox";
+    if (t === "input" && /^(text|search|url|tel|email|number)$/.test(type)) return "textbox";
     if (t === "label") return "label";
     if (t === "p" || t === "li") return "text";
     return null;
   }};
-  const out = [];
-  const nodes = [];
-  let truncated = false;
   const all = document.body ? document.body.querySelectorAll("*") : [];
+  const chosen = [];
+  let truncated = false;
   for (const el of all) {{
     const r = role(el);
     if (!r) continue;
-    if (out.length >= {max_nodes}) {{ truncated = true; break; }}
-    let name = (el.textContent || "").trim();
+    if (chosen.length >= {max_nodes}) {{ truncated = true; break; }}
+    chosen.push([el, r]);
+  }}
+  const place = new Map();
+  chosen.forEach(([el], index) => place.set(el, index));
+  const out = [];
+  const nodes = [];
+  for (const [el, r] of chosen) {{
     const entry = {{ node: "node_" + (nodes.length + 1), role: r }};
+    let name = (el.textContent || "").trim();
     if (r === "textbox") {{
       const label = el.id ? document.querySelector('label[for="' + el.id + '"]') : null;
-      name = (label ? label.textContent : (el.getAttribute("aria-label") || el.name || "")).trim();
+      name = (label ? label.textContent : (el.getAttribute("aria-label") || el.getAttribute("name") || "")).trim();
       entry.value = String(el.value || "").slice(0, 256);
+    }}
+    if (r === "checkbox" || r === "radio") {{
+      const label = el.id ? document.querySelector('label[for="' + el.id + '"]') : null;
+      name = (label ? label.textContent : (el.getAttribute("aria-label") || el.getAttribute("name") || "")).trim();
+      entry.checked = !!el.checked;
+      if (r === "radio") entry.group = String(el.getAttribute("name") || "").slice(0, 64);
+    }}
+    if (r === "select") {{
+      name = (el.getAttribute("aria-label") || el.getAttribute("name") || "").trim();
+      const options = el.options.slice(0, 64);
+      entry.options = options.map((o, index) => ({{
+        index, label: String(o.label || "").trim().slice(0, 256),
+        selected: index === el.selectedIndex, disabled: !!o.disabled,
+      }}));
+      entry.selected = el.selectedIndex;
+    }}
+    if (r === "form") {{
+      name = (el.getAttribute("aria-label") || el.getAttribute("name") || el.getAttribute("id") || "").trim();
+      entry.method = String(el.getAttribute("method") || "get").toLowerCase();
+      entry.has_action = el.hasAttribute("action");
+      entry.controls = el.elements.slice(0, 64)
+        .filter((c) => place.has(c)).map((c) => "node_" + (place.get(c) + 1));
+    }}
+    if (r === "textbox" || r === "checkbox" || r === "radio" || r === "select" || r === "button") {{
+      entry.disabled = !!el.disabled;
+      entry.read_only = !!el.readOnly;
+      const control = String(el.getAttribute("name") || "");
+      if (control) entry.control_name = control.slice(0, 64);
     }}
     entry.name = name.slice(0, 256);
     if (el.id) entry.dom_id = String(el.id).slice(0, 64);
@@ -160,6 +205,132 @@ fn microbench_script(nested: bool) -> String {
   if ({nested}) return nestedText;
   const base = JSON.stringify({{ revision: s.revision, truncated: false, nodes: [], pad: "" }});
   return JSON.stringify({{ revision: s.revision, truncated: false, nodes: [], pad: "p".repeat(nestedText.length - base.length) }});
+}})()"#
+    )
+}
+
+/// The five 0.0.2 actions, applied inside the realm, which is the only
+/// authority over form state. The host passes the action as JSON and receives
+/// a bounded outcome: applied, a navigation to perform, or a typed refusal.
+/// A value never comes back.
+fn form_action_script(revision: u64, index: usize, action: &str) -> String {
+    format!(
+        r#"(() => {{
+  const s = window.__mcs;
+  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  const el = s.nodes[{index}];
+  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  const action = {action};
+  // A successful action changes observable state, so the revision advances
+  // once. Writing a value is not a DOM mutation, so the observer would not
+  // notice it; if the page's own handlers already advanced it, that stands.
+  const startRevision = s.revision;
+  const advance = (outcome) => {{
+    if (s.revision === startRevision) s.revision = startRevision + 1;
+    return JSON.stringify(outcome);
+  }};
+  const t = el.tagName.toLowerCase();
+  const type = (el.type || "").toLowerCase();
+  const isCheck = t === "input" && /^(checkbox|radio)$/.test(type);
+  const isText = t === "textarea" || (t === "input" && /^(text|search|url|tel|email|number)$/.test(type));
+  const isButton = t === "button" || (t === "input" && /^(button|submit|reset)$/.test(type));
+  // Every refusal happens here, before anything is written.
+  if (el.disabled) return JSON.stringify({{ unsupported: true, reason: "control_disabled" }});
+  const fire = (name, cancelable) => el.dispatchEvent(new Event(name, {{ bubbles: true, cancelable: !!cancelable }}));
+  const enc = (v) => encodeURIComponent(String(v)).replace(/%20/g, "+")
+    .replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+  const serialize = (form, submitter) => {{
+    const pairs = [];
+    for (const c of form.elements.slice(0, 64)) {{
+      const name = c.getAttribute("name");
+      if (!name || c.disabled) continue;
+      const ct = c.tagName.toLowerCase();
+      const ctype = (c.type || "").toLowerCase();
+      if (ct === "input" && /^(password|file)$/.test(ctype)) continue;
+      if (ct === "input" && /^(checkbox|radio)$/.test(ctype)) {{
+        if (c.checked) pairs.push([name, c.getAttribute("value") ?? "on"]);
+      }} else if (ct === "select") {{
+        const o = c.options[c.selectedIndex];
+        if (o) pairs.push([name, o.getAttribute("value") ?? (o.textContent || "").trim()]);
+      }} else if (ct === "textarea" || (ct === "input" && /^(text|search|url|tel|email|number|hidden)$/.test(ctype))) {{
+        pairs.push([name, c.value ?? ""]);
+      }} else if (submitter && c === submitter) {{
+        pairs.push([name, c.getAttribute("value") ?? ""]);
+      }}
+    }}
+    return pairs.map(([k, v]) => enc(k) + "=" + enc(v)).join("&");
+  }};
+  const submitForm = (form, submitter) => {{
+    const method = String(form.getAttribute("method") || "get").toLowerCase();
+    if (method !== "get") return JSON.stringify({{ unsupported: true, reason: "form_method_unsupported" }});
+    const ev = new Event("submit", {{ bubbles: true, cancelable: true }});
+    form.dispatchEvent(ev);
+    if (ev.defaultPrevented) return advance({{ applied: true, role: "form" }});
+    const query = serialize(form, submitter);
+    const action = form.getAttribute("action");
+    const base = action === null || action === "" ? "" : action;
+    return advance({{ navigate: base + (query ? "?" + query : ""), role: "form", current: !base }});
+  }};
+  if (action.kind === "set_value") {{
+    if (!isText) return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    if (el.readOnly) return JSON.stringify({{ unsupported: true, reason: "control_read_only" }});
+    el.value = action.value;
+    fire("input", false);
+    fire("change", false);
+    return advance({{ applied: true, role: "textbox", value_bytes: action.value.length }});
+  }}
+  if (action.kind === "set_checked") {{
+    if (!isCheck) return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    el.checked = action.checked;
+    fire("click", true);
+    fire("change", false);
+    return advance({{ applied: true, role: type }});
+  }}
+  if (action.kind === "select_option") {{
+    if (t !== "select") return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    const options = el.options;
+    if (action.index >= options.length) return JSON.stringify({{ absent: true, reason: "option_out_of_range" }});
+    if (options[action.index].disabled) return JSON.stringify({{ unsupported: true, reason: "option_disabled" }});
+    el.selectedIndex = action.index;
+    fire("change", false);
+    return advance({{ applied: true, role: "select" }});
+  }}
+  if (action.kind === "submit") {{
+    const form = t === "form" ? el : el.form;
+    if (!form) return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    return submitForm(form, t === "form" ? null : el);
+  }}
+  if (action.kind === "press") {{
+    const key = action.key === "space" ? " " : "Enter";
+    for (const name of ["keydown", "keypress", "keyup"]) {{
+      const ev = new Event(name, {{ bubbles: true, cancelable: true }});
+      ev.key = key;
+      el.dispatchEvent(ev);
+    }}
+    if (action.key === "space" && isCheck) {{
+      el.checked = !el.checked;
+      fire("click", true);
+      fire("change", false);
+      return advance({{ applied: true, role: type }});
+    }}
+    if (isButton) {{
+      const form = el.form;
+      if (form && type === "submit") return submitForm(form, el);
+      el.click();
+      return advance({{ applied: true, role: "button" }});
+    }}
+    if (action.key === "enter" && t === "a" && el.hasAttribute("href")) {{
+      const ev = new Event("click", {{ bubbles: true, cancelable: true }});
+      el.dispatchEvent(ev);
+      if (ev.defaultPrevented) return advance({{ applied: true, role: "link" }});
+      return advance({{ navigate: el.getAttribute("href"), role: "link" }});
+    }}
+    if (action.key === "enter" && isText && el.form) return submitForm(el.form, null);
+    return advance({{ applied: true, role: t }});
+  }}
+  return JSON.stringify({{ unsupported: true, reason: "action_unsupported" }});
 }})()"#
     )
 }
@@ -362,6 +533,8 @@ const MAX_AUDIT_ORIGINS: usize = 32;
 struct AuditEntry {
     sequence: u64,
     deadline_ms: u64,
+    /// For a value-carrying action, how many bytes it had. Never the value.
+    value_bytes: Option<u64>,
     target: std::rc::Rc<str>,
     origin: Option<std::rc::Rc<str>>,
     operation: &'static str,
@@ -375,6 +548,7 @@ impl AuditEntry {
             "target": &*self.target, "operation": self.operation,
             "origin": self.origin.as_deref(), "outcome": self.outcome,
             "deadline_ms": self.deadline_ms, "result_bytes_limit": MAX_RESPONSE_BYTES,
+            "value_bytes": self.value_bytes,
         })
     }
 }
@@ -2804,7 +2978,7 @@ impl Host {
             "surface.show" => self.surface_show(a, deadline),
             "surface.hide" => self.surface_hide(a),
             "target.snapshot" => self.target_snapshot(a, deadline),
-            "target.act" => self.target_act(a, deadline),
+            "target.act" => self.target_act(a, &request.version, deadline),
             "target.wait" => self.target_wait(a, deadline),
             "memory.report" => Ok(self.memory_report()),
             "memory.trim" => {
@@ -3486,6 +3660,7 @@ impl Host {
         ledger.append(AuditEntry {
             sequence,
             deadline_ms,
+            value_bytes: None,
             target,
             origin,
             operation,
@@ -3553,6 +3728,56 @@ impl Host {
             "kind":"profile_policy","profile":profile_id,"session":session_id,
             "policy":policy.to_json(),"persisted":persistent,
         }))
+    }
+
+    /// One bounded audit record for a form action. It names the kind and the
+    /// outcome and, for a value, only how many bytes it had. No value, no
+    /// label, no field name and no query ever reaches the ledger.
+    fn audit_action(
+        &mut self,
+        target_id: &str,
+        kind: &str,
+        outcome: &str,
+        value_bytes: Option<u64>,
+    ) {
+        let Some(session) = self.targets.get(target_id).map(|t| t.session_id.clone()) else {
+            return;
+        };
+        let sequence = self.next_audit_sequence;
+        self.next_audit_sequence = self.next_audit_sequence.saturating_add(1);
+        let deadline_ms = self.current_deadline_ms;
+        let ledger = self.audits.entry(session).or_default();
+        let target = Ledger::share(&mut ledger.targets, target_id, MAX_TARGETS);
+        // The action's kind and outcome are fixed vocabularies, so they cost
+        // nothing per record and cannot smuggle page data.
+        let operation = match kind {
+            "set_value" => "target.act:set_value",
+            "set_checked" => "target.act:set_checked",
+            "select_option" => "target.act:select_option",
+            "submit" => "target.act:submit",
+            "press" => "target.act:press",
+            _ => "target.act:click",
+        };
+        let outcome = match outcome {
+            "applied" => "applied",
+            "committed" => "committed",
+            "unsupported_capability" => "unsupported_capability",
+            "not_found" => "not_found",
+            "resource_limit" => "resource_limit",
+            "invalid_request" => "invalid_request",
+            "deadline_exceeded" => "deadline_exceeded",
+            "permission_denied" => "permission_denied",
+            _ => "internal",
+        };
+        ledger.append(AuditEntry {
+            sequence,
+            deadline_ms,
+            value_bytes,
+            target,
+            origin: None,
+            operation,
+            outcome,
+        });
     }
 
     /// `session.inspect`: read-only and bounded. Identity and owner chain, the
@@ -4018,6 +4243,24 @@ impl Host {
             if let Some(value) = entry.get("value") {
                 item["value"] = value.clone();
             }
+            // The bounded form facts the realm reported. Each is copied as
+            // it came; the host keeps no form state of its own.
+            for fact in [
+                "checked",
+                "group",
+                "options",
+                "selected",
+                "method",
+                "has_action",
+                "controls",
+                "disabled",
+                "read_only",
+                "control_name",
+            ] {
+                if let Some(value) = entry.get(fact) {
+                    item[fact] = value.clone();
+                }
+            }
             if let Some(dom_id) = entry.get("dom_id") {
                 item["dom_id"] = dom_id.clone();
             }
@@ -4040,7 +4283,71 @@ impl Host {
         }))
     }
 
-    fn target_act(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
+    /// The bounded shape of each action, checked before the realm sees it.
+    fn validate_action(action: &Map<String, Value>, kind: &str) -> Result<(), ControlError> {
+        let exact = |fields: &[&str]| -> Result<(), ControlError> {
+            let expected: std::collections::BTreeSet<&str> = fields.iter().copied().collect();
+            let given: std::collections::BTreeSet<&str> =
+                action.keys().map(String::as_str).collect();
+            if expected == given {
+                Ok(())
+            } else {
+                Err(invalid("action fields differ"))
+            }
+        };
+        match kind {
+            "click" | "submit" => exact(&["kind"]),
+            "set_value" => {
+                exact(&["kind", "value"])?;
+                let value = action
+                    .get("value")
+                    .and_then(Value::as_str)
+                    .ok_or_else(|| invalid("set_value takes a string"))?;
+                if value.len() > MAX_FORM_VALUE_BYTES {
+                    return Err(ControlError::new(
+                        "invalid_request",
+                        "value exceeds its byte bound",
+                        false,
+                    ));
+                }
+                Ok(())
+            }
+            "set_checked" => {
+                exact(&["kind", "checked"])?;
+                action
+                    .get("checked")
+                    .and_then(Value::as_bool)
+                    .map(|_| ())
+                    .ok_or_else(|| invalid("set_checked takes a boolean"))
+            }
+            "select_option" => {
+                exact(&["kind", "index"])?;
+                action
+                    .get("index")
+                    .and_then(Value::as_u64)
+                    .filter(|index| *index <= MAX_OPTION_INDEX)
+                    .map(|_| ())
+                    .ok_or_else(|| invalid("select_option index differs"))
+            }
+            "press" => {
+                exact(&["kind", "key"])?;
+                match string_field(action, "key")? {
+                    "enter" | "space" => Ok(()),
+                    _ => Err(invalid("press offers enter and space only")),
+                }
+            }
+            _ => Err(invalid(
+                "action kind is not part of the control version it names",
+            )),
+        }
+    }
+
+    fn target_act(
+        &mut self,
+        arguments: &Value,
+        version: &str,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["target", "reference", "action"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let reference = exact_object(
@@ -4058,16 +4365,16 @@ impl Host {
             .get("action")
             .and_then(Value::as_object)
             .ok_or_else(|| invalid("action missing"))?;
-        if action.len() != 1 {
-            return Err(invalid("click action fields differ"));
-        }
-        if string_field(action, "kind")? != "click" {
-            return Err(ControlError::new(
-                "unsupported_capability",
-                "the native DOM slice offers click only",
-                false,
+        // The version a request named decides which actions exist. 0.0.1 has
+        // the click and nothing else; nothing is inferred from the shape.
+        let kind = string_field(action, "kind")?.to_owned();
+        let form_action = kind != "click";
+        if form_action && version != VERSION_NEXT {
+            return Err(invalid(
+                "this action is not part of the control version it names",
             ));
         }
+        Self::validate_action(action, &kind)?;
         let index = node
             .strip_prefix("node_")
             .and_then(|s| s.parse::<usize>().ok())
@@ -4097,12 +4404,16 @@ impl Host {
             );
         }
         let base = target.revision_base;
-        let outcome = Self::eval_json(
-            target,
-            &act_script(revision - base, index),
-            deadline,
-            &policy,
-        )?;
+        let script = if form_action {
+            form_action_script(
+                revision - base,
+                index,
+                &serde_json::to_string(&Value::Object(action.clone())).expect("action serializes"),
+            )
+        } else {
+            act_script(revision - base, index)
+        };
+        let outcome = Self::eval_json(target, &script, deadline, &policy)?;
         if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
             return Err(ControlError::new(
                 "stale_revision",
@@ -4118,15 +4429,66 @@ impl Host {
             );
         }
         if outcome.get("unsupported").is_some() {
-            return Err(ControlError::new(
-                "unsupported_capability",
-                "click requires a button or link node",
-                false,
-            ));
+            let reason = outcome
+                .get("reason")
+                .and_then(Value::as_str)
+                .unwrap_or("action_unsupported")
+                .to_owned();
+            let message = if form_action {
+                "this action does not apply to that control"
+            } else {
+                "click requires a button or link node"
+            };
+            self.audit_action(&id, &kind, "unsupported_capability", None);
+            return Err(ControlError::new("unsupported_capability", message, false)
+                .scoped("target", &id)
+                .details(json!({"reason": reason})));
+        }
+        if outcome.get("absent").is_some() {
+            self.audit_action(&id, &kind, "not_found", None);
+            return Err(ControlError::new("not_found", "no such option", false)
+                .scoped("target", &id)
+                .details(json!({"reason": outcome.get("reason").and_then(Value::as_str).unwrap_or("absent")})));
         }
         if let Some(href) = outcome.get("navigate").and_then(Value::as_str) {
             let href = href.to_owned();
-            return self.navigate(&id, &href, deadline);
+            // A submit's query is page data: it is bounded here and never put
+            // into an error, a log or a record.
+            if let Some(base_url) = self.targets.get(&id).and_then(|t| t.url.as_ref())
+                && base_url
+                    .join(&href)
+                    .map(|url| url.as_str().len())
+                    .unwrap_or(0)
+                    > MAX_URL_BYTES
+            {
+                self.audit_action(&id, &kind, "resource_limit", None);
+                return Err(ControlError::new(
+                    "resource_limit",
+                    "the submitted URL exceeds its bound",
+                    false,
+                )
+                .scoped("target", &id)
+                .details(json!({"reason": "submitted_url_bytes"})));
+            }
+            let navigated = self.navigate(&id, &href, deadline);
+            self.audit_action(
+                &id,
+                &kind,
+                navigated
+                    .as_ref()
+                    .err()
+                    .map_or("committed", |error| error.code),
+                None,
+            );
+            // A click keeps exactly the result it has always returned; a form
+            // action adds its own two fields to that same shape and takes
+            // nothing away.
+            let mut navigated = navigated?;
+            if form_action {
+                navigated["action"] = json!(kind);
+                navigated["role"] = outcome.get("role").cloned().unwrap_or(json!("form"));
+            }
+            return Ok(navigated);
         }
         if outcome.get("applied").and_then(Value::as_bool) != Some(true) {
             return Err(
@@ -4135,7 +4497,17 @@ impl Host {
             );
         }
         let after = Self::revision(target, deadline, &policy)?;
-        Ok(json!({"kind":"action","target":id,"revision":after,"applied":true}))
+        let value_bytes = outcome.get("value_bytes").and_then(Value::as_u64);
+        self.audit_action(&id, &kind, "applied", value_bytes);
+        let mut result = json!({"kind":"action","target":id,"revision":after,"applied":true});
+        if form_action {
+            result["action"] = json!(kind);
+            result["role"] = outcome.get("role").cloned().unwrap_or(json!(null));
+            if let Some(bytes) = value_bytes {
+                result["value_bytes"] = json!(bytes);
+            }
+        }
+        Ok(result)
     }
 
     fn target_wait(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {
@@ -5058,6 +5430,7 @@ mod ledger_tests {
             ledger.append(AuditEntry {
                 sequence,
                 deadline_ms: 15000,
+                value_bytes: None,
                 target,
                 origin: Some(origin),
                 operation: "target.navigate",
@@ -5099,8 +5472,13 @@ mod ledger_tests {
         assert_eq!(rendered["result_bytes_limit"], json!(MAX_RESPONSE_BYTES));
         assert_eq!(
             rendered.as_object().map(|fields| fields.len()),
-            Some(9),
-            "no field was added or lost"
+            Some(10),
+            "the fields are the nine of the navigation record plus the value's byte length"
+        );
+        assert_eq!(
+            rendered["value_bytes"],
+            json!(null),
+            "a navigation record carries no value length"
         );
         // The reserved ring is reported, so sharing hides nothing.
         assert!(ledger.capacity_bytes() >= MAX_AUDIT_ENTRIES * std::mem::size_of::<AuditEntry>());
@@ -5122,6 +5500,7 @@ mod ledger_tests {
             ledger.append(AuditEntry {
                 sequence: index as u64,
                 deadline_ms: 1,
+                value_bytes: None,
                 target,
                 origin: Some(origin),
                 operation: "target.traverse",

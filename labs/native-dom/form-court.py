@@ -22,6 +22,22 @@ Groups:
  5 secrecy      no value, label or query in the ledger, the log or the receipt
  6 memory       the numeric live-owner criteria of the design
  7 cdp          the form methods stay -32601
+
+Court amendment (mechanism, recorded when the host was implemented): the court
+validates its own requests against the contract before sending them, which
+refused the deliberately over-long value before the host could. That one
+request now skips the court's own check so the host's typed refusal is what is
+measured; every other request is still validated both ways. No criterion moved.
+
+Second amendment (mechanism): the keyboard group pressed space on the form's
+submit button, which submits and navigates, so the group that follows found no
+form. Space is now pressed on a checkbox, which is the other activation the
+design defines and changes nothing else, and the submit group starts from a
+freshly opened form page. No criterion moved.
+
+Completion, not a movement: group 7 was frozen in the design and missing from
+the first implementation of this file. It is implemented now against the
+pinned client.
 """
 
 import argparse
@@ -147,8 +163,45 @@ def node(snap, role, name=None, index=0):
     return found[index]["reference"] if len(found) > index else None
 
 
-def act(host, target, reference, action, deadline_ms=15000):
-    return host.call("target.act", {"target": target, "reference": reference, "action": action}, deadline_ms)
+def act(host, target, reference, action, deadline_ms=15000, validate=True):
+    return host.call("target.act", {"target": target, "reference": reference, "action": action},
+                     deadline_ms, validate=validate)
+
+
+def qualify_cdp(binary, origin, client_modules, expect, tag):
+    """Group 7: the form methods stay unprojected, proven with the client."""
+    if not (Path(client_modules) / "node_modules").exists():
+        expect(tag + "the form methods stay -32601", False,
+               {"reason": "the pinned client package is absent from the ignored lab directory"})
+        return
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-form-cdp-") as directory:
+        host = NAV.Host(binary, directory, "system", origin, cdp=True)
+        client = None
+        try:
+            profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = host.ok("session.open", {"profile": profile})["session"]
+            target = NAV.open_target(host, session, origin, "/form.html")
+            client = NAV.CDP.Client(client_modules)
+            client.command("connect", endpoint=host.endpoint())
+            client.command("waitForTarget", id=target)
+            client.command("attach", name="A", id=target)
+            for method, params in (("DOM.setNodeValue", {"nodeId": 1, "value": "x"}),
+                                   ("Input.dispatchKeyEvent", {"type": "keyDown", "key": "Enter"}),
+                                   ("Input.insertText", {"text": "x"})):
+                answer = client.send("A", method, params)
+                expect(tag + f"{method} stays an explicit -32601: the slice adds no CDP form surface",
+                       NAV.cdp_failed(answer, -32601), answer)
+            host.ok("target.close", {"target": target})
+            host.ok("session.close", {"session": session})
+        finally:
+            if client is not None:
+                try:
+                    client.command("disconnect")
+                except Exception:  # noqa: BLE001
+                    pass
+                client.process.wait(timeout=10)
+            if host.process.poll() is None:
+                host.finish()
 
 
 def run(binary, allocator, origin, expect, tag):
@@ -236,19 +289,38 @@ def run(binary, allocator, origin, expect, tag):
                 response = act(host, target, readonly[0]["reference"], {"kind": "set_value", "value": "x"})
                 expect(tag + "a read-only control refuses set_value", refused(response, "unsupported_capability"),
                        response.get("error"))
+            # The court's own contract check would refuse this one first.
             over = act(host, target, node(snap, "textbox", "Text"),
-                       {"kind": "set_value", "value": "y" * (CAPS["max_value_bytes"] + 1)})
+                       {"kind": "set_value", "value": "y" * (CAPS["max_value_bytes"] + 1)},
+                       validate=False)
             expect(tag + "an over-long value is refused before any change",
                    refused(over, "invalid_request"), over.get("error"))
             far = act(host, target, node(snap, "select"), {"kind": "select_option", "index": 60})
             expect(tag + "an option index outside the list is refused typed",
                    refused(far, "not_found") or refused(far, "invalid_request"), far.get("error"))
 
-            # 3. Keyboard activation, bounded to two keys.
-            pressed = act(host, target, node(snap, "button"), {"kind": "press", "key": "space"})
-            expect(tag + "press space activates a button", pressed.get("ok"), pressed.get("error"))
+            # 3. Keyboard activation, bounded to two keys. Space is pressed on
+            # a checkbox: on a submit button it would submit and navigate, and
+            # the group below needs the form still there.
+            snap = snapshot(host, target)
+            before_press = [n.get("checked") for n in snap["nodes"] if n.get("role") == "checkbox"]
+            pressed = act(host, target, node(snap, "checkbox"), {"kind": "press", "key": "space"})
+            snap = snapshot(host, target)
+            after_press = [n.get("checked") for n in snap["nodes"] if n.get("role") == "checkbox"]
+            expect(tag + "press space toggles a checkbox",
+                   pressed.get("ok") and after_press[0] != before_press[0],
+                   {"before": before_press, "after": after_press, "error": pressed.get("error")})
 
-            # 4. Submit: GET serialisation and atomicity.
+            # 4. Submit: GET serialisation and atomicity, from a fresh form.
+            host.ok("target.navigate", {"target": target, "url": f"{origin}/form.html"})
+            snap = snapshot(host, target)
+            act(host, target, node(snap, "textbox", "Text"), {"kind": "set_value", "value": TYPED["text"]})
+            snap = snapshot(host, target)
+            act(host, target, node(snap, "checkbox"), {"kind": "set_checked", "checked": True})
+            snap = snapshot(host, target)
+            act(host, target, node(snap, "radio"), {"kind": "set_checked", "checked": True})
+            snap = snapshot(host, target)
+            act(host, target, node(snap, "select"), {"kind": "select_option", "index": 1})
             snap = snapshot(host, target)
             before = host.ok("target.inspect", {"target": target})
             submitted = act(host, target, node(snap, "form"), {"kind": "submit"})
@@ -356,6 +428,7 @@ def main():
     try:
         for allocator in ("system", "arena"):
             run(args.binary, allocator, origin, expect, f"[{allocator}] ")
+        qualify_cdp(args.binary, origin, args.client_modules, expect, "[cdp] ")
     finally:
         server.shutdown()
     receipt = {

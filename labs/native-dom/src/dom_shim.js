@@ -113,11 +113,79 @@
     get name() { return this.getAttribute("name") ?? ""; }
     get href() { return this.getAttribute("href") ?? ""; }
     get type() { const t = this.getAttribute("type"); if (t) return t.toLowerCase(); return this.localName === "button" ? "submit" : this.localName === "input" ? "text" : ""; }
-    get value() { if (this.__value !== null) return this.__value; return this.localName === "textarea" ? this.textContent : (this.getAttribute("value") ?? ""); }
+    get value() {
+      if (this.localName === "select") { const o = this.__options()[this.selectedIndex]; return o ? o.value : ""; }
+      if (this.__value !== null) return this.__value;
+      return this.localName === "textarea" ? this.textContent : (this.getAttribute("value") ?? "");
+    }
     set value(v) { this.__value = String(v); }
+    // The form model: the realm is the only authority over this state, so
+    // every property below is derived from the tree or from a field this
+    // element owns, never from anything outside the realm.
+    get disabled() { return this.hasAttribute("disabled"); }
+    get readOnly() { return this.hasAttribute("readonly"); }
+    get defaultValue() { return this.localName === "textarea" ? this.textContent : (this.getAttribute("value") ?? ""); }
+    get defaultChecked() { return this.hasAttribute("checked"); }
+    get checked() { return this.__checked === undefined ? this.defaultChecked : this.__checked; }
+    set checked(v) {
+      const on = !!v;
+      if (on && this.localName === "input" && this.type === "radio") {
+        for (const other of this.__radioGroup()) { if (other !== this) other.__checked = false; }
+      }
+      this.__checked = on;
+    }
+    __radioGroup() {
+      const name = this.getAttribute("name");
+      if (!name) return [this];
+      const scope = this.form || g.document;
+      const all = scope === g.document ? g.document.querySelectorAll("input") : scope.__controls();
+      return [...all].filter((el) => el.localName === "input" && el.type === "radio" && el.getAttribute("name") === name);
+    }
+    get form() { for (let n = this.parentNode; n; n = n.parentNode) if (n.localName === "form") return n; return null; }
+    __options() { return this.localName === "select" ? [...this.querySelectorAll("option")] : []; }
+    get options() { return this.__options(); }
+    get selectedIndex() {
+      const options = this.__options();
+      if (this.__selected !== undefined) return this.__selected;
+      const marked = options.findIndex((o) => o.hasAttribute("selected"));
+      return marked >= 0 ? marked : (options.length ? 0 : -1);
+    }
+    set selectedIndex(index) { this.__selected = Number(index); }
+    get selected() {
+      const select = (() => { for (let n = this.parentNode; n; n = n.parentNode) if (n.localName === "select") return n; return null; })();
+      if (!select) return this.hasAttribute("selected");
+      return select.__options().indexOf(this) === select.selectedIndex;
+    }
+    get label() { return this.getAttribute("label") ?? this.textContent; }
+    __controls() {
+      return [...this.querySelectorAll("input")]
+        .concat([...this.querySelectorAll("textarea")])
+        .concat([...this.querySelectorAll("select")])
+        .concat([...this.querySelectorAll("button")]);
+    }
+    get elements() { return this.localName === "form" ? this.__controls() : []; }
+    // A reset restores every control to the document's own defaults.
+    reset() {
+      for (const el of this.__controls()) {
+        el.__value = null;
+        el.__checked = undefined;
+        el.__selected = undefined;
+      }
+      this.dispatchEvent(new Event("reset", { bubbles: true, cancelable: true }));
+    }
+    submit() { return this.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); }
     get innerText() { return this.textContent; }
     matches(selector) { return matchChain(this, parseSelector(selector), null); }
-    click() { this.dispatchEvent(new Event("click", { bubbles: true, cancelable: true })); }
+    click() {
+      if (this.localName === "input" && this.type === "reset") {
+        const form = this.form;
+        const ev = new Event("click", { bubbles: true, cancelable: true });
+        this.dispatchEvent(ev);
+        if (!ev.defaultPrevented && form) form.reset();
+        return;
+      }
+      this.dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+    }
     focus() {} blur() {}
   }
   class Document extends Node {
