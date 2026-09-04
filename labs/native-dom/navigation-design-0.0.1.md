@@ -394,3 +394,57 @@ cap does not clear the criterion: the two batches **disagree**, the status is
 cross-batch unstable, and the original failure stands. No cap moved, no arm
 was retuned, no further run was taken and no candidate was pre-registered,
 since that was permitted only had the replication exceeded the cap again.
+
+## 16. Immutable-policy sharing repair (pre-registered before the code)
+
+One repair candidate, frozen before it is written. The status it addresses is
+cross-batch unstable: the original batch measured 1,064,960 bytes over 128
+navigations under the default allocator against the frozen 1,048,576, and the
+single replication measured exactly the cap with two of seven runs above it.
+**Neither cap moves.**
+
+### 16.1 What costs the bytes
+
+Every control operation builds the network policy it will use by cloning the
+host's policy, and that clone deep-copies the allowlist: a fresh vector of
+`AllowedOrigin`, allocated and dropped per operation. A navigation does this
+more than once. The list is host-wide and never changes after start-up, so
+every one of those copies is identical to the last.
+
+### 16.2 The repair
+
+- The allowlist becomes **bounded shared immutable storage**,
+  `Arc<[AllowedOrigin]>`. Cloning a policy then copies a pointer and a
+  reference count and allocates no allowlist storage at all.
+- The profile's `online` switch stays exactly what it is: a small per-profile
+  value copied into the policy for that operation, widening no authority.
+- No borrowed lifetimes are introduced, so nothing about the QuickJS or
+  network callbacks changes shape. No global mutable state. No caching keyed
+  by URL or by anything else. No behaviour change of any kind.
+- The origin rules, the TLS rules, the address and SSRF refusals and the
+  per-document fetch and byte limits stay identical.
+
+### 16.3 Proof obligations
+
+- A test shows that cloning a policy shares one allowlist: the two clones
+  point at the same storage and the reference count rises, and flipping the
+  per-profile switch on a clone leaves that sharing and the original untouched.
+- One profile's policy change cannot reach another profile: the profile
+  court's cross-profile assertion stands, with one profile offline while the
+  other still opens targets.
+
+### 16.4 Repair acceptance, frozen, in addition to the original court
+
+Measured on one post-fix batch, no cherry-picking and no second attempt:
+
+| Criterion | Threshold |
+|---|---|
+| default-allocator median excess | ≤ 983,040 bytes, that is the frozen cap with at least 65,536 of headroom |
+| any single default-allocator run | never above 1,048,576 bytes |
+| arena median excess | no worse than the replication's 655,360 by more than 65,536, so ≤ 720,896 |
+| tail slopes | unchanged, ≤ 65,536 for both allocators |
+| every other check | navigation, audit, profile policy, network and CDP stay green |
+
+These are stricter conditions on the repair and they do not rewrite the
+original gate. If any of them fails the outcome is recorded rejected or
+narrow and the work stops there: no second optimisation, no moved cap.
