@@ -54,6 +54,12 @@ const MAX_TARGETS: usize = 8;
 const MAX_PROFILES: usize = 8;
 const MAX_SESSIONS: usize = 8;
 const MAX_SNAPSHOT_NODES: u64 = 128;
+/// Frames per target, main frame included: the synthetic host's bound.
+const MAX_FRAMES_PER_TARGET: usize = 8;
+/// Node ids are target-scoped. Each frame's ids come from a disjoint band of
+/// this width, so one id never means two nodes within one target revision and
+/// a reference taken in a child frame cannot resolve against the main one.
+const NODE_BAND: u64 = MAX_SNAPSHOT_NODES;
 const MAX_FIXTURE_BYTES: u64 = 1_048_576;
 const REALM_MEMORY_LIMIT: usize = 16 * 1024 * 1024;
 const REALM_STACK_LIMIT: usize = 512 * 1024;
@@ -100,6 +106,28 @@ const REVISION_JS: &str = "(() => String(window.__mcs ? window.__mcs.revision : 
 type SemanticRows = Vec<(String, String, String)>;
 /// A host-side scroll advances the revision like any other page mutation.
 const SCROLL_REVISION_JS: &str = "(() => { if (!window.__mcs) { return '-1'; } window.__mcs.revision += 1; return String(window.__mcs.revision); })()";
+
+/// The realm-side location seed for a document, used by the main frame and by
+/// every child frame so an embedded document reports its own address.
+fn location_script(url: &Url) -> String {
+    format!(
+        "__mcsLocation({})",
+        json!({
+            "href": url.as_str(),
+            "origin": url.origin().ascii_serialization(),
+            "protocol": format!("{}:", url.scheme()),
+            "host": url.host_str().map(|h| match url.port() {
+                Some(p) => format!("{h}:{p}"),
+                None => h.to_owned(),
+            }).unwrap_or_default(),
+            "hostname": url.host_str().unwrap_or_default(),
+            "port": url.port().map(|p| p.to_string()).unwrap_or_default(),
+            "pathname": url.path(),
+            "search": url.query().map(|q| format!("?{q}")).unwrap_or_default(),
+            "hash": url.fragment().map(|f| format!("#{f}")).unwrap_or_default(),
+        })
+    )
+}
 
 fn snapshot_script(max_nodes: u64) -> String {
     format!(
@@ -1529,6 +1557,22 @@ struct Session {
     profile_id: String,
 }
 
+/// A bounded child frame: a static embedded document with its own identity,
+/// generation and realm. It runs no scripts (design §16), so its realm holds
+/// the shim, the seeded tree, its location and the revision instrumentation
+/// and nothing else.
+struct ChildFrame {
+    id: String,
+    generation: u64,
+    realm_id: String,
+    realm: Realm,
+    /// The document's own bytes and elements, so the memory report attributes
+    /// an embedded document to its owner. A child's address is deliberately
+    /// not stored: no result carries it, and design §12.2 is unruled.
+    bytes: usize,
+    element_count: usize,
+}
+
 struct Target {
     id: String,
     session_id: String,
@@ -1556,6 +1600,9 @@ struct Target {
     /// Bounded scroll offset owned by the host (the synthetic host's rule);
     /// moved only by surface input in this slice.
     scroll_y: u64,
+    /// Bounded child frames in document order, built with this document and
+    /// ended with it. At most `MAX_FRAMES_PER_TARGET - 1`.
+    children: Vec<ChildFrame>,
 }
 
 /// Where a document comes from: a court fixture file or a URL fetched under
@@ -1612,6 +1659,54 @@ impl Target {
     }
 
     /// Seed the realm's cookie and storage mirrors from the working copy.
+    /// The main frame first, then the bounded children in document order.
+    /// Live QuickJS bytes of this target's frames, the children included.
+    fn realm_malloc_bytes(&self) -> usize {
+        self.realm.malloc_bytes()
+            + self
+                .children
+                .iter()
+                .map(|child| child.realm.malloc_bytes())
+                .sum::<usize>()
+    }
+
+    fn frame_count(&self) -> usize {
+        self.children.len() + 1
+    }
+
+    fn frames_json(&self) -> Value {
+        let mut frames = vec![json!({"frame":self.frame_id,"parent":Value::Null,
+            "generation":self.generation,"realm":self.realm_id})];
+        frames.extend(self.children.iter().map(|child| {
+            json!({"frame":child.id,"parent":self.frame_id,
+                "generation":child.generation,"realm":child.realm_id})
+        }));
+        Value::Array(frames)
+    }
+
+    fn realms_json(&self) -> Value {
+        let mut realms = vec![json!({"realm":self.realm_id,"frame":self.frame_id,"world":"main"})];
+        realms.extend(
+            self.children
+                .iter()
+                .map(|child| json!({"realm":child.realm_id,"frame":child.id,"world":"main"})),
+        );
+        Value::Array(realms)
+    }
+
+    /// Which frame an optional `frame` argument names: `None` for the main
+    /// frame, `Some(index)` for a child. A frame that is not live in this
+    /// target is not resolved here; the caller refuses it.
+    fn frame_index(&self, frame: &str) -> Option<Option<usize>> {
+        if frame == self.frame_id {
+            return Some(None);
+        }
+        self.children
+            .iter()
+            .position(|child| child.id == frame)
+            .map(Some)
+    }
+
     fn seed_store(&mut self, deadline: Instant, read_only: bool) -> Result<(), ControlError> {
         let now = profile::now_seconds();
         let cookie = self
@@ -1804,6 +1899,9 @@ struct Host {
     next_target: u64,
     next_frame: u64,
     next_realm: u64,
+    /// The child frames the last committed navigation ended, read once by the
+    /// result that reports them.
+    ended_frames: Vec<String>,
     realms_retired_total: u64,
     navigations_total: u64,
     /// One bounded history per target with a URL, kept beside the targets so
@@ -1889,6 +1987,9 @@ impl Host {
     /// Keep a closing target's TLS counters in the host totals.
     fn retire_target(&mut self, target: &Target) {
         self.tls_retired.absorb_tls(&target.budget);
+        // Children before their parent, realm before frame: every realm the
+        // target owned is retired exactly once, the main frame's included.
+        self.realms_retired_total += target.children.len() as u64 + 1;
     }
 
     // ------------------------------------------------------------ surfaces
@@ -2005,7 +2106,7 @@ impl Host {
             "audit_entries": self.audits.values().map(|l| l.entries.len()).sum::<usize>(),
             "audit_bytes": self.audits.values().map(Ledger::bytes).sum::<usize>(),
             "audit_capacity_bytes": self.audits.values().map(Ledger::capacity_bytes).sum::<usize>(),
-            "realm_malloc_bytes": self.targets.values().map(|t| t.realm.malloc_bytes()).sum::<usize>(),
+            "realm_malloc_bytes": self.targets.values().map(Target::realm_malloc_bytes).sum::<usize>(),
             "realms": self.targets.len(),
             "document_fetches": budget.fetches,
             "document_bytes": budget.bytes,
@@ -2989,9 +3090,9 @@ impl Host {
                     "kind":"target","target":target.id,"session":target.session_id,"fixture":target.fixture,
                     "url":target.url.as_ref().map(Url::as_str),"document_framing":target.document_framing,"revision":revision,"load_complete":true,"crashed":false,
                     "script_realm":true,"scripts_run":target.script_count,"scripts_skipped":target.skipped_scripts,
-                    "frames":[{"frame":target.frame_id,"parent":null,"generation":target.generation,"realm":target.realm_id}],
-                    "realms":[{"realm":target.realm_id,"frame":target.frame_id,"world":"main"}],
-                    "frame_limit":1,
+                    "frames":target.frames_json(),
+                    "realms":target.realms_json(),
+                    "frame_limit":MAX_FRAMES_PER_TARGET,
                     "network":target_network(&target.budget, https),
                     "surface":surface_id,
                     "scroll_y":target.scroll_y,
@@ -3030,8 +3131,17 @@ impl Host {
                     // SAFETY: a null zone requests pressure relief from every
                     // malloc zone; a zero goal asks for everything reclaimable.
                     let released = unsafe { malloc_zone_pressure_relief(std::ptr::null_mut(), 0) };
-                    let arena_released: usize =
-                        self.targets.values().map(|t| t.realm.trim_arena()).sum();
+                    let arena_released: usize = self
+                        .targets
+                        .values()
+                        .map(|t| {
+                            t.realm.trim_arena()
+                                + t.children
+                                    .iter()
+                                    .map(|child| child.realm.trim_arena())
+                                    .sum::<usize>()
+                        })
+                        .sum();
                     Ok(json!({
                         "kind":"memory_trim",
                         "strategy":"malloc_zone_pressure_relief+arena_tail_madvise",
@@ -3537,6 +3647,20 @@ impl Host {
         let element_count = document.select("*").nodes().len();
         let mut tree = Vec::new();
         serialize_children(&document.root(), &mut tree);
+        // Embedded documents in document order, collected before the parse is
+        // dropped. `Err` is a source that will never be fetched and the reason
+        // it is refused, decided without touching the network.
+        let mut embedded: Vec<Result<String, &'static str>> = Vec::new();
+        for node in document.select("iframe").nodes() {
+            if node.attr("srcdoc").is_some() {
+                embedded.push(Err("srcdoc is not built"));
+                continue;
+            }
+            match node.attr("src") {
+                Some(src) if !src.trim().is_empty() => embedded.push(Ok(src.to_string())),
+                _ => embedded.push(Err("iframe without a src")),
+            }
+        }
         // Scripts in document order: inline text, or a same-origin external
         // source fetched under the same policy and budget.
         let mut scripts: Vec<(String, String)> = Vec::new();
@@ -3605,27 +3729,7 @@ impl Host {
         );
         realm.eval(&seed, deadline, id)?;
         if let Some(base_url) = &base {
-            realm.eval(
-                &format!(
-                    "__mcsLocation({})",
-                    json!({
-                        "href": base_url.as_str(),
-                        "origin": base_url.origin().ascii_serialization(),
-                        "protocol": format!("{}:", base_url.scheme()),
-                        "host": base_url.host_str().map(|h| match base_url.port() {
-                            Some(p) => format!("{h}:{p}"),
-                            None => h.to_owned(),
-                        }).unwrap_or_default(),
-                        "hostname": base_url.host_str().unwrap_or_default(),
-                        "port": base_url.port().map(|p| p.to_string()).unwrap_or_default(),
-                        "pathname": base_url.path(),
-                        "search": base_url.query().map(|q| format!("?{q}")).unwrap_or_default(),
-                        "hash": base_url.fragment().map(|f| format!("#{f}")).unwrap_or_default(),
-                    })
-                ),
-                deadline,
-                id,
-            )?;
+            realm.eval(&location_script(base_url), deadline, id)?;
             io.origin = base_url.origin().ascii_serialization();
             io.document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
         } else {
@@ -3633,8 +3737,96 @@ impl Host {
             io.document_host = None;
         }
         // The realm id is minted only once the document exists; a failed
-        // build never consumes one.
+        // build never consumes one. It is taken here, before the children
+        // mint theirs, so a child can never carry its parent's realm id.
         self.next_realm += 1;
+        let main_realm_id = format!("realm_{}", self.next_realm);
+        // Bounded child frames, built with their parent, under its budget and
+        // its deadline, same-origin only. A child that cannot be built is
+        // skipped with a reason; it never fails the parent's document.
+        let mut children: Vec<ChildFrame> = Vec::new();
+        let mut skipped_frames: Vec<Value> = Vec::new();
+        for source in embedded {
+            if children.len() + 1 >= MAX_FRAMES_PER_TARGET {
+                skipped_frames.push(json!({"reason":"frame limit"}));
+                continue;
+            }
+            let src = match source {
+                Ok(src) => src,
+                Err(reason) => {
+                    skipped_frames.push(json!({"reason":reason}));
+                    continue;
+                }
+            };
+            let Some(base_url) = &base else {
+                skipped_frames.push(json!({"reason":"embedded documents need a network origin"}));
+                continue;
+            };
+            let Ok(resolved) = base_url.join(&src) else {
+                skipped_frames.push(json!({"reason":"malformed src"}));
+                continue;
+            };
+            if !net::same_origin(base_url, &resolved) {
+                budget.denied += 1;
+                skipped_frames.push(json!({"reason":"cross-origin child refused"}));
+                continue;
+            }
+            let document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
+            let mut hooks = JarHooks {
+                jar: &mut io.jar,
+                document_host: document_host.as_deref(),
+                now,
+                rejections: &mut io.cookie_rejections,
+            };
+            let response = match net::fetch_with(
+                resolved.as_str(),
+                &policy,
+                &mut budget,
+                deadline,
+                Some(&mut hooks),
+                io.tls.as_deref(),
+            ) {
+                Ok(response) if response.status < 400 => response,
+                Ok(response) => {
+                    skipped_frames.push(json!({"reason":format!("status {}", response.status)}));
+                    continue;
+                }
+                Err(error) => {
+                    skipped_frames.push(json!({"reason":error.reason,"code":error.code}));
+                    continue;
+                }
+            };
+            let text = String::from_utf8_lossy(&response.body).into_owned();
+            let parsed = Document::from(text.as_str());
+            let element_count = parsed.select("*").nodes().len();
+            let mut child_tree = Vec::new();
+            serialize_children(&parsed.root(), &mut child_tree);
+            drop(parsed);
+            let realm = Realm::new(self.realm_allocation)?;
+            realm.eval(DOM_SHIM_JS, deadline, id)?;
+            realm.eval(
+                &format!(
+                    "__mcsSeed({})",
+                    serde_json::to_string(&child_tree).expect("tree serializes")
+                ),
+                deadline,
+                id,
+            )?;
+            realm.eval(&location_script(&response.url), deadline, id)?;
+            realm.eval("__mcsComplete()", deadline, id)?;
+            realm.eval(INSTALL_JS, deadline, id)?;
+            self.next_frame += 1;
+            self.next_realm += 1;
+            children.push(ChildFrame {
+                id: format!("frame_{}", self.next_frame),
+                generation: 1,
+                realm_id: format!("realm_{}", self.next_realm),
+                realm,
+                bytes: response.body.len(),
+                element_count,
+            });
+        }
+        skipped.extend(skipped_frames);
         let mut target = Target {
             id: id.to_owned(),
             session_id: session.to_owned(),
@@ -3650,10 +3842,11 @@ impl Host {
             last_snapshot: None,
             frame_id,
             generation,
-            realm_id: format!("realm_{}", self.next_realm),
+            realm_id: main_realm_id,
             revision_base,
             io,
             scroll_y: 0,
+            children,
         };
         let read_only = self
             .sessions
@@ -3875,6 +4068,13 @@ impl Host {
 
     /// The result every navigation operation returns: the identity after the
     /// swap, the committed URL and the bounded history state.
+    /// The frames the last committed navigation ended, carried from the swap
+    /// to the result that reports it. It is emptied by whichever result reads
+    /// it, so a navigation that ended nothing reports an empty list.
+    fn take_ended_frames(&mut self) -> Vec<String> {
+        std::mem::take(&mut self.ended_frames)
+    }
+
     fn navigation_result(&mut self, id: &str, deadline: Instant) -> Result<Value, ControlError> {
         let policy = self.policy_for_target(id);
         let target = self.target_mut(id)?;
@@ -3890,10 +4090,16 @@ impl Host {
         let url = target.url.as_ref().map(Url::as_str).ok_or_else(|| {
             ControlError::new("internal", "navigated target has no URL", false).scoped("target", id)
         })?;
-        Ok(json!({
+        // The navigation result's field set is pinned by the contract, so the
+        // frames this navigation ended are not added to it. They are observable
+        // through the enumeration and the not_found that follows, and the click
+        // path reports them where 0.0.1 already does.
+        let result = json!({
             "kind":"navigation","target":id,"frame":target.frame_id,"generation":target.generation,
             "realm":target.realm_id,"revision":revision,"url":url,"history":history,
-        }))
+        });
+        self.take_ended_frames();
+        Ok(result)
     }
 
     /// A URL a navigation may address: absolute, `http` or `https`, bounded.
@@ -4175,6 +4381,15 @@ impl Host {
             Ok(replacement) => {
                 let retired = std::mem::replace(target, replacement);
                 let retired_realm = retired.realm_id;
+                // The replaced document's children end with it, in reverse
+                // order of construction, each realm retired exactly once.
+                let ended_frames: Vec<String> = retired
+                    .children
+                    .iter()
+                    .map(|child| child.id.clone())
+                    .collect();
+                self.realms_retired_total += retired.children.len() as u64;
+                self.ended_frames = ended_frames.clone();
                 // The replaced document's spend leaves the gate and becomes a
                 // lifetime diagnostic; its TLS counters stay attributable.
                 let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
@@ -4189,7 +4404,7 @@ impl Host {
                 Ok(json!({
                     "kind":"action","target":id,"revision":revision,"applied":true,"navigated":true,
                     "frame":target.frame_id,"generation":target.generation,"realm":target.realm_id,
-                    "retired_realm":retired_realm,"url":target.url.as_ref().map(Url::as_str),"fixture":target.fixture,
+                    "retired_realm":retired_realm,"ended_frames":ended_frames,"url":target.url.as_ref().map(Url::as_str),"fixture":target.fixture,
                     "network":{"fetches":target.budget.fetches,"bytes":target.budget.bytes,"denied":target.budget.denied},
                 }))
             }
@@ -4251,31 +4466,59 @@ impl Host {
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
         let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
-        // A foreign, retired or unknown frame or realm is one and the same
-        // refusal: only the target's live main frame and realm exist.
-        if object.get("frame").is_some() {
-            let frame = typed_field(object, "frame", "frame")?;
-            if frame != target.frame_id {
-                return Err(
+        // A foreign, ended or unknown frame or realm is one and the same
+        // refusal, whether the target has children or not.
+        let selected = match object.get("frame") {
+            Some(_) => {
+                let frame = typed_field(object, "frame", "frame")?;
+                target.frame_index(frame).ok_or_else(|| {
                     not_found("frame", frame).details(json!({"reason":"frame_not_live_in_target"}))
-                );
+                })?
             }
-        }
+            None => None,
+        };
+        let (frame_id, realm_id, generation) = match selected {
+            None => (
+                target.frame_id.clone(),
+                target.realm_id.clone(),
+                target.generation,
+            ),
+            Some(index) => {
+                let child = &target.children[index];
+                (child.id.clone(), child.realm_id.clone(), child.generation)
+            }
+        };
+        // A realm argument asserts the narrowed frame's own current realm. A
+        // realm that is live in another frame of the same target is refused
+        // exactly like one that never existed.
         if object.get("realm").is_some() {
             let realm = typed_field(object, "realm", "realm")?;
-            if realm != target.realm_id {
-                return Err(not_found("realm", realm).details(
-                    json!({"reason":"realm_not_live_in_target","frame":target.frame_id}),
-                ));
+            if realm != realm_id {
+                return Err(not_found("realm", realm)
+                    .details(json!({"reason":"realm_not_live_in_target","frame":frame_id})));
             }
         }
-        let (frame_id, realm_id, generation, base) = (
-            target.frame_id.clone(),
-            target.realm_id.clone(),
-            target.generation,
-            target.revision_base,
-        );
-        let raw = Self::eval_json(target, &snapshot_script(max_nodes), deadline, &policy)?;
+        let base = target.revision_base;
+        // The revision a snapshot reports is the target's, whichever frame it
+        // observed: a node reference is scoped to (target, revision, node).
+        let raw = match selected {
+            None => Self::eval_json(target, &snapshot_script(max_nodes), deadline, &policy)?,
+            Some(index) => {
+                let revision = Self::revision(target, deadline, &policy)?;
+                let child = &target.children[index];
+                let text = child
+                    .realm
+                    .eval(&snapshot_script(max_nodes), deadline, &id)?;
+                let mut value: Value = serde_json::from_str(&text).map_err(|_| {
+                    ControlError::new("internal", "engine returned malformed snapshot JSON", false)
+                        .scoped("target", &id)
+                })?;
+                // The child counts its own revision from zero and never
+                // mutates; the target's revision is what the caller holds.
+                value["revision"] = json!(revision.saturating_sub(base));
+                value
+            }
+        };
         if raw.get("error").is_some() {
             return Err(ControlError::new(
                 "internal",
@@ -4304,11 +4547,23 @@ impl Host {
             .cloned()
             .unwrap_or_default()
         {
+            // Target-scoped node ids: each frame's band is disjoint, so a
+            // reference taken in a child can never resolve in the main frame.
             let node = entry
                 .get("node")
                 .and_then(Value::as_str)
                 .unwrap_or("node_0")
                 .to_owned();
+            let node = match selected {
+                None => node,
+                Some(index) => {
+                    let within = node
+                        .strip_prefix("node_")
+                        .and_then(|n| n.parse::<u64>().ok())
+                        .unwrap_or(0);
+                    format!("node_{}", NODE_BAND * (index as u64 + 1) + within)
+                }
+            };
             let mut item = json!({
                 "reference":{"target":id,"revision":revision,"node":node},
                 "role":entry.get("role").cloned().unwrap_or(Value::Null),
@@ -4463,6 +4718,18 @@ impl Host {
                 ControlError::new("not_found", "node does not exist", false).scoped("target", &id)
             })?
             - 1;
+        // A node id above the main frame's band belongs to a child frame.
+        // Acting there is refused before any event and without moving the
+        // revision, rather than resolved against the main frame's nodes.
+        if index as u64 >= NODE_BAND {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "this host does not act inside a child frame",
+                false,
+            )
+            .scoped("target", &id)
+            .details(json!({"reason":"action_in_child_frame_unsupported"})));
+        }
         let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
         let current = Self::revision(target, deadline, &policy)?;
@@ -4645,9 +4912,20 @@ impl Host {
     }
 
     fn memory_report(&self) -> Value {
-        let fixture_bytes: usize = self.targets.values().map(|t| t.fixture_bytes).sum();
-        let elements: usize = self.targets.values().map(|t| t.element_count).sum();
-        let realm_bytes: usize = self.targets.values().map(|t| t.realm.malloc_bytes()).sum();
+        // Document owners count every frame's document, children included.
+        let fixture_bytes: usize = self
+            .targets
+            .values()
+            .map(|t| t.fixture_bytes + t.children.iter().map(|c| c.bytes).sum::<usize>())
+            .sum();
+        let elements: usize = self
+            .targets
+            .values()
+            .map(|t| t.element_count + t.children.iter().map(|c| c.element_count).sum::<usize>())
+            .sum();
+        let realm_bytes: usize = self.targets.values().map(Target::realm_malloc_bytes).sum();
+        // One frame and one realm per frame, the children included.
+        let frame_objects: usize = self.targets.values().map(Target::frame_count).sum();
         let zones: Vec<Value> = self
             .targets
             .values()
@@ -4703,15 +4981,15 @@ impl Host {
                         let lifetime = self.lifetimes.get(&target.id).copied().unwrap_or_default();
                         json!({"target":target.id,"network":lifetime.to_json(&target.budget)})
                     }).collect::<Vec<_>>()},
-                "frames":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"frames_per_target":1},
-                "realms":{"objects":self.targets.len(),"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
+                "frames":{"objects":frame_objects,"object_limit":MAX_TARGETS * MAX_FRAMES_PER_TARGET,"frames_per_target":MAX_FRAMES_PER_TARGET},
+                "realms":{"objects":frame_objects,"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
                 "surfaces":{"objects":self.surfaces.len(),"object_limit":surface::MAX_SURFACES,
                     "bytes":self.surfaces.values().map(|s| s.painting.pixels.mapped_len()).sum::<usize>(),
                     "painter":surface::PAINTER,"binary":self.surface_binary.is_some(),
                     "frame":self.surface_frame_owner(),
                     "process":self.surface_stats.to_json(self.surface_generation, self.surfaces.len())},
-                "script_realms":{"objects":self.targets.len(),"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
+                "script_realms":{"objects":frame_objects,"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_document":net::MAX_FETCHES_PER_DOCUMENT,"bytes_per_document":net::MAX_BYTES_PER_DOCUMENT,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
             },
             "allocator":{"realm_allocation":self.realm_allocation.name(),"realm_zone":self.realm_allocation == RealmAllocation::Zone,"realm_arena":self.realm_allocation == RealmAllocation::Arena,"realm_arena_reserved_bytes":REALM_ARENA_BYTES,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed),"arenas_unmapped":arenas_unmapped,"arena_blocks_leaked_total":arena_leaked},
@@ -4938,6 +5216,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_target: 0,
         next_frame: 0,
         next_realm: 0,
+        ended_frames: Vec::new(),
         realms_retired_total: 0,
         navigations_total: 0,
         histories: BTreeMap::new(),

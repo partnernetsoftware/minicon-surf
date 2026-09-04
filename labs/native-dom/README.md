@@ -619,8 +619,8 @@ Scope: `Target` carries `frame_id` (minted with the target), `generation`,
 `realm_id` (minted with each document, never reused) and a revision base so
 the revision the caller sees is the realm's count plus everything before the
 last navigation. `target.open` reports `frame`, `generation` and `realm`;
-`target.inspect` lists `frames[]` (one, `parent` null) and `realms[]` with
-`frame_limit` 1; `target.snapshot` takes optional `frame` and `realm` and
+`target.inspect` lists `frames[]` (the main frame first, then bounded child
+frames) and `realms[]` with `frame_limit` 8; `target.snapshot` takes optional `frame` and `realm` and
 names what it observed, refusing a foreign, retired or unknown id with the
 same `not_found`. A click on an `<a href>` node dispatches the click event
 and, unless the page prevented the default, navigates: the new document is
@@ -635,8 +635,20 @@ court fixture files; the network boundary is not widened. Frames and realms
 count as owners in `memory.report` with `retired_total` and
 `navigations_total`.
 
-Losses, recorded rather than approximated: no child frames (`frame_limit`
-1); no capability attenuation on this host, so a request carrying the field
+Child frames (`child-frame-design-0.0.1.md`): a same-origin `<iframe src>`
+becomes a bounded child frame with its own id, generation and realm, built
+with its parent under the parent's own fetch and byte budget, at most 7 of
+them, depth one. `target.snapshot` narrows to one and names what it observed;
+node ids are target-scoped, so a reference taken in a child is refused by
+`target.act` rather than resolved against the main frame. A child runs no
+scripts. A parent navigation ends its children, and the click path names them
+in `ended_frames`. One child costs about 247 KB of live owner bytes, seven
+about 1.7 MB, and the whole cost returns on close.
+
+Losses, recorded rather than approximated: no acting inside a child frame,
+no child navigation, no nesting, no cross-origin or `srcdoc` children, no
+scripts in a child, and a child frame projected through CDP carries its
+parent's `url`; no capability attenuation on this host, so a request carrying the field
 is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
 of frames or realms here; navigation is a link click only (no
 `target.navigate`, history or form submission).

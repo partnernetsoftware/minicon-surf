@@ -175,8 +175,8 @@ Rules every host follows:
   one-to-one with a native frame while both live, qualified on the synthetic
   host through `Page.getFrameTree`; realm identity is not yet projected
   (`Runtime.ExecutionContextId`, context events), navigation events and
-  document generation have no projection, and child frames are limited to
-  the one bounded synthetic child. These are recorded losses, not
+  document generation have no projection, child frames project flat with a
+  child carrying its parent's `url`, and nesting is not offered. These are recorded losses, not
   approximations. Hosts that do not implement the optional `frame`/`realm`
   arguments fail closed with `invalid_request`, exactly as with
   `capability`: a caller that requires frame or realm narrowing MUST NOT
