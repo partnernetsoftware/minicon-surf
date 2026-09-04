@@ -376,3 +376,21 @@ tables hold, so the ledger's cost is stated rather than hidden by sharing.
 
 If the repair misses the cap, the outcome is recorded `narrow` and the work
 stops there. The cap is not moved and the arms are not retuned.
+
+## 15. Replication batch of the failed soak (recorded, not a pass)
+
+The 128-navigation differential soak failed one pre-registered cap on build
+`720656ce…`: 1,064,960 bytes under the default allocator against 1,048,576.
+Exactly one independent replication was run on that same build with the same
+court, warm-up, seven measured runs and both allocators, and stored separately
+as `native-dom-control-0.0.2-navigation-replication` so the original receipt
+keeps its history.
+
+The replication measured 1,048,576 under the default allocator, exactly the
+cap, and 655,360 under the arena. Three of its seven default-allocator runs
+were above the cap (1,064,960, 1,064,960 and 1,048,576 twice at it, 1,032,192
+twice below). By the reading fixed before the run, a replication inside the
+cap does not clear the criterion: the two batches **disagree**, the status is
+cross-batch unstable, and the original failure stands. No cap moved, no arm
+was retuned, no further run was taken and no candidate was pre-registered,
+since that was permitted only had the replication exceeded the cap again.

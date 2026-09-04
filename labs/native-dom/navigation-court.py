@@ -77,6 +77,11 @@ Amendments after the freeze, in order, none of them moving a criterion:
    it was originally frozen. It is no longer recorded unverified, and
    `unsupported_operation` was never counted as success. The record of its
    temporary unverified state stays above.
+10 Reporting only, no criterion touched. A replication batch was asked to
+   report per-run values beside the batch medians, so the soak summary now
+   records each run's samples alongside the medians it already computed. The
+   measurement procedure, the arms, the warm-up, the repetitions and every
+   threshold are byte-identical to the batch that failed.
 """
 
 import argparse
@@ -620,6 +625,7 @@ def main():
             if args.skip_soak:
                 continue
             arms = {}
+            per_run = {}
             for navigating in (False, True):
                 runs = []
                 for repetition in range(args.warmup + args.repetitions):
@@ -632,11 +638,16 @@ def main():
                     by_call[call] = int(statistics.median(
                         [next(s["over_base"] for s in r["samples"] if s["call"] == call) for r in runs]))
                 arms["navigating" if navigating else "control"] = by_call
+                per_run["navigating" if navigating else "control"] = [
+                    {str(sample["call"]): sample["over_base"] for sample in outcome["samples"]}
+                    for outcome in runs
+                ]
             last, tail = CAPS["soak_navigations"], CAPS["soak_navigations"] - CAPS["soak_tail"]
             excess = arms["navigating"][last] - arms["control"][last]
             tail_slope = ((arms["navigating"][last] - arms["navigating"][tail])
                           - (arms["control"][last] - arms["control"][tail]))
-            soaks[allocator] = {"arms": arms, "excess_at_128": excess, "tail_excess_slope": tail_slope}
+            soaks[allocator] = {"arms": arms, "excess_at_128": excess, "tail_excess_slope": tail_slope,
+                                "per_run": per_run}
             expect(f"[{allocator}] the navigating arm's excess over the control arm stays within its budget",
                    excess <= CAPS["soak_navigations"] * CAPS["soak_excess_bytes_per_navigation"],
                    {"excess": excess, "cap": CAPS["soak_navigations"] * CAPS["soak_excess_bytes_per_navigation"]})
