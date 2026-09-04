@@ -34,6 +34,19 @@ against the identical childless arm, with the same 1 MiB bound and both
 absolute numbers reported. The cap's number did not move; what it is measured
 against did, and the reason is here rather than erased.
 
+Second extension (the root's ruling and its blockers, §18): the court now
+proves that a same-origin redirect still becomes a child and is reported at
+its final URL, that a redirect leaving the origin does not become a child,
+that a refused redirect's cookie never reaches the profile while a kept one's
+does, that a response which is not text/html is refused before any parse,
+that a deterministic construction failure is a skip and not a failure of the
+parent, and that every refusal class is tallied under its own fixed reason
+without ever appearing among the skipped scripts. One criterion changed
+direction rather than being added: the CDP group asserted, as a recorded
+loss, that a projected child carries its parent's url. The root granted D2,
+so it now asserts the opposite, that a child carries its own. The earlier
+wording is kept here rather than erased.
+
 Held out pending the two rulings the design puts to the root (§12): a group
 that acts inside a child, which needs a node reference that can name a frame,
 and the assertion that a child's projected CDP url is its own. Both are
@@ -45,6 +58,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -79,6 +93,8 @@ def load_module(name, path):
         sys.argv = saved
     return module
 
+
+COOKIES = []
 
 RETENTION = load_module("retention_court", Path(__file__).with_name("retention-court.py"))
 NAV = load_module("navigation_court", Path(__file__).with_name("navigation-court.py"))
@@ -119,9 +135,10 @@ def qualify_cdp(binary, origin, client_modules, expect, tag):
                    and str(child.get("id", "")).startswith("cdp_frame_")
                    and main_id != native["frames"][0]["frame"],
                    {"cdp_main": main_id})
-            expect(tag + "recorded loss: a projected child carries its parent's url until §12.2 is ruled",
-                   child.get("url") == (frame_tree.get("frame") or {}).get("url"),
-                   {"same_url": child.get("url") == (frame_tree.get("frame") or {}).get("url")})
+            expect(tag + "a projected child carries its own url, never its parent's",
+                   str(child.get("url", "")).endswith("/child-a.html")
+                   and child.get("url") != (frame_tree.get("frame") or {}).get("url"),
+                   {"differs": child.get("url") != (frame_tree.get("frame") or {}).get("url")})
             host.ok("target.close", {"target": target})
             host.ok("session.close", {"session": session})
         finally:
@@ -146,7 +163,16 @@ class FrameHandler:
             def do_GET(self):
                 path, _, _query = self.path.partition("?")
                 network.Handler.hits.append(path)
+                COOKIES.append((path, self.headers.get("Cookie") or ""))
                 other = other_origin_holder[0]
+                if path == "/child-redirect-in.html":
+                    return self.reply(302, b"", extra=[("Location", "/child-a.html"),
+                                                       ("Set-Cookie", "courtkeep=1; Path=/")])
+                if path == "/child-redirect-out.html":
+                    return self.reply(302, b"", extra=[("Location", f"{other}/child-a.html"),
+                                                       ("Set-Cookie", "courtleak=1; Path=/")])
+                if path == "/child-json":
+                    return self.reply(200, b'{"embedded":"json"}', "application/json")
                 pages = {
                     # One same-origin child, and the identical page without it.
                     "/parent-one.html": page("Parent one", ['<iframe src="/child-a.html"></iframe>']),
@@ -164,6 +190,10 @@ class FrameHandler:
                         '<iframe src="/child-a.html"></iframe>',
                     ]),
                     # A child that itself embeds: depth stops at one.
+                    "/parent-redirect-in.html": page("Parent redirect in", ['<iframe src="/child-redirect-in.html"></iframe>']),
+                    "/parent-redirect-out.html": page("Parent redirect out", ['<iframe src="/child-redirect-out.html"></iframe>']),
+                    "/parent-json.html": page("Parent json", ['<iframe src="/child-json"></iframe>']),
+                    "/probe.html": page("Probe", ['<p>probe</p>']),
                     "/parent-link.html": page("Parent link", [
                         '<iframe src="/child-a.html"></iframe>',
                         '<a id="go" href="/landed.html">Go</a>']),
@@ -184,6 +214,53 @@ class FrameHandler:
                     return self.reply(200, pages[path])
                 return super().do_GET()
         return Handler
+
+
+def qualify_build_failure(binary, origin, expect, tag):
+    """A deterministic child construction failure, forced by a court-only knob:
+    the frame is skipped with its fixed reason and the parent still commits."""
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-child-fail-") as directory:
+        environment = {k: v for k, v in os.environ.items() if k != VISIBLE_ENV}
+        process = subprocess.Popen(
+            [binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+             "--config-dir", str(Path(directory) / "config"), "--allow-origin", origin,
+             "--court-child-build-failure"],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, env=environment)
+        counter = [0]
+
+        def ok(operation, arguments):
+            counter[0] += 1
+            request = {"protocol": "minicon-surf.control", "version": "0.0.2",
+                       "request_id": f"req_fail_{counter[0]}", "deadline_ms": 30000,
+                       "operation": operation, "arguments": arguments}
+            check_contract.validate_request(request)
+            process.stdin.write(json.dumps(request) + "\n")
+            process.stdin.flush()
+            line = process.stdout.readline()
+            if not line:
+                raise RuntimeError(f"host exited during {operation}")
+            response = json.loads(line)
+            check_contract.validate_response(response)
+            if not response["ok"]:
+                raise RuntimeError(f"{operation} failed: {response['error']}")
+            return response["result"]
+
+        try:
+            profile = ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = ok("session.open", {"profile": profile})["session"]
+            target = ok("target.open", {"session": session, "url": f"{origin}/parent-one.html"})["target"]
+            inspect = ok("target.inspect", {"target": target})
+            skipped = {entry["reason"]: entry["count"] for entry in inspect.get("frames_skipped", [])}
+            expect(tag + "a child that cannot be built is skipped and the parent still commits",
+                   len(inspect.get("frames") or []) == 1
+                   and skipped == {"realm_build_failed": 1}
+                   and inspect["scripts_skipped"] == []
+                   and inspect["url"].endswith("/parent-one.html"),
+                   {"frames": len(inspect.get("frames") or []), "skipped": skipped})
+        finally:
+            process.stdin.close()
+            process.wait(timeout=30)
 
 
 def frames_of(inspect):
@@ -440,6 +517,56 @@ def main():
                            {"fetches": seven_network["fetches"],
                             "per_document": [limits["fetches_per_document"], limits["bytes_per_document"]]})
 
+                    # 5b. Redirects, media type, rollback and the skip tally.
+                    def tally(target):
+                        return {entry["reason"]: entry["count"]
+                                for entry in ok("target.inspect", {"target": target}).get("frames_skipped", [])}
+
+                    kept = open_page(session, "/parent-redirect-in.html")
+                    kept_inspect = ok("target.inspect", {"target": kept})
+                    kept_frames = frames_of(kept_inspect)
+                    expect(tag + "a same-origin redirect still becomes a child, reported at its final URL",
+                           len(kept_frames) == 2
+                           and str(at(kept_frames, 1, "url")).endswith("/child-a.html")
+                           and str(at(kept_frames, 0, "url")).endswith("/parent-redirect-in.html"),
+                           {"frames": len(kept_frames),
+                            "final": str(at(kept_frames, 1, "url")).rsplit("/", 1)[-1]})
+                    out = open_page(session, "/parent-redirect-out.html")
+                    out_frames = frames_of(ok("target.inspect", {"target": out}))
+                    expect(tag + "a redirect that leaves the origin does not become a child",
+                           len(out_frames) == 1 and tally(out) == {"cross_origin_redirect": 1},
+                           {"frames": len(out_frames), "skipped": tally(out)})
+                    # The refused redirect's cookie must not reach the profile,
+                    # and the kept one's must, or the check proves nothing.
+                    del COOKIES[:]
+                    probe = open_page(session, "/probe.html")
+                    seen = " ".join(header for path, header in COOKIES if path == "/probe.html")
+                    expect(tag + "a refused redirect's cookie never reaches the profile, a kept one's does",
+                           "courtleak" not in seen and "courtkeep" in seen,
+                           {"leaked": "courtleak" in seen, "kept": "courtkeep" in seen})
+                    ok("target.close", {"target": probe})
+                    ok("target.close", {"target": out})
+                    ok("target.close", {"target": kept})
+                    not_html = open_page(session, "/parent-json.html")
+                    expect(tag + "a response that is not text/html is refused before any parse",
+                           len(frames_of(ok("target.inspect", {"target": not_html}))) == 1
+                           and tally(not_html) == {"not_html": 1},
+                           {"skipped": tally(not_html)})
+                    expect(tag + "a refused frame is never reported as a refused script",
+                           ok("target.inspect", {"target": not_html})["scripts_skipped"] == [],
+                           {"scripts_skipped": ok("target.inspect", {"target": not_html})["scripts_skipped"]})
+                    ok("target.close", {"target": not_html})
+                    policy_tally = tally(policy_target)
+                    expect(tag + "every refusal class is tallied under its own fixed reason",
+                           policy_tally == {"cross_origin_src": 1, "srcdoc": 1, "malformed_src": 1,
+                                            "no_src": 1},
+                           {"skipped": policy_tally})
+                    expect(tag + "the ninth child is tallied as a limit skip, not as a refusal",
+                           tally(nine) == {"frame_limit": 1}, {"skipped": tally(nine)})
+                    expect(tag + "the frame owner counts every skip",
+                           ok("memory.report", {})["owners"]["frames"]["skipped_total"] >= 8,
+                           {"skipped_total": ok("memory.report", {})["owners"]["frames"].get("skipped_total")})
+
                     # 7. Memory, pre-registered.
                     ok("target.close", {"target": nine})
                     ok("target.close", {"target": policy_target})
@@ -507,6 +634,7 @@ def main():
                            {"audit_bytes": len(blob)})
                 finally:
                     host.finish()
+        qualify_build_failure(args.binary, origin, expect, "[failure] ")
         qualify_cdp(args.binary, origin, args.client_modules, expect, "[cdp] ")
     finally:
         server.shutdown()
