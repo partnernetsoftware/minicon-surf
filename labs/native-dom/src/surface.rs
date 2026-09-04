@@ -527,19 +527,25 @@ fn kind_name(kind: u8) -> &'static str {
     }
 }
 
+/// Kinds a wait may skip because the child sent them before it read the
+/// message that changed the state. Only the `CLOSE` wait has any: an
+/// acknowledgement or an input already on the wire when `CLOSE` arrived is in
+/// flight, not out of order. A skipped input is discarded, never applied.
+const IN_FLIGHT_AT_CLOSE: &[u8] = &[KIND_FRAME_ACK, KIND_INPUT];
+/// The spawn waits skip nothing: the frozen ordering allows no message between
+/// `HELLO` and `READY`, or between the first frame and its acknowledgement.
+const NOTHING_IN_FLIGHT: &[u8] = &[];
+
 /// Wait for the message a state expects. `expected` names that message and
-/// makes the wait state-specific: a decoded message of any other kind is out
-/// of order and fails the wait closed, because the frozen ordering allows
-/// nothing between `HELLO` and `READY` or between the first frame and its
-/// acknowledgement. With `None` the wait tolerates other kinds, which is what
-/// `CLOSE` needs: a frame acknowledgement or an input sent before the child
-/// read `CLOSE` is in flight, not out of order. Returns the outcome and, for
-/// a protocol failure, a text naming kinds only.
+/// `skip` lists the only other kinds this state tolerates; every other decoded
+/// kind is out of order and fails the wait closed. Returns the outcome and,
+/// for a protocol failure, a text naming kinds only.
 fn wait_on(
     events: &mpsc::Receiver<Event>,
     deadline: Instant,
     wanted: impl Fn(&Body) -> bool,
-    expected: Option<&'static str>,
+    expected: &'static str,
+    skip: &'static [u8],
 ) -> (Waited, Option<String>) {
     loop {
         let remaining = deadline.saturating_duration_since(Instant::now());
@@ -551,8 +557,9 @@ fn wait_on(
                 if wanted(&message.body) {
                     return (Waited::Body(message.body), None);
                 }
-                if let Some(expected) = expected {
-                    let got = kind_name(message.body.kind());
+                let kind = message.body.kind();
+                if !skip.contains(&kind) {
+                    let got = kind_name(kind);
                     return (
                         Waited::Protocol,
                         Some(format!("{got} arrived while waiting for {expected}")),
@@ -745,7 +752,8 @@ impl Process {
         let ready_ms = match process.wait_for(
             started + READY_DEADLINE,
             |body| matches!(body, Body::Ready { .. }),
-            Some("ready"),
+            "ready",
+            NOTHING_IN_FLIGHT,
         ) {
             Waited::Body(Body::Ready {
                 window_number,
@@ -776,7 +784,8 @@ impl Process {
         match process.wait_for(
             frame_started + ACK_DEADLINE,
             |body| matches!(body, Body::FrameAck { .. }),
-            Some("frame_ack"),
+            "frame_ack",
+            NOTHING_IN_FLIGHT,
         ) {
             Waited::Body(_) => {}
             outcome => {
@@ -802,9 +811,10 @@ impl Process {
         &mut self,
         deadline: Instant,
         wanted: impl Fn(&Body) -> bool,
-        expected: Option<&'static str>,
+        expected: &'static str,
+        skip: &'static [u8],
     ) -> Waited {
-        let (outcome, detail) = wait_on(&self.events, deadline, wanted, expected);
+        let (outcome, detail) = wait_on(&self.events, deadline, wanted, expected, skip);
         match outcome {
             Waited::Protocol => {
                 self.last_error = detail;
@@ -927,12 +937,11 @@ impl Process {
             };
         }
         let outcome = if self.writer.send(Body::Close).is_ok() {
-            // Tolerant on purpose: an acknowledgement or an input the child
-            // sent before it read `CLOSE` is in flight, not out of order.
             self.wait_for(
                 started + CLOSE_DEADLINE,
                 |body| matches!(body, Body::Closed),
-                None,
+                "closed",
+                IN_FLIGHT_AT_CLOSE,
             )
         } else {
             // The child's stdin is closed: it is already on its way out.
@@ -1216,11 +1225,12 @@ mod tests {
         }
     }
 
-    /// A decoded but out-of-order message fails a state-specific wait closed:
-    /// nothing between `HELLO` and `READY`, and nothing between the first
-    /// frame and its acknowledgement. The `CLOSE` wait stays tolerant because
-    /// an acknowledgement or an input sent before the child read `CLOSE` is in
-    /// flight rather than out of order.
+    /// A decoded but out-of-order message fails a state-specific wait closed.
+    /// The spawn waits skip nothing: the frozen ordering allows no message
+    /// between `HELLO` and `READY`, or between the first frame and its
+    /// acknowledgement. The `CLOSE` wait skips exactly two kinds, an
+    /// acknowledgement and an input already on the wire when `CLOSE` arrived,
+    /// and refuses every other kind.
     #[test]
     fn a_valid_message_out_of_order_fails_a_state_specific_wait() {
         fn message(sequence: u32, body: Body) -> Event {
@@ -1250,17 +1260,15 @@ mod tests {
             }
         }
         let deadline = || Instant::now() + Duration::from_millis(500);
+        let is_ready = |body: &Body| matches!(body, Body::Ready { .. });
+        let is_ack = |body: &Body| matches!(body, Body::FrameAck { .. });
+        let is_closed = |body: &Body| matches!(body, Body::Closed);
 
         // An input before `READY`, with the wanted message right behind it.
         let (sender, events) = mpsc::channel();
         sender.send(message(1, input())).unwrap();
         sender.send(message(2, ready())).unwrap();
-        let (outcome, detail) = wait_on(
-            &events,
-            deadline(),
-            |body| matches!(body, Body::Ready { .. }),
-            Some("ready"),
-        );
+        let (outcome, detail) = wait_on(&events, deadline(), is_ready, "ready", NOTHING_IN_FLIGHT);
         assert!(matches!(outcome, Waited::Protocol));
         let detail = detail.expect("a protocol failure names the kinds");
         assert_eq!(detail, "input arrived while waiting for ready");
@@ -1284,12 +1292,8 @@ mod tests {
         sender
             .send(message(2, Body::FrameAck { frame: 1 }))
             .unwrap();
-        let (outcome, detail) = wait_on(
-            &events,
-            deadline(),
-            |body| matches!(body, Body::FrameAck { .. }),
-            Some("frame_ack"),
-        );
+        let (outcome, detail) =
+            wait_on(&events, deadline(), is_ack, "frame_ack", NOTHING_IN_FLIGHT);
         assert!(matches!(outcome, Waited::Protocol));
         assert_eq!(
             detail.expect("named"),
@@ -1299,45 +1303,91 @@ mod tests {
         // `CLOSED` where `READY` belongs is equally out of order.
         let (sender, events) = mpsc::channel();
         sender.send(message(1, Body::Closed)).unwrap();
-        let (outcome, detail) = wait_on(
-            &events,
-            deadline(),
-            |body| matches!(body, Body::Ready { .. }),
-            Some("ready"),
-        );
+        let (outcome, detail) = wait_on(&events, deadline(), is_ready, "ready", NOTHING_IN_FLIGHT);
         assert!(matches!(outcome, Waited::Protocol));
         assert_eq!(
             detail.expect("named"),
             "closed arrived while waiting for ready"
         );
 
-        // The tolerant wait that `CLOSE` uses: in-flight traffic is skipped.
+        // The `CLOSE` wait skips an acknowledgement and an input, then closes.
         let (sender, events) = mpsc::channel();
         sender
             .send(message(1, Body::FrameAck { frame: 7 }))
             .unwrap();
         sender.send(message(2, input())).unwrap();
         sender.send(message(3, Body::Closed)).unwrap();
-        let (outcome, detail) = wait_on(
-            &events,
-            deadline(),
-            |body| matches!(body, Body::Closed),
-            None,
-        );
+        let (outcome, detail) =
+            wait_on(&events, deadline(), is_closed, "closed", IN_FLIGHT_AT_CLOSE);
         assert!(matches!(outcome, Waited::Body(Body::Closed)));
         assert!(detail.is_none());
+        let stats = Stats::default();
+        assert_eq!(stats.protocol_failures_total, 0);
+        assert_eq!(
+            stats.input_events_total, 0,
+            "an input skipped at close is discarded, never applied"
+        );
+
+        // Everything else during the `CLOSE` wait is out of order.
+        for (body, expected) in [
+            (ready(), "ready arrived while waiting for closed"),
+            (
+                Body::Error {
+                    code: 7,
+                    text: "detail".to_owned(),
+                },
+                "error arrived while waiting for closed",
+            ),
+            (
+                Body::Hello {
+                    width: 8,
+                    height: 8,
+                    max_fps: 30,
+                    queue_max: 1,
+                    title: "t".to_owned(),
+                },
+                "hello arrived while waiting for closed",
+            ),
+            (
+                Body::Frame {
+                    frame: 1,
+                    width: 1,
+                    height: 1,
+                    format: 0,
+                    pixels: vec![0; 4],
+                },
+                "frame arrived while waiting for closed",
+            ),
+        ] {
+            let (sender, events) = mpsc::channel();
+            sender.send(message(1, body)).unwrap();
+            sender.send(message(2, Body::Closed)).unwrap();
+            let (outcome, detail) =
+                wait_on(&events, deadline(), is_closed, "closed", IN_FLIGHT_AT_CLOSE);
+            assert!(matches!(outcome, Waited::Protocol), "{expected}");
+            let detail = detail.expect("named");
+            assert_eq!(detail, expected);
+            assert!(
+                !detail.contains("detail") && !detail.contains('7'),
+                "the text names kinds only, never an error's own text or code: {detail}"
+            );
+            let mut stats = Stats::default();
+            attribute_wait(outcome, &mut stats);
+            assert_eq!(stats.protocol_failures_total, 1, "counted exactly once");
+        }
 
         // The timeout and early-exit attributions are unchanged.
         let (sender, events) = mpsc::channel();
         sender.send(Event::Eof).unwrap();
-        let (outcome, _) = wait_on(&events, deadline(), |_| false, Some("ready"));
+        let (outcome, _) = wait_on(&events, deadline(), |_| false, "ready", NOTHING_IN_FLIGHT);
         assert!(matches!(outcome, Waited::Ended));
         let (_sender, events) = mpsc::channel::<Event>();
         let (outcome, _) = wait_on(
             &events,
             Instant::now() + Duration::from_millis(20),
             |_| false,
-            Some("ready"),
+            "ready",
+            NOTHING_IN_FLIGHT,
         );
         assert!(matches!(outcome, Waited::Timeout));
     }
