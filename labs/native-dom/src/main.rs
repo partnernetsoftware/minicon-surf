@@ -305,37 +305,128 @@ fn operation_available(operation: &str, version: &str) -> bool {
         || (version == VERSION_NEXT && NAVIGATION_OPERATIONS.contains(&operation))
 }
 
+/// At most this many distinct origins are shared inside one ledger; a record
+/// beyond that owns its own copy, which stays bounded because the ledger is.
+const MAX_AUDIT_ORIGINS: usize = 32;
+
 /// One bounded audit record. It names an origin, never a path, a query or
-/// userinfo, and carries no value the page or the profile holds.
+/// userinfo, and carries no value the page or the profile holds. The
+/// operation and outcome are fixed vocabularies, so they are static; the
+/// target and origin repeat across navigations, so they are shared handles;
+/// the session and its profile belong to the ledger, not to the record.
 #[derive(Debug, Clone)]
 struct AuditEntry {
     sequence: u64,
-    profile: String,
-    target: String,
-    operation: String,
-    origin: Option<String>,
-    outcome: String,
     deadline_ms: u64,
+    target: std::rc::Rc<str>,
+    origin: Option<std::rc::Rc<str>>,
+    operation: &'static str,
+    outcome: &'static str,
 }
 
 impl AuditEntry {
-    fn to_json(&self, session: &str) -> Value {
+    fn to_json(&self, session: &str, profile: &str) -> Value {
         json!({
-            "sequence": self.sequence, "session": session, "profile": self.profile,
-            "target": self.target, "operation": self.operation, "origin": self.origin,
-            "outcome": self.outcome, "deadline_ms": self.deadline_ms,
-            "result_bytes_limit": MAX_RESPONSE_BYTES,
+            "sequence": self.sequence, "session": session, "profile": profile,
+            "target": &*self.target, "operation": self.operation,
+            "origin": self.origin.as_deref(), "outcome": self.outcome,
+            "deadline_ms": self.deadline_ms, "result_bytes_limit": MAX_RESPONSE_BYTES,
         })
     }
+}
 
-    /// Roughly what the record costs, for the owner accounting.
+/// One session's ledger: a ring of at most `MAX_AUDIT_ENTRIES` records
+/// reserved once, plus the shared handles its records name.
+#[derive(Debug)]
+struct Ledger {
+    entries: std::collections::VecDeque<AuditEntry>,
+    origins: Vec<std::rc::Rc<str>>,
+    targets: Vec<std::rc::Rc<str>>,
+    dropped: u64,
+}
+
+/// The default ledger is the reserved one: nothing may create a ring that
+/// has to grow on its first records.
+impl Default for Ledger {
+    fn default() -> Ledger {
+        Ledger::new()
+    }
+}
+
+impl Ledger {
+    fn new() -> Ledger {
+        Ledger {
+            entries: std::collections::VecDeque::with_capacity(MAX_AUDIT_ENTRIES),
+            origins: Vec::new(),
+            targets: Vec::new(),
+            dropped: 0,
+        }
+    }
+
+    /// A shared handle for a value that repeats, or an owned one when the
+    /// table is full. Both are the same type, so a record never knows which.
+    fn share(table: &mut Vec<std::rc::Rc<str>>, value: &str, capacity: usize) -> std::rc::Rc<str> {
+        if let Some(shared) = table.iter().find(|entry| &***entry == value) {
+            return std::rc::Rc::clone(shared);
+        }
+        let shared: std::rc::Rc<str> = std::rc::Rc::from(value);
+        if table.len() < capacity {
+            table.push(std::rc::Rc::clone(&shared));
+        }
+        shared
+    }
+
+    /// Append one record, dropping the oldest when the ring is full. The ring
+    /// never moves its records and never grows past its reserved capacity.
+    fn append(&mut self, entry: AuditEntry) {
+        if self.entries.len() == MAX_AUDIT_ENTRIES {
+            self.entries.pop_front();
+            self.dropped = self.dropped.saturating_add(1);
+        }
+        self.entries.push_back(entry);
+    }
+
+    /// What the ledger costs: the reserved ring plus the shared strings it
+    /// holds. Sharing hides nothing here; the capacity is stated.
     fn bytes(&self) -> usize {
-        self.profile.len()
-            + self.target.len()
-            + self.operation.len()
-            + self.origin.as_ref().map_or(0, String::len)
-            + self.outcome.len()
-            + 3 * std::mem::size_of::<u64>()
+        let shared: usize = self
+            .origins
+            .iter()
+            .chain(self.targets.iter())
+            .map(|entry| entry.len())
+            .sum();
+        let owned: usize = self
+            .entries
+            .iter()
+            .map(|entry| {
+                let target = if self
+                    .targets
+                    .iter()
+                    .any(|handle| std::rc::Rc::ptr_eq(handle, &entry.target))
+                {
+                    0
+                } else {
+                    entry.target.len()
+                };
+                let origin = entry.origin.as_ref().map_or(0, |origin| {
+                    if self
+                        .origins
+                        .iter()
+                        .any(|handle| std::rc::Rc::ptr_eq(handle, origin))
+                    {
+                        0
+                    } else {
+                        origin.len()
+                    }
+                });
+                target + origin
+            })
+            .sum();
+        self.capacity_bytes() + shared + owned
+    }
+
+    fn capacity_bytes(&self) -> usize {
+        self.entries.capacity() * std::mem::size_of::<AuditEntry>()
     }
 }
 
@@ -1459,11 +1550,10 @@ struct Host {
     /// Saturating per-target diagnostics, likewise kept across the swap.
     lifetimes: BTreeMap<String, Lifetime>,
     /// The newest bounded audit records per session, released with it.
-    audits: BTreeMap<String, Vec<AuditEntry>>,
+    audits: BTreeMap<String, Ledger>,
     /// Monotonic across the host, so a record's place in the order is visible
     /// even after older records have been dropped.
     next_audit_sequence: u64,
-    audit_dropped_total: u64,
     /// The deadline the request being executed carries, for the ledger.
     current_deadline_ms: u64,
     /// Adapters (today: CDP sessions) registered against live targets. A
@@ -3250,30 +3340,31 @@ impl Host {
     fn audit_navigation(
         &mut self,
         target_id: &str,
-        operation: &str,
+        operation: &'static str,
         url: Option<&str>,
-        outcome: &str,
+        outcome: &'static str,
     ) {
         let Some(session) = self.targets.get(target_id).map(|t| t.session_id.clone()) else {
             return;
         };
-        let profile = self.target_profile_id(target_id).unwrap_or_default();
-        let entry = AuditEntry {
-            sequence: self.next_audit_sequence,
-            profile,
-            target: target_id.to_owned(),
-            operation: operation.to_owned(),
-            origin: url.and_then(origin_only),
-            outcome: outcome.to_owned(),
-            deadline_ms: self.current_deadline_ms,
-        };
+        let sequence = self.next_audit_sequence;
         self.next_audit_sequence = self.next_audit_sequence.saturating_add(1);
+        let deadline_ms = self.current_deadline_ms;
+        let origin = url.and_then(origin_only);
         let ledger = self.audits.entry(session).or_default();
-        ledger.push(entry);
-        while ledger.len() > MAX_AUDIT_ENTRIES {
-            ledger.remove(0);
-            self.audit_dropped_total = self.audit_dropped_total.saturating_add(1);
-        }
+        // The target id and the origin repeat over a run, so they are shared
+        // rather than allocated again for every record.
+        let target = Ledger::share(&mut ledger.targets, target_id, MAX_TARGETS);
+        let origin =
+            origin.map(|origin| Ledger::share(&mut ledger.origins, &origin, MAX_AUDIT_ORIGINS));
+        ledger.append(AuditEntry {
+            sequence,
+            deadline_ms,
+            target,
+            origin,
+            operation,
+            outcome,
+        });
     }
 
     /// `session.inspect`: read-only and bounded. Identity and owner chain, the
@@ -3318,10 +3409,10 @@ impl Host {
             // is implemented here, so an attenuated request is refused.
             "capability_attenuation":"unsupported",
             "audit":{
-                "entries": ledger.map(|entries| entries.iter().map(|e| e.to_json(&id)).collect::<Vec<_>>()).unwrap_or_default(),
-                "count": ledger.map_or(0, Vec::len),
+                "entries": ledger.map(|ledger| ledger.entries.iter().map(|e| e.to_json(&id, &profile)).collect::<Vec<_>>()).unwrap_or_default(),
+                "count": ledger.map_or(0, |ledger| ledger.entries.len()),
                 "limit": MAX_AUDIT_ENTRIES,
-                "dropped_total": self.audit_dropped_total,
+                "dropped_total": ledger.map_or(0, |ledger| ledger.dropped),
                 "records":"the navigation operations; an entry names an origin, never a path, a query or userinfo, and is evidence rather than authorization",
             },
         }))
@@ -3934,10 +4025,11 @@ impl Host {
                     "budgets":profile_budgets(),
                 },
                 "sessions":{"objects":self.sessions.len(),"object_limit":MAX_SESSIONS,
-                    "audit_entries":self.audits.values().map(Vec::len).sum::<usize>(),
+                    "audit_entries":self.audits.values().map(|l| l.entries.len()).sum::<usize>(),
                     "audit_entry_limit":MAX_AUDIT_ENTRIES,
-                    "audit_bytes":self.audits.values().flat_map(|l| l.iter()).map(AuditEntry::bytes).sum::<usize>(),
-                    "audit_dropped_total":self.audit_dropped_total},
+                    "audit_bytes":self.audits.values().map(Ledger::bytes).sum::<usize>(),
+                    "audit_capacity_bytes":self.audits.values().map(Ledger::capacity_bytes).sum::<usize>(),
+                    "audit_dropped_total":self.audits.values().map(|l| l.dropped).sum::<u64>()},
                 "targets":{"objects":self.targets.len(),"object_limit":MAX_TARGETS,"fixture_bytes":fixture_bytes,"elements":elements,
                     "history_entries":self.histories.values().map(|h| h.entries.len()).sum::<usize>(),
                     "history_entry_limit":MAX_HISTORY_ENTRIES,
@@ -4187,7 +4279,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         lifetimes: BTreeMap::new(),
         audits: BTreeMap::new(),
         next_audit_sequence: 0,
-        audit_dropped_total: 0,
         current_deadline_ms: 0,
         adapters: BTreeMap::new(),
         next_adapter: 0,
@@ -4748,5 +4839,111 @@ mod navigation_tests {
         assert_eq!(history.entries.len(), 4);
         assert_eq!(history.to_json()["can_go_forward"], json!(false));
         assert!(history.bytes() > 0 && history.bytes() < 1024 * MAX_HISTORY_ENTRIES);
+    }
+}
+
+#[cfg(test)]
+mod ledger_tests {
+    use super::*;
+
+    /// The ring keeps its capacity, evicts the oldest, counts the drops and
+    /// shares the values that repeat, without changing what a record says.
+    #[test]
+    fn the_ledger_is_a_preallocated_ring_that_shares_repeats() {
+        let mut ledger = Ledger::new();
+        let reserved = ledger.entries.capacity();
+        assert!(reserved >= MAX_AUDIT_ENTRIES, "the ring is reserved once");
+        for sequence in 0..(MAX_AUDIT_ENTRIES as u64 + 10) {
+            let target = Ledger::share(&mut ledger.targets, "target_1", MAX_TARGETS);
+            let origin =
+                Ledger::share(&mut ledger.origins, "http://127.0.0.1:1", MAX_AUDIT_ORIGINS);
+            ledger.append(AuditEntry {
+                sequence,
+                deadline_ms: 15000,
+                target,
+                origin: Some(origin),
+                operation: "target.navigate",
+                outcome: "committed",
+            });
+        }
+        assert_eq!(
+            ledger.entries.len(),
+            MAX_AUDIT_ENTRIES,
+            "capacity unchanged"
+        );
+        assert_eq!(ledger.entries.capacity(), reserved, "the ring never grew");
+        assert_eq!(ledger.dropped, 10, "every eviction is counted");
+        assert_eq!(ledger.entries.front().expect("oldest").sequence, 10);
+        assert_eq!(
+            ledger.entries.back().expect("newest").sequence,
+            MAX_AUDIT_ENTRIES as u64 + 9
+        );
+        // The repeated target and origin were allocated once, not per record.
+        assert_eq!(ledger.targets.len(), 1);
+        assert_eq!(ledger.origins.len(), 1);
+        assert_eq!(
+            std::rc::Rc::strong_count(&ledger.targets[0]),
+            MAX_AUDIT_ENTRIES + 1
+        );
+        // A record still says exactly what it said before.
+        let rendered = ledger
+            .entries
+            .back()
+            .unwrap()
+            .to_json("session_1", "profile_1");
+        assert_eq!(rendered["session"], json!("session_1"));
+        assert_eq!(rendered["profile"], json!("profile_1"));
+        assert_eq!(rendered["target"], json!("target_1"));
+        assert_eq!(rendered["operation"], json!("target.navigate"));
+        assert_eq!(rendered["origin"], json!("http://127.0.0.1:1"));
+        assert_eq!(rendered["outcome"], json!("committed"));
+        assert_eq!(rendered["deadline_ms"], json!(15000));
+        assert_eq!(rendered["result_bytes_limit"], json!(MAX_RESPONSE_BYTES));
+        assert_eq!(
+            rendered.as_object().map(|fields| fields.len()),
+            Some(9),
+            "no field was added or lost"
+        );
+        // The reserved ring is reported, so sharing hides nothing.
+        assert!(ledger.capacity_bytes() >= MAX_AUDIT_ENTRIES * std::mem::size_of::<AuditEntry>());
+        assert!(ledger.bytes() >= ledger.capacity_bytes());
+    }
+
+    /// Beyond the sharing table a record owns its value; it is never dropped
+    /// and never renamed.
+    #[test]
+    fn origins_beyond_the_table_are_owned_not_lost() {
+        let mut ledger = Ledger::new();
+        for index in 0..(MAX_AUDIT_ORIGINS + 4) {
+            let origin = Ledger::share(
+                &mut ledger.origins,
+                &format!("http://127.0.0.1:{index}"),
+                MAX_AUDIT_ORIGINS,
+            );
+            let target = Ledger::share(&mut ledger.targets, "target_1", MAX_TARGETS);
+            ledger.append(AuditEntry {
+                sequence: index as u64,
+                deadline_ms: 1,
+                target,
+                origin: Some(origin),
+                operation: "target.traverse",
+                outcome: "not_found",
+            });
+        }
+        assert_eq!(
+            ledger.origins.len(),
+            MAX_AUDIT_ORIGINS,
+            "the table is bounded"
+        );
+        let newest = ledger.entries.back().expect("newest");
+        assert_eq!(
+            newest.to_json("session_1", "profile_1")["origin"],
+            json!(format!("http://127.0.0.1:{}", MAX_AUDIT_ORIGINS + 3)),
+            "an origin past the table is still reported exactly"
+        );
+        assert!(
+            ledger.bytes() > ledger.capacity_bytes(),
+            "owned bytes are accounted"
+        );
     }
 }
