@@ -516,3 +516,43 @@ supported key, with the click's cancellation deciding whether the submit or
 the reset follows; space on an already-checked radio; a canceled radio change
 restoring the whole group including the sibling that was cleared; and a
 canceled reset through both the key and the click, proving nothing moved.
+
+## 15. The bounded press sequence, one step closer to a browser (sections 1 to 14 stay as written)
+
+§14.1 declared a coarse model: three phases always dispatched, any
+cancellation stopping the activation. The ruling moves it one step toward what
+a browser does, and this section replaces §14.1's dispatch rule while leaving
+everything else in §14 as written.
+
+The sequence, in order:
+
+1. Dispatch `keydown`. If it is canceled, **`keypress` is not dispatched**.
+2. Otherwise dispatch `keypress`.
+3. Dispatch `keyup` in every case, canceled `keydown` included.
+4. Activate only if none of the events that were dispatched was canceled.
+
+Activation stays deferred until the whole sequence has run, so a handler on
+`keyup` still sees the same document a handler on `keydown` did, and the
+answer to a canceled press is unchanged: `applied: false` with
+`default_prevented: true`, keeping whatever the handlers changed and the
+revision that resulted.
+
+**What this still is not.** It is a bounded ordered sequence, not a hardware
+timing model. There is no auto-repeat, no key code, no modifier state, no
+composition, no timing between phases and no distinction between a synthesised
+press and a real one beyond the `key` the events carry. A page that reasons
+about intervals, repeat counts or `isTrusted` sees something that does not
+resemble a keyboard. That is a declared bound, not an oversight.
+
+**Court, extended.** The order of the phases is now observable rather than
+inferred: a fixture records each dispatched phase as it arrives, so the court
+asserts the exact sequence per case — `keydown keyup` for a canceled
+`keydown`, with `keypress` absent, the full `keydown keypress keyup` for a
+canceled `keypress` or `keyup`, and the full sequence followed by the click
+when nothing is canceled. The absent `keypress` is what distinguishes this
+model from §14.1's, so the court is run against the pre-ruling build to show
+that criterion failing there.
+
+Everything else stands unchanged: the button subtypes of §14.2, the radio
+group of §14.3, the reset ordering of §14.4, the redaction of §13.3, the UTF-8
+byte count of §13.2 and 0.0.1's request and result shapes byte for byte.
