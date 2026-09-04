@@ -115,10 +115,7 @@ impl AllowedOrigin {
 
 #[derive(Debug, Clone, Default)]
 pub struct Policy {
-    /// The host's allowlist: decided once at start-up and never changed, so
-    /// it is shared immutable storage. Cloning a policy for an operation
-    /// copies a pointer and a reference count and allocates no allowlist.
-    pub allowed_origins: std::sync::Arc<[AllowedOrigin]>,
+    pub allowed_origins: Vec<AllowedOrigin>,
     /// True only when pinned roots were loaded; `https` is otherwise
     /// `unsupported_capability`.
     pub https: bool,
@@ -1066,7 +1063,7 @@ mod tests {
         Policy {
             https: false,
             offline: false,
-            allowed_origins: vec![AllowedOrigin::parse(origin).unwrap()].into(),
+            allowed_origins: vec![AllowedOrigin::parse(origin).unwrap()],
         }
     }
 
@@ -1299,47 +1296,6 @@ mod tests {
             let ip: IpAddr = text.parse().unwrap();
             assert!(is_public_ip(ip), "{text} must be public");
         }
-    }
-
-    /// Cloning a policy for one operation shares the allowlist rather than
-    /// copying it: the clones point at the same storage, the reference count
-    /// rises, and the per-profile switch never touches that sharing.
-    #[test]
-    fn cloning_a_policy_allocates_no_allowlist() {
-        let origins: std::sync::Arc<[AllowedOrigin]> = vec![
-            AllowedOrigin::parse("http://127.0.0.1:8080").unwrap(),
-            AllowedOrigin::parse("http://127.0.0.1:9090").unwrap(),
-        ]
-        .into();
-        let policy = Policy {
-            https: false,
-            offline: false,
-            allowed_origins: std::sync::Arc::clone(&origins),
-        };
-        assert_eq!(std::sync::Arc::strong_count(&origins), 2);
-        let clones: Vec<Policy> = (0..8).map(|_| policy.clone()).collect();
-        assert_eq!(
-            std::sync::Arc::strong_count(&origins),
-            10,
-            "eight clones added eight references and no storage"
-        );
-        for clone in &clones {
-            assert!(std::sync::Arc::ptr_eq(&clone.allowed_origins, &origins));
-        }
-        // The per-profile switch is a value on the clone; it neither copies
-        // the allowlist nor reaches the policy it was cloned from.
-        let mut offline = policy.clone();
-        offline.offline = true;
-        assert!(std::sync::Arc::ptr_eq(&offline.allowed_origins, &origins));
-        assert!(!policy.offline, "the original is untouched");
-        assert_eq!(offline.allowed_origins.len(), 2, "the same two origins");
-        drop(clones);
-        drop(offline);
-        assert_eq!(
-            std::sync::Arc::strong_count(&origins),
-            2,
-            "clones freed no allowlist"
-        );
     }
 
     /// An offline profile is refused here, before a name is resolved, a

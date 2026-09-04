@@ -4287,7 +4287,6 @@ fn main() -> Result<(), Box<dyn Error>> {
         usage();
     }
     let mut policy = net::Policy::default();
-    let mut allowed_origins: Vec<net::AllowedOrigin> = Vec::new();
     let mut cdp_port = None;
     let mut ready_file = None;
     let mut profile_root: Option<PathBuf> = None;
@@ -4303,7 +4302,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for pair in arguments[6..].chunks_exact(2) {
         match pair[0].as_str() {
             "--allow-origin" => match net::AllowedOrigin::parse(&pair[1]) {
-                Ok(origin) => allowed_origins.push(origin),
+                Ok(origin) => policy.allowed_origins.push(origin),
                 Err(message) => {
                     eprintln!("--allow-origin: {message}");
                     std::process::exit(64);
@@ -4350,9 +4349,6 @@ fn main() -> Result<(), Box<dyn Error>> {
             _ => usage(),
         }
     }
-    // The allowlist is decided here and never again, so it becomes shared
-    // immutable storage that every later policy clone points at.
-    policy.allowed_origins = allowed_origins.into();
     if cdp_port.is_some() != ready_file.is_some() {
         usage();
     }
