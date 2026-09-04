@@ -21,6 +21,19 @@ Groups:
  8 cdp          the children project flat, and the losses are asserted as losses
  9 secrecy      no child text, URL or path in the ledger, the log or the receipt
 
+First amendment (mechanism and one criterion, recorded before implementation):
+running this court against the pre-implementation host to confirm that it
+fails showed two things that are not about child frames. A probe target was
+left open and its bytes were still counted by the memory group, which is
+fixed. And M5's absolute retention cap of 1 MiB was already exceeded, 3.1 MB
+over 64 open-and-close cycles, on a host that has no child frames at all: the
+criterion as frozen measured the page-granular allocator retention the
+navigation increment already recorded, not anything this design does. It is
+now the differential the navigation increment settled on, the children's arm
+against the identical childless arm, with the same 1 MiB bound and both
+absolute numbers reported. The cap's number did not move; what it is measured
+against did, and the reason is here rather than erased.
+
 Held out pending the two rulings the design puts to the root (§12): a group
 that acts inside a child, which needs a node reference that can name a frame,
 and the assertion that a child's projected CDP url is its own. Both are
@@ -258,8 +271,30 @@ def main():
                     expect(tag + "a realm belonging to the other frame is not_found on either side",
                            refused(snap(one, frame=main_frame, realm=child_realm), "not_found", "realm")
                            and refused(snap(one, frame=child, realm=main_realm), "not_found", "realm"))
+                    nested = open_page(session, "/parent-nested.html")
                     expect(tag + "a child's own iframe is not built: depth stops at one",
-                           len(frames_of(ok("target.inspect", {"target": open_page(session, "/parent-nested.html")}))) == 2)
+                           len(frames_of(ok("target.inspect", {"target": nested}))) == 2)
+                    ok("target.close", {"target": nested})
+
+                    # 2b. The hazard §15 records: a child's node ids are not the
+                    # main frame's, and a child's reference never acts here.
+                    child_nodes = [n["reference"]["node"] for n in embedded["result"]["nodes"]] if embedded.get("ok") else []
+                    main_nodes = [n["reference"]["node"] for n in parent_snap["result"]["nodes"]] if parent_snap.get("ok") else []
+                    expect(tag + "a child's node ids are disjoint from the main frame's in one revision",
+                           child_nodes and main_nodes and not (set(child_nodes) & set(main_nodes)),
+                           {"child": len(child_nodes), "main": len(main_nodes),
+                            "shared": len(set(child_nodes) & set(main_nodes))})
+                    if child_nodes:
+                        borrowed = embedded["result"]["nodes"][0]["reference"]
+                        answer = call("target.act", {"target": one, "reference": borrowed,
+                                                     "action": {"kind": "click"}})
+                        expect(tag + "a reference from a child is refused rather than acting on the main frame",
+                               refused(answer, "unsupported_capability", None,
+                                       "action_in_child_frame_unsupported"),
+                               {"error": answer.get("error")})
+                    else:
+                        expect(tag + "a reference from a child is refused rather than acting on the main frame",
+                               False, {"reason": "the child snapshot produced no nodes"})
 
                     # 3. Refusals, all one refusal.
                     foreign = at(frames_of(ok("target.inspect", {"target": seven})), 1, "frame")
@@ -359,16 +394,24 @@ def main():
                            {"first_half": first_half, "second_half": second_half})
                     ok("target.close", {"target": cycle_target})
 
-                    for _ in range(CAPS["cycles"]):
-                        closing = open_page(session, "/parent-seven.html")
-                        ok("target.close", {"target": closing})
-                    m5_owners = owners()
-                    m5_footprint = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"] - empty_footprint
+                    def churn(path):
+                        start = RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"]
+                        for _ in range(CAPS["cycles"]):
+                            closing = open_page(session, path)
+                            ok("target.close", {"target": closing})
+                        return (owners(),
+                                RETENTION.sample_process(host.process.pid)["physical_footprint_bytes"] - start)
+                    control_owners, control_retention = churn("/parent-none.html")
+                    child_owners, child_retention = churn("/parent-seven.html")
                     expect(tag + "M5: open and close with the bound of children returns every owner",
-                           m5_owners == empty_owners, {"owner_bytes": m5_owners - empty_owners})
-                    expect(tag + f"M5: its retention stays under {CAPS['close_retention_bytes']}, reported with the allocator",
-                           m5_footprint <= CAPS["close_retention_bytes"],
-                           {"retention_bytes": m5_footprint, "allocator": allocator})
+                           child_owners == empty_owners and control_owners == empty_owners,
+                           {"owner_bytes": child_owners - empty_owners,
+                            "control_owner_bytes": control_owners - empty_owners})
+                    expect(tag + f"M5: the children's arm retains at most {CAPS['close_retention_bytes']} more than the identical childless arm",
+                           child_retention - control_retention <= CAPS["close_retention_bytes"],
+                           {"excess_bytes": child_retention - control_retention,
+                            "children_bytes": child_retention, "control_bytes": control_retention,
+                            "allocator": allocator})
 
                     # 9. Secrecy: nothing about a child's document escapes.
                     audit = ok("session.inspect", {"session": session})

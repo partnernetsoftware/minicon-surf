@@ -305,3 +305,53 @@ failing until they exist. Groups:
 
 Group 2's activation half and group 8's URL assertion are the only parts that
 change with the §12 rulings, and both are written to be added, not rewritten.
+
+## 15. Amendment before implementation: a hazard in §12.1, and what closes it
+
+Running the frozen court against the pre-implementation host, to confirm that
+it fails, made a defect in this record visible. It is recorded here in order;
+§§1–14 stay as written.
+
+**The hazard.** A node reference is `(target, revision, node)` and a node id is
+an index into the frame's realm. With observation-only children, a snapshot
+narrowed to a child would return references whose `node` ids are *the same
+shape and the same numbers* as the main frame's. Handing such a reference to
+`target.act` would not fail: it would resolve the index against the **main**
+realm and act on whatever node happens to sit there. A caller doing the
+obvious thing — observe the embedded document, then act on what it saw — would
+silently mutate the wrong document. That is worse than not supporting the
+action at all, and it is a safety property, not an ergonomic one.
+
+**What closes it, without widening anything.** Node ids become **target-scoped
+rather than frame-scoped**: each frame's ids are minted from a disjoint band of
+the target's id space, so no id ever means two things within one target
+revision. The protocol already says node ids alone have no meaning and are
+valid only for their `(target, revision)` pair, so a disjoint per-target space
+is inside the contract, not an extension of it. Nothing on the wire changes:
+the reference stays exactly `(target, revision, node)`.
+
+With that, `target.act` can *see* that a reference belongs to a child frame.
+In this slice it refuses it, typed, with `unsupported_capability` and reason
+`action_in_child_frame_unsupported`, before any event and without moving the
+revision. Refusing is the safe side of the ambiguity and needs no ruling.
+
+**§12.1 is narrowed, not answered.** The question is no longer "may a reference
+name a frame", because it does not need to; it is "may an action reach a child
+frame at all", which is a capability question that can be answered later
+without any change to a request or result shape. Until it is answered the
+refusal above stands. §12.2 is unchanged and still open.
+
+**Court, extended.** Two criteria are added: node ids minted for a child frame
+are disjoint from the main frame's within one revision, and a reference taken
+from a child snapshot is refused by `target.act` with that typed reason
+rather than acting on the main frame. The second is the one that would have
+caught the hazard.
+
+**M5's criterion, amended, with the number unmoved.** The same baseline run
+showed M5's absolute retention bound already exceeded, 3.1 MB over 64
+open-and-close cycles, on a host with no child frames at all: as frozen it
+measured the page-granular allocator retention the navigation increment
+already recorded rather than anything this design does. It becomes the
+differential that increment settled on — the children's arm against the
+identical childless arm — keeping the same 1 MiB bound and reporting both
+absolute numbers. The bound did not move; what it is measured against did.
