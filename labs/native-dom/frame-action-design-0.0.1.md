@@ -859,3 +859,21 @@ value carries leading or trailing ASCII whitespace before a mixed-case
 closed reasons — `scheme_unsupported` and `fragment_unsupported` — before any
 event. This is whitespace normalisation for the values this host already
 judges, not a claim about URL compatibility in general.
+
+## 28. Correction: a whitespace-only target is an empty one
+
+§25.3 introduced a branch that §23.2 had not ruled: it made a present but
+whitespace-only `target` a `target_named` refusal. That is a new rule invented
+during a fix, and it is withdrawn. §23.2's normalisation stands unchanged —
+trim, then judge — so the rule is exactly:
+
+- **attribute absent** → the base decides; with a `<base target>` present that
+  is `base_target_unmodeled`, without one it is `allowed`;
+- **attribute present**, trimmed to empty (exactly empty or ASCII whitespace
+  only) → `allowed`, and the base is never consulted;
+- **attribute present**, otherwise → the keywords of §23.2, normalised
+  case-insensitively, else `target_named`.
+
+The same for a submitter's `formtarget`. The court carries both an
+exactly-empty and a whitespace-only falsifier, in the main frame and in a
+child, under a `<base target>`.
