@@ -770,6 +770,70 @@
    "passed": true
   },
   {
+   "check": "[system] press enter on the down case dispatches exactly \"od: keydown keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "od: keydown keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on the press case dispatches exactly \"op: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "op: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on the up case dispatches exactly \"ou: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "ou: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press enter on the all case dispatches exactly \"oa: keydown keypress keyup click\"",
+   "detail": {
+    "applied": true,
+    "sequence": "oa: keydown keypress keyup click"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on the down case dispatches exactly \"od: keydown keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "od: keydown keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on the press case dispatches exactly \"op: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "op: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on the up case dispatches exactly \"ou: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "ou: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] press space on the all case dispatches exactly \"oa: keydown keypress keyup click\"",
+   "detail": {
+    "applied": true,
+    "sequence": "oa: keydown keypress keyup click"
+   },
+   "passed": true
+  },
+  {
    "check": "[system] space sets a radio and leaves an already checked one checked",
    "detail": {
     "after_first": [
@@ -806,7 +870,7 @@
      "kind": "action",
      "revision": 0,
      "role": "checkbox",
-     "target": "target_16"
+     "target": "target_18"
     }
    },
    "passed": true
@@ -820,7 +884,7 @@
     "kind": "action",
     "revision": 0,
     "role": "form",
-    "target": "target_16"
+    "target": "target_18"
    },
    "passed": true
   },
@@ -838,7 +902,7 @@
      "kind": "action",
      "revision": 0,
      "role": "radio",
-     "target": "target_16"
+     "target": "target_18"
     }
    },
    "passed": true
@@ -857,7 +921,7 @@
      "kind": "action",
      "revision": 0,
      "role": "radio",
-     "target": "target_16"
+     "target": "target_18"
     }
    },
    "passed": true
@@ -875,7 +939,7 @@
      "kind": "action",
      "revision": 1,
      "role": "button",
-     "target": "target_17"
+     "target": "target_19"
     }
    },
    "passed": true
@@ -890,7 +954,7 @@
      "applied": true,
      "kind": "action",
      "revision": 1,
-     "target": "target_18"
+     "target": "target_20"
     }
    },
    "passed": true
@@ -903,14 +967,14 @@
      "details": {
       "generation": 1,
       "navigation": "failed",
-      "realm": "realm_35",
+      "realm": "realm_37",
       "reason": "navigation_failed",
       "redacted": true
      },
      "message": "the form submission did not navigate",
      "retryable": false,
      "scope": {
-      "id": "target_19",
+      "id": "target_21",
       "kind": "target"
      }
     },
@@ -938,48 +1002,8 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_36",
-     "reason": "address",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
-    "retryable": false,
-    "scope": {
-     "id": "target_20",
-     "kind": "target"
-    }
-   },
-   "passed": true
-  },
-  {
-   "check": "[system] a missing document refuses the submit and says so without its address",
-   "detail": {
-    "code": "not_found",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
-     "realm": "realm_37",
-     "reason": "navigation_failed",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
-    "retryable": false,
-    "scope": {
-     "id": "target_21",
-     "kind": "target"
-    }
-   },
-   "passed": true
-  },
-  {
-   "check": "[system] an unqualified scheme refuses the submit and says so without its address",
-   "detail": {
-    "code": "unsupported_capability",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
      "realm": "realm_38",
-     "reason": "tls_no_pinned_roots",
+     "reason": "address",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -992,14 +1016,14 @@
    "passed": true
   },
   {
-   "check": "[system] an offline profile refuses the submit without its address",
+   "check": "[system] a missing document refuses the submit and says so without its address",
    "detail": {
-    "code": "permission_denied",
+    "code": "not_found",
     "details": {
      "generation": 1,
      "navigation": "failed",
      "realm": "realm_39",
-     "reason": "network_offline",
+     "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -1012,20 +1036,60 @@
    "passed": true
   },
   {
+   "check": "[system] an unqualified scheme refuses the submit and says so without its address",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_40",
+     "reason": "tls_no_pinned_roots",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_24",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an offline profile refuses the submit without its address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_41",
+     "reason": "network_offline",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_25",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
    "check": "[system] an expired deadline refuses the submit without its address",
    "detail": {
     "code": "deadline_exceeded",
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_39",
+     "realm": "realm_41",
      "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": true,
     "scope": {
-     "id": "target_23",
+     "id": "target_25",
      "kind": "target"
     }
    },
@@ -1094,7 +1158,7 @@
    "detail": {
     "audit_bytes": 6806,
     "audit_capacity_bytes": 6144,
-    "audit_dropped_total": 153,
+    "audit_dropped_total": 161,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -1890,6 +1954,70 @@
    "passed": true
   },
   {
+   "check": "[arena] press enter on the down case dispatches exactly \"od: keydown keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "od: keydown keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on the press case dispatches exactly \"op: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "op: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on the up case dispatches exactly \"ou: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "ou: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press enter on the all case dispatches exactly \"oa: keydown keypress keyup click\"",
+   "detail": {
+    "applied": true,
+    "sequence": "oa: keydown keypress keyup click"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on the down case dispatches exactly \"od: keydown keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "od: keydown keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on the press case dispatches exactly \"op: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "op: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on the up case dispatches exactly \"ou: keydown keypress keyup\"",
+   "detail": {
+    "applied": false,
+    "sequence": "ou: keydown keypress keyup"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] press space on the all case dispatches exactly \"oa: keydown keypress keyup click\"",
+   "detail": {
+    "applied": true,
+    "sequence": "oa: keydown keypress keyup click"
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] space sets a radio and leaves an already checked one checked",
    "detail": {
     "after_first": [
@@ -1926,7 +2054,7 @@
      "kind": "action",
      "revision": 0,
      "role": "checkbox",
-     "target": "target_16"
+     "target": "target_18"
     }
    },
    "passed": true
@@ -1940,7 +2068,7 @@
     "kind": "action",
     "revision": 0,
     "role": "form",
-    "target": "target_16"
+    "target": "target_18"
    },
    "passed": true
   },
@@ -1958,7 +2086,7 @@
      "kind": "action",
      "revision": 0,
      "role": "radio",
-     "target": "target_16"
+     "target": "target_18"
     }
    },
    "passed": true
@@ -1977,7 +2105,7 @@
      "kind": "action",
      "revision": 0,
      "role": "radio",
-     "target": "target_16"
+     "target": "target_18"
     }
    },
    "passed": true
@@ -1995,7 +2123,7 @@
      "kind": "action",
      "revision": 1,
      "role": "button",
-     "target": "target_17"
+     "target": "target_19"
     }
    },
    "passed": true
@@ -2010,7 +2138,7 @@
      "applied": true,
      "kind": "action",
      "revision": 1,
-     "target": "target_18"
+     "target": "target_20"
     }
    },
    "passed": true
@@ -2023,14 +2151,14 @@
      "details": {
       "generation": 1,
       "navigation": "failed",
-      "realm": "realm_35",
+      "realm": "realm_37",
       "reason": "navigation_failed",
       "redacted": true
      },
      "message": "the form submission did not navigate",
      "retryable": false,
      "scope": {
-      "id": "target_19",
+      "id": "target_21",
       "kind": "target"
      }
     },
@@ -2058,48 +2186,8 @@
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_36",
-     "reason": "address",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
-    "retryable": false,
-    "scope": {
-     "id": "target_20",
-     "kind": "target"
-    }
-   },
-   "passed": true
-  },
-  {
-   "check": "[arena] a missing document refuses the submit and says so without its address",
-   "detail": {
-    "code": "not_found",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
-     "realm": "realm_37",
-     "reason": "navigation_failed",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
-    "retryable": false,
-    "scope": {
-     "id": "target_21",
-     "kind": "target"
-    }
-   },
-   "passed": true
-  },
-  {
-   "check": "[arena] an unqualified scheme refuses the submit and says so without its address",
-   "detail": {
-    "code": "unsupported_capability",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
      "realm": "realm_38",
-     "reason": "tls_no_pinned_roots",
+     "reason": "address",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -2112,14 +2200,14 @@
    "passed": true
   },
   {
-   "check": "[arena] an offline profile refuses the submit without its address",
+   "check": "[arena] a missing document refuses the submit and says so without its address",
    "detail": {
-    "code": "permission_denied",
+    "code": "not_found",
     "details": {
      "generation": 1,
      "navigation": "failed",
      "realm": "realm_39",
-     "reason": "network_offline",
+     "reason": "navigation_failed",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -2132,20 +2220,60 @@
    "passed": true
   },
   {
+   "check": "[arena] an unqualified scheme refuses the submit and says so without its address",
+   "detail": {
+    "code": "unsupported_capability",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_40",
+     "reason": "tls_no_pinned_roots",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_24",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an offline profile refuses the submit without its address",
+   "detail": {
+    "code": "permission_denied",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_41",
+     "reason": "network_offline",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
+    "retryable": false,
+    "scope": {
+     "id": "target_25",
+     "kind": "target"
+    }
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] an expired deadline refuses the submit without its address",
    "detail": {
     "code": "deadline_exceeded",
     "details": {
      "generation": 1,
      "navigation": "failed",
-     "realm": "realm_39",
-     "reason": "read",
+     "realm": "realm_41",
+     "reason": "connect",
      "redacted": true
     },
     "message": "the form submission did not navigate",
     "retryable": true,
     "scope": {
-     "id": "target_23",
+     "id": "target_25",
      "kind": "target"
     }
    },
@@ -2185,18 +2313,18 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 845408,
-    "at_8": 845344,
+    "at_128": 845424,
+    "at_8": 845408,
     "cap": 65536,
-    "growth": 64
+    "growth": 16
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 845408,
-    "at_64": 845344,
+    "at_128": 845424,
+    "at_64": 845360,
     "cap": 8192
    },
    "passed": true
@@ -2204,8 +2332,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 790432,
-    "fresh": 830672
+    "after_submit": 790448,
+    "fresh": 830688
    },
    "passed": true
   },
@@ -2214,7 +2342,7 @@
    "detail": {
     "audit_bytes": 6806,
     "audit_capacity_bytes": 6144,
-    "audit_dropped_total": 153,
+    "audit_dropped_total": 161,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -2285,11 +2413,11 @@
    "passed": true
   }
  ],
- "checks_passed": 163,
- "checks_total": 163,
+ "checks_passed": 179,
+ "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "be320726133153ac708279ed80321fb1be4cc5d51b25f49746794c82a1aedffa",
+ "host_sha256": "0b24e662fb28c8a5f212bdd4d35bfae79d75904c14dcfe4bf6bbd612a0196ca8",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

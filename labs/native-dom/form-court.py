@@ -57,6 +57,15 @@ earlier criteria stand unchanged; these are additions.
 Falsifiability, recorded: the pre-fix host was rebuilt and run against this
 file. Eleven of the new checks failed per allocator arm, one for each defect
 §14 records, and every earlier check still passed.
+
+Fifth extension (criteria added by §15, none moved): the press sequence is now
+observed rather than inferred. A fixture writes down each phase as it arrives,
+one mark per case, so the court asserts the exact sequence: `keydown keyup` for
+a canceled keydown with keypress absent, the full three phases for a canceled
+keypress or keyup, and the three phases followed by the click when nothing is
+canceled. Run against the pre-ruling host, only the two suppressed-keypress
+checks fail, one per key, which is the criterion that distinguishes the ruled
+model from §14.1's.
 """
 
 import argparse
@@ -180,6 +189,26 @@ class FormHandler(PROFILE.ProfileHandler):
                  b"for (var j=0;j<ids.length;j++){document.getElementById(ids[j])"
                  b".addEventListener('click',function(){mark.textContent='clicked';});}"
                  b"</script></body></html>")
+    # Each dispatched phase writes itself down, so the order is observed
+    # rather than inferred. One button per case, one mark per button.
+    ORDER_FORM = (b"<!doctype html><html><body><main><h1>Order form</h1>"
+                  b"<form id=\"of\" method=\"get\" action=\"/landed.html\">"
+                  b"<button id=\"od\" name=\"down\" type=\"button\">D</button>"
+                  b"<button id=\"op\" name=\"press\" type=\"button\">P</button>"
+                  b"<button id=\"ou\" name=\"up\" type=\"button\">U</button>"
+                  b"<button id=\"oa\" name=\"all\" type=\"button\">A</button></form>"
+                  b"<p id=\"m-od\">od:</p><p id=\"m-op\">op:</p>"
+                  b"<p id=\"m-ou\">ou:</p><p id=\"m-oa\">oa:</p></main>"
+                  b"<script>var cancels={od:'keydown',op:'keypress',ou:'keyup',oa:null};"
+                  b"var ids=['od','op','ou','oa'];"
+                  b"var phases=['keydown','keypress','keyup','click'];"
+                  b"for (var i=0;i<ids.length;i++){for (var j=0;j<phases.length;j++){"
+                  b"(function(id,phase){var el=document.getElementById(id);"
+                  b"var mark=document.getElementById('m-'+id);"
+                  b"el.addEventListener(phase,function(e){"
+                  b"mark.textContent=mark.textContent+' '+phase;"
+                  b"if (cancels[id]===phase) e.preventDefault();});})(ids[i],phases[j]);}}"
+                  b"</script></body></html>")
     # One of each button subtype in one bounded form.
     SUBTYPE_FORM = (b"<!doctype html><html><body><main><h1>Subtype form</h1>"
                     b"<form id=\"bf\" method=\"get\" action=\"/landed.html\">"
@@ -227,6 +256,8 @@ class FormHandler(PROFILE.ProfileHandler):
             return self.reply(200, self.HANDLER_FORM, "text/html")
         if path == "/keys-form.html":
             return self.reply(200, self.KEYS_FORM, "text/html")
+        if path == "/order-form.html":
+            return self.reply(200, self.ORDER_FORM, "text/html")
         if path == "/subtype-form.html":
             return self.reply(200, self.SUBTYPE_FORM, "text/html")
         if path == "/gate-form.html":
@@ -609,6 +640,29 @@ def run(binary, allocator, origin, expect, tag):
                    and any("clicked" in (m or "") for m in marks),
                    {"result": answer.get("result"), "marks": marks})
             host.ok("target.close", {"target": keys})
+
+            # 4c4b. The order itself, observed: a canceled keydown suppresses
+            # keypress, keyup arrives in every case, and nothing activates
+            # until the whole bounded sequence has run.
+            expected = {"down": "od: keydown keyup",
+                        "press": "op: keydown keypress keyup",
+                        "up": "ou: keydown keypress keyup",
+                        "all": "oa: keydown keypress keyup click"}
+            for key in ("enter", "space"):
+                order = NAV.open_target(host, session, origin, "/order-form.html")
+                for which in ("down", "press", "up", "all"):
+                    snap = snapshot(host, order)
+                    answer = act(host, order, node(snap, "button", which),
+                                 {"kind": "press", "key": key})
+                    marks = [(n.get("name") or "").strip()
+                             for n in snapshot(host, order)["nodes"] if n.get("role") == "text"]
+                    want = expected[which]
+                    seen = next((m for m in marks if m.startswith(want.split(":")[0] + ":")), None)
+                    applied = answer.get("ok") and answer["result"].get("applied")
+                    expect(tag + f"press {key} on the {which} case dispatches exactly \"{want}\"",
+                           seen == want and applied is (which == "all"),
+                           {"sequence": seen, "applied": applied})
+                host.ok("target.close", {"target": order})
 
             # 4c5. Space sets a radio; it never turns a checked one off.
             host.ok("target.navigate", {"target": target, "url": f"{origin}/form.html"})
