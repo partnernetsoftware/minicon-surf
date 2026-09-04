@@ -355,3 +355,33 @@ already recorded rather than anything this design does. It becomes the
 differential that increment settled on — the children's arm against the
 identical childless arm — keeping the same 1 MiB bound and reporting both
 absolute numbers. The bound did not move; what it is measured against did.
+
+## 16. Amendment before implementation: a child frame runs no scripts
+
+§8 assumed a child's scripts would run and be charged to the parent's budget.
+Working through what that costs, it is the wrong choice for this product and
+it is corrected here before any code. §§1–15 stay as written.
+
+**Why not.** A child realm that runs scripts needs its own cookie and storage
+seeding. Because a child is same-origin by construction (§7), that would give
+one origin *two independent in-memory copies* of the same `localStorage`, free
+to diverge, with only one of them ever committed back to the profile. That is
+a correctness hazard invented purely to run embedded scripts. It also doubles
+the per-child memory for the one thing this slice most wants to keep small,
+and the doctrine is explicit that web compatibility may be narrowed before
+memory is surrendered.
+
+**What a child frame is, then.** Fetched, parsed, seeded into its own realm
+with the shim, its location and the revision instrumentation, and observable —
+a static embedded document. No inline script runs, no external script is
+fetched, no cookie or storage seeding happens, and its realm therefore starts
+with an empty storage view that is never committed. §8's budget rule is
+unchanged and simply has less to cover.
+
+**Losses added to §10.** A child's scripts never run; a child's realm sees no
+cookies and an empty `localStorage`; a page whose embedded document builds
+itself in script appears empty. These are recorded, not approximated.
+
+**Court.** Two criteria are added: an embedded document whose inline script
+would add a marker is observed without it, and a child whose script has a
+`src` costs no fetch.

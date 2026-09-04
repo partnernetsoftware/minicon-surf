@@ -119,6 +119,12 @@ class FrameHandler:
                     "/parent-nested.html": page("Parent nested", ['<iframe src="/child-nested.html"></iframe>']),
                     "/child-nested.html": page("Child nested", ['<iframe src="/child-a.html"></iframe>']),
                     "/child-a.html": page("Child A", ['<p id="ca">embedded alpha</p>']),
+                    # A child that would rewrite itself, and one that would fetch.
+                    "/parent-script.html": page("Parent script", ['<iframe src="/child-script.html"></iframe>']),
+                    "/child-script.html": page("Child script", [
+                        '<p id="cs">embedded static</p>',
+                        '<script>document.getElementById("cs").textContent="embedded dynamic";</script>',
+                        '<script src="/child-helper.js"></script>']),
                     "/landed.html": page("Landed", ['<p id="lp">landed</p>']),
                 }
                 for n in range(9):
@@ -295,6 +301,21 @@ def main():
                     else:
                         expect(tag + "a reference from a child is refused rather than acting on the main frame",
                                False, {"reason": "the child snapshot produced no nodes"})
+
+                    # 2c. A child runs no scripts and fetches none (§16).
+                    scripted = open_page(session, "/parent-script.html")
+                    scripted_frames = frames_of(ok("target.inspect", {"target": scripted}))
+                    scripted_snap = snap(scripted, frame=at(scripted_frames, 1, "frame"))
+                    scripted_names = [n.get("name") for n in scripted_snap["result"]["nodes"]] if scripted_snap.get("ok") else []
+                    expect(tag + "an embedded document's inline script does not run",
+                           scripted_snap.get("ok")
+                           and any("embedded static" in (n or "") for n in scripted_names)
+                           and not any("embedded dynamic" in (n or "") for n in scripted_names),
+                           {"names": len(scripted_names)})
+                    expect(tag + "an embedded document's external script costs no fetch",
+                           ok("target.inspect", {"target": scripted})["network"]["fetches"] == 2,
+                           {"fetches": ok("target.inspect", {"target": scripted})["network"]["fetches"]})
+                    ok("target.close", {"target": scripted})
 
                     # 3. Refusals, all one refusal.
                     foreign = at(frames_of(ok("target.inspect", {"target": seven})), 1, "frame")
