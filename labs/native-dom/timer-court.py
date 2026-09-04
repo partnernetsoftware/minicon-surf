@@ -32,8 +32,56 @@ sys.path.insert(0, str(ROOT / "protocol"))
 import check_contract  # noqa: E402
 
 VISIBLE_ENV = "MINICON_SURF_ALLOW_VISIBLE_COURT"
+MAX_SAFE = (1 << 53) - 1
 PENDING_LIMIT = 64
 BOUNDARY_BUDGET = 32
+
+
+def handles(binary, origin, expect, tag, start, expected_more):
+    """A realm whose next handle is seeded near the safe integer: exactly the
+    handles below it can be minted, and none at or above it."""
+    import subprocess
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-timer-handle-") as directory:
+        environment = {k: v for k, v in os.environ.items() if k != VISIBLE_ENV}
+        process = subprocess.Popen(
+            [binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+             "--config-dir", str(Path(directory) / "config"), "--allow-origin", origin,
+             "--court-timer-handle", str(start)],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, env=environment)
+        counter = [0]
+
+        def ok(operation, arguments):
+            counter[0] += 1
+            request = {"protocol": "minicon-surf.control", "version": "0.0.2",
+                       "request_id": f"req_handle_{counter[0]}", "deadline_ms": 30000,
+                       "operation": operation, "arguments": arguments}
+            check_contract.validate_request(request)
+            process.stdin.write(json.dumps(request) + "\n")
+            process.stdin.flush()
+            line = process.stdout.readline()
+            if not line:
+                raise RuntimeError("host exited")
+            answer = json.loads(line)
+            check_contract.validate_response(answer)
+            if not answer["ok"]:
+                raise RuntimeError(f"{operation} failed: {answer['error']}")
+            return answer["result"]
+
+        try:
+            profile = ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = ok("session.open", {"profile": profile})["session"]
+            target = ok("target.open", {"session": session, "url": f"{origin}/handle.html"})["target"]
+            observed = ok("target.snapshot", {"target": target, "format": "semantic",
+                                              "max_bytes": 65536, "max_nodes": 32})
+            texts = [n.get("name") or "" for n in observed["nodes"] if n.get("role") == "text"]
+            state = texts[0] if texts else ""
+            expect(tag + f"exactly {expected_more} more handles can be minted at the boundary",
+                   state == f"made {expected_more}",
+                   {"observed_len": len(state)})
+        finally:
+            process.stdin.close()
+            process.wait(timeout=30)
 
 
 def load_module(name, path):
@@ -129,6 +177,12 @@ def main():
                 "/teardown.html": page("Teardown",
                                        "setTimeout(function(){write('late ran');},60);"),
                 "/landed.html": page("Landed", ""),
+                # Three attempts against a seeded handle boundary.
+                "/handle.html": page("Handle",
+                                     "var made=0;"
+                                     "for(var i=0;i<3;i++){try{setTimeout(function(){},1000);made=made+1;}"
+                                     "catch(e){}}"
+                                     "write('made '+made);"),
                 # A child frame must have no timer surface.
                 "/parent-timer.html": ("<!doctype html><html><body><main><h1>Parent timer</h1>"
                                        "<iframe src=\"/child-timer.html\"></iframe>"
@@ -277,6 +331,26 @@ def main():
                            {"objects": after.get("objects")})
                     ok("target.close", {"target": target})
 
+                    # 8b. Every realm replacement retires what was pending.
+                    for label, replace in (("close", None), ("reload", "reload")):
+                        probe = open_page(session, "/teardown.html")
+                        ok("target.inspect", {"target": probe})
+                        pending = (ok("target.inspect", {"target": probe})
+                                   .get("timers") or {}).get("pending")
+                        before = (ok("memory.report", {})["owners"].get("timers") or {})
+                        if replace is None:
+                            ok("target.close", {"target": probe})
+                        else:
+                            ok("target.reload", {"target": probe})
+                        after = (ok("memory.report", {})["owners"].get("timers") or {})
+                        expect(tag + f"a {label} retires the pending timers of the realm it replaces",
+                               pending == 1
+                               and after.get("retired_total", 0) >= before.get("retired_total", 0) + 1,
+                               {"pending": pending,
+                                "retired": [before.get("retired_total"), after.get("retired_total")]})
+                        if replace is not None:
+                            ok("target.close", {"target": probe})
+
                     # 9. A due callback's mutations move the global revision.
                     target = open_page(session, "/teardown.html")
                     start = ok("target.inspect", {"target": target})["revision"]
@@ -333,6 +407,8 @@ def main():
                            {"audit_bytes": len(blob)})
                 finally:
                     host.finish()
+        handles(args.binary, origin, expect, "[handle-3] ", MAX_SAFE - 3, 3)
+        handles(args.binary, origin, expect, "[handle-0] ", MAX_SAFE, 0)
     finally:
         server.shutdown()
 

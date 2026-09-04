@@ -296,10 +296,16 @@ integer.
 
 A handle is a per-realm monotonic integer starting at 1 and **never reused**,
 including after `clearTimeout`. It is also a JavaScript Number, so the same
-limit that binds a frame's counter binds it: when the next handle would exceed
-`MAX_SAFE_COUNTER`, `setTimeout` is refused rather than wrapping or repeating,
-and the refusal is counted in `refused_total`. A realm that exhausts handles
-keeps its existing timers and schedules no new ones.
+limit that binds a frame's counter binds it. The rule is **exclusive and
+frozen here**: a handle is minted only while the realm's *next* handle is
+**strictly less than** `Number.MAX_SAFE_INTEGER`, so the largest handle ever
+issued is `MAX_SAFE_INTEGER − 1` and the value `MAX_SAFE_INTEGER` itself is
+never handed to a page. The alternative — allowing `MAX_SAFE_INTEGER` exactly
+and keeping a separate exhausted flag — was considered and not taken, because
+it buys one handle at the cost of a second piece of state whose only job is to
+remember that the counter can no longer be advanced exactly. Refusals are
+counted in `refused_total`; a realm that exhausts handles keeps its existing
+timers and schedules no new ones. See §15.5 for the seam that proves it.
 
 ### 14.3 Only a callable callback
 
@@ -336,3 +342,61 @@ false of the current shim rather than merely unimplemented.
 Child frames have no timer surface, no clock is readable from a realm, no
 schema, request or result shape moves beyond D4's additive
 `target.inspect` field, no background thread exists, and nothing visual runs.
+
+## 15. Answers to the implementation audit
+
+**15.1 A due time is never earlier than its schedule.** The host reads its
+clock **after** the collecting evaluation has returned and been parsed, and a
+due time is that instant plus the delay. Since the realm ran the `setTimeout`
+call inside the turn that the collect terminates, the schedule happened before
+that instant, so `due ≥ schedule + delay` always. The delay stays a lower
+bound and can only ever be longer, never shorter, which is the direction §14's
+D2 loss already allows. Timers a document's own scripts scheduled are
+collected at the end of the build, so their delays start from that document
+rather than from whichever operation observes it first.
+
+**15.2 The reported limit is per owning realm.** `memory.report`'s
+`owners.timers.object_limit` is `MAX_PENDING_TIMERS × live timer-owning
+realms`, which is one per live target because a child runs no scripts and owns
+none. `target.inspect`'s `timers.limit` stays the per-target bound. With one
+target the two agree; with several they no longer pretend to.
+
+**15.3 A failed collect is attributed, not swallowed.** If the collect
+evaluation fails, its answer will not parse, or its shape is not the one this
+host accepts, a schedule the realm had already recorded may be lost with it.
+That is counted in `collect_failed_total` beside the other six, so the ledger
+shows it rather than a timer silently never firing. It is the seventh
+attribution counter and the only one that reports a host-side fault.
+
+**15.4 Retirement is counted wherever a realm is replaced.** Navigation,
+reload and traverse all replace the document through the same swap, and close
+goes through the same target teardown, so each adds the pending count to
+`retired_total`. The court proves the navigation and the close paths, and the
+reload path through the same swap.
+
+**15.5 The handle boundary, pre-registered.** The rule §14.2 freezes, stated
+once more as the code enforces it — `next >= MAX_SAFE_INTEGER` refuses:
+
+- the largest handle ever issued is **2^53 − 2**, which is
+  `MAX_SAFE_INTEGER − 1`;
+- the value `MAX_SAFE_INTEGER` is never issued, because issuing it would
+  leave `next` unable to advance exactly;
+- the refusal is `refused_total`, and the realm throws.
+
+Design and code are one integer apart nowhere: the court seeds the boundary
+and counts what can still be minted. A court-only seam seeds a realm's next
+handle so the boundary is reachable: with the next handle at 2^53 − 4 exactly
+three more timers can be scheduled — 2^53 − 4, 2^53 − 3 and 2^53 − 2, the
+largest a handle ever takes — and with it at 2^53 − 1 none can.
+
+### 15.6 The CDP group is unqualified in this environment
+
+§11's group 14 — the timer-adjacent CDP methods staying `-32601` — is **not**
+in the court file, and the reason is environmental rather than a decision: the
+pinned client package under the ignored `target/labs/d4` is not present in
+this working copy, so three CDP checks in the child-frame, form and navigation
+courts cannot run either. Those three report the absence as a failure or as
+unverified rather than passing quietly, which is the behaviour they were
+written with. The timer slice's CDP claim is therefore **not qualified here**
+and must not be read as proven; it is a court to add when the client is
+restored.

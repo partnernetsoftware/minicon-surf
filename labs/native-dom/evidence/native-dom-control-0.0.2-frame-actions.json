@@ -1914,7 +1914,7 @@
  "checks_passed": 182,
  "checks_total": 182,
  "court": "native-dom frame-aware actions (control 0.0.2)",
- "host_sha256": "161357b0ffa54fcd86d22ed9ead611f12d73ff2186abb819dcdbad497ed42a26",
+ "host_sha256": "1ce1e3f4c64e4c91194e7cc427cb2b3e4ffb86f472310c972f5e086f4dbb9a98",
  "limitations": [
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
   "children run no scripts, so an action in a child can never be canceled by the page",

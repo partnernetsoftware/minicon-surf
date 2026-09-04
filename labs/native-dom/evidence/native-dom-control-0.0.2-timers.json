@@ -1,0 +1,324 @@
+{
+ "bounds": {
+  "callbacks_per_boundary": 32,
+  "pending_per_realm": 64
+ },
+ "checks": [
+  {
+   "check": "[system] a zero-delay timer has run and a fifty-millisecond one has not",
+   "detail": {
+    "observed_len": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and after the delay has passed, both have run",
+   "detail": {
+    "observed_len": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a cleared timer never runs and an uncleared one does",
+   "detail": {
+    "observed_len": 5
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] two timers scheduled in one turn have different handles",
+   "detail": {
+    "observed_len": 22
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a shorter delay scheduled later runs first, equal delays in order",
+   "detail": {
+    "observed_len": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a timer runs at the observation that follows its due time, not before",
+   "detail": {
+    "after_len": 8,
+    "before_len": 5
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] one boundary runs at most 32 callbacks",
+   "detail": {
+    "first_len": 6,
+    "second_len": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] scheduling past 64 is refused in the realm",
+   "detail": {
+    "timers": {
+     "limit": 64,
+     "pending": 64
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] inspect reports pending and limit and nothing else",
+   "detail": {
+    "fields": [
+     "limit",
+     "pending"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a timer pending at a navigation never runs and is retired",
+   "detail": {
+    "objects": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a close retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": 1,
+    "retired": [
+     65,
+     66
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a reload retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": 1,
+    "retired": [
+     66,
+     67
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a due callback's mutation advances the target's revision",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a throwing callback is counted and the next one still runs",
+   "detail": {
+    "threw_total": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a string body and a non-callable argument both throw",
+   "detail": {
+    "observed_len": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a timer scheduled by a callback runs at the next boundary",
+   "detail": {
+    "steps": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child frame's timer never runs, because a child runs no scripts",
+   "detail": {
+    "observed_len": 5
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no callback, delay or page text in the ledger",
+   "detail": {
+    "audit_bytes": 1875
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a zero-delay timer has run and a fifty-millisecond one has not",
+   "detail": {
+    "observed_len": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and after the delay has passed, both have run",
+   "detail": {
+    "observed_len": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a cleared timer never runs and an uncleared one does",
+   "detail": {
+    "observed_len": 5
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] two timers scheduled in one turn have different handles",
+   "detail": {
+    "observed_len": 22
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a shorter delay scheduled later runs first, equal delays in order",
+   "detail": {
+    "observed_len": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a timer runs at the observation that follows its due time, not before",
+   "detail": {
+    "after_len": 8,
+    "before_len": 5
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] one boundary runs at most 32 callbacks",
+   "detail": {
+    "first_len": 6,
+    "second_len": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] scheduling past 64 is refused in the realm",
+   "detail": {
+    "timers": {
+     "limit": 64,
+     "pending": 64
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] inspect reports pending and limit and nothing else",
+   "detail": {
+    "fields": [
+     "limit",
+     "pending"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a timer pending at a navigation never runs and is retired",
+   "detail": {
+    "objects": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a close retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": 1,
+    "retired": [
+     65,
+     66
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a reload retires the pending timers of the realm it replaces",
+   "detail": {
+    "pending": 1,
+    "retired": [
+     66,
+     67
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a due callback's mutation advances the target's revision",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a throwing callback is counted and the next one still runs",
+   "detail": {
+    "threw_total": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a string body and a non-callable argument both throw",
+   "detail": {
+    "observed_len": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a timer scheduled by a callback runs at the next boundary",
+   "detail": {
+    "steps": 3
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child frame's timer never runs, because a child runs no scripts",
+   "detail": {
+    "observed_len": 5
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no callback, delay or page text in the ledger",
+   "detail": {
+    "audit_bytes": 1875
+   },
+   "passed": true
+  },
+  {
+   "check": "[handle-3] exactly 3 more handles can be minted at the boundary",
+   "detail": {
+    "observed_len": 6
+   },
+   "passed": true
+  },
+  {
+   "check": "[handle-0] exactly 0 more handles can be minted at the boundary",
+   "detail": {
+    "observed_len": 6
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 38,
+ "checks_total": 38,
+ "court": "native-dom bounded timers (control 0.0.2)",
+ "host_sha256": "1ce1e3f4c64e4c91194e7cc427cb2b3e4ffb86f472310c972f5e086f4dbb9a98",
+ "limitations": [
+  "design-frozen court: it fails until the bounded timer slice exists",
+  "a timer's delay is a lower bound: nothing fires while no request arrives",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
+  "no callback source, delay or page text is recorded"
+ ],
+ "page_text_in_audit_responses": [],
+ "passed": true
+}

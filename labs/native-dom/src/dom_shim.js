@@ -335,8 +335,41 @@
   g.window = g; g.self = g; g.document = document;
   g.Node = Node; g.Element = Element; g.Text = Text; g.Document = Document; g.Event = Event; g.MutationObserver = MutationObserver;
   g.queueMicrotask = (fn) => { Promise.resolve().then(fn); };
-  g.setTimeout = (fn, _ms, ...args) => { Promise.resolve().then(() => fn(...args)); return 0; };
-  g.clearTimeout = () => {};
+  // Timers. The realm owns the callbacks and their handles; the host owns the
+  // clock and decides when a callback is due, so a page can neither read the
+  // time nor measure it here. A handle is minted once and never reused, and
+  // the realm refuses to schedule past its bound or past the safe integer.
+  const timers = { next: 1, pending: new Map(), scheduled: [], refused: 0, limit: 64, safe: Number.MAX_SAFE_INTEGER };
+  g.__mcsTimers = timers;
+  g.setTimeout = (fn, ms, ...args) => {
+    if (typeof fn !== "function") {
+      throw new TypeError("setTimeout takes a function: this host evaluates no string bodies");
+    }
+    if (timers.pending.size >= timers.limit) {
+      timers.refused = timers.refused + 1;
+      throw new RangeError("too many pending timers");
+    }
+    if (timers.next >= timers.safe) {
+      timers.refused = timers.refused + 1;
+      throw new RangeError("timer handles are exhausted");
+    }
+    let delay = Number(ms);
+    if (!Number.isFinite(delay) || delay < 0) delay = 0;
+    delay = Math.min(Math.floor(delay), 2147483647);
+    const handle = timers.next;
+    timers.next = handle + 1;
+    timers.pending.set(handle, { fn, args });
+    timers.scheduled.push([handle, delay]);
+    return handle;
+  };
+  // Cancellation happens inside this turn: the callback is released here, so
+  // no later drain can reach it. An unknown or fired handle is a no-op.
+  g.clearTimeout = (handle) => {
+    const id = Number(handle);
+    if (!timers.pending.has(id)) return;
+    timers.pending.delete(id);
+    timers.scheduled.push([id, -1]);
+  };
   g.console = { log() {}, warn() {}, error() {}, debug() {}, info() {} };
   g.navigator = { userAgent: "MiniCon Surf native-dom (QuickJS)" };
   g.location = { href: "minicon-surf://court/fixture", protocol: "minicon-surf:", origin: "null", toString() { return "minicon-surf://court/fixture"; } };

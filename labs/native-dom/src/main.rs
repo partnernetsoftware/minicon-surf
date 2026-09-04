@@ -63,6 +63,114 @@ const NODE_BAND: u64 = MAX_SNAPSHOT_NODES;
 /// A frame's counter lives in a JavaScript realm as a Number, so it stops
 /// representing exact increments here, long before `u64` matters.
 const MAX_SAFE_COUNTER: u64 = (1u64 << 53) - 1;
+/// Pending timers a realm may hold. The realm enforces it too, so a page's
+/// own `setTimeout` throws rather than the host discovering it later.
+const MAX_PENDING_TIMERS: usize = 64;
+/// Callbacks run at one operation boundary, however many are due. A chain of
+/// zero-delay timers therefore advances one boundary at a time.
+const MAX_TIMER_CALLBACKS_PER_BOUNDARY: usize = 32;
+
+/// What the realm answers when the host collects newly scheduled timers: a
+/// pair per call, the handle and the delay, with a negative delay meaning the
+/// page cleared that handle inside the same turn.
+const TIMER_COLLECT_JS: &str = r#"(() => {
+  const t = window.__mcsTimers;
+  if (!t) return JSON.stringify({ moved: [], refused: 0, pending: 0 });
+  const moved = t.scheduled;
+  const refused = t.refused;
+  t.scheduled = [];
+  t.refused = 0;
+  return JSON.stringify({ moved, refused, pending: t.pending.size });
+})()"#;
+
+/// Run one due callback. The realm answers whether it ran, whether it threw,
+/// and whether the handle was still there at all.
+fn timer_fire_script(handle: u64) -> String {
+    format!(
+        r#"(() => {{
+  const t = window.__mcsTimers;
+  if (!t) return JSON.stringify({{ missing: true }});
+  const entry = t.pending.get({handle});
+  if (!entry) return JSON.stringify({{ missing: true }});
+  t.pending.delete({handle});
+  try {{
+    entry.fn(...entry.args);
+  }} catch (error) {{
+    return JSON.stringify({{ threw: true }});
+  }}
+  return JSON.stringify({{ fired: true }});
+}})()"#
+    )
+}
+
+/// One realm's pending timers, owned by the frame they belong to and dying
+/// with it. The host keeps the clock; the realm keeps the callbacks.
+#[derive(Default)]
+struct Timers {
+    /// Handle and the instant it becomes due, in scheduling order.
+    pending: Vec<(u64, Instant)>,
+}
+
+impl Timers {
+    fn len(&self) -> usize {
+        self.pending.len()
+    }
+
+    /// The handles due at `now`, ordered by due time then by handle, bounded
+    /// by one boundary's budget. They are removed from the queue: whether each
+    /// one ran, threw or had been cleared is the realm's answer.
+    fn take_due(&mut self, now: Instant, budget: usize) -> Vec<u64> {
+        let mut due: Vec<(u64, Instant)> = self
+            .pending
+            .iter()
+            .filter(|(_, at)| *at <= now)
+            .copied()
+            .collect();
+        due.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(&b.0)));
+        due.truncate(budget);
+        let taken: Vec<u64> = due.iter().map(|(handle, _)| *handle).collect();
+        self.pending.retain(|(handle, _)| !taken.contains(handle));
+        taken
+    }
+
+    fn next_due(&self) -> Option<Instant> {
+        self.pending.iter().map(|(_, at)| *at).min()
+    }
+}
+
+/// The host's saturating attribution for timers. Every outcome is its own
+/// counter: nothing is conflated into one bucket.
+#[derive(Default, Clone, Copy)]
+struct TimerCounters {
+    fired: u64,
+    cleared: u64,
+    retired: u64,
+    threw: u64,
+    deadline_discarded: u64,
+    refused: u64,
+    /// A collect that failed or answered a shape this host does not accept.
+    /// It is counted rather than ignored, because a schedule the realm had
+    /// already recorded may have been lost with it.
+    collect_failed: u64,
+}
+
+impl TimerCounters {
+    fn to_json(self, pending: usize, realms: usize) -> Value {
+        json!({
+            "objects": pending,
+            // One bound per timer-owning realm, which is one per live target:
+            // a child runs no scripts and owns none.
+            "object_limit": MAX_PENDING_TIMERS.saturating_mul(realms),
+            "fired_total": self.fired,
+            "cleared_total": self.cleared,
+            "retired_total": self.retired,
+            "threw_total": self.threw,
+            "deadline_discarded_total": self.deadline_discarded,
+            "refused_total": self.refused,
+            "collect_failed_total": self.collect_failed,
+        })
+    }
+}
 
 /// The one refusal both limits produce, before anything is dispatched, built
 /// or fetched.
@@ -1844,6 +1952,9 @@ struct Target {
     last_snapshot: Option<FrameSnapshot>,
     /// Whether the main document carries a `<base target>`.
     base_target: bool,
+    /// The main frame's pending timers. A child runs no scripts and therefore
+    /// has none. They die with this document, because they live on it.
+    timers: Timers,
     /// The main frame's id: minted with the target and kept for its life.
     frame_id: String,
     /// Document generation of the main frame: 1 for the first document,
@@ -2247,6 +2358,8 @@ struct Host {
     next_target: u64,
     next_frame: u64,
     next_realm: u64,
+    /// Saturating attribution for every timer outcome, across the host.
+    timer_counters: TimerCounters,
     /// The child frames the last committed navigation ended, read once by the
     /// result that reports them.
     ended_frames: Vec<String>,
@@ -2307,6 +2420,9 @@ struct Host {
     /// Court-only (`--court-frame-counter N`): every realm's counter starts
     /// here, so the per-frame Number boundary is reachable.
     court_frame_counter: u64,
+    /// Court-only (`--court-timer-handle N`): a realm's next timer handle
+    /// starts here, so the safe-integer boundary is reachable.
+    court_timer_handle: u64,
     surface_snapshot_arm: Option<String>,
     surface_court_gc: bool,
     /// Visible windows need a double opt-in: `--visual 1` and the
@@ -2345,6 +2461,11 @@ impl Host {
     /// Keep a closing target's TLS counters in the host totals.
     fn retire_target(&mut self, target: &Target) {
         self.tls_retired.absorb_tls(&target.budget);
+        // The timers belonged to this document's realm and die with it.
+        self.timer_counters.retired = self
+            .timer_counters
+            .retired
+            .saturating_add(target.timers.len() as u64);
         // Children before their parent, realm before frame: every realm the
         // target owned is retired exactly once, the main frame's included.
         self.realms_retired_total += target.children.len() as u64 + 1;
@@ -3321,6 +3442,116 @@ impl Host {
 
     /// The target's absolute revision: the live realm's count plus the base
     /// carried over every navigation, so it never decreases.
+    /// What the realm scheduled or cleared since the last time it was asked.
+    /// Called right after any evaluation that could schedule, so a timer's due
+    /// time is measured from the turn that asked for it rather than from the
+    /// next boundary.
+    fn collect_timers(&mut self, id: &str, deadline: Instant) {
+        let policy = self.policy_for_target(id);
+        let Ok(target) = self.target_mut(id) else {
+            return;
+        };
+        let collected = target.eval(TIMER_COLLECT_JS, deadline, &policy);
+        // The clock is read *after* the turn that scheduled these timers has
+        // finished, so a due time is never earlier than the schedule plus its
+        // delay: the delay stays a lower bound.
+        let now = Instant::now();
+        let Ok(text) = collected else {
+            // A collect that fails may have dropped a schedule the realm had
+            // already recorded, so it is attributed rather than swallowed.
+            self.timer_counters.collect_failed =
+                self.timer_counters.collect_failed.saturating_add(1);
+            return;
+        };
+        let Ok(answer) = serde_json::from_str::<Value>(&text) else {
+            self.timer_counters.collect_failed =
+                self.timer_counters.collect_failed.saturating_add(1);
+            return;
+        };
+        if !answer.get("moved").is_some_and(Value::is_array) {
+            self.timer_counters.collect_failed =
+                self.timer_counters.collect_failed.saturating_add(1);
+            return;
+        }
+        let Ok(target) = self.target_mut(id) else {
+            return;
+        };
+        let refused = answer.get("refused").and_then(Value::as_u64).unwrap_or(0);
+        let mut cleared = 0u64;
+        for item in answer
+            .get("moved")
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default()
+        {
+            let handle = item.get(0).and_then(Value::as_u64);
+            let delay = item.get(1).and_then(Value::as_i64);
+            match (handle, delay) {
+                (Some(handle), Some(delay)) if delay >= 0 => {
+                    let due = now
+                        .checked_add(Duration::from_millis(delay as u64))
+                        .unwrap_or(now);
+                    target.timers.pending.push((handle, due));
+                }
+                (Some(handle), Some(_)) => {
+                    let before = target.timers.pending.len();
+                    target.timers.pending.retain(|(live, _)| *live != handle);
+                    if target.timers.pending.len() < before {
+                        cleared += 1;
+                    }
+                }
+                _ => {}
+            }
+        }
+        self.timer_counters.refused = self.timer_counters.refused.saturating_add(refused);
+        self.timer_counters.cleared = self.timer_counters.cleared.saturating_add(cleared);
+    }
+
+    /// One operation boundary's timer work, and the only place a callback
+    /// runs. Due callbacks run in order, bounded; one that throws or is
+    /// interrupted at the deadline is discarded and counted, the target stays
+    /// usable, and whatever it completed before that stands.
+    fn run_due_timers(&mut self, id: &str, deadline: Instant) {
+        if !self.targets.contains_key(id) {
+            return;
+        }
+        self.collect_timers(id, deadline);
+        let policy = self.policy_for_target(id);
+        let now = Instant::now();
+        let due = match self.target_mut(id) {
+            Ok(target) => target
+                .timers
+                .take_due(now, MAX_TIMER_CALLBACKS_PER_BOUNDARY),
+            Err(_) => return,
+        };
+        for handle in due {
+            let script = timer_fire_script(handle);
+            let outcome = match self.target_mut(id) {
+                Ok(target) => target.eval(&script, deadline, &policy),
+                Err(_) => return,
+            };
+            match outcome {
+                Ok(answer) if answer.contains("fired") => {
+                    self.timer_counters.fired = self.timer_counters.fired.saturating_add(1);
+                }
+                Ok(answer) if answer.contains("threw") => {
+                    self.timer_counters.threw = self.timer_counters.threw.saturating_add(1);
+                }
+                Ok(_) => {}
+                Err(_) => {
+                    self.timer_counters.deadline_discarded =
+                        self.timer_counters.deadline_discarded.saturating_add(1);
+                    return;
+                }
+            }
+            // A callback may have scheduled or cleared timers of its own; they
+            // are collected here so their due times start from this turn, and
+            // a zero-delay one waits for the next boundary because this
+            // boundary's due list was taken before it existed.
+            self.collect_timers(id, deadline);
+        }
+    }
+
     /// The target-global revision: the base plus every live frame's counter.
     /// The main frame's counter is read from its realm, because page scripts
     /// and queued jobs can move it; a child's is taken from the cache, which
@@ -3497,6 +3728,9 @@ impl Host {
             "target.inspect" => {
                 let object = exact_object(a, &["target"])?;
                 let id = typed_field(object, "target", "target")?.to_owned();
+                // An observation is an operation boundary: what was due has
+                // run, and the revision reported below includes it.
+                self.run_due_timers(&id, deadline);
                 let policy = self.policy_for_target(&id);
                 let https = self.tls_roots.is_some();
                 let surface_id = self
@@ -3512,6 +3746,7 @@ impl Host {
                     "script_realm":true,"scripts_run":target.script_count,"scripts_skipped":target.skipped_scripts,
                     "frames":target.frames_json(),
                     "frames_skipped":target.frames_skipped_json(),
+                    "timers":{"pending":target.timers.len(),"limit":MAX_PENDING_TIMERS},
                     "realms":target.realms_json(),
                     "frame_limit":MAX_FRAMES_PER_TARGET,
                     "network":target_network(&target.budget, https),
@@ -4354,6 +4589,7 @@ impl Host {
             children,
             frames_skipped,
             base_target,
+            timers: Timers::default(),
         };
         let read_only = self
             .sessions
@@ -4361,6 +4597,15 @@ impl Host {
             .and_then(|s| self.profiles.get(&s.profile_id))
             .is_some_and(|p| p.read_only);
         target.seed_store(deadline, read_only)?;
+        // Court-only: the realm's next timer handle, seeded before any page
+        // script runs so the safe-integer boundary is reachable.
+        if self.court_timer_handle > 0 {
+            let seed = format!(
+                "(() => {{ window.__mcsTimers.next = {}; return String(window.__mcsTimers.next); }})()",
+                self.court_timer_handle
+            );
+            target.eval(&seed, deadline, &policy)?;
+        }
         for (index, (origin, script)) in scripts.iter().enumerate() {
             if let Err(error) = target.eval(script, deadline, &policy) {
                 let mut details = error.details.clone().unwrap_or_else(|| json!({}));
@@ -4373,6 +4618,30 @@ impl Host {
         }
         target.eval("__mcsComplete()", deadline, &policy)?;
         target.eval(INSTALL_JS, deadline, &policy)?;
+        // Timers the document's own scripts scheduled are collected here, so
+        // their due times start from the document rather than from whichever
+        // operation happens to observe it first.
+        if let Ok(text) = target.eval(TIMER_COLLECT_JS, deadline, &policy)
+            && let Ok(answer) = serde_json::from_str::<Value>(&text)
+        {
+            let now = Instant::now();
+            for item in answer
+                .get("moved")
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default()
+            {
+                if let Some(handle) = item.get(0).and_then(Value::as_u64)
+                    && let Some(delay) = item.get(1).and_then(Value::as_i64)
+                    && delay >= 0
+                {
+                    let due = now
+                        .checked_add(Duration::from_millis(delay as u64))
+                        .unwrap_or(now);
+                    target.timers.pending.push((handle, due));
+                }
+            }
+        }
         // Court-only seams: they do nothing unless the knobs are given.
         if self.court_frame_counter > 0 {
             let seed = format!(
@@ -5106,6 +5375,12 @@ impl Host {
                     .map(|child| child.id.clone())
                     .collect();
                 self.realms_retired_total += retired.children.len() as u64;
+                // The replaced document's timers die with its realm; a
+                // callback pending across a navigation never runs.
+                self.timer_counters.retired = self
+                    .timer_counters
+                    .retired
+                    .saturating_add(retired.timers.len() as u64);
                 self.ended_frames = ended_frames.clone();
                 // The replaced document's spend leaves the gate and becomes a
                 // lifetime diagnostic; its TLS counters stay attributable.
@@ -5181,6 +5456,9 @@ impl Host {
         }
         let max_bytes = bounded_u64(object, "max_bytes", 1, MAX_RESPONSE_BYTES as u64)? as usize;
         let max_nodes = bounded_u64(object, "max_nodes", 1, MAX_SNAPSHOT_NODES)?;
+        // Due timers run before the observation, so what it reports is
+        // consistent with the revision it names.
+        self.run_due_timers(&id, deadline);
         let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
         // A foreign, ended or unknown frame or realm is one and the same
@@ -5448,6 +5726,9 @@ impl Host {
             ));
         }
         Self::validate_action(action, &kind)?;
+        // A boundary before the preflight, and none between the two phases:
+        // what the preflight approves is what the activation re-derives.
+        self.run_due_timers(&id, deadline);
         let index = node
             .strip_prefix("node_")
             .and_then(|s| s.parse::<usize>().ok())
@@ -5804,6 +6085,7 @@ impl Host {
         let policy = self.policy_for_target(&id);
         loop {
             self.pump_surfaces(deadline);
+            self.run_due_timers(&id, deadline);
             let target = self.target_mut(&id)?;
             let revision = Self::revision(target, deadline, &policy)?;
             if revision >= expected {
@@ -5817,9 +6099,20 @@ impl Host {
                 )
                 .scoped("target", &id));
             }
-            // Only queued microtasks and fetch settlements, both served by
-            // the revision poll above, can still change the revision.
-            std::thread::sleep(Duration::from_millis(5));
+            // Queued microtasks and fetch settlements are served by the poll
+            // above; a pending timer has a due time, so the wait sleeps until
+            // the earliest of it, the deadline and the poll interval rather
+            // than always the interval.
+            let now = Instant::now();
+            let next = self
+                .target_mut(&id)
+                .ok()
+                .and_then(|target| target.timers.next_due())
+                .filter(|due| *due > now)
+                .map(|due| due.duration_since(now))
+                .unwrap_or(Duration::from_millis(5));
+            let remaining = deadline.saturating_duration_since(now);
+            std::thread::sleep(next.min(Duration::from_millis(5)).min(remaining));
         }
     }
 
@@ -5892,6 +6185,9 @@ impl Host {
                         let lifetime = self.lifetimes.get(&target.id).copied().unwrap_or_default();
                         json!({"target":target.id,"network":lifetime.to_json(&target.budget)})
                     }).collect::<Vec<_>>()},
+                "timers":self.timer_counters.to_json(
+                    self.targets.values().map(|t| t.timers.len()).sum(),
+                    self.targets.len()),
                 "frames":{"objects":frame_objects,"object_limit":MAX_TARGETS * MAX_FRAMES_PER_TARGET,"frames_per_target":MAX_FRAMES_PER_TARGET,"skipped_total":frames_skipped_total},
                 "realms":{"objects":frame_objects,"retired_total":self.realms_retired_total,"navigations_total":self.navigations_total},
                 "adapters":{"objects":self.adapters.len(),"object_limit":MAX_ADAPTERS,"detached_total":self.adapters_detached_total},
@@ -6000,6 +6296,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut court_child_build_failure = false;
     let mut court_revision_base = 0u64;
     let mut court_frame_counter = 0u64;
+    let mut court_timer_handle = 0u64;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -6045,6 +6342,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             "--court-frame-counter" => {
                 court_frame_counter = pair[1].parse::<u64>().unwrap_or_else(|_| usage())
+            }
+            "--court-timer-handle" => {
+                court_timer_handle = pair[1].parse::<u64>().unwrap_or_else(|_| usage())
             }
             "--surface-court-snapshot-arm" => {
                 if !matches!(
@@ -6137,6 +6437,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_target: 0,
         next_frame: 0,
         next_realm: 0,
+        timer_counters: TimerCounters::default(),
         ended_frames: Vec::new(),
         realms_retired_total: 0,
         navigations_total: 0,
@@ -6169,6 +6470,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         court_child_build_failure,
         court_revision_base,
         court_frame_counter,
+        court_timer_handle,
         surface_snapshot_arm,
         surface_court_gc,
         surface_visual,
@@ -6745,6 +7047,7 @@ mod revision_tests {
             scroll_y: 0,
             children: Vec::new(),
             frames_skipped: [0; FRAME_SKIP_REASONS.len()],
+            timers: Timers::default(),
         };
         for (index, counter) in counters.iter().enumerate() {
             target.children.push(ChildFrame {
