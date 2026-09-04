@@ -1069,7 +1069,6 @@ mod tests {
 
     #[test]
     fn painter_rows_follow_scroll_and_hit_map() {
-        let _guard = crate::frame_region::test_lock();
         let nodes = vec![
             (
                 "node_1".to_owned(),
@@ -1143,7 +1142,9 @@ mod tests {
     #[cfg(target_os = "macos")]
     #[test]
     fn failed_shows_unmap_the_frame_and_reap_the_child() {
-        let _guard = crate::frame_region::test_lock();
+        // No lock: what this test proves about the mapping is proven on the
+        // painting's own region through its witness, so nothing another test
+        // or thread maps can move it. The process counters are lower bounds.
         let nodes = vec![("node_1".to_owned(), "text".to_owned(), "x".to_owned())];
         let size = FrameSize::parse("128x128").unwrap();
         // Three different failures, counted three different ways. Every child
@@ -1160,11 +1161,13 @@ mod tests {
         ] {
             let before = crate::frame_region::counters();
             let mut stats = Stats::default();
-            let painting = paint(&nodes, 0, 1, size).unwrap();
-            assert_eq!(
-                crate::frame_region::counters().regions_mapped_total,
-                before.regions_mapped_total + 1
+            let mut painting = paint(&nodes, 0, 1, size).unwrap();
+            let witness = painting.pixels.witness();
+            assert!(
+                crate::frame_region::counters().regions_mapped_total > before.regions_mapped_total,
+                "at least this frame was mapped"
             );
+            assert_eq!(witness.load(std::sync::atomic::Ordering::SeqCst), 0);
             let started = Instant::now();
             let result = Process::spawn(
                 Path::new(binary),
@@ -1216,12 +1219,13 @@ mod tests {
                 }
             }
             drop(painting);
-            let after = crate::frame_region::counters();
             assert_eq!(
-                after.regions_unmapped_total,
-                before.regions_unmapped_total + 1
+                witness.load(std::sync::atomic::Ordering::SeqCst),
+                1,
+                "{binary}: this frame's mapping was unmapped exactly once"
             );
-            assert_eq!(after.regions_mapped_total, before.regions_mapped_total + 1);
+            let after = crate::frame_region::counters();
+            assert!(after.regions_unmapped_total > before.regions_unmapped_total);
         }
     }
 

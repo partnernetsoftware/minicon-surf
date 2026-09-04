@@ -125,6 +125,11 @@ pub struct FrameRegion {
     base: std::ptr::NonNull<u8>,
     bytes: usize,
     mapped: usize,
+    /// Test builds only: a witness this one region reports its own unmap to,
+    /// so a test proves *this* object's lifetime instead of reading counters
+    /// every mapping in the process moves. It changes no product layout.
+    #[cfg(test)]
+    witness: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
 }
 
 // SAFETY: the mapping is private to this value; the pointer is only ever
@@ -157,6 +162,8 @@ impl FrameRegion {
             base: std::ptr::NonNull::new(base.cast::<u8>()).ok_or(RegionError::Os(0))?,
             bytes,
             mapped,
+            #[cfg(test)]
+            witness: None,
         })
     }
 
@@ -241,6 +248,10 @@ impl Drop for FrameRegion {
         }
         REGIONS_UNMAPPED_TOTAL.fetch_add(1, Ordering::SeqCst);
         UNMAPPED_BYTES_TOTAL.fetch_add(self.mapped as u64, Ordering::SeqCst);
+        #[cfg(test)]
+        if let Some(witness) = &self.witness {
+            witness.fetch_add(1, Ordering::SeqCst);
+        }
     }
 }
 
@@ -256,9 +267,15 @@ impl fmt::Debug for FrameRegion {
 }
 
 #[cfg(test)]
-pub(crate) fn test_lock() -> std::sync::MutexGuard<'static, ()> {
-    static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-    LOCK.lock().unwrap_or_else(|poisoned| poisoned.into_inner())
+impl FrameRegion {
+    /// Attach a witness this region reports its own unmap to. The witness is
+    /// this object's alone, so nothing another thread or another module's
+    /// test maps can move it.
+    pub(crate) fn witness(&mut self) -> std::sync::Arc<std::sync::atomic::AtomicUsize> {
+        let witness = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        self.witness = Some(std::sync::Arc::clone(&witness));
+        witness
+    }
 }
 
 #[cfg(all(test, target_os = "macos"))]
@@ -267,10 +284,7 @@ mod tests {
 
     #[test]
     fn lengths_are_checked_and_bounded() {
-        // This test maps and drops a region too, so it takes the same lock:
-        // the counters below are process-global and every test that moves
-        // them is serialised against every test that reads them.
-        let _guard = test_lock();
+        // No lock and no counter claim: this test is about the length rules.
         let (bytes, mapped) = lengths(FrameSize::DEFAULT).unwrap();
         assert_eq!(bytes, 640 * 400 * 4);
         assert!(mapped >= bytes && mapped - bytes < page_size() && mapped % page_size() == 0);
@@ -308,23 +322,21 @@ mod tests {
 
     #[test]
     fn map_write_and_unmap_exactly_once() {
-        let _guard = test_lock();
+        // No lock, and none needed: every exact claim below is about this one
+        // region, proven by a witness only this region can move. The process
+        // counters are read as lower bounds, because any other test, thread or
+        // module may be mapping at the same time.
         let before = counters();
-        // The counters are process-global and monotonic, so they are read as
-        // lower bounds. What this test owns is one region, and what it proves
-        // exactly is that region's own lifetime: the live difference rises by
-        // one while it is alive and returns to where it was when it is gone.
-        let live_before = before.regions_mapped_total - before.regions_unmapped_total;
         let mut region = FrameRegion::map(FrameSize::parse("128x128").unwrap()).unwrap();
-        let after_map = counters();
-        assert!(
-            after_map.regions_mapped_total > before.regions_mapped_total,
-            "a map is at least one map"
-        );
+        let witness = region.witness();
         assert_eq!(
-            after_map.regions_mapped_total - after_map.regions_unmapped_total,
-            live_before + 1,
-            "exactly this region is live"
+            witness.load(Ordering::SeqCst),
+            0,
+            "a live region has not been unmapped"
+        );
+        assert!(
+            counters().regions_mapped_total > before.regions_mapped_total,
+            "at least this map happened"
         );
         assert_eq!(region.frame_len(), 128 * 128 * 4);
         assert!(
@@ -339,61 +351,62 @@ mod tests {
         assert!(region.touched_bytes() >= untouched);
         assert!(region.touched_bytes() <= region.mapped_len());
         let mapped = region.mapped_len() as u64;
+        let before_drop = counters();
         drop(region);
+        assert_eq!(
+            witness.load(Ordering::SeqCst),
+            1,
+            "unmapped exactly once, whatever else the process did"
+        );
         let after_drop = counters();
         assert!(
-            after_drop.regions_unmapped_total > after_map.regions_unmapped_total,
-            "the drop unmapped at least this region"
+            after_drop.regions_unmapped_total > before_drop.regions_unmapped_total,
+            "the counters advanced by at least this unmap"
         );
-        assert!(
-            after_drop.unmapped_bytes_total >= after_map.unmapped_bytes_total + mapped,
-            "and returned at least its mapped bytes"
-        );
-        assert_eq!(
-            after_drop.regions_mapped_total - after_drop.regions_unmapped_total,
-            live_before,
-            "nothing of this region is left live: unmapped exactly once"
-        );
+        assert!(after_drop.unmapped_bytes_total >= before_drop.unmapped_bytes_total + mapped);
     }
 
-    /// The same property under parallel stress: many regions mapped and
-    /// dropped from several threads leave the live difference exactly where
-    /// they found it, and each counter advances by at least what was done.
+    /// The same claim under heavy parallel stress, still object-local: every
+    /// region carries its own witness and every witness reads exactly one.
     #[test]
-    fn parallel_maps_and_drops_conserve_the_live_difference() {
-        let _guard = test_lock();
+    fn parallel_maps_and_drops_each_unmap_exactly_once() {
+        const THREADS: usize = 8;
+        const EACH: usize = 64;
         let before = counters();
-        let live_before = before.regions_mapped_total - before.regions_unmapped_total;
-        const THREADS: u64 = 4;
-        const EACH: u64 = 16;
         let mut handles = Vec::new();
         for _ in 0..THREADS {
             handles.push(std::thread::spawn(|| {
                 let size = FrameSize::parse("64x64").expect("a size");
+                let mut witnesses = Vec::with_capacity(EACH);
                 for _ in 0..EACH {
                     let mut region = FrameRegion::map(size).expect("a region");
+                    let witness = region.witness();
                     region.as_mut_slice()[0] = 7;
                     assert_eq!(region.as_slice()[0], 7);
+                    assert_eq!(witness.load(Ordering::SeqCst), 0, "still live");
                     drop(region);
+                    witnesses.push(witness);
                 }
+                witnesses
             }));
         }
+        let mut unmapped = 0usize;
         for handle in handles {
-            handle.join().expect("a thread");
+            for witness in handle.join().expect("a thread") {
+                assert_eq!(
+                    witness.load(Ordering::SeqCst),
+                    1,
+                    "every region reported its own unmap exactly once"
+                );
+                unmapped += 1;
+            }
         }
+        assert_eq!(unmapped, THREADS * EACH);
         let after = counters();
         assert!(
-            after.regions_mapped_total >= before.regions_mapped_total + THREADS * EACH,
-            "every region was mapped"
+            after.regions_mapped_total >= before.regions_mapped_total + unmapped as u64,
+            "the process counters advanced by at least what this test did"
         );
-        assert!(
-            after.regions_unmapped_total >= before.regions_unmapped_total + THREADS * EACH,
-            "and every one of them was unmapped"
-        );
-        assert_eq!(
-            after.regions_mapped_total - after.regions_unmapped_total,
-            live_before,
-            "none of them leaked and none was unmapped twice"
-        );
+        assert!(after.regions_unmapped_total >= before.regions_unmapped_total + unmapped as u64);
     }
 }
