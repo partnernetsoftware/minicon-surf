@@ -728,7 +728,10 @@ and `browser.disconnect`; `target.page()` and every puppeteer Page API are
 outside the claim because their initialization needs the `-32601` methods.
 No Chromium, Electron or Playwright statement follows from any of this.
 
-Reproduction (the client package lives under the ignored `target/labs/d4`):
+Reproduction (the client package lives under the ignored `target/labs/d4`;
+it is installed there from the pinned version and its integrity is the one
+in the qualification matrix, so a machine that has the package in its npm
+cache can restore it offline):
 
 ```sh
 python3 labs/native-dom/cdp-frame-tree-court.py \
@@ -1783,7 +1786,7 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 | `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
-| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, `native-dom-control-0.0.2-surface-snapshot-attribution` | the host with the G3 surface process, the surface-owned mmap frame region and the court-only stage log, host `32343eb5…` (`surface_sha256` names the child binary); these three are visual runs recorded before the headless rule and are not rerun | the current build (host `925d062b…`, child `8e9e51e2…`: the replay child's frame-relative bound, the typed wait attribution and the close allowlist) carries exactly two receipts, `native-dom-control-0.0.2-surface-headless` (17/17) and `-surface-paired-causal` (arm B only), both rerun on it. Everything else is older-build evidence and is not presented as current: `-profile`, `-frame-realm`, `-https` and `-secure-cookie` were last run on `69778384…`, and `-cdp-frame-tree` on `a69992be…`, that court being unrunnable on this machine since its pinned Node client modules under `target/labs/d4` were removed and cannot be reinstalled offline. The surface court is visual and waits for a by-hand opted-in run | the journeys (27/27, 35/35 under both allocators) were rerun on the headless rule build |
+| `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, `native-dom-control-0.0.2-surface-snapshot-attribution` | the host with the G3 surface process, the surface-owned mmap frame region and the court-only stage log, host `32343eb5…` (`surface_sha256` names the child binary); these three are visual runs recorded before the headless rule and are not rerun | the current build (host `925d062b…`, child `8e9e51e2…`: the replay child's frame-relative bound, the typed wait attribution and the close allowlist) carries three receipts rerun on it, `native-dom-control-0.0.2-surface-headless` (17/17), `-surface-paired-causal` (arm B only) and `-cdp-frame-tree` (58/58, its pinned `puppeteer-core 24.15.0` client restored offline from the local npm cache under the ignored `target/labs/d4`, integrity equal to `cdp-qualification-0.0.1.json`, on Node.js v26.7.0). The rest is older-build evidence and is not presented as current: `-profile`, `-frame-realm`, `-https` and `-secure-cookie` were last run on `69778384…`. The surface court is visual and waits for a by-hand opted-in run | the journeys (27/27, 35/35 under both allocators) were rerun on the headless rule build |
 
 ## Findings against product contracts
 
