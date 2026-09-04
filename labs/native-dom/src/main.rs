@@ -226,19 +226,28 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
   // A successful action changes observable state, so the revision advances
   // once. Writing a value is not a DOM mutation, so the observer would not
   // notice it; if the page's own handlers already advanced it, that stands.
+  // A refusal never advances it, and neither does a canceled default on its
+  // own: only what the handlers really changed does.
   const startRevision = s.revision;
-  const advance = (outcome) => {{
-    if (s.revision === startRevision) s.revision = startRevision + 1;
+  const settle = (outcome) => {{
+    if (outcome.applied && s.revision === startRevision) s.revision = startRevision + 1;
     return JSON.stringify(outcome);
   }};
+  const refuse = (reason) => JSON.stringify({{ unsupported: true, reason }});
   const t = el.tagName.toLowerCase();
   const type = (el.type || "").toLowerCase();
   const isCheck = t === "input" && /^(checkbox|radio)$/.test(type);
-  const isText = t === "textarea" || (t === "input" && /^(text|search|url|tel|email|number)$/.test(type));
+  const isLine = t === "input" && /^(text|search|url|tel|email|number)$/.test(type);
+  const isText = t === "textarea" || isLine;
   const isButton = t === "button" || (t === "input" && /^(button|submit|reset)$/.test(type));
+  const isSubmitter = (t === "button" && (type === "submit" || type === "")) || (t === "input" && type === "submit");
   // Every refusal happens here, before anything is written.
-  if (el.disabled) return JSON.stringify({{ unsupported: true, reason: "control_disabled" }});
-  const fire = (name, cancelable) => el.dispatchEvent(new Event(name, {{ bubbles: true, cancelable: !!cancelable }}));
+  if (el.disabled) return refuse("control_disabled");
+  const fire = (name, cancelable) => {{
+    const ev = new Event(name, {{ bubbles: true, cancelable: !!cancelable }});
+    el.dispatchEvent(ev);
+    return ev.defaultPrevented;
+  }};
   const enc = (v) => encodeURIComponent(String(v)).replace(/%20/g, "+")
     .replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
   const serialize = (form, submitter) => {{
@@ -264,73 +273,90 @@ fn form_action_script(revision: u64, index: usize, action: &str) -> String {
   }};
   const submitForm = (form, submitter) => {{
     const method = String(form.getAttribute("method") || "get").toLowerCase();
-    if (method !== "get") return JSON.stringify({{ unsupported: true, reason: "form_method_unsupported" }});
+    if (method !== "get") return refuse("form_method_unsupported");
     const ev = new Event("submit", {{ bubbles: true, cancelable: true }});
     form.dispatchEvent(ev);
-    if (ev.defaultPrevented) return advance({{ applied: true, role: "form" }});
+    // A canceled submit is not applied: no navigation begins. Whatever the
+    // handler changed stays, and the revision it moved stays moved.
+    if (ev.defaultPrevented) return JSON.stringify({{ applied: false, default_prevented: true, role: "form" }});
     const query = serialize(form, submitter);
-    const action = form.getAttribute("action");
-    const base = action === null || action === "" ? "" : action;
-    return advance({{ navigate: base + (query ? "?" + query : ""), role: "form", current: !base }});
+    const target = form.getAttribute("action");
+    const base = target === null || target === "" ? "" : target;
+    return settle({{ navigate: base + (query ? "?" + query : ""), applied: true, role: "form", current: !base }});
   }};
   if (action.kind === "set_value") {{
-    if (!isText) return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
-    if (el.readOnly) return JSON.stringify({{ unsupported: true, reason: "control_read_only" }});
+    if (!isText) return refuse("role_mismatch");
+    if (el.readOnly) return refuse("control_read_only");
     el.value = action.value;
     fire("input", false);
     fire("change", false);
-    return advance({{ applied: true, role: "textbox", value_bytes: action.value.length }});
+    // The host counts the bytes from its own validated string; the realm
+    // reports no length, because its idea of length is not the contract's.
+    return settle({{ applied: true, role: "textbox" }});
   }}
   if (action.kind === "set_checked") {{
-    if (!isCheck) return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    if (!isCheck) return refuse("role_mismatch");
+    const before = !!el.checked;
     el.checked = action.checked;
-    fire("click", true);
+    if (fire("click", true)) {{
+      // Canceled: the state goes back and no change is fired.
+      el.checked = before;
+      return JSON.stringify({{ applied: false, default_prevented: true, role: type }});
+    }}
     fire("change", false);
-    return advance({{ applied: true, role: type }});
+    return settle({{ applied: true, role: type }});
   }}
   if (action.kind === "select_option") {{
-    if (t !== "select") return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    if (t !== "select") return refuse("role_mismatch");
     const options = el.options;
     if (action.index >= options.length) return JSON.stringify({{ absent: true, reason: "option_out_of_range" }});
-    if (options[action.index].disabled) return JSON.stringify({{ unsupported: true, reason: "option_disabled" }});
+    if (options[action.index].disabled) return refuse("option_disabled");
     el.selectedIndex = action.index;
     fire("change", false);
-    return advance({{ applied: true, role: "select" }});
+    return settle({{ applied: true, role: "select" }});
   }}
   if (action.kind === "submit") {{
     const form = t === "form" ? el : el.form;
-    if (!form) return JSON.stringify({{ unsupported: true, reason: "role_mismatch" }});
+    if (!form) return refuse("role_mismatch");
     return submitForm(form, t === "form" ? null : el);
   }}
   if (action.kind === "press") {{
-    const key = action.key === "space" ? " " : "Enter";
+    // The closed activation matrix. Anything outside it is refused before a
+    // single event is dispatched and before the revision can move.
+    const enter = action.key === "enter";
+    const allowed = enter
+      ? ((t === "a" && el.hasAttribute("href")) || isButton || isLine)
+      : (isButton || isCheck);
+    if (!allowed) return refuse("key_role_unsupported");
+    if (enter && isLine && !el.form) return refuse("key_role_unsupported");
     for (const name of ["keydown", "keypress", "keyup"]) {{
       const ev = new Event(name, {{ bubbles: true, cancelable: true }});
-      ev.key = key;
+      ev.key = enter ? "Enter" : " ";
       el.dispatchEvent(ev);
     }}
-    if (action.key === "space" && isCheck) {{
-      el.checked = !el.checked;
-      fire("click", true);
+    if (!enter && isCheck) {{
+      const before = !!el.checked;
+      el.checked = !before;
+      if (fire("click", true)) {{
+        el.checked = before;
+        return JSON.stringify({{ applied: false, default_prevented: true, role: type }});
+      }}
       fire("change", false);
-      return advance({{ applied: true, role: type }});
+      return settle({{ applied: true, role: type }});
     }}
     if (isButton) {{
-      const form = el.form;
-      if (form && type === "submit") return submitForm(form, el);
-      el.click();
-      return advance({{ applied: true, role: "button" }});
+      if (enter && isSubmitter && el.form) return submitForm(el.form, el);
+      if (fire("click", true)) return JSON.stringify({{ applied: false, default_prevented: true, role: "button" }});
+      if (type === "reset" && el.form) el.form.reset();
+      return settle({{ applied: true, role: "button" }});
     }}
-    if (action.key === "enter" && t === "a" && el.hasAttribute("href")) {{
-      const ev = new Event("click", {{ bubbles: true, cancelable: true }});
-      el.dispatchEvent(ev);
-      if (ev.defaultPrevented) return advance({{ applied: true, role: "link" }});
-      return advance({{ navigate: el.getAttribute("href"), role: "link" }});
+    if (enter && t === "a") {{
+      if (fire("click", true)) return JSON.stringify({{ applied: false, default_prevented: true, role: "link" }});
+      return settle({{ navigate: el.getAttribute("href"), applied: true, role: "link" }});
     }}
-    if (action.key === "enter" && isText && el.form) return submitForm(el.form, null);
-    return advance({{ applied: true, role: t }});
+    return submitForm(el.form, null);
   }}
-  return JSON.stringify({{ unsupported: true, reason: "action_unsupported" }});
+  return refuse("action_unsupported");
 }})()"#
     )
 }
@@ -4001,6 +4027,20 @@ impl Host {
     /// failure the target keeps its document, realm, generation and
     /// revision, and only the network budget records the attempt.
     fn navigate(&mut self, id: &str, href: &str, deadline: Instant) -> Result<Value, ControlError> {
+        self.navigate_with(id, href, deadline, false)
+    }
+
+    /// `sensitive` marks a navigation whose address carries page data, which
+    /// is a form's serialised query. Its failures are diagnosed by their typed
+    /// reason and the identity alone: no address, no query, no free text that
+    /// could hold either.
+    fn navigate_with(
+        &mut self,
+        id: &str,
+        href: &str,
+        deadline: Instant,
+        sensitive: bool,
+    ) -> Result<Value, ControlError> {
         let policy = self.policy_for_target(id);
         {
             let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
@@ -4145,6 +4185,24 @@ impl Host {
                 let realm = target.realm_id.clone();
                 let lifetime = self.lifetimes.entry(id.to_owned()).or_default();
                 lifetime.navigation_refusals = lifetime.navigation_refusals.saturating_add(1);
+                if sensitive {
+                    // Only the typed reason and the identity survive, and the
+                    // reason is a fixed vocabulary the host itself wrote.
+                    let reason = error
+                        .details
+                        .as_ref()
+                        .and_then(|details| details.get("reason"))
+                        .and_then(Value::as_str)
+                        .unwrap_or("navigation_failed")
+                        .to_owned();
+                    let message = "the form submission did not navigate";
+                    return Err(ControlError::new(error.code, message, error.retryable)
+                        .scoped("target", id)
+                        .details(json!({
+                            "navigation":"failed","redacted":true,"reason":reason,
+                            "generation":generation,"realm":realm,
+                        })));
+                }
                 let mut details = error.details.clone().unwrap_or_else(|| json!({}));
                 details["navigation"] = json!("failed");
                 details["href"] = json!(href);
@@ -4369,6 +4427,12 @@ impl Host {
         // the click and nothing else; nothing is inferred from the shape.
         let kind = string_field(action, "kind")?.to_owned();
         let form_action = kind != "click";
+        // The host counts UTF-8 bytes from its own validated string. The
+        // realm's idea of length is UTF-16 code units and is never trusted.
+        let value_bytes = action
+            .get("value")
+            .and_then(Value::as_str)
+            .map(|value| value.len() as u64);
         if form_action && version != VERSION_NEXT {
             return Err(invalid(
                 "this action is not part of the control version it names",
@@ -4470,7 +4534,9 @@ impl Host {
                 .scoped("target", &id)
                 .details(json!({"reason": "submitted_url_bytes"})));
             }
-            let navigated = self.navigate(&id, &href, deadline);
+            // A form's query is page data: this navigation is diagnosed in
+            // sensitive mode, so no href, URL or query reaches an error.
+            let navigated = self.navigate_with(&id, &href, deadline, form_action);
             self.audit_action(
                 &id,
                 &kind,
@@ -4490,6 +4556,20 @@ impl Host {
             }
             return Ok(navigated);
         }
+        if outcome.get("default_prevented").and_then(Value::as_bool) == Some(true) {
+            // The page canceled the default. The events were dispatched and
+            // any handler effects stand, so the revision is read again and
+            // reported; the action's own effect did not happen.
+            let after = Self::revision(target, deadline, &policy)?;
+            self.audit_action(&id, &kind, "default_prevented", value_bytes);
+            let mut result = json!({"kind":"action","target":id,"revision":after,
+                                    "applied":false,"default_prevented":true});
+            if form_action {
+                result["action"] = json!(kind);
+                result["role"] = outcome.get("role").cloned().unwrap_or(json!(null));
+            }
+            return Ok(result);
+        }
         if outcome.get("applied").and_then(Value::as_bool) != Some(true) {
             return Err(
                 ControlError::new("internal", "engine did not confirm the action", false)
@@ -4497,7 +4577,6 @@ impl Host {
             );
         }
         let after = Self::revision(target, deadline, &policy)?;
-        let value_bytes = outcome.get("value_bytes").and_then(Value::as_u64);
         self.audit_action(&id, &kind, "applied", value_bytes);
         let mut result = json!({"kind":"action","target":id,"revision":after,"applied":true});
         if form_action {
