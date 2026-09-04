@@ -260,7 +260,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -285,7 +285,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -310,7 +310,7 @@
      "details": {
       "reason": "download_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -335,7 +335,7 @@
      "details": {
       "reason": "scheme_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -360,7 +360,7 @@
      "details": {
       "reason": "fragment_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -413,7 +413,7 @@
      "details": {
       "reason": "target_cross_frame"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -438,7 +438,7 @@
      "details": {
       "reason": "target_cross_frame"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -463,7 +463,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -488,7 +488,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -513,7 +513,7 @@
      "details": {
       "reason": "download_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -538,7 +538,7 @@
      "details": {
       "reason": "scheme_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -563,7 +563,7 @@
      "details": {
       "reason": "fragment_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -589,7 +589,7 @@
      "details": {
       "reason": "base_target_unmodeled"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_7",
@@ -663,7 +663,7 @@
      "details": {
       "reason": "form_method_unsupported"
      },
-     "message": "this action does not apply to that control",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_8",
@@ -678,6 +678,209 @@
    "check": "[system] a formaction is honoured rather than ignored",
    "detail": {
     "url_tail": "child-landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the main frame a absent target under a base is base_target_unmodeled",
+   "detail": {
+    "activation": "base_target_unmodeled"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the main frame a exact target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the main frame a spaces target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the main frame the eb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the main frame the efb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an empty target navigates the main frame itself",
+   "detail": {
+    "tail": "landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the child frame a absent target under a base is base_target_unmodeled",
+   "detail": {
+    "activation": "base_target_unmodeled"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the child frame a exact target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the child frame a spaces target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the child frame the eb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] in the child frame the efb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an empty target navigates the child frame itself",
+   "detail": {
+    "tail": "landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a wsjs link is scheme_unsupported despite its whitespace and case",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and clicking it is refused scheme_unsupported before any event",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a wsfrag link is fragment_unsupported despite its whitespace and case",
+   "detail": {
+    "activation": "fragment_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and clicking it is refused fragment_unsupported before any event",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "fragment_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the wfb submitter's action is refused for its scheme",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and pressing wfb dispatches nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the wfab submitter's action is refused for its scheme",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and pressing wfab dispatches nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a queued job that rewrites a control between the phases stops the activation",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "preflight_mismatch"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_13",
+      "kind": "target"
+     }
+    },
+    "marks": 1
    },
    "passed": true
   },
@@ -959,7 +1162,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -984,7 +1187,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -1009,7 +1212,7 @@
      "details": {
       "reason": "download_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -1034,7 +1237,7 @@
      "details": {
       "reason": "scheme_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -1059,7 +1262,7 @@
      "details": {
       "reason": "fragment_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_5",
@@ -1112,7 +1315,7 @@
      "details": {
       "reason": "target_cross_frame"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1137,7 +1340,7 @@
      "details": {
       "reason": "target_cross_frame"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1162,7 +1365,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1187,7 +1390,7 @@
      "details": {
       "reason": "target_named"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1212,7 +1415,7 @@
      "details": {
       "reason": "download_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1237,7 +1440,7 @@
      "details": {
       "reason": "scheme_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1262,7 +1465,7 @@
      "details": {
       "reason": "fragment_unsupported"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_6",
@@ -1288,7 +1491,7 @@
      "details": {
       "reason": "base_target_unmodeled"
      },
-     "message": "click requires a button or link node",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_7",
@@ -1362,7 +1565,7 @@
      "details": {
       "reason": "form_method_unsupported"
      },
-     "message": "this action does not apply to that control",
+     "message": "this host does not model that activation",
      "retryable": false,
      "scope": {
       "id": "target_8",
@@ -1377,6 +1580,209 @@
    "check": "[arena] a formaction is honoured rather than ignored",
    "detail": {
     "url_tail": "child-landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the main frame a absent target under a base is base_target_unmodeled",
+   "detail": {
+    "activation": "base_target_unmodeled"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the main frame a exact target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the main frame a spaces target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the main frame the eb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the main frame the efb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an empty target navigates the main frame itself",
+   "detail": {
+    "tail": "landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the child frame a absent target under a base is base_target_unmodeled",
+   "detail": {
+    "activation": "base_target_unmodeled"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the child frame a exact target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the child frame a spaces target under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the child frame the eb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] in the child frame the efb submitter under a base is allowed",
+   "detail": {
+    "activation": "allowed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an empty target navigates the child frame itself",
+   "detail": {
+    "tail": "landed.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a wsjs link is scheme_unsupported despite its whitespace and case",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and clicking it is refused scheme_unsupported before any event",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a wsfrag link is fragment_unsupported despite its whitespace and case",
+   "detail": {
+    "activation": "fragment_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and clicking it is refused fragment_unsupported before any event",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "fragment_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the wfb submitter's action is refused for its scheme",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and pressing wfb dispatches nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the wfab submitter's action is refused for its scheme",
+   "detail": {
+    "activation": "scheme_unsupported"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and pressing wfab dispatches nothing",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "scheme_unsupported"
+     },
+     "message": "this host does not model that activation",
+     "retryable": false,
+     "scope": {
+      "id": "target_12",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a queued job that rewrites a control between the phases stops the activation",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "preflight_mismatch"
+     },
+     "message": "this action does not apply to that control",
+     "retryable": false,
+     "scope": {
+      "id": "target_13",
+      "kind": "target"
+     }
+    },
+    "marks": 1
    },
    "passed": true
   },
@@ -1397,12 +1803,102 @@
     "revision": 1
    },
    "passed": true
+  },
+  {
+   "check": "[frame-limit] a read at the boundary still answers",
+   "detail": {
+    "revision_is_int": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[frame-limit] an action and a click that would navigate are both refused resource_limit",
+   "detail": {
+    "codes": [
+     "resource_limit",
+     "resource_limit"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[frame-limit] and nothing moved: url, generation, realm, history and budget stand",
+   "detail": {
+    "url_unchanged": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[frame-limit] a main navigation is served, because replacing the realm is the way out",
+   "detail": {
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[frame-limit-1] a read at the boundary still answers",
+   "detail": {
+    "revision_is_int": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[frame-limit-1] one below the limit an action still applies and advances by one",
+   "detail": {
+    "revision": [
+     9007199254740990,
+     9007199254740991
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[u64-limit] a read at the boundary still answers",
+   "detail": {
+    "revision_is_int": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[u64-limit] an action and a click that would navigate are both refused resource_limit",
+   "detail": {
+    "codes": [
+     "resource_limit",
+     "resource_limit"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[u64-limit] and nothing moved: url, generation, realm, history and budget stand",
+   "detail": {
+    "url_unchanged": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[u64-limit] a main navigation is refused too, because its own advance has no room",
+   "detail": {
+    "error": {
+     "code": "resource_limit",
+     "details": {
+      "reason": "revision_saturated"
+     },
+     "message": "the target's revision cannot advance any further",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
   }
  ],
- "checks_passed": 128,
- "checks_total": 128,
+ "checks_passed": 180,
+ "checks_total": 180,
  "court": "native-dom frame-aware actions (control 0.0.2)",
- "host_sha256": "9537d3ff05426556a45105174eea772fbe97dd97941399419cb63886d7b00581",
+ "host_sha256": "4af4a4a6d61e7d4122be56a12bb14eb8fb168bf097a2cd3354b002c240bbfafb",
  "limitations": [
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
   "children run no scripts, so an action in a child can never be canceled by the page",

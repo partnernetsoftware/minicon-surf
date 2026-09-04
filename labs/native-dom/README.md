@@ -648,7 +648,7 @@ revision has not moved since, that frame's own counter has not moved, and the
 index is inside what it returned. A child runs no scripts.
 
 The target's observable revision is its base plus every live frame's counter,
-saturating; a frame that ends or is replaced folds its counter into the base,
+computed once, in checked arithmetic; a frame that ends or is replaced folds its counter into the base,
 so the number never decreases. A committed navigation advances it by exactly
 one from its value at the commit; an applied action advances it by at least
 one and otherwise by whatever the page's handlers really changed; a canceled
@@ -656,7 +656,28 @@ or failed action advances only by those handler effects. In a script-free
 frame — every child is one — an applied action is exactly one and a canceled
 one is nothing. `target.wait` reads the main frame's counter and takes every
 child's from a cache, which is sound because nothing runs in a child between
-host evaluations.
+host evaluations. Two limits bound it, and neither is reached silently: a
+frame's counter is a JavaScript Number, so an action in a frame that cannot
+represent one more exact increment is refused `resource_limit` with reason
+`revision_saturated` before any event; and the target's aggregate is checked
+`u64`, where a read at the maximum is a real answer and anything that would
+have to advance past it is refused the same way. A frame at its counter limit
+can still be navigated: the replacement realm starts at zero and the fold is
+exact.
+
+Every activating action takes two phases. The first dispatches nothing: the
+realm computes the effective method, target and action — with HTML's leading
+and trailing ASCII whitespace stripped from any URL and schemes compared
+case-insensitively — and answers a fixed-vocabulary decision, the URL the
+activation would navigate to, and a signature of all of it; the host resolves
+that URL against the frame's own document and refuses a malformed resolution,
+an unsupported scheme, one over `MAX_URL_BYTES`, and for a child one that
+leaves the parent's origin. The second phase re-derives the signature from the
+document as it is then and compares it before dispatching anything, because a
+queued job can change a control's value between the two evaluations without
+moving the revision; a difference is `preflight_mismatch`. What the network
+answers — the origin's admissibility, redirects, status, media type — stays
+after the dispatch, so a failure there still keeps the page's handler effects.
 
 A link or a GET submit inside a child replaces **that child's document only**:
 the child keeps its frame id, its generation increments, its realm is replaced
@@ -671,10 +692,12 @@ snapshot says so in advance: every link, button and form carries an
 `activation` fact over the closed vocabulary `allowed`, `target_named`,
 `target_cross_frame`, `base_target_unmodeled`, `download_unsupported`,
 `scheme_unsupported`, `fragment_unsupported`, `control_disabled`,
-`form_method_unsupported`, and it never carries a target name, an href or any
+`form_method_unsupported`, `preflight_mismatch`, and it never carries a target name, an href or any
 other page text. The effective target is HTML's — the submitter's
-`formtarget`, else the form's or the link's `target`, else a `<base target>`
-which this host does not model and therefore refuses — normalised
+`formtarget`, else the form's or the link's `target`, else — only when the
+element has no target attribute at all — a `<base target>`, which this host
+does not model and therefore refuses; a present target that trims to empty is
+the element's own answer and means the current frame. Normalised
 case-insensitively, with `_parent` and `_top` allowed in the main frame, where
 they are the current context, and refused in a child. The effective method is
 the submitter's `formmethod` else the form's, and only `GET` is honoured; a

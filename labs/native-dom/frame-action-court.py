@@ -26,6 +26,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -51,6 +52,109 @@ def load_module(name, path):
 
 
 RETENTION = load_module("retention_court", Path(__file__).with_name("retention-court.py"))
+
+
+MAX_SAFE = (1 << 53) - 1
+
+
+def boundary(binary, origin, expect, tag, knobs, navigation_refused,
+             page_path="/quiet.html", safe_below=False):
+    """A host stood at a revision boundary by a court-only knob: a read still
+    answers, and anything that would have to advance is refused with the fixed
+    reason, having dispatched nothing and moved nothing."""
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-boundary-") as directory:
+        environment = {k: v for k, v in os.environ.items() if k != VISIBLE_ENV}
+        process = subprocess.Popen(
+            [binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+             "--config-dir", str(Path(directory) / "config"), "--allow-origin", origin] + knobs,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, env=environment)
+        counter = [0]
+
+        def call(operation, arguments):
+            counter[0] += 1
+            request = {"protocol": "minicon-surf.control", "version": "0.0.2",
+                       "request_id": f"req_edge_{counter[0]}", "deadline_ms": 30000,
+                       "operation": operation, "arguments": arguments}
+            check_contract.validate_request(request)
+            process.stdin.write(json.dumps(request) + "\n")
+            process.stdin.flush()
+            line = process.stdout.readline()
+            if not line:
+                raise RuntimeError(f"host exited during {operation}")
+            answer = json.loads(line)
+            check_contract.validate_response(answer)
+            return answer
+
+        def ok(operation, arguments):
+            answer = call(operation, arguments)
+            if not answer["ok"]:
+                raise RuntimeError(f"{operation} failed: {answer['error']}")
+            return answer["result"]
+
+        try:
+            try:
+                profile = ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            except RuntimeError:
+                # A host that does not know the seam cannot be stood at the
+                # boundary; that is a failure of this group, not a crash.
+                expect(tag + "the host accepts the court-only boundary seam", False,
+                       {"reason": "the host refused the knob"})
+                return
+            session = ok("session.open", {"profile": profile})["session"]
+            target = ok("target.open", {"session": session, "url": f"{origin}{page_path}"})["target"]
+            state = ok("target.inspect", {"target": target})
+            expect(tag + "a read at the boundary still answers",
+                   isinstance(state.get("revision"), int),
+                   {"revision_is_int": isinstance(state.get("revision"), int)})
+            observed = call("target.snapshot", {"target": target, "format": "semantic",
+                                                "max_bytes": 65536, "max_nodes": 64})
+            box = next((n for n in observed["result"]["nodes"] if n.get("role") == "textbox"), None)
+            link = next((n for n in observed["result"]["nodes"] if n.get("role") == "link"), None)
+            acted = call("target.act", {"target": target, "reference": box["reference"],
+                                        "action": {"kind": "set_value", "value": "court-fake-edge"}})
+            if safe_below:
+                # One increment below the limit the action still applies, and
+                # it advances by exactly one.
+                expect(tag + "one below the limit an action still applies and advances by one",
+                       acted.get("ok") and acted["result"]["applied"] is True
+                       and acted["result"]["revision"] == state["revision"] + 1,
+                       {"revision": [state["revision"], acted.get("result", {}).get("revision")]})
+                return
+            navigated = call("target.act", {"target": target, "reference": link["reference"],
+                                            "action": {"kind": "click"}})
+            still = ok("target.inspect", {"target": target})
+
+            def saturated(answer):
+                return ((not answer["ok"]) and answer["error"]["code"] == "resource_limit"
+                        and (answer["error"].get("details") or {}).get("reason") == "revision_saturated")
+
+            expect(tag + "an action and a click that would navigate are both refused resource_limit",
+                   saturated(acted) and saturated(navigated),
+                   {"codes": [a["error"]["code"] for a in (acted, navigated) if not a["ok"]]})
+            expect(tag + "and nothing moved: url, generation, realm, history and budget stand",
+                   still["url"] == state["url"]
+                   and still["frames"] == state["frames"]
+                   and still["history"] == state["history"]
+                   and still["network"] == state["network"],
+                   {"url_unchanged": still["url"] == state["url"]})
+            main_nav = call("target.navigate", {"target": target, "url": f"{origin}/landed.html"})
+            after = ok("target.inspect", {"target": target})
+            if navigation_refused:
+                expect(tag + "a main navigation is refused too, because its own advance has no room",
+                       saturated(main_nav) and after["url"] == state["url"],
+                       {"error": main_nav.get("error")})
+            else:
+                # A frame at its counter limit can still be replaced: the new
+                # realm starts at zero and the fold is exact, so a navigation
+                # is the way out rather than another refusal.
+                expect(tag + "a main navigation is served, because replacing the realm is the way out",
+                       main_nav.get("ok") and after["url"] != state["url"]
+                       and after["frames"][0]["generation"] == state["frames"][0]["generation"] + 1,
+                       {"ok": main_nav.get("ok")})
+        finally:
+            process.stdin.close()
+            process.wait(timeout=30)
 
 
 def page(title, bodies):
@@ -90,6 +194,41 @@ def main():
             network.Handler.hits.append(path)
             targets = "".join(html for html, _ in LINKS)
             pages = {
+                # A base target with an absent, an exactly empty and a
+                # whitespace-only target, plus a form and a submitter.
+                "/base-empty.html": page("Base empty", [
+                    '<base target="_blank">',
+                    '<a id="absent" href="/landed.html">absent</a>',
+                    '<a id="exact" href="/landed.html" target="">exact</a>',
+                    '<a id="spaces" href="/landed.html" target="   ">spaces</a>',
+                    '<form id="ef" method="get" action="/landed.html" target="">'
+                    '<button id="eb" type="submit">empty form target</button>'
+                    '<button id="efb" type="submit" formtarget="  ">empty formtarget</button>'
+                    '</form>']),
+                "/parent-base-empty.html": page("Parent base empty",
+                                                ['<iframe src="/base-empty.html"></iframe>']),
+                # Whitespace and case before a scheme or a fragment.
+                "/whitespace.html": page("Whitespace", [
+                    '<a id="wsjs" href="  JavaScript:void(0)  ">ws js</a>',
+                    '<a id="wsfrag" href="   #here">ws frag</a>',
+                    '<form id="wf" method="get" action="  jaVAscript:void(0)">'
+                    '<button id="wfb" type="submit">ws action</button>'
+                    '<button id="wfab" type="submit" formaction=" JAVASCRIPT:void(0) ">ws formaction</button>'
+                    '</form>']),
+                # A queued job rewrites a control between the two phases.
+                # The value the preflight reads is not the value the
+                # activation reads, deterministically and without a DOM
+                # mutation, which is the shape a queued job produces.
+                "/toctou.html": page("Toctou", [
+                    '<form id="tf" method="get" action="/landed.html">'
+                    '<input id="ti" name="q" type="text" value="before">'
+                    '<button id="tb" type="submit">Send</button></form>',
+                    '<p id="tm">no submit</p>',
+                    '<script>document.getElementById("tf").addEventListener("submit",function(){'
+                    'document.getElementById("tm").textContent="submit ran";});'
+                    'var reads=0;var box=document.getElementById("ti");'
+                    'Object.defineProperty(box,"value",{get:function(){'
+                    'reads=reads+1;return "v"+reads;}});</script>']),
                 "/parent.html": page("Parent", ['<iframe src="/child.html"></iframe>',
                                                 '<p id="pm">parent alpha</p>']),
                 "/child.html": page("Child", [
@@ -494,6 +633,92 @@ def main():
                            {"url_tail": (landed.get("url") or "").rsplit("/", 1)[-1]})
                     ok("target.close", {"target": forms})
 
+                    # 11d. An empty target overrides a base target; an absent
+                    # one does not (design §28).
+                    for page_path, kind in (("/base-empty.html", "main"),
+                                            ("/parent-base-empty.html", "child")):
+                        probe = open_page(session, page_path)
+                        arg = {} if kind == "main" else {"frame": frames(probe)[1]["frame"]}
+                        observed = snap(probe, **arg)
+                        cases = {"absent": "base_target_unmodeled", "exact": "allowed",
+                                 "spaces": "allowed"}
+                        for dom_id, want in cases.items():
+                            node = find(observed, "link", dom_id=dom_id)
+                            expect(tag + f"in the {kind} frame a {dom_id} target under a base is {want}",
+                                   node is not None and node.get("activation") == want,
+                                   {"activation": (node or {}).get("activation")})
+                        for dom_id in ("eb", "efb"):
+                            node = find(observed, "button", dom_id=dom_id)
+                            expect(tag + f"in the {kind} frame the {dom_id} submitter under a base is allowed",
+                                   node is not None and node.get("activation") == "allowed",
+                                   {"activation": (node or {}).get("activation")})
+                        # And an empty target really navigates the current frame.
+                        node = find(observed, "link", dom_id="exact")
+                        state = ok("target.inspect", {"target": probe})
+                        answer = call("target.act", {"target": probe, "reference": node["reference"],
+                                                     "action": {"kind": "click"}}) if node else {}
+                        moved = ok("target.inspect", {"target": probe})
+                        landed = (moved["url"] if kind == "main"
+                                  else str(moved["frames"][1].get("url", "")))
+                        expect(tag + f"an empty target navigates the {kind} frame itself",
+                               answer.get("ok") and landed.endswith("/landed.html")
+                               and (kind == "child" or moved["frames"][0]["generation"]
+                                    == state["frames"][0]["generation"] + 1),
+                               {"tail": landed.rsplit("/", 1)[-1]})
+                        ok("target.close", {"target": probe})
+
+                    # 11e. Whitespace and case cannot smuggle a scheme or a
+                    # fragment past the preflight.
+                    ws = open_page(session, "/whitespace.html")
+                    observed = snap(ws)
+                    for dom_id, want in (("wsjs", "scheme_unsupported"),
+                                         ("wsfrag", "fragment_unsupported")):
+                        node = find(observed, "link", dom_id=dom_id)
+                        expect(tag + f"a {dom_id} link is {want} despite its whitespace and case",
+                               node is not None and node.get("activation") == want,
+                               {"activation": (node or {}).get("activation")})
+                        state = ok("target.inspect", {"target": ws})
+                        answer = call("target.act", {"target": ws, "reference": node["reference"],
+                                                     "action": {"kind": "click"}}) if node else {}
+                        still = ok("target.inspect", {"target": ws})
+                        expect(tag + f"and clicking it is refused {want} before any event",
+                               refused(answer, "unsupported_capability", want)
+                               and still["revision"] == state["revision"]
+                               and still["url"] == state["url"],
+                               {"error": answer.get("error")})
+                    for dom_id in ("wfb", "wfab"):
+                        node = find(observed, "button", dom_id=dom_id)
+                        expect(tag + f"the {dom_id} submitter's action is refused for its scheme",
+                               node is not None and node.get("activation") == "scheme_unsupported",
+                               {"activation": (node or {}).get("activation")})
+                        state = ok("target.inspect", {"target": ws})
+                        answer = call("target.act", {"target": ws, "reference": node["reference"],
+                                                     "action": {"kind": "press", "key": "enter"}}) if node else {}
+                        still = ok("target.inspect", {"target": ws})
+                        expect(tag + f"and pressing {dom_id} dispatches nothing",
+                               refused(answer, "unsupported_capability", "scheme_unsupported")
+                               and still["revision"] == state["revision"],
+                               {"error": answer.get("error")})
+                    ok("target.close", {"target": ws})
+
+                    # 11f. A job that runs between the phases cannot change
+                    # what the host approved.
+                    toc = open_page(session, "/toctou.html")
+                    observed = snap(toc)
+                    button = find(observed, "button", dom_id="tb")
+                    state = ok("target.inspect", {"target": toc})
+                    answer = call("target.act", {"target": toc, "reference": button["reference"],
+                                                 "action": {"kind": "press", "key": "enter"}})
+                    marks = [n.get("name") for n in nodes_of(snap(toc)) if n.get("role") == "text"]
+                    still = ok("target.inspect", {"target": toc})
+                    expect(tag + "a queued job that rewrites a control between the phases stops the activation",
+                           refused(answer, "unsupported_capability", "preflight_mismatch")
+                           and not any("submit ran" in (m or "") for m in marks)
+                           and still["url"] == state["url"]
+                           and still["frames"][0]["generation"] == state["frames"][0]["generation"],
+                           {"error": answer.get("error"), "marks": len(marks)})
+                    ok("target.close", {"target": toc})
+
                     # 12. The main frame's handler revision behaviour is preserved.
                     handler = open_page(session, "/handler.html")
                     observed = snap(handler)
@@ -527,6 +752,12 @@ def main():
                     ok("target.close", {"target": quiet})
                 finally:
                     host.finish()
+        boundary(args.binary, origin, expect, "[frame-limit] ",
+                 ["--court-frame-counter", str(MAX_SAFE)], False)
+        boundary(args.binary, origin, expect, "[frame-limit-1] ",
+                 ["--court-frame-counter", str(MAX_SAFE - 1)], False, safe_below=True)
+        boundary(args.binary, origin, expect, "[u64-limit] ",
+                 ["--court-revision-base", str((1 << 64) - 1)], True)
     finally:
         server.shutdown()
 

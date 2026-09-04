@@ -877,3 +877,34 @@ trim, then judge — so the rule is exactly:
 The same for a submitter's `formtarget`. The court carries both an
 exactly-empty and a whitespace-only falsifier, in the main frame and in a
 child, under a `<base target>`.
+
+## 29. The preflight had a time-of-check gap
+
+§26.1 claimed nothing executes between the two phases. That is true for a
+child and **false for the main frame**: `Realm::eval_staged` drains queued jobs
+before it returns, and `Target::eval` then pumps the network, so a queued
+promise job can run after the preflight answered. Such a job can write a
+control's `value` property, or an element's `action`, without mutating the
+DOM — so the revision need not move, and the second phase could serialise a
+different URL from the one the host approved. Revision equality is not a
+sufficient guard, and the design must not rely on it.
+
+**The fix: the activation phase re-derives and compares.** The preflight
+answers, besides its decision, a **signature** of the complete effective
+activation — the kind of activation, the decision, the effective method where
+one applies, and the exact URL it would navigate to including the serialised
+query. The host passes that signature back into the activation phase, which
+re-derives it from the document as it is *then* and compares, byte for byte,
+**before dispatching any event**. A difference is refused
+`unsupported_capability` with the fixed reason `preflight_mismatch`: no event,
+no write, no navigation, no revision or identity movement.
+
+The signature is page data. It is carried between the two evaluations and
+compared inside the realm; it is never logged, never audited, never put in an
+error's details and never written to a receipt. The reason is a fixed word
+from the closed vocabulary, which is all a caller learns.
+
+`preflight_mismatch` joins the closed activation vocabulary. The court gains a
+main-frame falsifier: a page whose queued microtask rewrites a control's value
+between the phases, proving that no event is dispatched, nothing navigates and
+nothing moves, while the same page without the rewrite activates normally.

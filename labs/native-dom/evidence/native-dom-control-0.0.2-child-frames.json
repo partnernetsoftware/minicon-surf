@@ -269,7 +269,7 @@
   {
    "check": "[system] M4: the footprint's growth does not accelerate over the cycles",
    "detail": {
-    "first_half": 32768,
+    "first_half": 0,
     "second_half": 16384
    },
    "passed": true
@@ -286,9 +286,9 @@
    "check": "[system] M5: the children's arm retains at most 1048576 more than the identical childless arm",
    "detail": {
     "allocator": "system",
-    "children_bytes": -573440,
-    "control_bytes": 0,
-    "excess_bytes": -573440
+    "children_bytes": 32768,
+    "control_bytes": 16384,
+    "excess_bytes": 16384
    },
    "passed": true
   },
@@ -560,8 +560,8 @@
   {
    "check": "[arena] M4: the footprint's growth does not accelerate over the cycles",
    "detail": {
-    "first_half": 0,
-    "second_half": 32768
+    "first_half": 32768,
+    "second_half": 49152
    },
    "passed": true
   },
@@ -577,9 +577,9 @@
    "check": "[arena] M5: the children's arm retains at most 1048576 more than the identical childless arm",
    "detail": {
     "allocator": "arena",
-    "children_bytes": 65536,
-    "control_bytes": 81920,
-    "excess_bytes": -16384
+    "children_bytes": 81920,
+    "control_bytes": 114688,
+    "excess_bytes": -32768
    },
    "passed": true
   },
@@ -630,7 +630,7 @@
   "child-nested"
  ],
  "court": "native-dom child frames (control 0.0.2)",
- "host_sha256": "9537d3ff05426556a45105174eea772fbe97dd97941399419cb63886d7b00581",
+ "host_sha256": "4af4a4a6d61e7d4122be56a12bb14eb8fb168bf097a2cd3354b002c240bbfafb",
  "limitations": [
   "design-frozen court: it fails until bounded child frames exist on the native route",
   "observation only: acting inside a child needs a node reference that can name a frame, which is unruled",

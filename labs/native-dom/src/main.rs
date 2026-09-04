@@ -60,6 +60,21 @@ const MAX_FRAMES_PER_TARGET: usize = 8;
 /// this width, so one id never means two nodes within one target revision and
 /// a reference taken in a child frame cannot resolve against the main one.
 const NODE_BAND: u64 = MAX_SNAPSHOT_NODES;
+/// A frame's counter lives in a JavaScript realm as a Number, so it stops
+/// representing exact increments here, long before `u64` matters.
+const MAX_SAFE_COUNTER: u64 = (1u64 << 53) - 1;
+
+/// The one refusal both limits produce, before anything is dispatched, built
+/// or fetched.
+fn saturated(id: &str) -> ControlError {
+    ControlError::new(
+        "resource_limit",
+        "the target's revision cannot advance any further",
+        false,
+    )
+    .scoped("target", id)
+    .details(json!({"reason":"revision_saturated"}))
+}
 const MAX_FIXTURE_BYTES: u64 = 1_048_576;
 const REALM_MEMORY_LIMIT: usize = 16 * 1024 * 1024;
 const REALM_STACK_LIMIT: usize = 512 * 1024;
@@ -129,17 +144,95 @@ fn location_script(url: &Url) -> String {
     )
 }
 
+/// The form serialiser and the preflight both phases share, so the URL the
+/// host approves and the URL the activation builds are produced by the same
+/// code.
+const SERIALIZE_JS: &str = r##"
+  const enc = (v) => encodeURIComponent(String(v)).replace(/%20/g, "+")
+    .replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+  const serialize = (form, submitter) => {
+    const pairs = [];
+    for (const c of form.elements.slice(0, 64)) {
+      const name = c.getAttribute("name");
+      if (!name || c.disabled) continue;
+      const ct = c.tagName.toLowerCase();
+      const ctype = (c.type || "").toLowerCase();
+      if (ct === "input" && /^(password|file)$/.test(ctype)) continue;
+      if (ct === "input" && /^(checkbox|radio)$/.test(ctype)) {
+        if (c.checked) pairs.push([name, c.getAttribute("value") ?? "on"]);
+      } else if (ct === "select") {
+        const o = c.options[c.selectedIndex];
+        if (o) pairs.push([name, o.getAttribute("value") ?? (o.textContent || "").trim()]);
+      } else if (ct === "textarea" || (ct === "input" && /^(text|search|url|tel|email|number|hidden)$/.test(ctype))) {
+        pairs.push([name, c.value ?? ""]);
+      } else if (submitter && c === submitter) {
+        pairs.push([name, c.getAttribute("value") ?? ""]);
+      }
+    }
+    return pairs.map(([k, v]) => enc(k) + "=" + enc(v)).join("&");
+  };
+  // The complete effective activation as one comparable value. The host
+  // carries it between the phases and the activation phase re-derives it, so a
+  // job that ran in between cannot change what was approved.
+  const __mcsNavigation = (el, action) => {
+    const tag = el.tagName.toLowerCase();
+    const kind = (el.type || "").toLowerCase();
+    const submits = (tag === "button" && (kind === "submit" || kind === "")) || (tag === "input" && kind === "submit");
+    if (tag === "a" && el.hasAttribute("href")) {
+      return { shape: "link", href: urlOf(el.getAttribute("href")), method: "get" };
+    }
+    let form = null;
+    let submitter = null;
+    if (tag === "form" && action.kind === "submit") { form = el; }
+    else if (submits) { form = el.form; submitter = el; }
+    else if (tag === "input" && action.kind === "press" && action.key === "enter") { form = el.form; }
+    if (!form) return { shape: "plain", href: null, method: null };
+    return __mcsFormNavigation(form, submitter);
+  };
+  const __mcsFormNavigation = (form, submitter) => {
+    const query = serialize(form, submitter);
+    const declared = actionOf(form, submitter);
+    return {
+      shape: "form",
+      method: methodOf(form, submitter),
+      href: declared + (query ? "?" + query : ""),
+    };
+  };
+  const __mcsPreflight = (el, action) => {
+    const decision = el.disabled ? "control_disabled" : activationOf(el);
+    const navigation = __mcsNavigation(el, action);
+    return {
+      decision,
+      href: navigation.href,
+      shape: navigation.shape,
+      signature: [navigation.shape, decision, navigation.method || "", navigation.href || ""].join(" "),
+    };
+  };
+"##;
+
 /// The one activation decision, shared by the snapshot that predicts it and
 /// by the scripts that enforce it. `IS_CHILD` and `HAS_BASE_TARGET` are
 /// substituted by the host, which knows both and the realm does not.
 const ACTIVATION_JS: &str = r##"
   const targetOf = (el, attr) => {
-    const raw = el.hasAttribute(attr) ? String(el.getAttribute(attr) || "").trim() : "";
-    if (raw === "") return HAS_BASE_TARGET ? "base_target_unmodeled" : "allowed";
-    const value = raw.toLowerCase();
-    if (value === "_self") return "allowed";
+    // HTML consults a base target only when the element has no target
+    // attribute at all. A present one, even empty or whitespace, is the
+    // element's own answer and means the current frame.
+    if (!el.hasAttribute(attr)) return HAS_BASE_TARGET ? "base_target_unmodeled" : "allowed";
+    const value = String(el.getAttribute(attr) || "").trim().toLowerCase();
+    if (value === "" || value === "_self") return "allowed";
     if (value === "_parent" || value === "_top") return IS_CHILD ? "target_cross_frame" : "allowed";
     return "target_named";
+  };
+  // HTML strips leading and trailing ASCII whitespace before it parses a URL,
+  // so every judgement here is made on the stripped value.
+  const urlOf = (raw) => String(raw == null ? "" : raw).replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, "");
+  const schemeDecision = (raw) => {
+    const value = urlOf(raw);
+    if (value.startsWith("#")) return "fragment_unsupported";
+    const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(value);
+    if (scheme && !/^https?$/i.test(scheme[1])) return "scheme_unsupported";
+    return "allowed";
   };
   const methodOf = (form, submitter) => {
     const raw = submitter && submitter.hasAttribute("formmethod")
@@ -147,18 +240,26 @@ const ACTIVATION_JS: &str = r##"
       : form.getAttribute("method");
     return String(raw || "get").trim().toLowerCase();
   };
+  const actionOf = (form, submitter) => {
+    const declared = submitter && submitter.hasAttribute("formaction")
+      ? submitter.getAttribute("formaction")
+      : form.getAttribute("action");
+    return urlOf(declared);
+  };
   const submitDecision = (form, submitter) => {
     if (!form) return "allowed";
     if (methodOf(form, submitter) !== "get") return "form_method_unsupported";
+    // The effective action is judged before any event, not after the submit
+    // has already been dispatched.
+    const decision = schemeDecision(actionOf(form, submitter));
+    if (decision !== "allowed") return decision;
     if (submitter && submitter.hasAttribute("formtarget")) return targetOf(submitter, "formtarget");
     return targetOf(form, "target");
   };
   const linkDecision = (el) => {
     if (el.hasAttribute("download")) return "download_unsupported";
-    const href = String(el.getAttribute("href") || "");
-    if (href.startsWith("#")) return "fragment_unsupported";
-    const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(href);
-    if (scheme && !/^https?$/i.test(scheme[1])) return "scheme_unsupported";
+    const decision = schemeDecision(el.getAttribute("href"));
+    if (decision !== "allowed") return decision;
     return targetOf(el, "target");
   };
   const activationOf = (el) => {
@@ -300,7 +401,10 @@ fn microbench_script(nested: bool) -> String {
 /// authority over form state. The host passes the action as JSON and receives
 /// a bounded outcome: applied, a navigation to perform, or a typed refusal.
 /// A value never comes back.
-fn form_action_script(
+/// Phase one of every activating action: the effective method, target and
+/// action, the URL the activation would navigate to, and a signature of all of
+/// it. Nothing is dispatched, nothing is written, no counter moves.
+fn preflight_script(
     revision: u64,
     index: usize,
     action: &str,
@@ -308,6 +412,34 @@ fn form_action_script(
     has_base_target: bool,
 ) -> String {
     let activation = activation_js(is_child, has_base_target);
+    let serializer = SERIALIZE_JS;
+    format!(
+        r#"(() => {{
+  const s = window.__mcs;
+  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  const el = s.nodes[{index}];
+  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  const action = {action};
+{activation}
+{serializer}
+  return JSON.stringify(__mcsPreflight(el, action));
+}})()"#
+    )
+}
+
+fn form_action_script(
+    revision: u64,
+    index: usize,
+    action: &str,
+    is_child: bool,
+    has_base_target: bool,
+    signature: &str,
+) -> String {
+    let activation = activation_js(is_child, has_base_target);
+    let serializer = SERIALIZE_JS;
+    let expected = serde_json::to_string(signature).expect("signature serializes");
     format!(
         r#"(() => {{
   const s = window.__mcs;
@@ -336,41 +468,22 @@ fn form_action_script(
   const isButton = t === "button" || (t === "input" && /^(button|submit|reset)$/.test(type));
   const isSubmitter = (t === "button" && (type === "submit" || type === "")) || (t === "input" && type === "submit");
 {activation}
+{serializer}
   // Every refusal happens here, before anything is written.
   if (el.disabled) return refuse("control_disabled");
-  // What the snapshot predicted, enforced: an activation this host does not
-  // model is refused before a single event is dispatched.
+  // What the preflight approved, re-derived from the document as it is now.
+  // Jobs can run between the two evaluations without moving the revision, so
+  // equality of the whole effective activation is what is checked, not the
+  // revision alone. The value is compared here and never leaves the realm.
   if (action.kind === "click" || action.kind === "press" || action.kind === "submit") {{
     const decision = activationOf(el);
     if (decision !== "allowed") return refuse(decision);
+    if (__mcsPreflight(el, action).signature !== {expected}) return refuse("preflight_mismatch");
   }}
   const fire = (name, cancelable) => {{
     const ev = new Event(name, {{ bubbles: true, cancelable: !!cancelable }});
     el.dispatchEvent(ev);
     return ev.defaultPrevented;
-  }};
-  const enc = (v) => encodeURIComponent(String(v)).replace(/%20/g, "+")
-    .replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
-  const serialize = (form, submitter) => {{
-    const pairs = [];
-    for (const c of form.elements.slice(0, 64)) {{
-      const name = c.getAttribute("name");
-      if (!name || c.disabled) continue;
-      const ct = c.tagName.toLowerCase();
-      const ctype = (c.type || "").toLowerCase();
-      if (ct === "input" && /^(password|file)$/.test(ctype)) continue;
-      if (ct === "input" && /^(checkbox|radio)$/.test(ctype)) {{
-        if (c.checked) pairs.push([name, c.getAttribute("value") ?? "on"]);
-      }} else if (ct === "select") {{
-        const o = c.options[c.selectedIndex];
-        if (o) pairs.push([name, o.getAttribute("value") ?? (o.textContent || "").trim()]);
-      }} else if (ct === "textarea" || (ct === "input" && /^(text|search|url|tel|email|number|hidden)$/.test(ctype))) {{
-        pairs.push([name, c.value ?? ""]);
-      }} else if (submitter && c === submitter) {{
-        pairs.push([name, c.getAttribute("value") ?? ""]);
-      }}
-    }}
-    return pairs.map(([k, v]) => enc(k) + "=" + enc(v)).join("&");
   }};
   const submitForm = (form, submitter) => {{
     const decision = submitDecision(form, submitter);
@@ -380,17 +493,13 @@ fn form_action_script(
     // A canceled submit is not applied: no navigation begins. Whatever the
     // handler changed stays, and the revision it moved stays moved.
     if (ev.defaultPrevented) return JSON.stringify({{ applied: false, default_prevented: true, role: "form" }});
-    const query = serialize(form, submitter);
-    // A submitter's formaction overrides the form's action and is resolved
-    // under exactly the same rules; ignoring it would submit elsewhere.
-    const declared = submitter && submitter.hasAttribute("formaction")
-      ? submitter.getAttribute("formaction")
-      : form.getAttribute("action");
-    const base = declared === null || declared === "" ? "" : declared;
+    // The same navigation the preflight approved, built by the same code and
+    // from the same submitter.
+    const navigation = __mcsFormNavigation(form, submitter);
     // A submit that navigates has exactly one observable consequence, the
     // document that replaces this one, and the navigation counts it. Settling
     // here as well would count the same event twice.
-    return JSON.stringify({{ navigate: base + (query ? "?" + query : ""), applied: true, role: "form", current: !base }});
+    return JSON.stringify({{ navigate: navigation.href, applied: true, role: "form", current: !actionOf(form, submitter) }});
   }};
   if (action.kind === "set_value") {{
     if (!isText) return refuse("role_mismatch");
@@ -485,8 +594,16 @@ fn form_action_script(
     )
 }
 
-fn act_script(revision: u64, index: usize, is_child: bool, has_base_target: bool) -> String {
+fn act_script(
+    revision: u64,
+    index: usize,
+    is_child: bool,
+    has_base_target: bool,
+    signature: &str,
+) -> String {
     let activation = activation_js(is_child, has_base_target);
+    let serializer = SERIALIZE_JS;
+    let expected = serde_json::to_string(signature).expect("signature serializes");
     format!(
         r#"(() => {{
   const s = window.__mcs;
@@ -496,9 +613,13 @@ fn act_script(revision: u64, index: usize, is_child: bool, has_base_target: bool
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
 {activation}
+{serializer}
   const t = el.tagName.toLowerCase();
   const decision = activationOf(el);
   if (decision !== "allowed") return JSON.stringify({{ unsupported: true, reason: decision }});
+  if (__mcsPreflight(el, {{ kind: "click" }}).signature !== {expected}) {{
+    return JSON.stringify({{ unsupported: true, reason: "preflight_mismatch" }});
+  }}
   if (t === "a" && el.hasAttribute("href")) {{
     const ev = new Event("click", {{ bubbles: true, cancelable: true }});
     el.dispatchEvent(ev);
@@ -1801,6 +1922,16 @@ impl Target {
 
     /// Seed the realm's cookie and storage mirrors from the working copy.
     /// The main frame first, then the bounded children in document order.
+    /// The target-global revision from a main-frame counter, checked. `None`
+    /// means it is not representable, which is refused rather than saturated:
+    /// a wrong number here would silently stop staleness from discriminating.
+    fn global_revision(&self, main_counter: u64) -> Option<u64> {
+        self.children.iter().try_fold(
+            self.revision_base.checked_add(main_counter)?,
+            |total, child| total.checked_add(child.counter),
+        )
+    }
+
     /// Live QuickJS bytes of this target's frames, the children included.
     fn realm_malloc_bytes(&self) -> usize {
         self.realm.malloc_bytes()
@@ -2153,6 +2284,12 @@ struct Host {
     /// construction fails, so the court can prove that a child that cannot be
     /// built is skipped with its fixed reason and never fails its parent.
     court_child_build_failure: bool,
+    /// Court-only (`--court-revision-base N`): every target opens with this
+    /// revision base, so the aggregate boundary is reachable.
+    court_revision_base: u64,
+    /// Court-only (`--court-frame-counter N`): every realm's counter starts
+    /// here, so the per-frame Number boundary is reachable.
+    court_frame_counter: u64,
     surface_snapshot_arm: Option<String>,
     surface_court_gc: bool,
     /// Visible windows need a double opt-in: `--visual 1` and the
@@ -2234,13 +2371,19 @@ impl Host {
             return Ok((Vec::new(), revision));
         }
         let raw = Self::eval_json_staged(target, &script, deadline, policy, stage)?;
+        // The painter observes the main frame, but the revision it reports is
+        // the target's, children included: there is one such number.
         let revision = raw
             .get("revision")
             .and_then(Value::as_u64)
-            .map(|r| target.revision_base + r)
             .ok_or_else(|| {
                 ControlError::new("internal", "snapshot lacks a revision", false)
                     .scoped("target", &target.id)
+            })
+            .and_then(|counter| {
+                target
+                    .global_revision(counter)
+                    .ok_or_else(|| saturated(&target.id))
             })?;
         if arm == Some("parse_drop") {
             drop(raw);
@@ -2627,27 +2770,52 @@ impl Host {
                         .filter(|n| *n >= 1)
                 {
                     // A surface click reaches the main frame only: the
-                    // painter paints that frame's rows and nothing else.
+                    // painter paints that frame's rows and nothing else. It
+                    // takes the same two phases as a control-door click, so a
+                    // painted row cannot activate what the door refuses.
                     let base = target.revision_base;
                     let children: u64 = target
                         .children
                         .iter()
                         .fold(0u64, |sum, child| sum.saturating_add(child.counter));
                     let has_base_target = target.base_target;
-                    if let Ok(outcome) = Self::eval_json(
+                    let counter = current.saturating_sub(base).saturating_sub(children);
+                    let preflight = Self::eval_json(
                         target,
-                        &act_script(
-                            current.saturating_sub(base).saturating_sub(children),
+                        &preflight_script(
+                            counter,
                             index - 1,
+                            "{\"kind\":\"click\"}",
                             false,
                             has_base_target,
                         ),
                         deadline,
                         &policy,
-                    ) && outcome.get("applied").and_then(Value::as_bool) == Some(true)
+                    );
+                    let approved = preflight.ok().filter(|value| {
+                        value.get("decision").and_then(Value::as_str) == Some("allowed")
+                    });
+                    let signature = approved.as_ref().and_then(|value| {
+                        value
+                            .get("signature")
+                            .and_then(Value::as_str)
+                            .map(str::to_owned)
+                    });
+                    if counter < MAX_SAFE_COUNTER
+                        && current.checked_add(1).is_some()
+                        && let Some(signature) = signature
+                        && let Ok(outcome) = Self::eval_json(
+                            target,
+                            &act_script(counter, index - 1, false, has_base_target, &signature),
+                            deadline,
+                            &policy,
+                        )
+                        && outcome.get("applied").and_then(Value::as_bool) == Some(true)
                     {
                         let after = Self::revision(target, deadline, &policy).unwrap_or(current);
                         applied = Some(("click", after));
+                    } else {
+                        self.surface_stats.stale_events_dropped_total += 1;
                     }
                 }
             }
@@ -2665,7 +2833,11 @@ impl Host {
                 if let Ok(text) = target.eval(SCROLL_REVISION_JS, deadline, &policy)
                     && let Ok(after) = text.parse::<u64>()
                 {
-                    applied = Some(("scroll", target.revision_base + after));
+                    // A scroll that cannot advance the target's revision is
+                    // dropped rather than reported with a wrong number.
+                    applied = target
+                        .global_revision(after)
+                        .map(|revision| ("scroll", revision));
                 }
             }
             _ => {}
@@ -3140,20 +3312,19 @@ impl Host {
         deadline: Instant,
         policy: &net::Policy,
     ) -> Result<u64, ControlError> {
-        let children: u64 = target
-            .children
-            .iter()
-            .fold(0u64, |sum, child| sum.saturating_add(child.counter));
         let text = target.eval(REVISION_JS, deadline, policy)?;
-        text.parse::<i64>()
+        let counter = text
+            .parse::<i64>()
             .ok()
             .filter(|r| *r >= 0)
-            .map(|r| {
-                target
-                    .revision_base
-                    .saturating_add(r as u64)
-                    .saturating_add(children)
-            })
+            .map(|r| r as u64);
+        if let Some(counter) = counter {
+            return target
+                .global_revision(counter)
+                .ok_or_else(|| saturated(&target.id));
+        }
+        counter
+            .and_then(|counter| target.global_revision(counter))
             .ok_or_else(|| {
                 ControlError::new(
                     "internal",
@@ -4184,6 +4355,17 @@ impl Host {
         }
         target.eval("__mcsComplete()", deadline, &policy)?;
         target.eval(INSTALL_JS, deadline, &policy)?;
+        // Court-only seams: they do nothing unless the knobs are given.
+        if self.court_frame_counter > 0 {
+            let seed = format!(
+                "(() => {{ window.__mcs.revision = {}; return String(window.__mcs.revision); }})()",
+                self.court_frame_counter
+            );
+            target.eval(&seed, deadline, &policy)?;
+        }
+        if self.court_revision_base > 0 && target.revision_base == 0 {
+            target.revision_base = self.court_revision_base;
+        }
         Ok(target)
     }
 
@@ -4607,6 +4789,19 @@ impl Host {
                 .details(json!({"navigation":"failed","redacted":sensitive,"reason":reason}))
         };
         let target = self.target_mut(id)?;
+        // Room for the fold, the navigation's own advance and the generation,
+        // all checked before the network is touched or a realm is built.
+        let counter = target.children[child].counter;
+        if counter >= MAX_SAFE_COUNTER
+            || target.children[child].generation.checked_add(1).is_none()
+            || target
+                .revision_base
+                .checked_add(counter)
+                .and_then(|base| base.checked_add(1))
+                .is_none()
+        {
+            return Err(saturated(id));
+        }
         // A child's href resolves against the child's own document, and the
         // origin it must stay inside is the parent document's.
         let Some(parent_url) = target.url.clone() else {
@@ -4740,8 +4935,9 @@ impl Host {
         target.children[child].realm_id = realm_id.clone();
         target.revision_base = target
             .revision_base
-            .saturating_add(folded)
-            .saturating_add(1);
+            .checked_add(folded)
+            .and_then(|base| base.checked_add(1))
+            .expect("the fold was checked before the candidate was built");
         self.realms_retired_total += 1;
         let policy = self.policy_for_target(id);
         let target = self.target_mut(id)?;
@@ -4788,6 +4984,9 @@ impl Host {
                 )
                 .scoped("target", id)),
             };
+            if current.checked_add(1).is_none() || target.generation.checked_add(1).is_none() {
+                return Err(saturated(id));
+            }
             source.map(|source| {
                 (
                     target.session_id.clone(),
@@ -5297,16 +5496,134 @@ impl Host {
             None => (false, target.base_target),
             Some(child) => (true, target.children[child].base_target),
         };
+        // Neither limit may be reached silently. A frame whose counter cannot
+        // represent one more exact increment, or a target whose global
+        // revision cannot advance, refuses here: before any preflight, any
+        // event, any fetch and any build.
+        if frame_counter >= MAX_SAFE_COUNTER || current.checked_add(1).is_none() {
+            return Err(saturated(&id));
+        }
+        let encoded =
+            serde_json::to_string(&Value::Object(action.clone())).expect("action serializes");
+        // Phase one: what this activation would do, decided without doing any
+        // of it. The signature it answers is page data and stays inside the
+        // realm; only its fixed-vocabulary decision reaches a caller.
+        let activating = matches!(kind.as_str(), "click" | "press" | "submit");
+        let mut signature = String::new();
+        if activating {
+            let script =
+                preflight_script(frame_counter, within, &encoded, is_child, has_base_target);
+            let preflight = match frame {
+                None => Self::eval_json(target, &script, deadline, &policy)?,
+                Some(child) => {
+                    let text = target.children[child].realm.eval(&script, deadline, &id)?;
+                    serde_json::from_str(&text).map_err(|_| {
+                        ControlError::new("internal", "engine returned malformed preflight", false)
+                            .scoped("target", &id)
+                    })?
+                }
+            };
+            if let Some(current) = preflight.get("current").and_then(Value::as_u64) {
+                return Err(ControlError::new(
+                    "stale_revision",
+                    "node reference revision no longer matches the target",
+                    true,
+                )
+                .scoped("target", &id)
+                .details(json!({"reference_revision":revision,"current_revision":current})));
+            }
+            if preflight.get("missing").is_some() {
+                return Err(ControlError::new("not_found", "node does not exist", false)
+                    .scoped("target", &id));
+            }
+            let decision = preflight
+                .get("decision")
+                .and_then(Value::as_str)
+                .unwrap_or("action_unsupported");
+            if decision != "allowed" {
+                self.audit_action(&id, frame, &kind, "unsupported_capability", None);
+                return Err(ControlError::new(
+                    "unsupported_capability",
+                    "this host does not model that activation",
+                    false,
+                )
+                .scoped("target", &id)
+                .details(json!({"reason": decision})));
+            }
+            signature = preflight
+                .get("signature")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_owned();
+            // Phase one, host half: the URL this activation would navigate to,
+            // judged before anything is dispatched. Its text never reaches an
+            // error, a record or a receipt.
+            if let Some(href) = preflight.get("href").and_then(Value::as_str) {
+                let target = self.target_mut(&id)?;
+                let document = match frame {
+                    None => target.url.clone(),
+                    Some(child) => target.children[child].url.clone(),
+                };
+                let origin = target.url.clone();
+                if let Some(document) = document {
+                    let Ok(resolved) = document.join(href) else {
+                        return Err(ControlError::new(
+                            "invalid_request",
+                            "the activation's address is malformed",
+                            false,
+                        )
+                        .scoped("target", &id)
+                        .details(json!({"reason":"malformed_action"})));
+                    };
+                    if !matches!(resolved.scheme(), "http" | "https") {
+                        return Err(ControlError::new(
+                            "unsupported_capability",
+                            "this host does not model that activation",
+                            false,
+                        )
+                        .scoped("target", &id)
+                        .details(json!({"reason":"scheme_unsupported"})));
+                    }
+                    if resolved.as_str().len() > MAX_URL_BYTES {
+                        self.audit_action(&id, frame, &kind, "resource_limit", None);
+                        return Err(ControlError::new(
+                            "resource_limit",
+                            "the submitted URL exceeds its bound",
+                            false,
+                        )
+                        .scoped("target", &id)
+                        .details(json!({"reason":"submitted_url_bytes"})));
+                    }
+                    // Every live child is same-origin with its parent, so an
+                    // activation that would leave that origin is refused here
+                    // rather than after the page's handlers have run.
+                    if frame.is_some()
+                        && origin.is_some_and(|parent| !net::same_origin(&parent, &resolved))
+                    {
+                        return Err(ControlError::new(
+                            "permission_denied",
+                            "an embedded document stays inside its parent's origin",
+                            false,
+                        )
+                        .scoped("target", &id)
+                        .details(json!({"reason":"cross_origin_action"})));
+                    }
+                }
+            }
+        }
+        let policy = self.policy_for_target(&id);
+        let target = self.target_mut(&id)?;
         let script = if form_action {
             form_action_script(
                 frame_counter,
                 within,
-                &serde_json::to_string(&Value::Object(action.clone())).expect("action serializes"),
+                &encoded,
                 is_child,
                 has_base_target,
+                &signature,
             )
         } else {
-            act_script(frame_counter, within, is_child, has_base_target)
+            act_script(frame_counter, within, is_child, has_base_target, &signature)
         };
         let outcome = match frame {
             None => Self::eval_json(target, &script, deadline, &policy)?,
@@ -5657,6 +5974,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut surface_frame = surface::FrameSize::DEFAULT;
     let mut surface_stages = false;
     let mut court_child_build_failure = false;
+    let mut court_revision_base = 0u64;
+    let mut court_frame_counter = 0u64;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -5697,6 +6016,12 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             "--surface-court-stages" => surface_stages = pair[1] == "1",
             "--court-child-build-failure" => court_child_build_failure = pair[1] == "1",
+            "--court-revision-base" => {
+                court_revision_base = pair[1].parse::<u64>().unwrap_or_else(|_| usage())
+            }
+            "--court-frame-counter" => {
+                court_frame_counter = pair[1].parse::<u64>().unwrap_or_else(|_| usage())
+            }
             "--surface-court-snapshot-arm" => {
                 if !matches!(
                     pair[1].as_str(),
@@ -5818,6 +6143,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface_frame,
         surface_stages,
         court_child_build_failure,
+        court_revision_base,
+        court_frame_counter,
         surface_snapshot_arm,
         surface_court_gc,
         surface_visual,
@@ -6356,6 +6683,107 @@ mod navigation_tests {
         assert_eq!(history.entries.len(), 4);
         assert_eq!(history.to_json()["can_go_forward"], json!(false));
         assert!(history.bytes() > 0 && history.bytes() < 1024 * MAX_HISTORY_ENTRIES);
+    }
+}
+
+#[cfg(test)]
+mod revision_tests {
+    use super::*;
+
+    /// A target with `children` children, each holding `counter`, on `base`.
+    fn target_with(base: u64, counters: &[u64]) -> Target {
+        let mut target = Target {
+            id: "target_1".into(),
+            session_id: "session_1".into(),
+            fixture: "court".into(),
+            url: None,
+            document_framing: "fixture",
+            fixture_bytes: 0,
+            element_count: 0,
+            script_count: 0,
+            skipped_scripts: Vec::new(),
+            budget: net::Budget::default(),
+            realm: Realm::new(RealmAllocation::System).expect("a realm"),
+            last_snapshot: None,
+            base_target: false,
+            frame_id: "frame_1".into(),
+            generation: 1,
+            realm_id: "realm_1".into(),
+            revision_base: base,
+            io: TargetIo {
+                jar: profile::Jar::default(),
+                storage: profile::Storage::default(),
+                origin: profile::OPAQUE_ORIGIN.to_owned(),
+                document_host: None,
+                cookie_rejections: 0,
+                tls: None,
+            },
+            scroll_y: 0,
+            children: Vec::new(),
+            frames_skipped: [0; FRAME_SKIP_REASONS.len()],
+        };
+        for (index, counter) in counters.iter().enumerate() {
+            target.children.push(ChildFrame {
+                id: format!("frame_{}", index + 2),
+                generation: 1,
+                realm_id: format!("realm_{}", index + 2),
+                realm: Realm::new(RealmAllocation::System).expect("a realm"),
+                counter: *counter,
+                snapshot: None,
+                base_target: false,
+                url: None,
+                bytes: 0,
+                element_count: 0,
+            });
+        }
+        target
+    }
+
+    #[test]
+    fn the_global_revision_is_the_base_plus_every_live_frame() {
+        let target = target_with(10, &[3, 4]);
+        assert_eq!(target.global_revision(5), Some(22));
+        assert_eq!(
+            target_with(0, &[]).global_revision(0),
+            Some(0),
+            "an untouched target reads zero"
+        );
+    }
+
+    #[test]
+    fn a_sum_that_would_not_fit_is_refused_rather_than_saturated() {
+        let target = target_with(u64::MAX - 1, &[1]);
+        assert_eq!(
+            target.global_revision(0),
+            Some(u64::MAX),
+            "a read at the maximum is a real answer"
+        );
+        assert_eq!(
+            target.global_revision(1),
+            None,
+            "and one past it is refused"
+        );
+        let many = target_with(u64::MAX - 3, &[1, 1, 1]);
+        assert_eq!(many.global_revision(0), Some(u64::MAX));
+        assert_eq!(
+            many.global_revision(1),
+            None,
+            "a parent replacement folding several children is checked, not saturated"
+        );
+    }
+
+    #[test]
+    fn the_frame_counter_limit_is_the_realms_and_it_comes_first() {
+        assert_eq!(MAX_SAFE_COUNTER, (1u64 << 53) - 1);
+        // The realm's Number gives out long before the host's u64, which is
+        // the whole reason there are two limits.
+        assert_eq!(u64::MAX / MAX_SAFE_COUNTER, 2048);
+        let target = target_with(0, &[]);
+        assert_eq!(
+            target.global_revision(MAX_SAFE_COUNTER),
+            Some(MAX_SAFE_COUNTER),
+            "a counter at its own limit is still an exact global revision"
+        );
     }
 }
 
