@@ -740,3 +740,77 @@ two readings was never taken. It now tests, in the main frame and in a child,
 that an explicit empty `target` and an explicit empty `formtarget` under a
 `<base target>` are `allowed` and navigate the current frame, while an absent
 target under the same base stays `base_target_unmodeled`.
+
+## 26. Third blocker: the effective action was never preflighted
+
+§23.2 says the effective method, target **and action** are audited before any
+event. Only the first two are. The realm dispatches `submit`, then builds the
+navigate URL from `formaction` or `action`, and every judgement about that URL
+— its scheme, its resolution, its byte bound, its origin — happens in the host
+*after* the page's handlers have already run. The court proved an allowed
+`formaction` is honoured and had no falsifier for a forbidden one.
+
+The same gap exists one level down in `linkDecision`: the scheme is matched
+against the raw attribute, so a value with leading whitespace — which HTML
+strips before it parses a URL — slips past the test and reaches the host as a
+`javascript:` URL, refused only after the click was dispatched.
+
+### 26.1 A preflight phase, before any event
+
+Every activating action — `click`, `press`, `submit` — is decided in two
+phases. The first dispatches nothing:
+
+1. **In the realm.** The effective method, the effective target and the
+   effective action are computed exactly as §23.2 defines them, with HTML's
+   leading and trailing ASCII whitespace stripped from any URL value before it
+   is judged and schemes compared case-insensitively. The phase answers a
+   fixed-vocabulary decision and, when the action would navigate, the URL it
+   would navigate to. No event is dispatched, nothing is written, no counter
+   moves.
+2. **In the host.** That URL is resolved against the frame's own document URL
+   and judged: a resolution that fails is `invalid_request`; a scheme that is
+   not `http`/`https` is `unsupported_capability` with `scheme_unsupported`; a
+   resolved URL over `MAX_URL_BYTES` is `resource_limit` with
+   `submitted_url_bytes`, which used to be decided after the submit had been
+   dispatched; and for a **child frame** a URL that leaves the parent
+   document's origin is `permission_denied` with `cross_origin_action`, which
+   is the invariant every live child already has to satisfy.
+
+Only if both phases pass does the second phase run: the events, the effects,
+the navigation.
+
+Because nothing executes in a realm between two host evaluations, the two
+phases see the same document. In a child, which runs no scripts, that is
+trivially true; in the main frame it holds because a realm runs only while the
+host is inside an `eval` on it, which is the same argument §15 makes for the
+counter cache.
+
+### 26.2 What stays after the dispatch, and why
+
+The origin's **admissibility under the network policy** stays where it is,
+after the submit event. It cannot be decided without resolving the name — the
+allowlist is only one of its inputs, and a non-allowlisted public address is
+legitimate — so deciding it early would mean performing a network act before
+the page's own handler had run, which is worse than the ordering it would fix,
+and would let activation timing leak the shape of an allowlist the host
+deliberately hides. Redirects, status, media type and everything else the
+network answers stay there for the same reason.
+
+So the existing rule is preserved exactly: **a failure that happens only after
+a valid preflight and a dispatched submit keeps the handler's effects**, and
+the revision they moved stays moved. That is what the form court's failed
+submit already proves, and it is a different case from a refusal, which now
+happens before anything is dispatched at all.
+
+### 26.3 Court
+
+Added: a form whose `action` and a submitter whose `formaction` carry an
+unsupported scheme, a malformed value, and a value over the URL bound, each
+refused typed **before** any event — proven by a page whose submit handler
+leaves a mark, which must be absent — with no revision, identity or history
+movement; the same for a link href with leading whitespace before a
+`javascript:` scheme, which used to slip past; a child whose action would
+leave the parent's origin, refused `cross_origin_action` before dispatch; and,
+unchanged, the existing case where a valid preflight is followed by a fetch
+failure and the handler's mark **is** present. Every reason stays in the fixed
+vocabulary and no URL, query or page text enters any receipt.
