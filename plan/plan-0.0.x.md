@@ -1162,8 +1162,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [ ] Proposed, design only, nothing implemented and nothing measured: a
-  bounded timer slice for the native route
+- [~] Implemented and qualified on the native route, court 38 of 38: a
+  bounded timer slice
   (`labs/native-dom/timer-design-0.0.1.md`). The audit's finding is that the
   current shim is worse than an absence: `setTimeout` discards its delay and
   runs the callback at the next job drain, `clearTimeout` cannot cancel
@@ -1190,7 +1190,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   are frozen in the record. Five decisions wait on the root, including
   whether to implement at all rather than refuse honestly, and the hazard
   that observation boundaries can now change the document a snapshot is about
-  to report. No protocol shape moves. G1, G3, P6 and G6 stay open.
+  to report. **The root ruled all five and it is built.** Before the code the
+  frozen court was run against the pushed build and failed 13 of its 16 checks
+  per arm, the three named ones among them, so it describes a defect rather
+  than an absence. Five implementation audit points were then answered in the
+  record and the code: the clock is read after the collecting turn so a delay
+  is never shorter than asked, the reported owner limit is per timer-owning
+  realm, a failed collect is attributed instead of silently losing a schedule,
+  retirement is counted at every realm replacement, and the handle boundary is
+  frozen exclusive with the alternative recorded. Seven attribution counters
+  replace one bucket. Not qualified here: the timer CDP group, because the
+  pinned client is absent from the ignored lab directory in this working copy,
+  which also stops three CDP checks in other courts from running. No protocol
+  shape moves beyond the additive `target.inspect` timers field. G1, G3, P6 and
+  G6 stay open.
 - [~] Implemented and qualified on the native route: frame-aware actions and
   child-local navigation
   (`labs/native-dom/frame-action-design-0.0.1.md`). The record compared two
