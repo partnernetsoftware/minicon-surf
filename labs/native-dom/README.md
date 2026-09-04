@@ -725,11 +725,31 @@ ends its children, and the click path names them in `ended_frames`. One child
 costs about 247 KB of live owner bytes, seven about 1.7 MB, and the whole
 cost returns on close.
 
+Timers (`timer-design-0.0.1.md`): `setTimeout` and `clearTimeout` exist in the
+main frame and nowhere else. The realm owns the callbacks and their handles,
+which are per-realm, monotonic and never reused, and refuses to schedule past
+64 pending or past the safe integer; the host owns a monotonic clock, so a
+page can neither read the time nor measure it. A callback runs only at an
+operation boundary — an inspect, a snapshot, an act or a wait — at most 32 per
+boundary, ordered by due time then handle, and a zero-delay timer scheduled by
+a callback waits for the next boundary. `target.wait` sleeps to the next due
+timer rather than a fixed interval. A due callback's mutations move the
+target's revision like any other page activity, so two observations with
+nothing between them may differ. Timers die with their realm, so a navigation,
+a reload, a traverse or a close ends them. `target.inspect` reports `timers`
+as `pending` and `limit`, and `memory.report` attributes every outcome
+separately: fired, cleared, retired, threw, deadline-discarded, refused and
+collect-failed. A callback that throws or outlives the deadline is discarded
+and counted; whatever it completed first stands and the target stays usable. A
+delay is a **lower bound**: with no requests arriving, nothing fires.
+
 Losses, recorded rather than approximated: an action in a child behaves as it
 would in a script-free document, so no page handler can cancel it; a child
 frame cannot be addressed by `target.navigate` or by CDP, only acted in; no
 sandboxed frames, no nesting, no cross-origin or `srcdoc`
-children, no scripts in a child; no capability attenuation on this host, so a request carrying the field
+children, no scripts in a child; no `setInterval`, animation frames, idle
+callbacks, workers or background thread, no timers in a child, no clock a page
+can read, and no string body for `setTimeout`; no capability attenuation on this host, so a request carrying the field
 is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
 of frames or realms here.
 
