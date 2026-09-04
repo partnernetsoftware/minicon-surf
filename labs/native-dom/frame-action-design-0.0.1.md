@@ -924,8 +924,20 @@ Both paths now compute the same value the same way. The host already holds the
 global revision it validated against and the frame counter it expected, so the
 true global is `validated − expected + reported`, in checked arithmetic; a
 result that is not representable refuses `resource_limit` rather than
-reporting a number. A falsifier makes another frame's counter non-zero first,
-so a local number and a global one cannot coincide by accident.
+reporting a number.
+
+**How far the court can falsify this, stated honestly.** A court criterion
+holds a main-frame reference, moves a child's counter so a frame-local number
+and a global one cannot coincide, and asserts that the stale answer names the
+target's revision. That criterion passes against the previous build as well,
+and the reason is worth recording rather than hiding: the host's own global
+check fires before the realm is ever asked, so the two realm-side paths are
+reached only if a frame's counter and the target's global disagree in exactly
+compensating ways, which no fixture found produces. They were wrong all the
+same, and the arithmetic that replaces them is falsified directly by unit
+tests over the conversion in both directions, including the two cases where it
+must refuse rather than wrap. The court criterion stands as a regression on the
+reachable path, not as proof that the unreachable one was exercised.
 
 ### 30.2 A scroll changed observable state before it checked it could
 

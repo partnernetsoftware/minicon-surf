@@ -392,6 +392,34 @@ def main():
                     expect(tag + "an action in a child stales a reference held in the main frame",
                            refused(stale, "stale_revision"), {"error": stale.get("error")})
 
+                    # 3b. A stale answer names the target's revision, not the
+                    # frame's. The child's counter is non-zero by now, so a
+                    # frame-local number could not coincide with the global one.
+                    state = ok("target.inspect", {"target": target})
+                    child_snap = snap(target, frame=child)
+                    child_counter_nonzero = state["revision"] > 0
+                    main_snap = snap(target, frame=state["frames"][0]["frame"])
+                    held = find(main_snap, "text")["reference"]
+                    held_revision = held["revision"]
+                    # Move the main frame on, so the reference is stale.
+                    box = find(child_snap, "textbox")
+                    call("target.act", {"target": target, "reference": box["reference"],
+                                        "action": {"kind": "set_value", "value": "court-fake-stale"}})
+                    stale_answer = call("target.act", {"target": target, "reference": held,
+                                                       "action": {"kind": "click"}})
+                    now = ok("target.inspect", {"target": target})["revision"]
+                    detail = ((stale_answer.get("error") or {}).get("details") or {})
+                    # This is a regression on the reachable path: the host's
+                    # own global check fires before the realm is asked, so the
+                    # realm-side stale paths are covered by unit tests instead.
+                    expect(tag + "a stale answer reports the target's revision, children included",
+                           child_counter_nonzero
+                           and refused(stale_answer, "stale_revision")
+                           and detail.get("current_revision") == now
+                           and detail.get("reference_revision") == held_revision
+                           and now > held_revision,
+                           {"reported": detail.get("current_revision"), "actual": now})
+
                     # 4. One frame's snapshot never authorises another's node.
                     main_snap = snap(target, frame=before["frames"][0]["frame"])
                     main_ref = find(main_snap, "text")["reference"]

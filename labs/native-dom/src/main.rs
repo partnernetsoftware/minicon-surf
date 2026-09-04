@@ -1932,6 +1932,23 @@ impl Target {
         )
     }
 
+    /// The target-global revision a frame would produce by reporting
+    /// `reported` where `expected` was validated. Checked: a value that is not
+    /// representable is refused rather than reported.
+    fn global_with(&self, validated: u64, expected: u64, reported: u64) -> Option<u64> {
+        validated.checked_sub(expected)?.checked_add(reported)
+    }
+
+    /// The main frame's own counter, taken from a global revision this target
+    /// produced. The one place that arithmetic is written.
+    fn main_counter(&self, global: u64) -> Option<u64> {
+        self.children
+            .iter()
+            .try_fold(global.checked_sub(self.revision_base)?, |rest, child| {
+                rest.checked_sub(child.counter)
+            })
+    }
+
     /// Live QuickJS bytes of this target's frames, the children included.
     fn realm_malloc_bytes(&self) -> usize {
         self.realm.malloc_bytes()
@@ -2773,13 +2790,8 @@ impl Host {
                     // painter paints that frame's rows and nothing else. It
                     // takes the same two phases as a control-door click, so a
                     // painted row cannot activate what the door refuses.
-                    let base = target.revision_base;
-                    let children: u64 = target
-                        .children
-                        .iter()
-                        .fold(0u64, |sum, child| sum.saturating_add(child.counter));
                     let has_base_target = target.base_target;
-                    let counter = current.saturating_sub(base).saturating_sub(children);
+                    let counter = target.main_counter(current).unwrap_or(u64::MAX);
                     let preflight = Self::eval_json(
                         target,
                         &preflight_script(
@@ -2820,24 +2832,30 @@ impl Host {
                 }
             }
             surface::INPUT_KIND_SCROLL => {
-                let next = if input.delta >= 0 {
-                    target.scroll_y.saturating_add(input.delta as u64)
+                // A scroll advances the revision, so it is refused before it
+                // moves anything if either limit has no room: the offset and
+                // the counter must be exactly as they were.
+                let counter = target.main_counter(current);
+                let room = counter.is_some_and(|counter| counter < MAX_SAFE_COUNTER)
+                    && current.checked_add(1).is_some();
+                if room {
+                    let next = if input.delta >= 0 {
+                        target.scroll_y.saturating_add(input.delta as u64)
+                    } else {
+                        target
+                            .scroll_y
+                            .saturating_sub(input.delta.unsigned_abs() as u64)
+                    }
+                    .min(surface::MAX_SCROLL);
+                    target.scroll_y = next;
+                    if let Ok(text) = target.eval(SCROLL_REVISION_JS, deadline, &policy)
+                        && let Ok(after) = text.parse::<u64>()
+                        && let Some(revision) = target.global_revision(after)
+                    {
+                        applied = Some(("scroll", revision));
+                    }
                 } else {
-                    target
-                        .scroll_y
-                        .saturating_sub(input.delta.unsigned_abs() as u64)
-                }
-                .min(surface::MAX_SCROLL);
-                target.scroll_y = next;
-                // The synthetic host's rule: a scroll advances the revision.
-                if let Ok(text) = target.eval(SCROLL_REVISION_JS, deadline, &policy)
-                    && let Ok(after) = text.parse::<u64>()
-                {
-                    // A scroll that cannot advance the target's revision is
-                    // dropped rather than reported with a wrong number.
-                    applied = target
-                        .global_revision(after)
-                        .map(|revision| ("scroll", revision));
+                    self.surface_stats.stale_events_dropped_total += 1;
                 }
             }
             _ => {}
@@ -5523,14 +5541,18 @@ impl Host {
                     })?
                 }
             };
-            if let Some(current) = preflight.get("current").and_then(Value::as_u64) {
+            if let Some(reported) = preflight.get("current").and_then(Value::as_u64) {
+                let target = self.target_mut(&id)?;
+                let Some(global) = target.global_with(current, frame_counter, reported) else {
+                    return Err(saturated(&id));
+                };
                 return Err(ControlError::new(
                     "stale_revision",
                     "node reference revision no longer matches the target",
                     true,
                 )
                 .scoped("target", &id)
-                .details(json!({"reference_revision":revision,"current_revision":current})));
+                .details(json!({"reference_revision":revision,"current_revision":global})));
             }
             if preflight.get("missing").is_some() {
                 return Err(ControlError::new("not_found", "node does not exist", false)
@@ -5644,15 +5666,17 @@ impl Host {
                 value
             }
         };
-        let base = target.revision_base;
-        if let Some(current) = outcome.get("current").and_then(Value::as_u64) {
+        if let Some(reported) = outcome.get("current").and_then(Value::as_u64) {
+            let Some(global) = target.global_with(current, frame_counter, reported) else {
+                return Err(saturated(&id));
+            };
             return Err(ControlError::new(
                 "stale_revision",
                 "node reference revision no longer matches the target",
                 true,
             )
             .scoped("target", &id)
-            .details(json!({"reference_revision":revision,"current_revision":base + current})));
+            .details(json!({"reference_revision":revision,"current_revision":global})));
         }
         if outcome.get("missing").is_some() {
             return Err(
@@ -6769,6 +6793,34 @@ mod revision_tests {
             many.global_revision(1),
             None,
             "a parent replacement folding several children is checked, not saturated"
+        );
+    }
+
+    #[test]
+    fn a_frames_counter_and_the_global_revision_convert_both_ways() {
+        let target = target_with(10, &[3, 4]);
+        let global = target.global_revision(5).expect("representable");
+        assert_eq!(global, 22);
+        assert_eq!(
+            target.main_counter(global),
+            Some(5),
+            "the main frame's own counter comes back out of the global"
+        );
+        // A stale answer names the target's revision, never one frame's.
+        assert_eq!(
+            target.global_with(global, 5, 9),
+            Some(26),
+            "a frame reporting 9 where 5 was validated is four ahead globally"
+        );
+        assert_eq!(
+            target_with(0, &[]).global_with(0, 1, 0),
+            None,
+            "an impossible conversion is refused rather than wrapped"
+        );
+        assert_eq!(
+            target_with(u64::MAX - 1, &[1]).global_with(u64::MAX, 0, 1),
+            None,
+            "and so is one that would not fit"
         );
     }
 

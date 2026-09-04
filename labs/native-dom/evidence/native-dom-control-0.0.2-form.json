@@ -1084,7 +1084,7 @@
      "generation": 1,
      "navigation": "failed",
      "realm": "realm_41",
-     "reason": "connect",
+     "reason": "read",
      "redacted": true
     },
     "message": "the form submission did not navigate",
@@ -2419,7 +2419,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "4af4a4a6d61e7d4122be56a12bb14eb8fb168bf097a2cd3354b002c240bbfafb",
+ "host_sha256": "161357b0ffa54fcd86d22ed9ead611f12d73ff2186abb819dcdbad497ed42a26",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

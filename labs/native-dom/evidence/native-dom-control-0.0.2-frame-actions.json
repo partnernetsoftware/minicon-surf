@@ -37,6 +37,14 @@
    "passed": true
   },
   {
+   "check": "[system] a stale answer reports the target's revision, children included",
+   "detail": {
+    "actual": 3,
+    "reported": 3
+   },
+   "passed": true
+  },
+  {
    "check": "[system] a main-frame observation cannot authorise a node in a child's band",
    "detail": {
     "error": {
@@ -69,7 +77,7 @@
   {
    "check": "[system] a wait converges on a revision a child's action reached",
    "detail": {
-    "revision": 3
+    "revision": 4
    },
    "passed": true
   },
@@ -78,8 +86,8 @@
    "detail": {
     "generation": 2,
     "revision": [
-     3,
-     4
+     4,
+     5
     ]
    },
    "passed": true
@@ -90,8 +98,8 @@
     "error": {
      "code": "stale_revision",
      "details": {
-      "current_revision": 4,
-      "reference_revision": 3
+      "current_revision": 5,
+      "reference_revision": 4
      },
      "message": "node reference revision no longer matches the target",
      "retryable": true,
@@ -192,14 +200,14 @@
   {
    "check": "[system] every action record names the frame it touched",
    "detail": {
-    "records": 38
+    "records": 39
    },
    "passed": true
   },
   {
    "check": "[system] no URL, value, target name or other page text is in the ledger",
    "detail": {
-    "bytes": 10224
+    "bytes": 10479
    },
    "passed": true
   },
@@ -939,6 +947,14 @@
    "passed": true
   },
   {
+   "check": "[arena] a stale answer reports the target's revision, children included",
+   "detail": {
+    "actual": 3,
+    "reported": 3
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] a main-frame observation cannot authorise a node in a child's band",
    "detail": {
     "error": {
@@ -971,7 +987,7 @@
   {
    "check": "[arena] a wait converges on a revision a child's action reached",
    "detail": {
-    "revision": 3
+    "revision": 4
    },
    "passed": true
   },
@@ -980,8 +996,8 @@
    "detail": {
     "generation": 2,
     "revision": [
-     3,
-     4
+     4,
+     5
     ]
    },
    "passed": true
@@ -992,8 +1008,8 @@
     "error": {
      "code": "stale_revision",
      "details": {
-      "current_revision": 4,
-      "reference_revision": 3
+      "current_revision": 5,
+      "reference_revision": 4
      },
      "message": "node reference revision no longer matches the target",
      "retryable": true,
@@ -1094,14 +1110,14 @@
   {
    "check": "[arena] every action record names the frame it touched",
    "detail": {
-    "records": 38
+    "records": 39
    },
    "passed": true
   },
   {
    "check": "[arena] no URL, value, target name or other page text is in the ledger",
    "detail": {
-    "bytes": 10224
+    "bytes": 10479
    },
    "passed": true
   },
@@ -1895,10 +1911,10 @@
    "passed": true
   }
  ],
- "checks_passed": 180,
- "checks_total": 180,
+ "checks_passed": 182,
+ "checks_total": 182,
  "court": "native-dom frame-aware actions (control 0.0.2)",
- "host_sha256": "4af4a4a6d61e7d4122be56a12bb14eb8fb168bf097a2cd3354b002c240bbfafb",
+ "host_sha256": "161357b0ffa54fcd86d22ed9ead611f12d73ff2186abb819dcdbad497ed42a26",
  "limitations": [
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
   "children run no scripts, so an action in a child can never be canceled by the page",
