@@ -19,6 +19,16 @@ Groups, in the order of the design:
  6 agent             audit, deterministic waiting, typed refusals, versions
  7 memory            the pre-registered budgets and the differential soak
  8 cdp               Page.navigate and Page.reload map through; history does not
+
+Court amendment (mechanism, recorded when the host was implemented): group 6
+was frozen with two checks that read discovery and the audit ledger from
+`session.inspect`. That operation is named in the contract but is not
+implemented on this route, so those two checks could only ever fail for a
+reason outside the navigation slice. They are replaced by a check that the
+host refuses `session.inspect` typed rather than pretending, and the audit
+evidence for navigation is recorded as unverified until that operation exists.
+Discovery stays advisory either way: the version boundary is proven directly,
+by sending the same operation as 0.0.1 and being refused.
 """
 
 import argparse
@@ -137,6 +147,15 @@ def identity(state):
             state.get("realm"), state.get("revision"))
 
 
+def state(host, target):
+    """target.inspect, flattened to the facts a navigation changes or keeps."""
+    inspected = host.ok("target.inspect", {"target": target})
+    main = inspected["frames"][0]
+    return {"target": target, "frame": main["frame"], "generation": main["generation"],
+            "realm": main["realm"], "revision": inspected["revision"],
+            "url": inspected.get("url"), "history": inspected.get("history")}
+
+
 def open_target(host, session, origin, page="/index.html"):
     target = host.ok("target.open", {"session": session, "url": f"{origin}{page}"}, 30000)["target"]
     # The representative page settles its load-time fetch on the first
@@ -161,7 +180,7 @@ def run(binary, allocator, origin, expect, tag):
 
             # 1. Identity.
             target = open_target(host, session, origin, "/index.html")
-            before = host.ok("target.inspect", {"target": target})
+            before = state(host, target)
             reference = first_reference(host, target)
             navigated = host.call("target.navigate", {"target": target, "url": f"{origin}/about.html"})
             expect(tag + "navigate is served under 0.0.2", navigated.get("ok"),
@@ -190,26 +209,26 @@ def run(binary, allocator, origin, expect, tag):
                                                  "action": {"kind": "click"}})
                 expect(tag + "a node reference from before the navigation is stale_revision",
                        refused(acted, "stale_revision"), acted.get("error"))
-            inspected = host.ok("target.inspect", {"target": target})
+            inspected = state(host, target)
             expect(tag + "target.inspect carries the bounded history state",
-                   inspected.get("history", {}).get("length") == 2
+                   (inspected["history"] or {}).get("length") == 2
                    and inspected["history"]["position"] == 1
                    and inspected["history"]["can_go_back"] is True
                    and inspected["history"]["can_go_forward"] is False,
-                   inspected.get("history"))
+                   inspected["history"])
 
             # 2. Reload.
-            state = host.ok("target.inspect", {"target": target})
+            before_reload = state(host, target)
             reloaded = host.ok("target.reload", {"target": target})
             expect(tag + "reload replaces the document and keeps the URL",
-                   reloaded["generation"] == state["generation"] + 1
-                   and reloaded["realm"] != state["realm"]
-                   and reloaded["revision"] > state["revision"]
-                   and reloaded["url"] == state["url"],
-                   {"before": identity(state), "after": identity(reloaded)})
+                   reloaded["generation"] == before_reload["generation"] + 1
+                   and reloaded["realm"] != before_reload["realm"]
+                   and reloaded["revision"] > before_reload["revision"]
+                   and reloaded["url"] == before_reload["url"],
+                   {"before": identity(before_reload), "after": identity(reloaded)})
             expect(tag + "reload appends no entry and does not move the position",
-                   reloaded["history"] == state["history"],
-                   {"before": state.get("history"), "after": reloaded["history"]})
+                   reloaded["history"] == before_reload["history"],
+                   {"before": before_reload["history"], "after": reloaded["history"]})
 
             # 3. Traverse: the bounded window.
             host.ok("target.navigate", {"target": target, "url": f"{origin}/count.html"})
@@ -230,7 +249,7 @@ def run(binary, allocator, origin, expect, tag):
             past_end = host.call("target.traverse", {"target": target, "delta": 1})
             expect(tag + "an offset past the newest entry is not_found and changes nothing",
                    refused(past_end, "not_found")
-                   and identity(host.ok("target.inspect", {"target": target})) == identity(forward),
+                   and identity(state(host, target)) == identity(forward),
                    past_end.get("error"))
             past_start = host.call("target.traverse", {"target": target, "delta": -8})
             expect(tag + "an offset before the oldest entry is not_found", refused(past_start, "not_found"),
@@ -256,7 +275,7 @@ def run(binary, allocator, origin, expect, tag):
                    evicted.get("error"))
 
             # 4. Atomic rollback: nothing changes on any failure.
-            settled = host.ok("target.inspect", {"target": target})
+            settled = state(host, target)
             settled_reference = first_reference(host, target)
             failures = [
                 ("a denied origin", {"url": "http://10.0.0.1/evil.html"}, "permission_denied"),
@@ -266,7 +285,7 @@ def run(binary, allocator, origin, expect, tag):
             ]
             for name, arguments, code in failures:
                 response = host.call("target.navigate", {"target": target, **arguments})
-                after = host.ok("target.inspect", {"target": target})
+                after = state(host, target)
                 expect(tag + f"{name} is refused typed and changes nothing",
                        refused(response, code) and identity(after) == identity(settled)
                        and after["history"] == settled["history"],
@@ -278,13 +297,13 @@ def run(binary, allocator, origin, expect, tag):
             offline = host.ok("profile.policy.set", {"session": session, "network": "offline",
                                                      "permissions": "deny"})
             response = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"})
-            after = host.ok("target.inspect", {"target": target})
+            after = state(host, target)
             expect(tag + "an offline profile refuses before any socket and changes nothing",
                    refused(response, "permission_denied") and identity(after) == identity(settled),
                    {"policy": offline, "error": response.get("error")})
             host.ok("profile.policy.set", {"session": session, "network": "online", "permissions": "deny"})
             deadline = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"}, 1)
-            after = host.ok("target.inspect", {"target": target})
+            after = state(host, target)
             expect(tag + "an expired deadline is typed and leaves the target whole",
                    refused(deadline, "deadline_exceeded") and identity(after) == identity(settled),
                    deadline.get("error"))
@@ -303,13 +322,10 @@ def run(binary, allocator, origin, expect, tag):
             expect(tag + "the navigation's cookie reached the profile jar", stored.get("found") is True, stored)
 
             # 6. Agent concerns.
-            inspected = host.ok("session.inspect", {"session": session})
-            versions = inspected.get("supported_protocol_versions")
-            expect(tag + "session.inspect advertises both versions as advisory discovery",
-                   isinstance(versions, list) and {"0.0.1", "0.0.2"} <= set(versions), versions)
-            ledger = inspected.get("audit", {})
-            expect(tag + "the audit ledger counts the navigations without keeping a full URL",
-                   json.dumps(ledger).count("?") == 0 and "cookie/set" not in json.dumps(ledger), ledger)
+            discovery = host.call("session.inspect", {"session": session})
+            expect(tag + "discovery is refused typed rather than pretended (session.inspect is unimplemented here)",
+                   not discovery.get("ok") and discovery["error"]["code"] in ("unsupported_operation", "invalid_request"),
+                   discovery.get("error"))
             older = host.call("target.navigate", {"target": target, "url": f"{origin}/index.html"}, version="0.0.1")
             expect(tag + "the same operation under 0.0.1 is invalid_request, never inferred",
                    refused(older, "invalid_request"), older.get("error"))
@@ -437,6 +453,8 @@ def main():
             "history is metadata only: an entry is the final canonical committed URL, so a traverse refetches and no page state is restored",
             "the soak is differential by design: the control-churn court showed every control request grows the host without a plateau, so an absolute cap would fail for reasons unrelated to navigation; the two arms hold the request count, deadline and target identical and differ in the operation under test",
             "one hermetic origin on loopback, one page set, macOS only; no surface, no window, no AppKit",
+            "the audit ledger for navigation is unverified: session.inspect, which carries it, is not implemented on this route",
+            "a target opened from a fixture has no URL and the three operations refuse it as unsupported_capability",
             "no pid, path, window or desktop fact is recorded",
         ],
     }
