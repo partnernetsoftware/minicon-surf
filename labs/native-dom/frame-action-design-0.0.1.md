@@ -662,3 +662,81 @@ this work and reproduces on unmodified sources: its counters are global and
 another test's mapping can land between its two samples. Three reruns and a
 single-threaded run all pass. It is recorded here rather than fixed, because
 fixing it belongs to the surface slice and not to this increment.
+
+## 25. Two audit blockers, amended before code
+
+### 25.1 Saturation was specified and not implemented
+
+§14 says that once `R` saturates, every action and navigation is refused
+`resource_limit` with a fixed reason. The code does not do that. It saturates
+silently in `revision()` when it folds the base, the main counter and the
+children; `navigate_child` folds the base with a saturating add; the main
+navigation computes `base_revision + 1` and `generation + 1` unchecked; and
+the stale-revision detail reports `base + current` unchecked. A host at the
+boundary would therefore stop discriminating staleness while continuing to
+serve actions — the exact failure the section exists to prevent — and the
+court never went near the boundary.
+
+**The rule, restated so it can be implemented and proven.** All global-revision
+arithmetic lives in one place and is **checked**, never saturating:
+
+- `R = base + main counter + Σ child counters`, and if that sum is not
+  representable the read answers `resource_limit` rather than a wrong number.
+  A read *at* `u64::MAX` is legitimate and stays observable; only an
+  unrepresentable one is refused.
+- A fold is `base' = base + counter + advance`, checked. An unrepresentable
+  fold is refused **before** the operation that would need it.
+- Every operation that must advance — an applied action, a main navigation, a
+  child navigation, a scroll — checks that it *can* advance **before it
+  dispatches an event, fetches a document or builds a realm**, and refuses
+  `resource_limit` with reason `revision_saturated` when it cannot. Nothing is
+  dispatched, no realm is built, no history entry is made, no budget is spent
+  and no identity moves.
+- A generation increment is checked the same way and refuses with the same
+  reason.
+
+**Proving it.** A court-only knob seeds a target's revision base, so the court
+can stand the host at the boundary and prove: a read at the maximum still
+answers; an action, a main navigation and a child navigation are each refused
+`resource_limit` with the fixed reason; and afterwards the URL, generation,
+realm, history, budget and every frame's identity are exactly what they were.
+Unit tests cover the arithmetic itself, including that a parent replacement
+folding several children is checked rather than saturating.
+
+### 25.2 The surface paths compute a different revision
+
+`surface_rows` derives its snapshot revision as `revision_base + main counter`
+and the scroll path reports `revision_base + after`. Both omit the cached
+child counters, so after an action in a child they report a **smaller** number
+than the target-global revision — a second, disagreeing definition of the one
+value that staleness depends on. That is a violation of §14 and it is fixed by
+routing both through the same checked helper as everything else. The
+regression is a unit test on that helper: the surface paths themselves need a
+surface process, and nothing here runs one.
+
+### 25.3 An explicitly empty target was conflated with an absent one
+
+`targetOf` reads `hasAttribute` and then treats a trimmed-empty value the same
+as an absent attribute, so `target=""` under a `<base target>` was refused
+`base_target_unmodeled` when the ruling — and HTML — say it is allowed. HTML's
+"getting an element's target" returns the attribute's value **if the element
+has the attribute at all**, and consults the base element only when it does
+not. So:
+
+- attribute absent → the base decides; with a base present that is
+  `base_target_unmodeled`, without one it is `allowed`;
+- attribute present and empty → `allowed`, and the base is never consulted;
+- attribute present and whitespace-only → it names a context whose name is
+  whitespace, which this host does not model: `target_named`, fail-closed;
+- otherwise the keywords of §23.2, normalised case-insensitively.
+
+The same rule applies to a submitter's `formtarget`, where an explicitly empty
+value likewise means the current frame and suppresses the base.
+
+The court's gap that let this through is recorded with it: it tested an empty
+target only on a page with no base, and tested a base only against an absent
+target and an explicit `_self`, so the one combination that distinguishes the
+two readings was never taken. It now tests, in the main frame and in a child,
+that an explicit empty `target` and an explicit empty `formtarget` under a
+`<base target>` are `allowed` and navigate the current frame, while an absent
+target under the same base stays `base_target_unmodeled`.
