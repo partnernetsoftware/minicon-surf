@@ -278,7 +278,9 @@ against the number it was given.
 ### 14.1 Attribution, not one bucket
 
 §9's `dropped_total` conflated outcomes that mean different things. The timer
-owner reports six separate saturating integers, and no other:
+owner reports these six separate saturating integers, one per **timer**
+outcome — §15.3 adds a seventh that is not a timer outcome at all but a
+host-side fault, and §15.7 reconciles the two:
 
 | counter | means |
 |---|---|
@@ -289,8 +291,8 @@ owner reports six separate saturating integers, and no other:
 | `deadline_discarded_total` | the callback was interrupted at the request deadline and discarded |
 | `refused_total` | `setTimeout` was refused because the pending bound was full |
 
-`pending` and `limit` are the live figures; every one of these is a host-minted
-integer.
+`pending` and `limit` are the live figures; every one of these is a
+host-minted integer.
 
 ### 14.2 Handles fail closed before the safe integer
 
@@ -389,14 +391,129 @@ handle so the boundary is reachable: with the next handle at 2^53 − 4 exactly
 three more timers can be scheduled — 2^53 − 4, 2^53 − 3 and 2^53 − 2, the
 largest a handle ever takes — and with it at 2^53 − 1 none can.
 
-### 15.6 The CDP group is unqualified in this environment
+### 15.6 The CDP group, and the client that was missing
 
-§11's group 14 — the timer-adjacent CDP methods staying `-32601` — is **not**
-in the court file, and the reason is environmental rather than a decision: the
-pinned client package under the ignored `target/labs/d4` is not present in
-this working copy, so three CDP checks in the child-frame, form and navigation
-courts cannot run either. Those three report the absence as a failure or as
-unverified rather than passing quietly, which is the behaviour they were
-written with. The timer slice's CDP claim is therefore **not qualified here**
-and must not be read as proven; it is a court to add when the client is
-restored.
+§11's group 14 — the timer-adjacent CDP methods staying `-32601` — is not in
+the court file. When this slice was implemented the pinned client package was
+absent from the ignored `target/labs/d4`, which also stopped three CDP checks
+in the child-frame, form and navigation courts from running; each reported the
+absence rather than passing quietly, which is the behaviour they were written
+with.
+
+The client has since been restored **from the local npm cache with no network
+fallback**, and verified before anything ran: `puppeteer-core` 24.15.0, the
+integrity `sha512-2iy0iBeW…` of the committed qualification, on Node.js
+v26.7.0, all three matching `cdp-qualification-0.0.1.json` exactly. Those four
+courts were rerun in full on the same host build and their CDP groups pass.
+
+The timer slice's own CDP group is still **not written**, and that is a gap
+rather than a result: the timer-adjacent methods are unimplemented and
+therefore already answer `-32601` through the same default every unqualified
+method takes, but this record does not claim it until a court asserts it.
+
+### 15.7 Reconciling the seventh counter with §14.1
+
+§14.1 said six counters "and no other", and §15.3 then added
+`collect_failed_total`. The wording, not the design, was wrong, and the
+distinction it should have drawn is this:
+
+- **Six timer outcomes.** `fired`, `cleared`, `retired`, `threw`,
+  `deadline_discarded` and `refused` partition what happens to a timer. Every
+  timer that leaves the pending set leaves it through exactly one of them, and
+  that set is closed: nothing else may be added to it without saying which
+  outcome it splits.
+- **One host fault.** `collect_failed_total` counts something that happened to
+  the **host's bridge**, not to a timer. It does not partition anything and it
+  is not an outcome a page can cause: it says the host could not read what the
+  realm had recorded, so a schedule may have been lost without any of the six
+  being able to describe it. It exists precisely so that such a loss is
+  visible rather than silent.
+
+So the owner reports seven integers: six that classify timers and one that
+admits the host failed. §14.1's "and no other" governs the first group only,
+which is what it was written to fix.
+
+## 16. Five blockers from the qualification audit, recorded before any fix
+
+### 16.1 The court is a subset of what §11 froze, so 38 of 38 is not qualification
+
+Three frozen groups are missing from `timer-court.py`: **group 9**, a
+`target.wait` that converges on a revision a timer's mutation reached without
+a fixed-interval sleep; **group 11**, a callback that outlives the request
+deadline; and **group 14**, the timer-adjacent CDP methods. §12's **T1–T5**
+memory and latency criteria are absent too, and two of them still name the
+`dropped_total` that §14.1 replaced.
+
+So the 38 of 38 already recorded is **mechanics only**, and this record says
+so rather than letting the number stand for the frozen court. The caps do not
+move: T1–T5 are implemented as §12 froze them, with `dropped_total` replaced
+by the counters that superseded it — `retired_total` for T2 and T4, since
+those criteria were always about what a teardown accounts for.
+
+### 16.2 The build's own collect is a second, unvalidated bridge
+
+`build_target` inlines its own collect after the document's scripts run, and
+that copy: ignores an evaluation, parse or shape failure instead of
+attributing it; never adds the realm's `refused` count; and **drops clear
+records entirely**, so a timer the page scheduled and cleared in the same turn
+stays in the host's pending list until it comes due, inflating
+`timers.pending` and being counted as a clear only when it is finally reached.
+Two bridges with different rules is one too many: the build path uses the
+validated, attributed collect, and there is exactly one implementation.
+
+### 16.3 The realm has clocks, and the design said it had none
+
+§4 claimed "the realm has no clock at all, so a page can neither read the time
+nor measure it". That is **false**, and a probe proves it: this engine
+supplies `Date` as a function with a real epoch and `performance` as an
+object. What is genuinely absent is `setInterval`, `requestAnimationFrame`,
+`requestIdleCallback` and `Worker`, all `undefined`, so a page calling them
+throws — but that is absence, which the audit is right to say must be proven
+rather than assumed.
+
+Corrected: **the timer slice adds no clock**, and that is all §4 may claim.
+The realm inherits `Date` and `performance` from the engine, this host models
+neither, and together they are a real timing and fingerprinting surface that
+predates this slice. Removing `performance` would be cheap; removing `Date`
+is a compatibility decision of its own, and neither is taken here. §17 puts
+both to the root. The court asserts what is true today rather than what the
+design wished were true.
+
+### 16.4 A malformed entry inside a well-formed list was ignored
+
+The collect validates that `moved` is an array and then skips any entry it
+cannot read. A pair that is not a bounded two-element tuple of a non-negative
+handle and an integer delay is therefore silently discarded, which is the same
+class of silence as 16.2. Every entry is now validated as a whole; one that
+fails counts in `collect_failed_total` and the collect stops rather than
+continuing over a list it does not understand.
+
+### 16.5 The bridge is a page-visible global, and always was
+
+`window.__mcsTimers` is reachable and mutable from page script. So is
+`window.__mcs`, which carries the revision and the snapshot's node table, and
+that predates this slice by every increment. A same-realm bridge cannot be
+hidden from a page that shares the realm: there is one global scope and the
+host's own evaluations run in it.
+
+What can be done, and is: the binding is made non-writable, non-configurable
+and non-enumerable, so a page cannot replace or shadow it; and every read of
+it is validated and attributed (16.4), so a page that corrupts its own bridge
+loses its own timers and cannot make the host believe something false. What
+cannot be done without a second authority — a separate realm or world — is to
+stop a page from perturbing its own state, and this record does not pretend
+otherwise. **The trust boundary is recorded: the host trusts host-internal
+globals only as far as it validates them, and a page can cost itself its own
+timers.**
+
+## 17. Two decisions this audit raises
+
+1. **`Date` and `performance`.** A page can read the wall clock and measure
+   elapsed time through them today, on every route, and this host models
+   neither. Refusing `performance` is small and self-contained; refusing
+   `Date` is a compatibility decision. Neither is taken without a ruling.
+2. **Whether the timer CDP group should assert `-32601` for named methods**
+   or simply record that no timer method is qualified. The methods are
+   unimplemented and answer `-32601` through the same default as every other
+   unqualified method, so a court group here restates an existing guarantee;
+   it is cheap and it closes §11's group 14 honestly.
