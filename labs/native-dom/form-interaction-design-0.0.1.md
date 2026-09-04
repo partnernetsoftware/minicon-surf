@@ -354,3 +354,93 @@ measured evidence. `control-0.0.1` keeps `action` as exactly
 5. One measurement pass against §12.7.
 
 Work stops on any failed frozen semantic or live-memory criterion.
+
+## 13. Corrections after the root audit (sections 1 to 12 stay as written)
+
+The court passed 69 of 69 and still missed five things. Each is recorded here
+before any code changes; where this section differs from §2, §3 or §11, this
+section governs, and the earlier text stays as the record of what was claimed.
+
+### 13.1 `press` had a fall-through that claimed work it never did
+
+The implementation ended with a catch-all that answered `applied` and advanced
+the revision for any pair it did not handle: space on a textbox, enter on a
+checkbox, any key on a select or a form. That is a false claim. The activation
+matrix is now closed and exhaustive, and every pair outside it is refused
+typed **before** the revision moves:
+
+| Key | Role | Behaviour |
+|---|---|---|
+| enter | link | activates as a click; navigates unless the click is canceled |
+| enter | button | activates as a click |
+| enter | submit button | submits its form |
+| enter | single-line textbox | submits its form when it has one, else refused |
+| space | button | activates as a click |
+| space | checkbox, radio | toggles, with the click's cancellation respected |
+
+Everything else, including **every key on a select** and space on a textbox, is
+`unsupported_capability` with reason `key_role_unsupported`. No keyboard
+behaviour is claimed for a select, because none is modelled. A textarea is not
+a single-line textbox and enter does not submit from it.
+
+### 13.2 A value's length was counted in the wrong unit
+
+`action.value.length` in the realm is UTF-16 code units, not UTF-8 bytes, so a
+non-ASCII value was audited with the wrong number. The host now computes the
+length from the request's own already-validated string, which is UTF-8, and
+**never trusts or reports a length the realm sends back**. The realm returns no
+length at all. Non-ASCII values are covered by a test and by the court.
+
+### 13.3 A failed submit leaked its query into diagnostics
+
+A form's query is page data, and the navigation path put the href, and
+sometimes the response URL, into an error's details. Every failure of a form
+submission is now diagnosed in a **sensitive mode**: the error carries the
+typed code, a bounded reason and the identity facts, and carries no href, URL,
+query, control name or value, option value or label, and no encoded fragment
+of any of them. The court exercises a denied origin, a missing document, an
+offline profile, an unqualified scheme and an expired deadline, and greps the
+whole response, the court log, the ledger and the receipt for every fake value
+and for its percent-encoded and `+`-encoded forms.
+
+### 13.4 The rollback claim was impossible and is corrected
+
+§3 said a failed submit leaves the form, its values, the generation, the realm
+and the revision exactly as they were. That cannot be true once the cancelable
+`submit` event has run in the live realm: a handler may mutate the document
+before the network fails, and no browser rolls that back. The honest contract:
+
+- A failed submit **preserves identity and history**: the target, the frame,
+  the document generation, the realm id, the history entries and position, and
+  the committed URL are unchanged, and the document is not replaced.
+- **Handler effects may remain**, and the revision reflects them, because the
+  page really did change.
+- The preflight refusals of §12.4, `POST`, multipart and file, still happen
+  **before any event is dispatched or anything mutates**.
+
+A fixture whose submit handler mutates observable DOM, followed by a failing
+navigation, proves both halves: identity and history unchanged, handler effect
+and revision visible.
+
+### 13.5 What `applied` means, exactly
+
+- `applied: true` means the action's own effect took place: the value, checked
+  state or selection was written, or a navigation was started.
+- `applied: false` with `default_prevented: true` means the page canceled the
+  default. The events were dispatched, any handler effects stand, and the
+  revision reflects them; the action's own effect did not happen.
+- `set_checked` and every activation respect that ordering: the cancelable
+  `click` is dispatched and, when it is canceled, the state goes back to what
+  it was and no `change` is fired.
+- The semantic snapshot remains the final-state authority whenever a page
+  handler transforms what was written.
+
+### 13.6 Court, extended
+
+The court now covers the **full runtime cross-product** of the two keys against
+every role, asserting exactly the matrix of §13.1; a non-ASCII value and its
+audited byte length; the five submit failure kinds with a whole-output grep for
+fake values in plain, percent-encoded and `+`-encoded form; the
+submit-handler-mutation fixture of §13.4; and cancellation of a click on a
+checkbox and of a submit, asserting `applied` and `default_prevented` exactly
+as §13.5 defines them.
