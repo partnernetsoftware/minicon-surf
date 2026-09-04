@@ -8,6 +8,14 @@ import re
 ROOT = pathlib.Path(__file__).resolve().parent
 PROTOCOL = "minicon-surf.control"
 VERSION = "0.0.1"
+# 0.0.2 adds three navigation operations and nothing else. The two versions are
+# served side by side: a request names its version exactly, and the version it
+# names decides which operation set it may use. A caller that wants 0.0.2 sends
+# 0.0.2; nothing infers a version from the shape of a request, and no caller
+# strips the version and retries.
+VERSION_NEXT = "0.0.2"
+NAVIGATION_OPERATIONS = {"target.navigate", "target.reload", "target.traverse"}
+MAX_HISTORY_ENTRIES = 8
 MAX_REQUEST_BYTES = 65_536
 MAX_RESPONSE_BYTES = 4_194_304
 MAX_DEPTH = 32
@@ -43,6 +51,8 @@ OPERATIONS = {
     "memory.report",
     "memory.trim",
 }
+OPERATIONS_NEXT = OPERATIONS | NAVIGATION_OPERATIONS
+BY_VERSION = {VERSION: OPERATIONS, VERSION_NEXT: OPERATIONS_NEXT}
 ERROR_CODES = {
     "invalid_request",
     "not_found",
@@ -84,11 +94,13 @@ def load_bounded(path, maximum):
 
 
 def common(document):
+    """Validate the shared envelope and return the operation set of its version."""
     require(isinstance(document, dict), "envelope is not an object")
     require(document.get("protocol") == PROTOCOL, "protocol differs")
-    require(document.get("version") == VERSION, "version differs")
+    require(document.get("version") in BY_VERSION, "version differs")
     require(REQUEST_ID.fullmatch(document.get("request_id", "")), "invalid request ID")
     bounded(document)
+    return BY_VERSION[document["version"]]
 
 
 def object_id(kind, value):
@@ -99,14 +111,14 @@ ACTOR = re.compile(r"^[a-z0-9][a-z0-9_.-]{0,63}$")
 OWNER_KINDS = {"profile", "session", "target"}
 
 
-def validate_capability(capability):
+def validate_capability(capability, operations):
     """The optional attenuation envelope: shape only; the host decides authority."""
     require(isinstance(capability, dict), "capability is not an object")
     require(set(capability) == {"owner", "scope", "budget", "audit"}, "capability fields differ")
     validate_scope(capability["owner"])
     scope = capability["scope"]
-    require(isinstance(scope, list) and 1 <= len(scope) <= len(OPERATIONS), "capability scope differs")
-    require(len(set(scope)) == len(scope) and set(scope) <= OPERATIONS, "capability scope lists unknown operations")
+    require(isinstance(scope, list) and 1 <= len(scope) <= len(operations), "capability scope differs")
+    require(len(set(scope)) == len(scope) and set(scope) <= operations, "capability scope lists unknown operations")
     budget = capability["budget"]
     require(isinstance(budget, dict) and set(budget) == {"result_bytes", "deadline_ms"}, "capability budget differs")
     require(type(budget["result_bytes"]) is int and 1 <= budget["result_bytes"] <= MAX_RESPONSE_BYTES, "capability result budget differs")
@@ -118,15 +130,15 @@ def validate_capability(capability):
 
 
 def validate_request(document):
-    common(document)
+    operations = common(document)
     fields = {"protocol", "version", "request_id", "deadline_ms", "operation", "arguments"}
     require(fields <= set(document) <= fields | {"capability"}, "request fields differ")
     deadline = document["deadline_ms"]
     require(type(deadline) is int and 1 <= deadline <= 120_000, "deadline differs")
-    require(document["operation"] in OPERATIONS, "operation differs")
+    require(document["operation"] in operations, "operation differs")
     require(isinstance(document["arguments"], dict), "arguments is not an object")
     if "capability" in document:
-        validate_capability(document["capability"])
+        validate_capability(document["capability"], operations)
     encoded = json.dumps(document, separators=(",", ":"), ensure_ascii=False).encode()
     require(len(encoded) <= MAX_REQUEST_BYTES, "request exceeds byte bound")
     if document["operation"].startswith("target."):
@@ -165,6 +177,28 @@ def validate_request(document):
         require(reference["target"] == arguments["target"], "action target differs")
         require(type(reference["revision"]) is int and reference["revision"] >= 0, "action revision differs")
         require(arguments["action"] == {"kind": "click"}, "initial action differs")
+    elif document["operation"] in ("target.navigate", "target.reload"):
+        arguments = document["arguments"]
+        expected = {"target", "url"} if document["operation"] == "target.navigate" else {"target"}
+        require(set(arguments) == expected, "navigation arguments differ")
+        if "url" in arguments:
+            validate_url(arguments["url"])
+    elif document["operation"] == "target.traverse":
+        arguments = document["arguments"]
+        require(set(arguments) == {"target", "delta"}, "traverse arguments differ")
+        delta = arguments["delta"]
+        require(
+            type(delta) is int and delta != 0 and abs(delta) <= MAX_HISTORY_ENTRIES,
+            "traverse delta differs",
+        )
+
+
+URL = re.compile(r"^https?://[!-~]{1,2000}$")
+
+
+def validate_url(value):
+    """A bounded absolute http(s) URL. The host decides whether policy allows it."""
+    require(isinstance(value, str) and URL.fullmatch(value), "invalid URL")
 
 
 def validate_scope(scope):
@@ -183,6 +217,7 @@ def validate_response(document):
     if document["ok"]:
         require(isinstance(document["result"], dict), "result is not an object")
         validate_snapshot(document["result"])
+        validate_navigation(document["result"])
     else:
         error = document["error"]
         require(isinstance(error, dict), "error is not an object")
@@ -195,6 +230,36 @@ def validate_response(document):
             validate_scope(error["scope"])
         if "details" in error:
             require(isinstance(error["details"], dict), "details is not an object")
+
+
+def validate_history(history):
+    """The bounded history state a navigation result and target.inspect carry."""
+    require(isinstance(history, dict), "history is not an object")
+    require(set(history) == {"position", "length", "can_go_back", "can_go_forward"}, "history fields differ")
+    position, length = history["position"], history["length"]
+    require(type(length) is int and 1 <= length <= MAX_HISTORY_ENTRIES, "history length differs")
+    require(type(position) is int and 0 <= position < length, "history position differs")
+    require(type(history["can_go_back"]) is bool and type(history["can_go_forward"]) is bool, "history flags differ")
+    require(history["can_go_back"] == (position > 0), "can_go_back disagrees with the position")
+    require(history["can_go_forward"] == (position < length - 1), "can_go_forward disagrees with the position")
+
+
+def validate_navigation(result):
+    """A navigate, reload or traverse result: identity, the committed URL and
+    the bounded history state. An entry is a URL, never page state."""
+    if result.get("kind") != "navigation":
+        return
+    require(
+        set(result) == {"kind", "target", "frame", "generation", "realm", "revision", "url", "history"},
+        "navigation result fields differ",
+    )
+    object_id("target", result["target"])
+    object_id("frame", result["frame"])
+    object_id("realm", result["realm"])
+    require(type(result["generation"]) is int and result["generation"] >= 1, "navigation generation differs")
+    require(type(result["revision"]) is int and result["revision"] >= 0, "navigation revision differs")
+    validate_url(result["url"])
+    validate_history(result["history"])
 
 
 def validate_snapshot(result):
@@ -226,21 +291,55 @@ def expect_invalid(document, validator):
     raise AssertionError("negative contract case unexpectedly passed")
 
 
-def main():
-    schema = json.loads((ROOT / "control-0.0.1.schema.json").read_text())
+def check_schema(version, operations):
+    """Each version has its own schema file and its own discriminator."""
+    schema = json.loads((ROOT / f"control-{version}.schema.json").read_text())
     require(schema["$defs"]["protocol"]["const"] == PROTOCOL, "schema protocol differs")
-    require(schema["$defs"]["version"]["const"] == VERSION, "schema version differs")
-    require(set(schema["$defs"]["operation"]["enum"]) == OPERATIONS, "schema operations differ")
+    require(schema["$defs"]["version"]["const"] == version, "schema version differs")
+    require(set(schema["$defs"]["operation"]["enum"]) == operations, "schema operations differ")
     require(set(schema["$defs"]["error"]["properties"]["code"]["enum"]) == ERROR_CODES, "schema errors differ")
+    require(schema["$id"].endswith(f"control-{version}.schema.json"), "schema id differs")
     for kind in OBJECT_ID:
         require(f"{kind}_id" in schema["$defs"], f"schema lacks {kind} ID")
         require(
             schema["$defs"][f"{kind}_id"]["pattern"] == OBJECT_ID[kind].pattern,
             f"schema {kind} pattern differs",
         )
-    mapping = load_bounded(ROOT / "cdp-mapping-0.0.1.json", MAX_RESPONSE_BYTES)
+    return schema
+
+
+def check_mapping(version):
+    mapping = load_bounded(ROOT / f"cdp-mapping-{version}.json", MAX_RESPONSE_BYTES)
     require(mapping["native_protocol"] == PROTOCOL, "mapping protocol differs")
-    require(mapping["native_version"] == VERSION, "mapping version differs")
+    require(mapping["native_version"] == version, "mapping version differs")
+    losses = {item["native"]: item for item in mapping["losses"]}
+    require(len(losses) == len(mapping["losses"]), "mapping contains duplicate losses")
+    require(all(item.get("loss") for item in mapping["losses"]), "a mapping loss is empty")
+    return mapping, losses
+
+
+def main():
+    schema = check_schema(VERSION, OPERATIONS)
+    next_schema = check_schema(VERSION_NEXT, OPERATIONS_NEXT)
+    # 0.0.1 is unchanged by 0.0.2: the two differ only in the identity, the
+    # version discriminator and the three added operations.
+    require(
+        set(next_schema["$defs"]["operation"]["enum"]) - set(schema["$defs"]["operation"]["enum"])
+        == NAVIGATION_OPERATIONS,
+        "0.0.2 adds something other than the navigation operations",
+    )
+    stripped = [json.loads(json.dumps(s)) for s in (schema, next_schema)]
+    for one in stripped:
+        del one["$id"], one["title"], one["$defs"]["version"], one["$defs"]["operation"]
+    require(stripped[0] == stripped[1], "the two versions differ beyond version and operations")
+    mapping, _ = check_mapping(VERSION)
+    next_mapping, next_losses = check_mapping(VERSION_NEXT)
+    require(
+        {"navigation", "reload", "traverse", "history entry"} <= set(next_losses),
+        "0.0.2 mapping does not record the navigation losses",
+    )
+    require("-32601" in next_losses["traverse"]["loss"], "traverse loss must name its refusal")
+    require(next_mapping["objects"] == mapping["objects"], "0.0.2 changes the object vocabulary")
     mapped = {item["native"]: item for item in mapping["objects"]}
     require(len(mapped) == len(mapping["objects"]), "mapping contains duplicate objects")
     require(
@@ -355,7 +454,66 @@ def main():
     zero_generation = json.loads(json.dumps(frame_success))
     zero_generation["result"]["generation"] = 0
     expect_invalid(zero_generation, validate_response)
-    print("control 0.0.1: vocabulary mapping, 12 examples, and 15 negative cases passed")
+
+    # 0.0.2: the navigation slice, with its own examples beside the 0.0.1 set.
+    navigate_request = load_bounded(examples / "target-navigate.request.json", MAX_REQUEST_BYTES)
+    navigate_success = load_bounded(examples / "target-navigate.success.json", MAX_RESPONSE_BYTES)
+    reload_request = load_bounded(examples / "target-reload.request.json", MAX_REQUEST_BYTES)
+    reload_success = load_bounded(examples / "target-reload.success.json", MAX_RESPONSE_BYTES)
+    traverse_request = load_bounded(examples / "target-traverse.request.json", MAX_REQUEST_BYTES)
+    traverse_failure = load_bounded(examples / "target-traverse.failure.json", MAX_RESPONSE_BYTES)
+    for document in (navigate_request, reload_request, traverse_request):
+        validate_request(document)
+        require(document["version"] == VERSION_NEXT, "a navigation example must name 0.0.2")
+    for document in (navigate_success, reload_success, traverse_failure):
+        validate_response(document)
+        require(document["version"] == VERSION_NEXT, "a navigation example must name 0.0.2")
+    require(navigate_request["request_id"] == navigate_success["request_id"], "navigate does not echo request ID")
+    require(reload_request["request_id"] == reload_success["request_id"], "reload does not echo request ID")
+    require(traverse_request["request_id"] == traverse_failure["request_id"], "traverse does not echo request ID")
+    require(navigate_success["result"]["url"] == navigate_request["arguments"]["url"], "navigate committed another URL")
+    require(
+        reload_success["result"]["generation"] > navigate_success["result"]["generation"]
+        and reload_success["result"]["realm"] != navigate_success["result"]["realm"],
+        "a reload must produce a fresh document generation and realm",
+    )
+    require(
+        reload_success["result"]["history"] == navigate_success["result"]["history"],
+        "a reload must not append an entry or move the position",
+    )
+    require(traverse_failure["error"]["code"] == "not_found", "an entry outside the window must be not_found")
+
+    older_version = json.loads(json.dumps(navigate_request))
+    older_version["version"] = VERSION
+    expect_invalid(older_version, validate_request)
+    unknown_version = json.loads(json.dumps(navigate_request))
+    unknown_version["version"] = "0.0.3"
+    expect_invalid(unknown_version, validate_request)
+    relative_url = json.loads(json.dumps(navigate_request))
+    relative_url["arguments"]["url"] = "/second.html"
+    expect_invalid(relative_url, validate_request)
+    extra_navigate_argument = json.loads(json.dumps(navigate_request))
+    extra_navigate_argument["arguments"]["referrer"] = "http://127.0.0.1:8080/"
+    expect_invalid(extra_navigate_argument, validate_request)
+    zero_delta = json.loads(json.dumps(traverse_request))
+    zero_delta["arguments"]["delta"] = 0
+    expect_invalid(zero_delta, validate_request)
+    far_delta = json.loads(json.dumps(traverse_request))
+    far_delta["arguments"]["delta"] = MAX_HISTORY_ENTRIES + 1
+    expect_invalid(far_delta, validate_request)
+    inconsistent_history = json.loads(json.dumps(navigate_success))
+    inconsistent_history["result"]["history"]["can_go_back"] = False
+    expect_invalid(inconsistent_history, validate_response)
+    retained_state = json.loads(json.dumps(navigate_success))
+    retained_state["result"]["scroll_y"] = 120
+    expect_invalid(retained_state, validate_response)
+    older_capability_scope = json.loads(json.dumps(capability_request))
+    older_capability_scope["capability"]["scope"].append("target.navigate")
+    expect_invalid(older_capability_scope, validate_request)
+    print(
+        "control 0.0.1 and 0.0.2: two schemas, two mappings, 18 examples, "
+        "and 24 negative cases passed"
+    )
 
 
 if __name__ == "__main__":

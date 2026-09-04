@@ -1,0 +1,426 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://minicon.agenterm.work/surf/protocol/control-0.0.2.schema.json",
+  "title": "MiniCon Surf control envelope 0.0.2",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/request"
+    },
+    {
+      "$ref": "#/$defs/success"
+    },
+    {
+      "$ref": "#/$defs/failure"
+    }
+  ],
+  "$defs": {
+    "protocol": {
+      "const": "minicon-surf.control"
+    },
+    "version": {
+      "const": "0.0.2"
+    },
+    "request_id": {
+      "type": "string",
+      "pattern": "^req_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "profile_id": {
+      "type": "string",
+      "pattern": "^profile_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "session_id": {
+      "type": "string",
+      "pattern": "^session_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "target_id": {
+      "type": "string",
+      "pattern": "^target_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "frame_id": {
+      "type": "string",
+      "pattern": "^frame_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "realm_id": {
+      "type": "string",
+      "pattern": "^realm_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "surface_id": {
+      "type": "string",
+      "pattern": "^surface_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "node_id": {
+      "type": "string",
+      "pattern": "^node_[a-z0-9][a-z0-9_-]{0,63}$"
+    },
+    "operation": {
+      "enum": [
+        "profile.create",
+        "profile.list",
+        "profile.inspect",
+        "profile.delete",
+        "profile.storage.put",
+        "profile.storage.get",
+        "profile.policy.set",
+        "session.open",
+        "session.list",
+        "session.inspect",
+        "session.close",
+        "target.open",
+        "target.list",
+        "target.inspect",
+        "target.close",
+        "target.snapshot",
+        "target.act",
+        "target.navigate",
+        "target.reload",
+        "target.traverse",
+        "target.wait",
+        "target.screenshot",
+        "surface.show",
+        "surface.hide",
+        "memory.report",
+        "memory.trim"
+      ]
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "version",
+        "request_id",
+        "deadline_ms",
+        "operation",
+        "arguments"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "deadline_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120000
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
+        },
+        "arguments": {
+          "type": "object",
+          "maxProperties": 64
+        },
+        "capability": {
+          "$ref": "#/$defs/capability"
+        }
+      },
+      "additionalProperties": false
+    },
+    "capability": {
+      "description": "Optional attenuation of the caller's authority for this one request. It never grants: a request with a capability may do at most what the same request without one may do. The owner must be an object on the operation's ownership chain (profile, session or target); a surface, frame or realm is never an owner. The operation must be in scope, the request deadline may not exceed the budget deadline, and the result may not exceed the budget bytes. The audit record names the actor and reason for the host's bounded audit ledger.",
+      "type": "object",
+      "required": [
+        "owner",
+        "scope",
+        "budget",
+        "audit"
+      ],
+      "properties": {
+        "owner": {
+          "$ref": "#/$defs/scope"
+        },
+        "scope": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 23,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/operation"
+          }
+        },
+        "budget": {
+          "type": "object",
+          "required": [
+            "result_bytes",
+            "deadline_ms"
+          ],
+          "properties": {
+            "result_bytes": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4194304
+            },
+            "deadline_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 120000
+            }
+          },
+          "additionalProperties": false
+        },
+        "audit": {
+          "type": "object",
+          "required": [
+            "actor",
+            "reason"
+          ],
+          "properties": {
+            "actor": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9_.-]{0,63}$"
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "success": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "version",
+        "request_id",
+        "ok",
+        "result"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "ok": {
+          "const": true
+        },
+        "result": {
+          "type": "object",
+          "maxProperties": 64
+        }
+      },
+      "additionalProperties": false
+    },
+    "failure": {
+      "type": "object",
+      "required": [
+        "protocol",
+        "version",
+        "request_id",
+        "ok",
+        "error"
+      ],
+      "properties": {
+        "protocol": {
+          "$ref": "#/$defs/protocol"
+        },
+        "version": {
+          "$ref": "#/$defs/version"
+        },
+        "request_id": {
+          "$ref": "#/$defs/request_id"
+        },
+        "ok": {
+          "const": false
+        },
+        "error": {
+          "$ref": "#/$defs/error"
+        }
+      },
+      "additionalProperties": false
+    },
+    "error": {
+      "type": "object",
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "invalid_request",
+            "not_found",
+            "conflict",
+            "profile_locked",
+            "stale_revision",
+            "deadline_exceeded",
+            "resource_limit",
+            "unsupported_operation",
+            "unsupported_capability",
+            "permission_denied",
+            "target_crashed",
+            "internal"
+          ]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "scope": {
+          "$ref": "#/$defs/scope"
+        },
+        "details": {
+          "type": "object",
+          "maxProperties": 32
+        }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/profile_scope"
+        },
+        {
+          "$ref": "#/$defs/session_scope"
+        },
+        {
+          "$ref": "#/$defs/target_scope"
+        },
+        {
+          "$ref": "#/$defs/frame_scope"
+        },
+        {
+          "$ref": "#/$defs/realm_scope"
+        },
+        {
+          "$ref": "#/$defs/surface_scope"
+        }
+      ]
+    },
+    "profile_scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "profile"
+        },
+        "id": {
+          "$ref": "#/$defs/profile_id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "session_scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "session"
+        },
+        "id": {
+          "$ref": "#/$defs/session_id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "target_scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "target"
+        },
+        "id": {
+          "$ref": "#/$defs/target_id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "frame_scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "frame"
+        },
+        "id": {
+          "$ref": "#/$defs/frame_id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "realm_scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "realm"
+        },
+        "id": {
+          "$ref": "#/$defs/realm_id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "surface_scope": {
+      "type": "object",
+      "required": [
+        "kind",
+        "id"
+      ],
+      "properties": {
+        "kind": {
+          "const": "surface"
+        },
+        "id": {
+          "$ref": "#/$defs/surface_id"
+        }
+      },
+      "additionalProperties": false
+    },
+    "node_reference": {
+      "type": "object",
+      "required": [
+        "target",
+        "revision",
+        "node"
+      ],
+      "properties": {
+        "target": {
+          "$ref": "#/$defs/target_id"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "node": {
+          "$ref": "#/$defs/node_id"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

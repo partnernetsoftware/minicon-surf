@@ -103,6 +103,40 @@ The proposed one-shot projection is
 success or failure envelope. The command is illustrative and does not exist
 yet. Its operation names and object IDs cannot diverge from this schema.
 
+## Version 0.0.2: the navigation slice
+
+`0.0.2` is a **separate schema with its own version discriminator**
+([`control-0.0.2.schema.json`](control-0.0.2.schema.json)), not a patch of
+`0.0.1`. A host serves both concurrently: a request names its version exactly,
+and that version decides which operation set it may use. `0.0.1` is unchanged,
+byte for byte and in meaning; the two schemas differ only in their identity,
+their version constant and three added operations.
+
+| Operation | Arguments | Result boundary |
+|---|---|---|
+| `target.navigate` | `target`, `url` (absolute `http`/`https`, ≤ 2,000 bytes) | The target and its main frame keep their ids; the document generation increments, a new realm is minted, the revision advances and every earlier node reference is `stale_revision`. |
+| `target.reload` | `target` | The same identity rules. A reload appends no history entry and does not move the position. |
+| `target.traverse` | `target`, `delta` (non-zero, \|delta\| ≤ 8) | Refetches that entry's URL under the profile's current policy; an offset outside the window is `not_found`. |
+
+Each result is `{kind: "navigation", target, frame, generation, realm,
+revision, url, history}`, where `history` is `{position, length, can_go_back,
+can_go_forward}` with the flags agreeing with the position. `target.inspect`
+carries the same bounded `history` object.
+
+**History is metadata only.** An entry holds the final canonical committed URL
+and, at most, a host-minted identity for the CDP mapping. It holds no document,
+realm, response body, form state, scroll position, script state, cookie or
+storage snapshot, and no profile facts. Going back therefore refetches and
+produces a fresh document: page state is not restored, and that loss is
+recorded in the mapping rather than emulated. A redirect chain commits only the
+final URL, a navigation from a back position truncates the forward entries, and
+a failure mutates nothing at all.
+
+Discovery is advisory. `session.inspect` may advertise
+`supported_protocol_versions` and the exact `0.0.2` operation set, but a caller
+that wants `0.0.2` **sends `0.0.2`**. No host infers a version from the shape
+of a request, and no caller strips the version or a field and retries.
+
 ## Frames and realms
 
 Four things change at different times and are never collapsed into one:

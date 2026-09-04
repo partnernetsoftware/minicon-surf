@@ -1,0 +1,93 @@
+{
+ "schema": 1,
+ "native_protocol": "minicon-surf.control",
+ "native_version": "0.0.2",
+ "status": "hypothesis",
+ "objects": [
+  {
+   "native": "profile",
+   "cdp": null,
+   "mapping": "none",
+   "boundary": "BrowserContext does not define native profile persistence, locking, policy, or budgets"
+  },
+  {
+   "native": "session",
+   "cdp": "Target.SessionID",
+   "mapping": "different-semantics",
+   "boundary": "CDP session is a client attachment, not the native engine authority"
+  },
+  {
+   "native": "target",
+   "cdp": "Target.TargetID",
+   "mapping": "qualified-synthetic-one-to-one",
+   "boundary": "observed by the synthetic G2 court; HTML engines and external clients remain unqualified"
+  },
+  {
+   "native": "frame",
+   "cdp": "Page.FrameId",
+   "mapping": "adapter-scoped",
+   "boundary": "one-to-one with a native frame while both live, adapter-scoped and not stable across adapters; qualified through Page.getFrameTree on the synthetic host (main frame plus one bounded child) and on the native route (one main frame) where puppeteer-core 24.15.0 observes it over a loopback edge and keeps the same id across a same-frame navigation; Page.frameNavigated and child-frame nesting are not projected; document generation has no CDP equivalent"
+  },
+  {
+   "native": "realm",
+   "cdp": "Runtime.ExecutionContextId",
+   "mapping": "not-projected",
+   "boundary": "realm identity and retirement are native; no Runtime.enable, executionContextCreated or executionContextDestroyed is projected in this increment, so a CDP client cannot observe realm replacement except through stale DOM handles after navigation"
+  },
+  {
+   "native": "surface",
+   "cdp": null,
+   "mapping": "none",
+   "boundary": "target activation is not presentation attachment"
+  },
+  {
+   "native": "revision",
+   "cdp": null,
+   "mapping": "none",
+   "boundary": "maintained by the native target and adapter"
+  },
+  {
+   "native": "node_reference",
+   "cdp": "DOM.NodeId|DOM.BackendNodeId",
+   "mapping": "adapter-scoped-lossy",
+   "boundary": "CDP IDs never bypass target revision validation"
+  }
+ ],
+ "losses": [
+  {
+   "native": "document generation",
+   "cdp": null,
+   "loss": "no CDP concept; Page.loaderId is the closest and is not mapped"
+  },
+  {
+   "native": "navigation",
+   "cdp": "Page.navigate / Page.frameNavigated",
+   "loss": "target.navigate exists in 0.0.2 and maps onto Page.navigate; Page.frameNavigated and every other navigation event stay unprojected because this version projects no events at all"
+  },
+  {
+   "native": "child frames",
+   "cdp": "Page.FrameTree.childFrames",
+   "loss": "the synthetic host has exactly one bounded child frame and no nesting; engine hosts expose no frames yet"
+  },
+  {
+   "native": "world",
+   "cdp": "Runtime.ExecutionContextDescription.auxData.isDefault",
+   "loss": "only the main world exists on the synthetic host; isolated worlds are unprojected"
+  },
+  {
+   "native": "reload",
+   "cdp": "Page.reload",
+   "loss": "ignoreCache and scriptToEvaluateOnLoad have no native meaning and are refused typed rather than ignored"
+  },
+  {
+   "native": "traverse",
+   "cdp": "Page.getNavigationHistory / Page.navigateToHistoryEntry",
+   "loss": "both stay -32601 unless the host remains the sole history authority: adapter-scoped ids would have to map onto host-minted entry identities, with an evicted, foreign or stale id failing typed. The adapter never keeps its own list, never renumbers and never answers from a cache. The native window is bounded and addressed by a signed delta, so CDP entry ids are not projected"
+  },
+  {
+   "native": "history entry",
+   "cdp": "back/forward cache",
+   "loss": "an entry is the final canonical committed URL and, at most, a host-minted identity: no document, realm, body, form, scroll, script, cookie or storage state is retained, so a client that expects restored page state after going back gets a fresh document. Recorded, never emulated"
+  }
+ ]
+}
