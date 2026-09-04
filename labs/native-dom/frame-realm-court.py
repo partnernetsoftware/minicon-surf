@@ -8,9 +8,18 @@ refused alike, a real link click on a hermetic fixture and over the bounded
 network as a same-frame navigation (frame kept, generation +1, realm
 retired and replaced, revision monotonic, old node references stale), failed
 navigations that leave the target untouched, owners at zero after close, and
-the exact losses (no child frames, no capability attenuation on this host,
-no CDP projection). Native requests are validated by
-protocol/check_contract.py before they are sent.
+the exact losses (no capability attenuation on this host, no CDP
+projection). Native requests are validated by protocol/check_contract.py
+before they are sent.
+
+Amendment, recorded when the bounded child-frame slice landed: two criteria
+here asserted `frame_limit == 1` and a loss line said there are no child
+frames. Both were true of the host they were written for and are not true of
+the one that now exists. The enumeration criterion keeps its meaning — a
+document that embeds nothing has exactly one frame — and now reads the
+bounded limit of 8 rather than 1. The loss line says what the child frames
+actually are and points at the court that owns them. No other criterion
+moved, and the earlier wording is preserved in this note rather than erased.
 """
 
 import argparse
@@ -107,8 +116,8 @@ def main():
                     inspect_a = ok("target.inspect", {"target": a})
                     inspect_b = ok("target.inspect", {"target": b})
                     expect(tag + "open names frame, generation 1 and realm", opened["generation"] == 1 and opened["frame"].startswith("frame_") and opened["realm"].startswith("realm_"))
-                    expect(tag + "inspect enumerates exactly one main frame and one main-world realm with frame_limit 1",
-                           len(inspect_a["frames"]) == 1 and inspect_a["frames"][0]["parent"] is None and inspect_a["frame_limit"] == 1
+                    expect(tag + "a document with no embedded document enumerates one main frame and one main-world realm, under the bounded frame limit",
+                           len(inspect_a["frames"]) == 1 and inspect_a["frames"][0]["parent"] is None and inspect_a["frame_limit"] == 8
                            and inspect_a["realms"] == [{"realm": inspect_a["frames"][0]["realm"], "frame": inspect_a["frames"][0]["frame"], "world": "main"}])
                     frame_a, realm_a = inspect_a["frames"][0]["frame"], inspect_a["frames"][0]["realm"]
                     frame_b, realm_b = inspect_b["frames"][0]["frame"], inspect_b["frames"][0]["realm"]
@@ -211,7 +220,7 @@ def main():
                            ok("target.inspect", {"target": c})["revision"] == state["revision"]
                            and ok("target.snapshot", snapshot_arguments(c, realm=state["frames"][0]["realm"]))["generation"] == 3)
 
-                    # 5. Losses recorded by construction: no capability on this host, no child frames.
+                    # 5. Losses recorded by construction: no capability on this host.
                     attenuated = {"protocol": "minicon-surf.control", "version": "0.0.1", "request_id": "req_ret_cap",
                                   "deadline_ms": 1000, "operation": "target.snapshot", "arguments": snapshot_arguments(a),
                                   "capability": {"owner": {"kind": "target", "id": a}, "scope": ["target.snapshot"],
@@ -262,7 +271,7 @@ def main():
         "checks": checks,
         "footprint_bytes": footprints,
         "losses": [
-            "no child frames: every native-dom target is one main frame; frame_limit is 1",
+            "child frames are bounded, same-origin, depth one and script-free: this court's fixtures embed none, so every target here is one main frame; the child-frame court owns those criteria",
             "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",
             "no CDP projection of frames or realms on this host",
             "navigation is a link click only; no target.navigate, no history, no form submission",

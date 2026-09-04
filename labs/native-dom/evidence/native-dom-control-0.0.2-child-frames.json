@@ -1,0 +1,487 @@
+{
+ "caps": {
+  "child_owner_bytes": 262144,
+  "close_retention_bytes": 1048576,
+  "cycles": 64,
+  "frame_limit": 8,
+  "navigation_return_bytes": 65536,
+  "seven_children_owner_bytes": 1835008
+ },
+ "checks": [
+  {
+   "check": "[system] one iframe enumerates a main frame and one child, main first",
+   "detail": {
+    "count": 2,
+    "frame_limit": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] every frame carries its own generation and realm",
+   "detail": {
+    "generations": [
+     1,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the same page without the iframe still enumerates one frame",
+   "passed": true
+  },
+  {
+   "check": "[system] seven children reach the bound and no more",
+   "passed": true
+  },
+  {
+   "check": "[system] a snapshot narrowed to the child observes the child's document",
+   "detail": {
+    "frame": "frame_2",
+    "names": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the main frame's snapshot does not contain the child's nodes",
+   "detail": {
+    "names": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a realm belonging to the other frame is not_found on either side",
+   "passed": true
+  },
+  {
+   "check": "[system] a child's own iframe is not built: depth stops at one",
+   "passed": true
+  },
+  {
+   "check": "[system] a child's node ids are disjoint from the main frame's in one revision",
+   "detail": {
+    "child": 2,
+    "main": 1,
+    "shared": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a reference from a child is refused rather than acting on the main frame",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "action_in_child_frame_unsupported"
+     },
+     "message": "this host does not act inside a child frame",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an embedded document's inline script does not run",
+   "detail": {
+    "names": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an embedded document's external script costs no fetch",
+   "detail": {
+    "fetches": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a frame from another target is not_found in this one",
+   "passed": true
+  },
+  {
+   "check": "[system] a frame that never existed is the same not_found",
+   "passed": true
+  },
+  {
+   "check": "[system] parent navigation ends the children",
+   "detail": {
+    "frames": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a click that navigates names the frames it ended",
+   "detail": {
+    "ended": [
+     "frame_17"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an ended frame and its realm are afterwards the same not_found",
+   "passed": true
+  },
+  {
+   "check": "[system] closing a target retires every one of its realms exactly once",
+   "detail": {
+    "retired": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] cross-origin, srcdoc, about:, malformed and absent srcs are all refused",
+   "detail": {
+    "frames": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the parent still committed and the refusals were charged as denied",
+   "detail": {
+    "denied": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the ninth child is over the bound, skipped, and costs no fetch",
+   "detail": {
+    "fetches": 8,
+    "frames": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a parent's fetches include one per child and no new budget appears",
+   "detail": {
+    "fetches": 8,
+    "per_document": [
+     32,
+     4194304
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M1: one child costs at most 262144 live owner bytes",
+   "detail": {
+    "owner_bytes": 247000
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M2: seven children cost at most 1835008 live owner bytes",
+   "detail": {
+    "owner_bytes": 1726710
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M3: repeated parent navigation returns to the one-child level",
+   "detail": {
+    "one_child": 247000,
+    "owner_bytes": 247000
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M3: every navigation retires exactly the main realm and its children",
+   "detail": {
+    "retired": 128
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M4: the footprint's growth does not accelerate over the cycles",
+   "detail": {
+    "first_half": 0,
+    "second_half": 32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M5: open and close with the bound of children returns every owner",
+   "detail": {
+    "control_owner_bytes": 0,
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M5: the children's arm retains at most 1048576 more than the identical childless arm",
+   "detail": {
+    "allocator": "system",
+    "children_bytes": 16384,
+    "control_bytes": 0,
+    "excess_bytes": 16384
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no child URL, path or document text appears in the audit",
+   "detail": {
+    "audit_bytes": 17653
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] one iframe enumerates a main frame and one child, main first",
+   "detail": {
+    "count": 2,
+    "frame_limit": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] every frame carries its own generation and realm",
+   "detail": {
+    "generations": [
+     1,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the same page without the iframe still enumerates one frame",
+   "passed": true
+  },
+  {
+   "check": "[arena] seven children reach the bound and no more",
+   "passed": true
+  },
+  {
+   "check": "[arena] a snapshot narrowed to the child observes the child's document",
+   "detail": {
+    "frame": "frame_2",
+    "names": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the main frame's snapshot does not contain the child's nodes",
+   "detail": {
+    "names": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a realm belonging to the other frame is not_found on either side",
+   "passed": true
+  },
+  {
+   "check": "[arena] a child's own iframe is not built: depth stops at one",
+   "passed": true
+  },
+  {
+   "check": "[arena] a child's node ids are disjoint from the main frame's in one revision",
+   "detail": {
+    "child": 2,
+    "main": 1,
+    "shared": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a reference from a child is refused rather than acting on the main frame",
+   "detail": {
+    "error": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "action_in_child_frame_unsupported"
+     },
+     "message": "this host does not act inside a child frame",
+     "retryable": false,
+     "scope": {
+      "id": "target_1",
+      "kind": "target"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an embedded document's inline script does not run",
+   "detail": {
+    "names": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an embedded document's external script costs no fetch",
+   "detail": {
+    "fetches": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a frame from another target is not_found in this one",
+   "passed": true
+  },
+  {
+   "check": "[arena] a frame that never existed is the same not_found",
+   "passed": true
+  },
+  {
+   "check": "[arena] parent navigation ends the children",
+   "detail": {
+    "frames": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a click that navigates names the frames it ended",
+   "detail": {
+    "ended": [
+     "frame_17"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an ended frame and its realm are afterwards the same not_found",
+   "passed": true
+  },
+  {
+   "check": "[arena] closing a target retires every one of its realms exactly once",
+   "detail": {
+    "retired": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] cross-origin, srcdoc, about:, malformed and absent srcs are all refused",
+   "detail": {
+    "frames": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the parent still committed and the refusals were charged as denied",
+   "detail": {
+    "denied": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the ninth child is over the bound, skipped, and costs no fetch",
+   "detail": {
+    "fetches": 8,
+    "frames": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a parent's fetches include one per child and no new budget appears",
+   "detail": {
+    "fetches": 8,
+    "per_document": [
+     32,
+     4194304
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M1: one child costs at most 262144 live owner bytes",
+   "detail": {
+    "owner_bytes": 240152
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M2: seven children cost at most 1835008 live owner bytes",
+   "detail": {
+    "owner_bytes": 1677398
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M3: repeated parent navigation returns to the one-child level",
+   "detail": {
+    "one_child": 240152,
+    "owner_bytes": 240136
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M3: every navigation retires exactly the main realm and its children",
+   "detail": {
+    "retired": 128
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M4: the footprint's growth does not accelerate over the cycles",
+   "detail": {
+    "first_half": 32768,
+    "second_half": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M5: open and close with the bound of children returns every owner",
+   "detail": {
+    "control_owner_bytes": 0,
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M5: the children's arm retains at most 1048576 more than the identical childless arm",
+   "detail": {
+    "allocator": "arena",
+    "children_bytes": 81920,
+    "control_bytes": 49152,
+    "excess_bytes": 32768
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no child URL, path or document text appears in the audit",
+   "detail": {
+    "audit_bytes": 17653
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] Page.getFrameTree projects the one child, flat, under its parent",
+   "detail": {
+    "children": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] the projected ids are adapter-scoped, not the native frame ids",
+   "detail": {
+    "cdp_main": "cdp_frame_1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[cdp] recorded loss: a projected child carries its parent's url until \u00a712.2 is ruled",
+   "detail": {
+    "same_url": true
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 63,
+ "checks_total": 63,
+ "child_document_text_in_responses": [
+  "embedded alpha"
+ ],
+ "court": "native-dom child frames (control 0.0.2)",
+ "host_sha256": "5f8d068084da814056559f468dbfd8a3458e24eae8d459ec6d67010ea35610d5",
+ "limitations": [
+  "design-frozen court: it fails until bounded child frames exist on the native route",
+  "observation only: acting inside a child needs a node reference that can name a frame, which is unruled",
+  "two hermetic loopback origins, macOS only; no surface, no window, no AppKit",
+  "no pid, path, window or desktop fact is recorded"
+ ],
+ "passed": true
+}

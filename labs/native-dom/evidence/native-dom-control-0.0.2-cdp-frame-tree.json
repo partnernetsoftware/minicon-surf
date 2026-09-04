@@ -660,14 +660,14 @@
   },
   "footprint_bytes": {
     "arena": {
-      "empty": 1982800,
-      "live_two_targets_one_session": 3195264,
-      "post_close": 2769232
+      "empty": 1999184,
+      "live_two_targets_one_session": 3244416,
+      "post_close": 2752848
     },
     "system": {
       "empty": 1999184,
-      "live_two_targets_one_session": 3998032,
-      "post_close": 4374864
+      "live_two_targets_one_session": 3834192,
+      "post_close": 4292944
     }
   },
   "frame_id_mapping": {
@@ -680,12 +680,13 @@
       "native_frame": "frame_1"
     }
   },
-  "host_sha256": "9370cc31a0e6ec5ae116453a8ae6541713bdee971d22da8897bcc0ff1b2dd154",
+  "host_sha256": "5f8d068084da814056559f468dbfd8a3458e24eae8d459ec6d67010ea35610d5",
   "limitations": [
     "one named client and version; target.page() and every puppeteer Page API are outside the claim",
     "loopback only; one connection at a time",
     "Page.FrameId is adapter-scoped per connection; Runtime.ExecutionContextId is never emitted",
-    "no child frames, no Web API growth, no realm projection"
+    "this court's fixture targets embed nothing, so it exercises one main frame; the child-frame court qualifies the projection of bounded children",
+    "no Web API growth, no realm projection"
   ],
   "passed": true,
   "qualification": {

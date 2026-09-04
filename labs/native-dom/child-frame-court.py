@@ -18,7 +18,7 @@ Groups:
  5 policy       cross-origin, srcdoc, about:, malformed and the ninth child
  6 budget       children are charged to the parent document's fetches and bytes
  7 memory       M1 to M6 of the design, pre-registered before measurement
- 8 cdp          the children project flat, and the losses are asserted as losses
+ 8 cdp          the children project flat, and the url loss is asserted as a loss
  9 secrecy      no child text, URL or path in the ledger, the log or the receipt
 
 First amendment (mechanism and one criterion, recorded before implementation):
@@ -81,6 +81,54 @@ def load_module(name, path):
 
 
 RETENTION = load_module("retention_court", Path(__file__).with_name("retention-court.py"))
+NAV = load_module("navigation_court", Path(__file__).with_name("navigation-court.py"))
+
+
+def qualify_cdp(binary, origin, client_modules, expect, tag):
+    """Group 8: the children project flat through the generic mapping, and the
+    url loss that design §12.2 records is asserted as a loss, not hidden."""
+    if not (Path(client_modules) / "node_modules").exists():
+        expect(tag + "the children project through Page.getFrameTree", False,
+               {"reason": "the pinned client package is absent from the ignored lab directory"})
+        return
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-child-cdp-") as directory:
+        host = NAV.Host(binary, directory, "system", origin, cdp=True)
+        client = None
+        try:
+            profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+            session = host.ok("session.open", {"profile": profile})["session"]
+            target = NAV.open_target(host, session, origin, "/parent-one.html")
+            native = host.ok("target.inspect", {"target": target})
+            client = NAV.CDP.Client(client_modules)
+            client.command("connect", endpoint=host.endpoint())
+            client.command("waitForTarget", id=target)
+            client.command("attach", name="A", id=target)
+            tree = client.send("A", "Page.getFrameTree")
+            frame_tree = (tree.get("result") or {}).get("frameTree") or {}
+            children = frame_tree.get("childFrames") or []
+            main_id = (frame_tree.get("frame") or {}).get("id")
+            child = (children[0].get("frame") if children else {}) or {}
+            expect(tag + "Page.getFrameTree projects the one child, flat, under its parent",
+                   tree.get("ok") and len(children) == 1
+                   and child.get("parentId") == main_id
+                   and children[0].get("childFrames") == []
+                   and child.get("id") != main_id,
+                   {"children": len(children)})
+            expect(tag + "the projected ids are adapter-scoped, not the native frame ids",
+                   main_id and str(main_id).startswith("cdp_frame_")
+                   and str(child.get("id", "")).startswith("cdp_frame_")
+                   and main_id != native["frames"][0]["frame"],
+                   {"cdp_main": main_id})
+            expect(tag + "recorded loss: a projected child carries its parent's url until §12.2 is ruled",
+                   child.get("url") == (frame_tree.get("frame") or {}).get("url"),
+                   {"same_url": child.get("url") == (frame_tree.get("frame") or {}).get("url")})
+            host.ok("target.close", {"target": target})
+            host.ok("session.close", {"session": session})
+        finally:
+            if client is not None:
+                client.command("disconnect")
+                client.finish()
+            host.finish()
 
 
 def page(title, bodies):
@@ -116,6 +164,9 @@ class FrameHandler:
                         '<iframe src="/child-a.html"></iframe>',
                     ]),
                     # A child that itself embeds: depth stops at one.
+                    "/parent-link.html": page("Parent link", [
+                        '<iframe src="/child-a.html"></iframe>',
+                        '<a id="go" href="/landed.html">Go</a>']),
                     "/parent-nested.html": page("Parent nested", ['<iframe src="/child-nested.html"></iframe>']),
                     "/child-nested.html": page("Child nested", ['<iframe src="/child-a.html"></iframe>']),
                     "/child-a.html": page("Child A", ['<p id="ca">embedded alpha</p>']),
@@ -153,6 +204,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True)
     parser.add_argument("--receipt", required=True)
+    parser.add_argument("--client-modules", default=str(ROOT / "target" / "labs" / "d4"))
     args = parser.parse_args()
     if os.environ.get(VISIBLE_ENV):
         print(json.dumps({"passed": False, "reason": "the visible-court variable is set"}))
@@ -328,13 +380,26 @@ def main():
                     before = ok("target.inspect", {"target": one})
                     navigated = ok("target.navigate", {"target": one, "url": f"{origin}/landed.html"})
                     after = ok("target.inspect", {"target": one})
-                    expect(tag + "parent navigation ends the children and names them",
-                           navigated.get("ended_frames") == [child]
-                           and navigated["frame"] == main_frame
+                    expect(tag + "parent navigation ends the children",
+                           navigated["frame"] == main_frame
                            and navigated["generation"] == at(frames_of(before), 0, "generation") + 1
                            and navigated["realm"] != main_realm
                            and len(frames_of(after)) == 1,
-                           {"ended": navigated.get("ended_frames"), "frames": len(frames_of(after))})
+                           {"frames": len(frames_of(after))})
+                    # The click path is where 0.0.1's precedent puts the field
+                    # (design §17); the pinned navigation result keeps its shape.
+                    linked = open_page(session, "/parent-link.html")
+                    linked_frames = frames_of(ok("target.inspect", {"target": linked}))
+                    link_snap = snap(linked)
+                    link_node = next((n["reference"] for n in link_snap["result"]["nodes"]
+                                      if n.get("role") == "link"), None) if link_snap.get("ok") else None
+                    clicked = ok("target.act", {"target": linked, "reference": link_node,
+                                                "action": {"kind": "click"}}) if link_node else {}
+                    expect(tag + "a click that navigates names the frames it ended",
+                           clicked.get("ended_frames") == [at(linked_frames, 1, "frame")]
+                           and clicked.get("navigated") is True,
+                           {"ended": clicked.get("ended_frames")})
+                    ok("target.close", {"target": linked})
                     expect(tag + "an ended frame and its realm are afterwards the same not_found",
                            refused(snap(one, frame=child), "not_found", "frame", "frame_not_live_in_target")
                            and refused(snap(one, realm=child_realm), "not_found", "realm"))
@@ -442,6 +507,7 @@ def main():
                            {"audit_bytes": len(blob)})
                 finally:
                     host.finish()
+        qualify_cdp(args.binary, origin, args.client_modules, expect, "[cdp] ")
     finally:
         server.shutdown()
         other.shutdown()

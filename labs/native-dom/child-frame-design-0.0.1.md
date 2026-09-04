@@ -385,3 +385,25 @@ itself in script appears empty. These are recorded, not approximated.
 **Court.** Two criteria are added: an embedded document whose inline script
 would add a marker is observed without it, and a child whose script has a
 `src` costs no fetch.
+
+## 17. Amendment during implementation: where `ended_frames` may appear
+
+§4 said the navigation result reports `ended_frames`, on the strength of the
+synthetic host already carrying that field. Implementing it showed the
+precedent is narrower than the sentence: the synthetic host has no
+`target.navigate` — 0.0.1 navigates by clicking a link — so its `ended_frames`
+lives in an **action** result. The `kind: navigation` result that 0.0.2's
+`target.navigate`, `target.reload` and `target.traverse` return has its exact
+field set pinned by `protocol/check_contract.py`, and adding a field to it is
+a 0.0.2 result-shape change of precisely the kind this increment is told not
+to make on its own.
+
+So: the click path reports `ended_frames`, where 0.0.1's precedent puts it,
+and the three navigation operations do not. What they ended stays fully
+observable without any shape change — the enumeration afterwards lists what
+survived, and every ended frame and realm answers the same `not_found`. The
+court asserts the lifetime that way and asserts the field on the click path.
+
+Whether the pinned navigation result should also carry `ended_frames` is a
+third question for the root, and it is not taken here. It is smaller than
+§12.1 and §12.2: nothing is lost without it, only convenience.

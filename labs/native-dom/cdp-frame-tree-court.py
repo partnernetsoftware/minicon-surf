@@ -327,7 +327,8 @@ def main():
             "one named client and version; target.page() and every puppeteer Page API are outside the claim",
             "loopback only; one connection at a time",
             "Page.FrameId is adapter-scoped per connection; Runtime.ExecutionContextId is never emitted",
-            "no child frames, no Web API growth, no realm projection",
+            "this court's fixture targets embed nothing, so it exercises one main frame; the child-frame court qualifies the projection of bounded children",
+            "no Web API growth, no realm projection",
         ],
     }
     encoded = json.dumps(receipt, indent=2, sort_keys=True) + "\n"

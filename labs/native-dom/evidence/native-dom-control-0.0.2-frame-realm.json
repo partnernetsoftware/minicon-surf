@@ -5,7 +5,7 @@
       "passed": true
     },
     {
-      "check": "[system] inspect enumerates exactly one main frame and one main-world realm with frame_limit 1",
+      "check": "[system] a document with no embedded document enumerates one main frame and one main-world realm, under the bounded frame limit",
       "passed": true
     },
     {
@@ -63,6 +63,7 @@
       "check": "[system] a link click inside the court is a same-frame navigation",
       "detail": {
         "applied": true,
+        "ended_frames": [],
         "fixture": "semantic-static.html",
         "frame": "frame_1",
         "generation": 2,
@@ -109,6 +110,7 @@
       "check": "[system] a same-origin link navigates over the bounded network",
       "detail": {
         "applied": true,
+        "ended_frames": [],
         "fixture": "url",
         "frame": "frame_3",
         "generation": 2,
@@ -123,7 +125,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:51566/about.html"
+        "url": "http://127.0.0.1:57070/about.html"
       },
       "passed": true
     },
@@ -191,7 +193,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:51566/notfound"
+          "url": "http://127.0.0.1:57070/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -251,7 +253,7 @@
       "passed": true
     },
     {
-      "check": "[arena] inspect enumerates exactly one main frame and one main-world realm with frame_limit 1",
+      "check": "[arena] a document with no embedded document enumerates one main frame and one main-world realm, under the bounded frame limit",
       "passed": true
     },
     {
@@ -309,6 +311,7 @@
       "check": "[arena] a link click inside the court is a same-frame navigation",
       "detail": {
         "applied": true,
+        "ended_frames": [],
         "fixture": "semantic-static.html",
         "frame": "frame_1",
         "generation": 2,
@@ -355,6 +358,7 @@
       "check": "[arena] a same-origin link navigates over the bounded network",
       "detail": {
         "applied": true,
+        "ended_frames": [],
         "fixture": "url",
         "frame": "frame_3",
         "generation": 2,
@@ -369,7 +373,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:51566/about.html"
+        "url": "http://127.0.0.1:57070/about.html"
       },
       "passed": true
     },
@@ -437,7 +441,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:51566/notfound"
+          "url": "http://127.0.0.1:57070/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -497,19 +501,19 @@
   "checks_total": 62,
   "footprint_bytes": {
     "arena": {
-      "empty": 1950032,
-      "post_close": 2834768,
-      "two_fixture_targets_live": 2982272
+      "empty": 1999208,
+      "post_close": 2802024,
+      "two_fixture_targets_live": 3047832
     },
     "system": {
-      "empty": 1950032,
-      "post_close": 4538704,
-      "two_fixture_targets_live": 3604816
+      "empty": 1982800,
+      "post_close": 4784464,
+      "two_fixture_targets_live": 3768656
     }
   },
-  "host_sha256": "9370cc31a0e6ec5ae116453a8ae6541713bdee971d22da8897bcc0ff1b2dd154",
+  "host_sha256": "5f8d068084da814056559f468dbfd8a3458e24eae8d459ec6d67010ea35610d5",
   "losses": [
-    "no child frames: every native-dom target is one main frame; frame_limit is 1",
+    "child frames are bounded, same-origin, depth one and script-free: this court's fixtures embed none, so every target here is one main frame; the child-frame court owns those criteria",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",
     "no CDP projection of frames or realms on this host",
     "navigation is a link click only; no target.navigate, no history, no form submission",
