@@ -207,6 +207,10 @@ pub const PAINTER: &str = "bounded-semantic-painter";
 pub const READY_DEADLINE: Duration = Duration::from_millis(2000);
 pub const ACK_DEADLINE: Duration = Duration::from_millis(1000);
 pub const CLOSE_DEADLINE: Duration = Duration::from_millis(1000);
+/// How long a child that has closed its stdout may take to actually exit
+/// before cleanup gives up and kills it. End of file arrives a moment before
+/// the process is reapable, and that moment must not be counted as a kill.
+pub const EXIT_GRACE: Duration = Duration::from_millis(200);
 
 /// The environment the child needs before it may create a window; the host
 /// sets it only under its own double opt-in.
@@ -493,6 +497,37 @@ enum Event {
     Eof,
 }
 
+/// Why a wait ended. The three failures are different events and are counted
+/// differently: a deadline that expired while the child was still answering
+/// nothing, a child that left on its own (its stdout reached end of file or
+/// the reader thread stopped), and a message that did not decode.
+enum Waited {
+    Body(Body),
+    Timeout,
+    Ended,
+    Protocol,
+}
+
+/// Count a failed wait under the counter that describes it and name the cause
+/// for the caller's error text. A child that ended on its own is never a
+/// timeout, and a decode failure is never one either.
+fn attribute_wait(outcome: Waited, stats: &mut Stats) -> &'static str {
+    match outcome {
+        Waited::Body(_) | Waited::Timeout => {
+            stats.timeouts_total += 1;
+            "did not answer before the deadline"
+        }
+        Waited::Ended => {
+            stats.gone_total += 1;
+            "exited on its own"
+        }
+        Waited::Protocol => {
+            stats.protocol_failures_total += 1;
+            "broke the protocol"
+        }
+    }
+}
+
 /// A human input the child reported, in frame coordinates.
 #[derive(Debug, Clone, Copy)]
 pub struct Input {
@@ -640,13 +675,17 @@ impl Process {
             title: title.chars().take(32).collect(),
         });
         if hello.is_err() {
-            process.kill_and_reap(stats);
+            // The child's stdin is already closed: it left rather than
+            // refused, so this is not a kill unless it is somehow still alive.
+            if !process.end_after_failure(stats, true) {
+                stats.gone_total += 1;
+            }
             return Err("surface refused the hello".into());
         }
         let ready_ms = match process.wait_for(started + READY_DEADLINE, |body| {
             matches!(body, Body::Ready { .. })
         }) {
-            Some(Body::Ready {
+            Waited::Body(Body::Ready {
                 window_number,
                 screen_x,
                 screen_y,
@@ -662,10 +701,11 @@ impl Process {
                 };
                 started.elapsed().as_millis() as u64
             }
-            _ => {
-                stats.timeouts_total += 1;
-                process.kill_and_reap(stats);
-                return Err("surface did not become ready before the deadline".into());
+            outcome => {
+                let ended = matches!(outcome, Waited::Ended);
+                let cause = attribute_wait(outcome, stats);
+                process.end_after_failure(stats, ended);
+                return Err(format!("surface did not become ready: it {cause}"));
             }
         };
         stage("after_hello_ready");
@@ -674,11 +714,14 @@ impl Process {
         match process.wait_for(frame_started + ACK_DEADLINE, |body| {
             matches!(body, Body::FrameAck { .. })
         }) {
-            Some(_) => {}
-            None => {
-                stats.timeouts_total += 1;
-                process.kill_and_reap(stats);
-                return Err("surface did not acknowledge the first frame".into());
+            Waited::Body(_) => {}
+            outcome => {
+                let ended = matches!(outcome, Waited::Ended);
+                let cause = attribute_wait(outcome, stats);
+                process.end_after_failure(stats, ended);
+                return Err(format!(
+                    "surface did not acknowledge the first frame: it {cause}"
+                ));
             }
         }
         stats.frames_acked_total += 1;
@@ -691,16 +734,16 @@ impl Process {
         ))
     }
 
-    fn wait_for(&mut self, deadline: Instant, wanted: impl Fn(&Body) -> bool) -> Option<Body> {
+    fn wait_for(&mut self, deadline: Instant, wanted: impl Fn(&Body) -> bool) -> Waited {
         loop {
             let remaining = deadline.saturating_duration_since(Instant::now());
             if remaining.is_zero() {
-                return None;
+                return Waited::Timeout;
             }
             match self.events.recv_timeout(remaining) {
                 Ok(Event::Message(message)) => {
                     if wanted(&message.body) {
-                        return Some(message.body);
+                        return Waited::Body(message.body);
                     }
                     // Anything else arriving early is ignored here; input is
                     // not accepted before the first frame is acknowledged.
@@ -709,13 +752,13 @@ impl Process {
                     self.last_error = Some(error.to_string());
                     self.protocol_failure = true;
                     self.gone = true;
-                    return None;
+                    return Waited::Protocol;
                 }
                 Ok(Event::Eof) | Err(mpsc::RecvTimeoutError::Disconnected) => {
                     self.gone = true;
-                    return None;
+                    return Waited::Ended;
                 }
-                Err(mpsc::RecvTimeoutError::Timeout) => return None,
+                Err(mpsc::RecvTimeoutError::Timeout) => return Waited::Timeout,
             }
         }
     }
@@ -829,15 +872,17 @@ impl Process {
                 ms: started.elapsed().as_millis() as u64,
             };
         }
-        let sent = self.writer.send(Body::Close).is_ok();
-        let closed = sent
-            && self
-                .wait_for(started + CLOSE_DEADLINE, |body| {
-                    matches!(body, Body::Closed)
-                })
-                .is_some();
-        let reaped = closed && self.reap(CLOSE_DEADLINE.saturating_sub(started.elapsed()));
-        if reaped {
+        let outcome = if self.writer.send(Body::Close).is_ok() {
+            self.wait_for(started + CLOSE_DEADLINE, |body| {
+                matches!(body, Body::Closed)
+            })
+        } else {
+            // The child's stdin is closed: it is already on its way out.
+            Waited::Ended
+        };
+        if matches!(outcome, Waited::Body(_))
+            && self.reap(CLOSE_DEADLINE.saturating_sub(started.elapsed()))
+        {
             stats.exits_clean_total += 1;
             return Teardown {
                 exit: Exit::Protocol,
@@ -845,10 +890,13 @@ impl Process {
                 ms: started.elapsed().as_millis() as u64,
             };
         }
-        stats.timeouts_total += 1;
-        self.kill_and_reap(stats);
+        // `CLOSED` did not complete the exchange: say why it did not, and kill
+        // only a child that is still alive.
+        let ended = matches!(outcome, Waited::Ended);
+        attribute_wait(outcome, stats);
+        let killed = self.end_after_failure(stats, ended);
         Teardown {
-            exit: Exit::Killed,
+            exit: if killed { Exit::Killed } else { Exit::Gone },
             reaped: true,
             ms: started.elapsed().as_millis() as u64,
         }
@@ -870,12 +918,22 @@ impl Process {
         }
     }
 
-    fn kill_and_reap(&mut self, stats: &mut Stats) {
+    /// End a child after a failed exchange and report whether it had to be
+    /// killed. A child that already left is only reaped, so `kills_total`
+    /// never counts one that ended on its own; `ended` says the wait stopped
+    /// because its stdout closed, which precedes the exit by a moment.
+    fn end_after_failure(&mut self, stats: &mut Stats, ended: bool) -> bool {
+        if (ended && self.reap(EXIT_GRACE)) || self.child.try_wait().ok().flatten().is_some() {
+            self.gone = true;
+            self.join_reader();
+            return false;
+        }
         let _ = self.child.kill();
-        let _ = self.child.wait();
         stats.kills_total += 1;
+        let _ = self.child.wait();
         self.gone = true;
         self.join_reader();
+        true
     }
 
     fn join_reader(&mut self) {
@@ -1021,9 +1079,18 @@ mod tests {
         let _guard = crate::frame_region::test_lock();
         let nodes = vec![("node_1".to_owned(), "text".to_owned(), "x".to_owned())];
         let size = FrameSize::parse("128x128").unwrap();
-        // `sleep` gets the generation as its argument: 5 seconds, longer than READY.
-        // An exited child refuses the hello (EPIPE) or never answers.
-        for (binary, generation) in [("/usr/bin/true", 1u32), ("/bin/cat", 2), ("/bin/sleep", 5)] {
+        // Three different failures, counted three different ways. Every child
+        // is given the generation as its first argument, so `true` and `cat`
+        // both leave before `READY` (`cat` because that argument is not a
+        // file); this is the path the replay child's exit 69 takes. `yes`
+        // writes bytes that are not a message. `sleep` stays alive and silent
+        // past the deadline, its argument being 5 seconds.
+        for (binary, generation, expect) in [
+            ("/usr/bin/true", 1u32, "ended"),
+            ("/bin/cat", 3, "ended"),
+            ("/usr/bin/yes", 2, "protocol"),
+            ("/bin/sleep", 5, "timeout"),
+        ] {
             let before = crate::frame_region::counters();
             let mut stats = Stats::default();
             let painting = paint(&nodes, 0, 1, size).unwrap();
@@ -1047,16 +1114,40 @@ mod tests {
                 Ok(_) => panic!("{binary} must not become a surface"),
                 Err(error) => error,
             };
-            assert!(
-                error.contains("did not become ready") || error.contains("refused the hello"),
-                "{binary}: {error}"
-            );
             assert!(started.elapsed() < READY_DEADLINE + Duration::from_millis(500));
             assert_eq!(stats.spawns_total, 1);
-            assert_eq!(
-                stats.kills_total, 1,
-                "{binary}: failure cleanup kills and reaps"
-            );
+            match expect {
+                // The child left on its own: no timeout and no kill.
+                "ended" => {
+                    assert_eq!(stats.gone_total, 1, "{binary}: {error}");
+                    assert_eq!(stats.timeouts_total, 0, "{binary}: {error}");
+                    assert_eq!(stats.kills_total, 0, "{binary}: {error}");
+                    assert!(
+                        error.contains("exited on its own") || error.contains("refused the hello"),
+                        "{binary}: {error}"
+                    );
+                }
+                // A message that does not decode: a protocol failure, and the
+                // child is still alive, so ending it is a real kill.
+                "protocol" => {
+                    assert_eq!(stats.protocol_failures_total, 1, "{binary}: {error}");
+                    assert_eq!(stats.timeouts_total, 0, "{binary}: {error}");
+                    assert_eq!(stats.gone_total, 0, "{binary}: {error}");
+                    assert_eq!(stats.kills_total, 1, "{binary}: {error}");
+                    assert!(error.contains("broke the protocol"), "{binary}: {error}");
+                }
+                // The deadline expired with the child still running.
+                _ => {
+                    assert_eq!(stats.timeouts_total, 1, "{binary}: {error}");
+                    assert_eq!(stats.gone_total, 0, "{binary}: {error}");
+                    assert_eq!(stats.protocol_failures_total, 0, "{binary}: {error}");
+                    assert_eq!(stats.kills_total, 1, "{binary}: {error}");
+                    assert!(
+                        error.contains("did not answer before the deadline"),
+                        "{binary}: {error}"
+                    );
+                }
+            }
             drop(painting);
             let after = crate::frame_region::counters();
             assert_eq!(
