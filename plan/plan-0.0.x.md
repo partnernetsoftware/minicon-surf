@@ -1282,7 +1282,7 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, and the court written but held for a freeze ruling:
+- [~] Implemented and qualified on the native route, court 23 of 23:
   page-authored text in a host error
   (`labs/native-dom/page-error-redaction-design-0.0.1.md`). The defect is one
   site, `src/main.rs:2020`: the realm's `eval` copies an exception's message
@@ -1303,9 +1303,24 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   code, the retryable bit, the scope and the fixed reason. Explicitly **not**
   the repair: candidate A from the error-name audit blanks the message as a
   side effect, which hides this instance without fixing it, so the redaction
-  must be verified on a build without candidate A. Pending: whether details
-  may name the exception's class, and `details.script` carrying an external
-  script's `src`. G1, G3, P6 and G6 stay open.
+  must be verified on a build without candidate A. Ruled and built:
+  `details.engine_error` no longer carries an exception message at all. It
+  says one of exactly two host-authored words — one for a script that threw,
+  one for a deadline that expired — chosen from what the host knows rather
+  than from what the page said, and the message, the class, the length and any
+  digest stop at the catch site rather than being filtered somewhere
+  downstream that a later path could forget. The court reads **23 of 23** on
+  `30004da4d050…` against **17 of 23** on the build before, and the fix
+  **costs nothing**: M1 224,458, M2 1,569,708 and main-only slack 38,496 are
+  byte-identical to the previous binary, because no shim source changed.
+  Verified with the selector engine exactly as it is, without the
+  `DOMException` candidate, so the values are gone because of the redaction
+  and not as a side effect of an unrelated slice. Seventeen receipts were
+  rerun on the binary. Still pending and deliberately untouched: whether
+  details may name the exception's class, and `details.script` carrying an
+  external script's `src`, which stays as it is and is written down as a
+  page-derived diagnostic rather than widened into this round. G1, G3, P6 and
+  G6 stay open.
 - [ ] Design-only, nothing implemented and no court frozen: the selector
   engine's error names (`labs/native-dom/selector-error-name-audit-0.0.1.md`).
   Measured, not read: a page catching a selector refusal reads `e.name ===

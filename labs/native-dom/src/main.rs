@@ -42,6 +42,13 @@ const MAX_HISTORY_ENTRIES: usize = 8;
 /// navigation operations. A record is evidence that an operation happened; it
 /// is never an authorization, and this host implements no capability
 /// attenuation.
+/// What the host says about an evaluation that failed. This is the whole
+/// vocabulary: a page's exception carries page-authored text, so its message,
+/// its class, its length and any digest of it stop at the catch site, and the
+/// caller is told only what the host itself knows. Adding a word here changes
+/// what a caller can learn and is a decision, not a detail.
+const EVAL_FAILURE_THREW: &str = "a script threw";
+const EVAL_FAILURE_DEADLINE: &str = "the deadline expired before the script finished";
 const MAX_AUDIT_ENTRIES: usize = 64;
 /// A form value's byte bound, and the highest option index an action may name.
 const MAX_FORM_VALUE_BYTES: usize = 1024;
@@ -1994,22 +2001,35 @@ impl Realm {
                     }
                 }
                 Err(error) => {
-                    let exception = ctx.catch();
-                    let message = exception
-                        .as_exception()
-                        .and_then(|e| e.message())
-                        .unwrap_or_else(|| format!("{error}"));
-                    Err(message)
+                    // The exception is caught and dropped right here. Its
+                    // message is page-authored — a page builds it from
+                    // whatever it holds, a form value included — so it never
+                    // crosses to a caller, and it is not filtered downstream
+                    // where a later path could forget to. What the caller
+                    // learns is the host's own word for what happened.
+                    let _ = ctx.catch();
+                    drop(error);
+                    Err(())
                 }
             });
         stage("after_js_value_drop", self.arena_statistics());
         let result = match outcome {
             Ok(text) => text,
-            Err(message) => {
-                let code = if Instant::now() >= deadline {
+            Err(()) => {
+                let expired = Instant::now() >= deadline;
+                let code = if expired {
                     "deadline_exceeded"
                 } else {
                     "internal"
+                };
+                // One of a closed set, chosen by the host from what the host
+                // knows: whether its own clock ran out. Nothing here varies
+                // with the page, so two documents that fail the same way are
+                // reported identically, down to the byte.
+                let reason = if expired {
+                    EVAL_FAILURE_DEADLINE
+                } else {
+                    EVAL_FAILURE_THREW
                 };
                 return Err(ControlError::new(
                     code,
@@ -2017,7 +2037,7 @@ impl Realm {
                     code == "deadline_exceeded",
                 )
                 .scoped("target", target_id)
-                .details(json!({"engine_error":message.chars().take(256).collect::<String>()})));
+                .details(json!({"engine_error": reason})));
             }
         };
         let mut counters = JobCounters::default();

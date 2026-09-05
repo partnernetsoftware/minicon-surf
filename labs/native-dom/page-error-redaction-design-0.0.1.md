@@ -1,8 +1,8 @@
 # Page-authored text in a host error — design, 0.0.1
 
-Design-only. Nothing is implemented. The court described in §5 is written and
-was run to produce the measurements below, but is **not committed with this
-document**: freezing it is one commit, held for the ruling. No `DOMException`
+Design-only when written; **ruled, frozen and implemented since**, and §8
+records what was built and measured. The court described in §5 was frozen
+unchanged one commit ahead of the fix. No `DOMException`
 work, no attribute-name validator, no handle change, no cap or floor moved.
 
 ## 1. The defect, measured
@@ -157,3 +157,40 @@ today.
    and M2 should not move at all. That is a prediction, to be measured on the
    candidate rather than assumed, against the unchanged floors of 245,760 and
    1,720,320.
+
+
+## 8. Ruled, built, measured
+
+The ruling took the recommendation in §6 whole. `details.engine_error` no
+longer carries an exception message: it says one of exactly two words the host
+authors itself, `EVAL_FAILURE_THREW` for a script that threw and
+`EVAL_FAILURE_DEADLINE` for a deadline that expired, chosen from what the host
+knows — whether its own clock ran out — and never from anything the page said.
+No class, no length, no first character, no digest.
+
+The exception is caught and dropped at the catch site rather than filtered
+downstream, which is the part worth keeping: a filter is a place a later path
+can forget to call, and there is now nothing to forget, because the message
+never leaves the function that catches it.
+
+**The frozen court reads 23 of 23** on `30004da4d050…`, against 17 of 23 with
+`passed: false` on `4a5836f43b38…`, the build it was frozen on. R1, R2 and R8
+turned over; R3 through R7, R9, R10 and R11 passed before and pass now, which
+is the point of having frozen them.
+
+**It costs nothing.** M1 224,458, M2 1,569,708 and main-only slack 38,496 are
+byte-identical to the previous binary — the change is host-side Rust and
+touches no shim source — against unchanged floors of 245,760 and 1,720,320.
+Seventeen receipts were rerun on the binary; `cargo test` is 54 of 54, clippy
+is clean under `-D warnings`, and the contract passes.
+
+The verification was run with the selector engine **exactly as it is**, with
+no `DOMException` candidate anywhere in the build, so the values are gone
+because of this repair and not as an accident of an unrelated one. That was
+the condition §6 set for itself and it is met.
+
+`details.script` keeps carrying an external script's `src` as written in the
+document. It is page-derived text in a diagnostic, it is not a form value, it
+stays as it is by ruling, and it is written down here so it is a known
+position rather than an oversight. If a court ever shows it leaking something
+that matters, that is its own ruling.

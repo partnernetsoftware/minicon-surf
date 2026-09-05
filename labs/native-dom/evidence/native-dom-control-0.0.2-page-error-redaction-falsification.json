@@ -1,0 +1,218 @@
+{
+ "checks": [
+  {
+   "check": "[system] R1: a page's own throw does not carry its value into the answer",
+   "detail": {
+    "code": "target_crashed",
+    "leaked_as": [
+     "fragment",
+     "json",
+     "literal"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] R2: nor any encoding or fragment of it",
+   "detail": {
+    "leaked_as": [
+     "codes",
+     "fragment",
+     "json",
+     "literal"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] R3: nor a listener that throws during the lifecycle",
+   "detail": {
+    "code": null,
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R4: nor a timer callback that throws when the host drains",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R5: nor a listener that throws under the agent's own action",
+   "detail": {
+    "act_code": null,
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R6: nor a rejection nobody handles",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R7: the typed code, the retryable bit and the scope survive",
+   "detail": {
+    "code": "target_crashed",
+    "retryable": false,
+    "scope_kind": "target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R8: two pages, one class, two values, identical details",
+   "detail": {
+    "keys_that_varied": [
+     "engine_error"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] R8b: and a fixed host reason is still said out loud",
+   "detail": {
+    "has_reason": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R9: a host that ran out of time is not a host whose page threw",
+   "detail": {
+    "code": "deadline_exceeded",
+    "retryable": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R10: and neither does the ledger the session keeps",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1: a page's own throw does not carry its value into the answer",
+   "detail": {
+    "code": "target_crashed",
+    "leaked_as": [
+     "fragment",
+     "json",
+     "literal"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] R2: nor any encoding or fragment of it",
+   "detail": {
+    "leaked_as": [
+     "codes",
+     "fragment",
+     "json",
+     "literal"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] R3: nor a listener that throws during the lifecycle",
+   "detail": {
+    "code": null,
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R4: nor a timer callback that throws when the host drains",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R5: nor a listener that throws under the agent's own action",
+   "detail": {
+    "act_code": null,
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R6: nor a rejection nobody handles",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R7: the typed code, the retryable bit and the scope survive",
+   "detail": {
+    "code": "target_crashed",
+    "retryable": false,
+    "scope_kind": "target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R8: two pages, one class, two values, identical details",
+   "detail": {
+    "keys_that_varied": [
+     "engine_error"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] R8b: and a fixed host reason is still said out loud",
+   "detail": {
+    "has_reason": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R9: a host that ran out of time is not a host whose page threw",
+   "detail": {
+    "code": "deadline_exceeded",
+    "retryable": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R10: and neither does the ledger the session keeps",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  },
+  {
+   "check": "R11: the court's own receipt carries no page value",
+   "detail": {
+    "leaked_as": []
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 17,
+ "checks_total": 23,
+ "court": "native-dom page-authored text in a host error (control 0.0.2)",
+ "host_sha256": "4a5836f43b3814ca39cea206609fe5045ab0565067fae2455ae3d0c737b7cf66",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the host redacts page-authored text",
+  "the values the fixtures throw are invented here and are never written to this receipt: a check reports that a value was found, never what it was",
+  "it reads the answers a caller sees; a host that hides a value from the answer and writes it to a file this court does not read is not caught here",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "thresholds": {
+  "deadline_ms": 1200,
+  "fragment_bytes": 8,
+  "identical_detail_keys": [
+   "engine_error"
+  ]
+ }
+}
