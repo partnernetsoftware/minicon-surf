@@ -187,3 +187,34 @@ each. `e.name` is the portable thing; `e.code` and the tag are not.
    a page that replaces the global first, `classList` unchanged, and the
    redaction's R1/R2/R8 still passing so the class change cannot be mistaken
    for a leak repair.
+
+
+## 9. Ruled
+
+Candidate A is accepted as measured. The selector engine's four page entry
+points — `querySelector`, `querySelectorAll`, `closest`, `matches` — throw the
+base-load captured `DOMException` named `SyntaxError` with `code` 12 and the
+`[object DOMException]` tag; `removeChild` throws `NotFoundError` with `code`
+8. A page that replaces `globalThis.DOMException` or `globalThis.Error` must
+not be able to change any of it.
+
+**Scope stops there, deliberately.** `classList`, the re-entrant dispatch
+guard and `localStorage` keep the plain named `Error`s they have. This host
+will carry two error vocabularies rather than pay bytes to unify a third, and
+§6's loss matrix stands as the written record of that choice rather than
+something a page's author discovers.
+
+The class and the message stay out of the host's `details`, which keeps saying
+one of two fixed words. The redaction's R1, R2 and R8 must still pass on the
+build that carries this slice: a class change must never be mistaken for, or
+quietly become, a leak repair.
+
+**304 bytes per child is accepted**, with the floors of 245,760 and 1,720,320
+and the caps unmoved and roughly 21,000 bytes of M1 headroom left. The child
+divergence recorded in §5 — every child pays, no child can observe — is
+accepted with it, and the implementation court carries a criterion for it so
+the fact stays measured rather than remembered.
+
+The implementation court is frozen before the code, covering names, codes and
+tags at both sites, the capture against a page that replaces the global first,
+`classList` unchanged, the redaction regression, and the child divergence.
