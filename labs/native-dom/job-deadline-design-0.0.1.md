@@ -163,3 +163,105 @@ No cap here moves once frozen.
 3. **Whether an unhandled rejection should ever fail an operation.** I
    recommend never: it is the page's error, it is counted, and the drain
    continues.
+
+## 8. The rulings, and the refinements they came with
+
+D1, D2 and D3 are as §2 and §7 proposed: an interrupted drain fails its
+operation with a **retryable** `deadline_exceeded`; there is **no job-count
+cap**, the request's absolute deadline and the existing 16 MiB realm limit
+being the CPU and memory bounds; and a non-deadline job error is page-owned,
+counted without its source or value, does not fail the operation, and the
+drain continues.
+
+### 8.1 What this rquickjs version actually offers
+
+Read from `rquickjs-core` 0.12.2, the pinned version:
+
+- `Runtime::is_job_pending() -> bool` **exists**, so "the deadline arrived
+  while work was still queued" is distinguishable from "the queue emptied".
+- `Runtime::execute_pending_job() -> Result<bool, JobException>`: `Ok(true)` a
+  job ran, `Ok(false)` the queue is empty, `Err` an exception was raised
+  during execution.
+- `JobException(pub Context)` carries a context and its `Display` is the fixed
+  text "Job raised an exception"; the crate does not render the value. That
+  suits this host, which must not read it anyway.
+- `Runtime::set_host_promise_rejection_tracker` **exists**, which is the only
+  way to observe an *unhandled rejection* — a different event from a job that
+  threw.
+
+### 8.2 The drain, defined
+
+```
+loop {
+    if now >= deadline {
+        return if runtime.is_job_pending() { Interrupted } else { Done }
+    }
+    match runtime.execute_pending_job() {
+        Ok(true)  => { jobs_run += 1; continue }
+        Ok(false) => return Done,
+        Err(_)    => {
+            if now >= deadline { return Interrupted }   // the interrupt cut this job
+            jobs_threw += 1; continue                    // the page's own error
+        }
+    }
+}
+```
+
+`Interrupted` fails the operation; `Done` does not. An `Err` is classified by
+the clock, because the interrupt surfaces as an exception like any other and
+only the deadline separates the two.
+
+### 8.3 The counters, partitioned so none overlaps
+
+- **`jobs_run_total`** counts `Ok(true)` **only**: a job that ran to
+  completion. It does **not** include failed attempts.
+- **`jobs_threw_total`** counts `Err` that was **not** the deadline: a job
+  whose execution raised.
+- **`drains_interrupted_total`** counts **drains**, not jobs: one per drain
+  that ended at the deadline with work still queued.
+
+Every `execute_pending_job` call lands in exactly one of run, threw,
+queue-empty (uncounted, it is not an event) or interrupted (counted once for
+the drain). **No unhandled-rejection counter is claimed**: that is a distinct
+event this slice does not observe, and reporting one from an `Err` would be
+reporting a job that threw under another name. Installing the rejection
+tracker to count it honestly is available and is §9's question, not something
+smuggled in here.
+
+### 8.4 The handler is installed by a guard, not by two statements
+
+The interrupt handler must cover the evaluation, the string crossing that
+follows it and the **whole** drain, and must be removed on every return path,
+including the early `return Err(...)` the failure branch takes today. It is
+therefore installed by a small RAII guard whose `Drop` removes it, so no path
+can leave a stale handler behind and no future early return can reintroduce
+this bug.
+
+### 8.5 Late work is refused, not accepted
+
+Even when the evaluation and every job return normally, if the wall clock has
+crossed the deadline by the time the drain finishes, the operation answers
+`deadline_exceeded` rather than accepting work that finished late. The check
+is the same clock and the same absolute instant as everything else here.
+
+### 8.6 Court: two more honesty criteria
+
+- **Handler effects before an infinite job stand.** A page that mutates the
+  document, then queues a job that never returns, must show that mutation on
+  the next observation: the interruption cuts the job, not what already
+  happened, and the revision reflects it.
+- **A failed build leaves no target.** A `target.open` whose drain is
+  interrupted commits nothing: no target id, no realm, no history entry, and
+  the owners return.
+
+Every group that can meet a hanging host keeps its outer watchdog with an
+exact kill by pid and a reap, and records the timeout as the falsification.
+
+## 9. The one question left
+
+Should this slice install `set_host_promise_rejection_tracker` and count
+unhandled rejections as their own integer? It is the only way to report them
+honestly, it is a small addition, and it is genuinely separate from
+`jobs_threw_total`. I have **not** taken it: it widens the realm's host
+surface for a diagnostic no criterion needs, and D3 already says a rejection
+is page-owned. If the root wants the counter, it is one hook and one integer.
