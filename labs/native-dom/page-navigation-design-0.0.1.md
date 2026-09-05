@@ -34,8 +34,9 @@ navigate.
 
 A realm evaluation **never** re-enters fetch, build or swap. When a page
 assigns `location.href` or calls `assign`/`replace`, the realm records a
-**navigation intent** into a host-owned sink and returns; nothing about the
-live document changes at that moment.
+**navigation intent** into a realm-closure-owned slot the host takes at a
+boundary (§18) and returns; nothing about the live document changes at that
+moment.
 
 The host consumes the intent **at a boundary**, which is exactly where it
 already consumes everything else: after the current evaluation **and** after
@@ -456,3 +457,111 @@ under the cap, so the slice proceeds; but the next slice that adds shim source
 will exceed M1, and the honest reading is that this cap is now nearly spent,
 not that it is comfortable. No second optimization was attempted and no cap
 moved.
+
+
+## 17. Three root-audit findings the 50-check court did not cover
+
+Each is recorded with the falsifier that would have caught it, and every
+falsifier is added to the court before the code that answers it.
+
+**17.1 A boundary that swallowed its own failure.** `take_intent` returned
+`Option` and reached it through `realm.eval(…).ok()?` and
+`serde_json::from_str(…).ok()?`. Three different things therefore looked
+identical to the host: the page raised nothing, the evaluation failed at the
+deadline or was interrupted, and the bridge answered something malformed.
+Only the first is "no intent". The second and third are failures the caller
+was never told about — the operation went on to report **success** — and,
+worse, the JS taker may never have run, so the intent is still sitting in the
+realm's slot and commits at some **later** boundary, inside an unrelated
+operation, possibly after an explicit caller navigation that should have
+discarded it.
+
+The boundary now returns `Result<Option<NavigationIntent>, ControlError>`. An
+evaluation failure propagates as itself (the deadline's own error, unchanged),
+and output that is not empty and not a well-shaped intent is a typed host
+bridge failure — `internal`, `intent_bridge_failed`, not retryable — never a
+silent `None`.
+
+That fixes the report but not the stale slot: the failing evaluation cannot
+be retried inside a deadline that has already expired. So the target is
+**poisoned**. While a target is poisoned the host will not let page code run
+on that realm again until the slot has been emptied: the next boundary
+evaluates the taker first, throws away whatever comes back, counts it as a
+discard with the fixed cause `bridge_failure`, and only then runs timers or
+dispatches an action. If that clearing evaluation also fails, the operation
+fails with the same typed error and the target stays poisoned. Nothing is
+ever applied later; a rebuilt document gets a new realm and a clean flag.
+
+*Falsifier:* a court-only one-shot seam, `--court-break-intent-take 1`,
+constrained exactly like the hold seam — refused before serving without
+`--surface-court-file`. It makes the first take answer malformed output
+without evaluating anything, which is the worst case: the slot stays full.
+The court then asserts that the boundary answers `internal` /
+`intent_bridge_failed` rather than succeeding, that the target's URL and
+history are unchanged, and that the **next** boundary does not commit the
+stale intent — the URL is still the page's own, and exactly one discard is
+counted with cause `bridge_failure`. A host that returns `None` on failure
+passes none of these.
+
+**17.2 An address that was unbounded until it was too late.** The realm kept
+whatever string the page assigned — `String(value)` of any length — and the
+host crossed it as JSON, joined it against the document URL and handed the
+result to `navigate_with`, which does **not** apply `navigation_url`. So the
+2000-byte bound, the absolute-URL check and the `http`/`https` scheme check
+that every caller navigation passes were all skipped on the page's path, and
+a page could make the realm retain, and the host cross, an address of any
+size.
+
+Both ends are bounded now. The realm refuses to retain an address longer than
+`MAX_URL_BYTES` characters — it records the kind with no address and a fixed
+over-length marker — and the host enforces `MAX_URL_BYTES` **in UTF-8 bytes**
+on what crosses, before any parse, join or fetch, and then puts the resolved
+address through `navigation_url` itself. Every one of those refusals answers
+one fixed redacted reason, `navigation_url`, with no address in the message,
+the details, the ledger, the counters or the receipt. The character bound and
+the byte bound are deliberately different: a 1000-character non-ASCII address
+passes the realm's bound and is refused by the host's.
+
+*Falsifier:* two fixtures — one assigning 3000 ASCII characters, one
+assigning an address of non-ASCII characters that is under the character
+bound and over the byte bound. The court asserts each fails with
+`invalid_request` and the reason `navigation_url`, that the target keeps its
+URL and history, that nothing was fetched, and that neither the failure nor
+the ledger nor the counters contain any part of either address.
+
+**17.3 An audit §5 promised and the code never wrote.** §5 says a consumed
+intent reuses the existing path and its audit. It did not: `consume_intent`
+never called `audit_navigation`, so a page-initiated navigation left **no
+ledger record at all**. Secrecy was being read as if it were evidence, and it
+is the opposite — a navigation that appears nowhere is not a navigation that
+was audited discreetly.
+
+A page-initiated navigation now writes one bounded record like every other
+navigation: a fixed operation naming the kind — `page.navigate.assign`,
+`page.navigate.replace`, `page.navigate.reload` — a fixed outcome (committed,
+or the refusal's code), and the origin **only** when the address parsed into a
+real origin; never a path, a query, userinfo or any page value. A refusal is
+recorded too, with no origin at all.
+
+*Falsifier:* the court asserts a committed intent leaves a record whose
+operation is the fixed page-navigation name and whose origin is the loopback
+origin with no path or query; that a refused intent leaves a record with no
+origin; that no address, query or page text appears anywhere in the ledger;
+and that the ring still evicts — more than `MAX_AUDIT_ENTRIES` page
+navigations leave exactly 64 records and a non-zero `dropped_total`.
+
+
+## 18. One word in §3 that was not true
+
+§3 said the page "records a navigation intent into a host-owned sink". The
+sink is not host-owned. It is a slot inside the realm's closure: the page
+writes it through the location members, the host can only take it by
+evaluating the capability-guarded taker, and its bytes are the realm's and are
+accounted as realm bytes, not owner bytes. That distinction is the whole
+reason 17.1 exists — a slot the host owned could not go stale behind a failed
+evaluation.
+
+What *is* host-owned is everything the design says is host-owned elsewhere:
+the attribution counters, the court-only held intent, and the poison flag.
+§3's wording is corrected rather than the code: the intent slot is
+**realm-closure-owned and host-taken**.

@@ -38,6 +38,8 @@ VISIBLE_ENV = "MINICON_SURF_ALLOW_VISIBLE_COURT"
 CHAIN_CAP = 3
 OWNER_BYTES = 65536
 NAVIGATIONS = 128
+# More page navigations than the audit ring holds, so eviction is observed.
+AUDIT_LOOP = 40
 
 
 def load_module(name, path):
@@ -135,6 +137,19 @@ def main():
                 # An intent raised inside a lifecycle step, and after it.
                 "/late-intent.html": page("Late intent",
                                           "setTimeout(function(){location.href='/landed.html';},0);"),
+                # 17.2: two addresses the realm and the host must bound. One
+                # is over the character bound; the other is under it and over
+                # the byte bound, because each character is three bytes.
+                "/oversize-intent.html": page(
+                    "Oversize",
+                    "document.addEventListener('DOMContentLoaded',function(){"
+                    "location.href='/' + new Array(3001).join('z') + '.html';});"),
+                # This one is raised from a timer, so it is refused on the
+                # live path rather than during the build.
+                "/wide-late.html": page(
+                    "Wide",
+                    "setTimeout(function(){"
+                    "location.href='/' + new Array(801).join('\u4e2d') + '.html';},0);"),
                 "/landed.html": page("Landed", ""),
                 "/quiet.html": page("Quiet", ""),
             }
@@ -417,6 +432,162 @@ def main():
                        not seam_file.exists(), {"court_file": seam_file.exists()})
                 seam_directory.cleanup()
 
+            # 12: the address bounds, at both ends (§17.2).
+            directory, host, label = group("bounds")
+            try:
+                profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                session = host.ok("session.open", {"profile": profile})["session"]
+                del requested[:]
+                answer = open_page(host, session, "/oversize-intent.html")
+                error = answer.get("error") or {}
+                expect(tag + "an over-length address raised during a build is refused for one fixed reason",
+                       (not answer.get("ok")) and error.get("code") == "invalid_request"
+                       and error.get("details", {}).get("reason") == "navigation_url",
+                       {"error": error.get("code"),
+                        "reason": error.get("details", {}).get("reason")})
+                expect(tag + "and no part of it is in the failure, and none of it was fetched",
+                       "zzz" not in json.dumps(error)
+                       and not any("zzz" in path for path in requested),
+                       {"requested": len(requested)})
+                del requested[:]
+                opened = open_page(host, session, "/wide-late.html")
+                target = opened["result"]["target"] if opened.get("ok") else None
+                # The boundary that runs the timer is the one that must refuse:
+                # this address is under the realm's character bound and over
+                # the host's byte bound, because each character is three bytes.
+                probe = host.call("target.inspect", {"target": target}) if target else {}
+                error = probe.get("error") or {}
+                expect(tag + "a non-ASCII address over the byte bound is refused on the live path",
+                       (not probe.get("ok")) and error.get("code") == "invalid_request"
+                       and error.get("details", {}).get("reason") == "navigation_url",
+                       {"error": error.get("code"),
+                        "reason": error.get("details", {}).get("reason")})
+                live = state(host, target) if target else None
+                counts = counters(host)
+                expect(tag + "the refused document keeps its address, and nothing of the page's is anywhere",
+                       live is not None and (live.get("url") or "").endswith("/wide-late.html")
+                       and (live.get("history") or {}).get("length") == 1
+                       and "\u4e2d" not in json.dumps(error)
+                       and "\u4e2d" not in json.dumps(counts)
+                       and not any("%E4" in path or "\u4e2d" in path for path in requested),
+                       {"history": (live or {}).get("history"), "requested": len(requested)})
+            finally:
+                close(directory, host, label)
+
+            # 13: a take that fails is a failure, and never a later commit
+            # (§17.1). The seam is constrained exactly like the hold seam.
+            break_directory = tempfile.TemporaryDirectory(prefix="minicon-surf-pagenav-break-")
+            break_file = Path(break_directory.name) / "court.ndjson"
+            closed = subprocess.run(
+                [args.binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+                 "--config-dir", str(Path(break_directory.name) / "closed"),
+                 "--allow-origin", origin, "--court-break-intent-take", "1"],
+                input="", capture_output=True, text=True, timeout=30,
+                env={k: v for k, v in os.environ.items() if k != VISIBLE_ENV})
+            expect(tag + "the break seam is refused without the private court file",
+                   closed.returncode != 0 and not closed.stdout.strip(),
+                   {"code": closed.returncode, "answered": len(closed.stdout)})
+            directory, host, label = group("bridge-failure",
+                                           extra=("--court-break-intent-take", "1",
+                                                  "--surface-court-file", str(break_file)))
+            try:
+                answer = host.call("profile.create", {"persistence": "ephemeral"})
+                if not answer.get("ok"):
+                    expect(tag + "the host accepts the court-only broken-take seam", False,
+                           {"reason": (answer.get("error") or {}).get("code", "refused")})
+                else:
+                    profile = answer["result"]["profile"]
+                    session = host.ok("session.open", {"profile": profile})["session"]
+                    opened = open_page(host, session, "/late-intent.html")
+                    target = opened["result"]["target"] if opened.get("ok") else None
+                    before = state(host, target) if target else None
+                    # This boundary runs the timer, so an intent is raised, and
+                    # the take of it answers malformed output without having
+                    # evaluated anything: the slot is left full.
+                    probe = host.call("target.inspect", {"target": target}) if target else {}
+                    error = probe.get("error") or {}
+                    expect(tag + "a take that fails answers a typed failure instead of succeeding",
+                           (not probe.get("ok")) and error.get("code") == "internal"
+                           and error.get("details", {}).get("reason") == "intent_bridge_failed",
+                           {"error": error.get("code"),
+                            "reason": error.get("details", {}).get("reason")})
+                    counts_before = counters(host)
+                    after = state(host, target) if target else None
+                    counts_after = counters(host)
+                    expect(tag + "and the stale intent is discarded, never committed at a later boundary",
+                           after is not None
+                           and (after.get("url") or "").endswith("/late-intent.html")
+                           and (after.get("history") or {}).get("length") == 1
+                           and counts_after.get("discarded_total", 0)
+                           == counts_before.get("discarded_total", 0) + 1
+                           and counts_after.get("last_cause") == "bridge_failure",
+                           {"tail": (after or {}).get("url", "").rsplit("/", 1)[-1],
+                            "discarded": counts_after.get("discarded_total"),
+                            "cause": counts_after.get("last_cause")})
+                    expect(tag + "and the failure changed nothing about the document",
+                           before is not None and after is not None
+                           and before.get("url") == after.get("url")
+                           and before.get("history") == after.get("history"),
+                           {"same": before == after})
+            finally:
+                close(directory, host, label)
+                expect(tag + "the break seam's court file is gone when the host is",
+                       not break_file.exists(), {"court_file": break_file.exists()})
+                break_directory.cleanup()
+
+            # 14: the audit §5 promised, present and still bounded (§17.3).
+            directory, host, label = group("audit")
+            try:
+                profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                session = host.ok("session.open", {"profile": profile})["session"]
+                opened = open_page(host, session, "/assign-href.html")
+                target = opened["result"]["target"] if opened.get("ok") else None
+                audit = host.call("session.inspect", {"session": session})
+                entries = ((audit.get("result") or {}).get("audit") or {}).get("entries") or []
+                committed = [e for e in entries
+                             if str(e.get("operation", "")).startswith("page.navigate.")]
+                expect(tag + "a committed intent leaves one bounded page-navigation record",
+                       any(e.get("operation") == "page.navigate.assign"
+                           and e.get("outcome") == "committed"
+                           and e.get("origin") == origin for e in committed),
+                       {"records": [e.get("operation") for e in committed]})
+                blob = json.dumps(entries)
+                expect(tag + "and it names an origin, never a path, a query or page text",
+                       "landed.html" not in blob and "assign-href" not in blob
+                       and "?" not in blob,
+                       {"ledger_bytes": len(blob)})
+                if target:
+                    host.ok("target.close", {"target": target})
+                opened = open_page(host, session, "/wide-late.html")
+                refused = opened["result"]["target"] if opened.get("ok") else None
+                if refused:
+                    host.call("target.inspect", {"target": refused})
+                audit = host.call("session.inspect", {"session": session})
+                entries = ((audit.get("result") or {}).get("audit") or {}).get("entries") or []
+                expect(tag + "a refused intent leaves a record with an outcome and no origin",
+                       any(str(e.get("operation", "")).startswith("page.navigate.")
+                           and e.get("outcome") == "invalid_request"
+                           and e.get("origin") is None for e in entries),
+                       {"outcomes": sorted({e.get("outcome") for e in entries})})
+                if refused:
+                    host.ok("target.close", {"target": refused})
+                # More page navigations than the ring holds: it still evicts.
+                opened = open_page(host, session, "/assign-href.html")
+                loop = opened["result"]["target"] if opened.get("ok") else None
+                for _ in range(AUDIT_LOOP if loop else 0):
+                    host.ok("target.navigate",
+                            {"target": loop, "url": f"{origin}/assign-href.html"},
+                            deadline_ms=5000)
+                audit = host.call("session.inspect", {"session": session})
+                ledger = (audit.get("result") or {}).get("audit") or {}
+                expect(tag + "and the ring still holds exactly what it may and drops the rest",
+                       ledger.get("count") == ledger.get("limit")
+                       and ledger.get("dropped_total", 0) > 0
+                       and "landed.html" not in json.dumps(ledger.get("entries") or []),
+                       {"count": ledger.get("count"), "dropped": ledger.get("dropped_total")})
+            finally:
+                close(directory, host, label)
+
             # 9b, 10, 11: the empty slot, secrecy, and the owners.
             directory, host, label = group("owners")
             try:
@@ -456,7 +627,7 @@ def main():
         "court": "native-dom page-initiated navigation (control 0.0.2)",
         "host_sha256": hashlib.sha256(Path(args.binary).read_bytes()).hexdigest(),
         "criteria": {"chain_cap": CHAIN_CAP, "owner_bytes": OWNER_BYTES,
-                     "navigations": NAVIGATIONS},
+                     "navigations": NAVIGATIONS, "audit_loop": AUDIT_LOOP},
         "checks": checks,
         "checks_passed": sum(1 for c in checks if c["passed"]),
         "checks_total": len(checks),
