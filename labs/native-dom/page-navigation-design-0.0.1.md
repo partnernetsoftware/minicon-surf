@@ -431,3 +431,28 @@ M2 to about 1.79 MiB (under 1835008), leaving the main realm's cost as the
 slice's only memory change. If either cap still fails after this one change,
 the slice stops and is reported; there is no second optimization and no
 amended cap.
+
+
+## 16. What the narrowing actually recovered
+
+The pre-registered change was made and measured on the same court, the same
+copied release binary, both allocators:
+
+| criterion | frozen cap | HEAD before the slice | with the slice | after the narrowing |
+| --- | --- | --- | --- | --- |
+| child-frame M1, one child | 262144 | 255226 | 262970 | **261354** |
+| child-frame M2, seven children | 1835008 | 1784300 | 1838508 | **1827196** |
+
+Both caps hold, and the child-frame court is 82 of 82 again. The recovery is
+**partial, not complete**: a child still costs about 6.1 KiB more than it did
+before this slice. The accessor form was about 1.6 KiB of that; the rest is
+the shim source itself, which every realm compiles whether or not it will run
+page script, and which this slice made larger. §15 predicted a return to
+about 255 KiB and that did not happen — the prediction was wrong about where
+the cost lived, and the measurement is what stands.
+
+That leaves M1 with **790 bytes of headroom** on the default allocator. It is
+under the cap, so the slice proceeds; but the next slice that adds shim source
+will exceed M1, and the honest reading is that this cap is now nearly spent,
+not that it is comfortable. No second optimization was attempted and no cap
+moved.

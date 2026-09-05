@@ -725,8 +725,11 @@ occurrences is absent rather than zero, the counts saturate, and the frame
 owner's `skipped_total` sums them over live targets. `scripts_skipped`
 keeps its own meaning and its own contents. A parent navigation
 ends its children, and the click path names them in `ended_frames`. One child
-costs about 247 KB of live owner bytes, seven about 1.7 MB, and the whole
-cost returns on close.
+costs about 253 KB of live owner bytes, seven about 1.77 MB, and the whole
+cost returns on close. Those numbers rose by about 6 KB per child with the
+page-initiated navigation slice, which enlarged the shim every realm
+compiles; the frozen caps did not move, and M1 now has 790 bytes of
+headroom.
 
 Document lifecycle (`lifecycle-design-0.0.1.md`): after a document's own
 scripts have run, the host drives four observable steps, **each its own
@@ -754,6 +757,25 @@ other than `onload`, listener options (`capture`, `once`, `passive`,
 `signal`), `handleEvent` objects, the capture phase and
 `stopImmediatePropagation`. This is four steps of an event loop, not an event
 loop.
+
+Page-initiated navigation (`page-navigation-design-0.0.1.md`): a page's own
+script can ask for another document. `location.href = …`, `location.assign`,
+`location.replace` and `location.reload()` record **one intent** in a slot the
+realm's closure owns — last write wins, never a queue — which the host takes
+at the next boundary and turns into an ordinary navigation on the existing
+path: same allowlist, same budget, same deadline, same audit. An intent raised
+while the document is still being built is replace-like and does not add a
+history entry; one raised afterwards, from a timer or an action handler, adds
+one. A page that navigates on every build is a finite chain of at most
+`MAX_SCRIPT_CHAIN` (3) links inside one operation, sharing one budget and one
+deadline, and only the last link is ever observable; past that the operation
+fails `resource_limit` with `navigation_chain_limit`. A failed intent fails
+its operation as a **sensitive** navigation, so no address of the page's
+choosing reaches the error, the ledger or `memory.report`, which reports only
+`pending`, `discarded_total` and `last_cause`. An explicit `target.navigate`,
+`target.reload` or `target.traverse` outranks a pending intent and discards
+it. Losses: no `history` API, no fragment navigation, no `window.open` from
+script, and a child frame raises no intent at all — it runs no script.
 
 Queued jobs (`job-deadline-design-0.0.1.md`): a promise job or a
 `queueMicrotask` callback shares the deadline of the request whose turn queued
@@ -1965,7 +1987,8 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
-| **current, `099b46da4199…`** — every court rerun on this one binary: `-lifecycle` (53/53), `-job-deadline` (42/42), `-timers` (68/68), `-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64), `-navigation` (90/90) | the host with the bounded document lifecycle | the lifecycle's falsification receipt, `-lifecycle-falsification`, is the build before it and is kept as the record that the frozen court fails there. Navigation's **90 of 90 is this batch**: its differential soak criteria have failed in other batches on the same code, so the route stays **cross-batch narrow on the default allocator**. `-profile` stays 90 of 94, its four D6 checks narrow, and is **older-build evidence not rerun here**. G1, G3, P6 and G6 stay open |
+| **current, `24bb19416d9e…`** — every court rerun on this one binary: `-page-navigation` (50/50), `-lifecycle` (53/53), `-job-deadline` (42/42), `-timers` (68/68), `-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64), `-navigation` (90/90) | the host with page-initiated navigation | `-page-navigation-falsification` is the build before it, `0fc0cf97f606…`, where the frozen court passes only 20 of 46 and is kept as that record. `-child-frames` was rerun because this slice moved its numbers: M1 261,354 and M2 1,827,196 live owner bytes against unmoved caps of 262,144 and 1,835,008, so **M1 has 790 bytes of headroom**. Navigation's **90 of 90 is this batch**: its differential soak criteria have failed in other batches on the same code, so the route stays **cross-batch narrow on the default allocator**. `-profile` stays 90 of 94, its four D6 checks narrow, and is **older-build evidence not rerun here**. G1, G3, P6 and G6 stay open |
+| `099b46da4199…`, superseded — every court rerun on that binary: `-lifecycle` (53/53), `-job-deadline` (42/42), `-timers` (68/68), `-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64), `-navigation` (90/90) | the host with the bounded document lifecycle | the lifecycle's falsification receipt, `-lifecycle-falsification`, is the build before it and is kept as the record that the frozen court fails there. Navigation's **90 of 90 is this batch**: its differential soak criteria have failed in other batches on the same code, so the route stays **cross-batch narrow on the default allocator**. `-profile` stays 90 of 94, its four D6 checks narrow, and is **older-build evidence not rerun here**. G1, G3, P6 and G6 stay open |
 | `3b47966ece35…`, superseded — `native-dom-control-0.0.2-timers` (68/68, every frozen group and criterion, CDP included), plus `-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64) and `-navigation` (88/90) rerun on it | the host with bounded timers, on the pinned client restored offline from the local npm cache and verified against `cdp-qualification-0.0.1.json` | the timer court's own falsification receipt, `-timers-falsification`, is the earlier build `161357b0ffa5…` and is kept as the record that the frozen court fails there. Navigation's **88 of 90 is this batch**: its differential soak criteria passed in the batch before on the same code, so the route stays **cross-batch narrow on the default allocator** rather than repaired. `-profile` stays 90 of 94, its four D6 checks narrow, and is **older-build evidence not rerun here**. G1, G3, P6 and G6 stay open |
 | `161357b0ffa5…`, superseded by the row above — the same six receipts as they stood on the frame-action build | the host with frame-aware actions, child-local navigation, the two checked revision limits and the activation preflight | every one of these six was rerun on this build and carries its hash. The navigation court passed 90 of 90 **in this batch**; its differential soak criterion has failed in earlier batches on the same code, so the route stays **cross-batch narrow on the default allocator** and this row is not a repair. `-profile` stays 90 of 94, its four D6 footprint checks narrow, and was not rerun here. G1, G3, P6 and G6 stay open |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |

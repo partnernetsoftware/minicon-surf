@@ -1,0 +1,403 @@
+{
+ "checks": [
+  {
+   "check": "[system] the href setter commits the document it names",
+   "detail": {
+    "tail": "assign-href.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the href setter during the lifecycle adds no history entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] assign commits the document it names",
+   "detail": {
+    "tail": "assign-call.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] assign during the lifecycle adds no history entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] replace commits the document it names",
+   "detail": {
+    "tail": "replace-call.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] replace during the lifecycle adds no history entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] reload rebuilds the same URL and leaves history alone",
+   "detail": {
+    "fetches": 1,
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the last write of three decides the destination",
+   "detail": {
+    "tail": "last-write.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and the two it replaced are never fetched",
+   "detail": {
+    "requested": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a script chain longer than 3 is refused and commits nothing",
+   "detail": {
+    "error": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] no intermediate document of a refused chain exists",
+   "detail": {
+    "targets": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the href getter answers the committed URL until a commit",
+   "detail": {
+    "tail": "getter.html",
+    "texts": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] an intent from a timer commits at the boundary that ran it and adds an entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    },
+    "tail": "late-intent.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] an intent from an action handler answers the navigation-shaped result",
+   "detail": {
+    "navigated": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a failed intent answers the typed failure and keeps every identity",
+   "detail": {
+    "error": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the handler's mutation stands and no address is in the failure",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the seam is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the host accepts the court-only held-intent seam",
+   "detail": {
+    "reason": "host_exited"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the private court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the slot is empty at the end of every operation",
+   "detail": {
+    "pending": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] 128 intent-driven navigations stay within the bound",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] closing every target returns the owners exactly",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no intent URL, query or page text is in the ledger",
+   "detail": {
+    "audit_bytes": 18522
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the href setter commits the document it names",
+   "detail": {
+    "tail": "assign-href.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the href setter during the lifecycle adds no history entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] assign commits the document it names",
+   "detail": {
+    "tail": "assign-call.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] assign during the lifecycle adds no history entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] replace commits the document it names",
+   "detail": {
+    "tail": "replace-call.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] replace during the lifecycle adds no history entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] reload rebuilds the same URL and leaves history alone",
+   "detail": {
+    "fetches": 1,
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the last write of three decides the destination",
+   "detail": {
+    "tail": "last-write.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and the two it replaced are never fetched",
+   "detail": {
+    "requested": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a script chain longer than 3 is refused and commits nothing",
+   "detail": {
+    "error": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] no intermediate document of a refused chain exists",
+   "detail": {
+    "targets": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the href getter answers the committed URL until a commit",
+   "detail": {
+    "tail": "getter.html",
+    "texts": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] an intent from a timer commits at the boundary that ran it and adds an entry",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    },
+    "tail": "late-intent.html"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] an intent from an action handler answers the navigation-shaped result",
+   "detail": {
+    "navigated": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a failed intent answers the typed failure and keeps every identity",
+   "detail": {
+    "error": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the handler's mutation stands and no address is in the failure",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the seam is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the host accepts the court-only held-intent seam",
+   "detail": {
+    "reason": "host_exited"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the private court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the slot is empty at the end of every operation",
+   "detail": {
+    "pending": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] 128 intent-driven navigations stay within the bound",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] closing every target returns the owners exactly",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no intent URL, query or page text is in the ledger",
+   "detail": {
+    "audit_bytes": 18522
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 20,
+ "checks_total": 46,
+ "court": "native-dom page-initiated navigation (control 0.0.2)",
+ "criteria": {
+  "chain_cap": 3,
+  "navigations": 128,
+  "owner_bytes": 65536
+ },
+ "host_sha256": "0fc0cf97f606ea7ed6b1f8abdac37a9be0df874509907398df7bdd5ae33a59b7",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until page-initiated navigation exists",
+  "href, assign, replace and no-argument reload only; no history API, no hash navigation",
+  "every intent raised during a build or the lifecycle is replace-like, because this host has no activation model",
+  "caller_override is reachable only through a court-only seam: in production the slot is empty at the end of every operation",
+  "a host that does not answer inside its wall-clock bound is killed by pid and reaped; that timeout is the falsification",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

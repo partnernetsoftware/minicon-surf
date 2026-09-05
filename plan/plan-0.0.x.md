@@ -1162,7 +1162,7 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [ ] Proposed, design only, nothing implemented and nothing measured:
+- [~] Implemented and qualified on the native route, court 50 of 50:
   page-initiated navigation
   (`labs/native-dom/page-navigation-design-0.0.1.md`). It closes a silent lie
   rather than an absence: today `location.href = "…"` succeeds, the page reads
@@ -1185,7 +1185,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   every identity unchanged. Eleven criteria are pre-registered and three
   blockers go to the root: the cap itself, whether a host navigation should
   discard a pending intent, and whether `location.reload` belongs in scope.
-  G1, G3, P6 and G6 stay open.
+  All three were ruled: the cap stands at 3, an explicit caller navigation
+  discards a pending intent as `caller_override`, and `reload` is in scope.
+  The implementation follows the design; five further corrections are
+  recorded in it, each before the change it justified. Three were the
+  court's own: a reload fixture that reloaded forever because a rebuilt
+  document loses any in-page flag, a caller-override group that read the
+  counters at an operation that is not a timer boundary, and a seam
+  criterion that asked only for acceptance. The court-only hold seam is
+  doubly constrained: `--court-hold-intent` is refused with exit 64 before
+  the host serves anything unless the private `--surface-court-file` is also
+  given, that file is created after every configuration exit so its
+  destructor cannot be skipped, and it is gone when the host is; all three
+  are criteria, not claims. The fifth is a memory correction: the slice
+  cost about 7.7 KB per child realm and broke the frozen child-frame M1 cap
+  at 262,970 against 262,144. The cap did not move. A single pre-registered
+  narrowing — the accessor/intent form only on script-running realms, the
+  plain object on script-free child frames, which no page code can tell
+  apart because a child runs no script — brought it to 261,354 and M2 to
+  1,827,196. That recovery is **partial**: a child still costs about 6.1 KB
+  more than before this slice, because the shim source every realm compiles
+  grew, and **M1 now has 790 bytes of headroom**. The court passes 50 of 50
+  and 20 of 46 against the build before it. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the
   bounded document lifecycle (`labs/native-dom/lifecycle-design-0.0.1.md`).
   Four observable steps after the document's own scripts, each its own
