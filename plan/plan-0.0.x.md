@@ -1282,6 +1282,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: standard error
+  classes for the base's own throws
+  (`labs/native-dom/error-class-audit-0.0.1.md`), the deferred half of the
+  error-name slice. Candidate A measured on top of `d46ee3c`: the selector
+  engine and `removeChild` throw the engine's own `DOMException` with the
+  standard name, `code` 12 and 8, and the `[object DOMException]` tag, at
+  **+304 bytes per child** (M1 224,762, M2 1,571,836) against unchanged floors
+  — the same price as on the earlier baseline, so it is stable across two
+  builds. **The capture holds, measured**: a page that installs its own `Fake`
+  over `globalThis.DOMException` and then trips the engine still catches a real
+  `DOMException`, with `e instanceof Fake` false. **The one measured objection
+  is gone**: `as_exception()` returning `None` used to blind the host's
+  diagnostic, but since the redaction the host reads no message at all and an
+  uncaught `DOMException` produces byte-identical details to an uncaught
+  `Error` — the order those two slices were ruled in turned out to matter. The
+  finding worth the ruling's attention is where the cost falls: the selector
+  engine is in the base, so **every child pays 304 bytes for an error no child
+  can ever observe**, since a child realm runs no scripts — the frozen
+  child-frame court says so on this binary — and the host never passes a
+  selector into any realm. The loss matrix records what stays unserved:
+  `classList`, the dispatch guard and storage keep named plain `Error`s with no
+  `code`, so after A this host has two vocabularies instead of three, and
+  `e.name` remains the portable thing. Existing courts on the candidate:
+  redaction 23/23, element-view 23/23, element-api 28/28, event-fidelity 62/62,
+  dataset 15/15, child-frames 82/82. The class still never reaches `details`,
+  by ruling. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 23 of 23:
   page-authored text in a host error
   (`labs/native-dom/page-error-redaction-design-0.0.1.md`). The defect is one
