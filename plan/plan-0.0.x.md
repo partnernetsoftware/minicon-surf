@@ -1282,6 +1282,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: `signal` and
+  `AbortController` (`labs/native-dom/abort-signal-audit-0.0.1.md`), the last
+  rung of the listener ladder and the only one whose obvious implementation is
+  unsafe. **The refusal is now measured, not argued**: on the naive candidate a
+  page passing `{get aborted(){…}}` gets its own code executed **inside the
+  host's dispatch walk**, and in the third probe that getter used the window to
+  `removeEventListener` a listener the same dispatch was about to run — which
+  worked, so a page could rewrite which listeners a dispatch delivers to, from
+  inside the dispatch. The branded design refuses it: a closure-owned `WeakSet`
+  of host-minted signals, a second for the aborted ones, both read through
+  captured methods, `aborted` as a host getter, and a `TypeError` for any
+  signal the host did not mint — measured to refuse both the page object and
+  the getter while keeping correct abort semantics. **Cost gradient**: naive
+  +1,504 per child (refused), branded with the classes in the base **+5,952**,
+  branded with the classes in the main extension **+2,976** but needing one new
+  entry in the one-shot handle. Safety costs two to four times the unsafe
+  version, and the base variant makes every child pay 2,976 more for two
+  classes no child can construct. **A dependency worth fixing regardless**: the
+  split candidate widens the handle and **every frozen court still passes** —
+  the only criterion that reads the handle asks whether it names `EventTarget`
+  — so the handle's shape is guarded by nothing today, and a court should pin
+  its exact key set whatever is ruled here. Also recorded: none of the
+  candidates gives an `EventTarget` signal, `reason`, `throwIfAborted` or the
+  statics, and one `child-frames` M4 footprint-acceleration failure on the base
+  variant did not reproduce in two reruns. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 30 of 30: passive
   listeners
   (`labs/native-dom/passive-listener-audit-0.0.1.md`). This is the rung that
