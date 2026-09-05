@@ -144,6 +144,15 @@
   // Closure-owned, keyed by the target: a page cannot replace, read or
   // corrupt the store by assigning a property, and a target that dies takes
   // its listeners with it.
+  const weakSetAdd = WeakSet.prototype.add;
+  const weakSetHas = WeakSet.prototype.has;
+  const hostSignals = new WeakSet();
+  const abortedSignals = new WeakSet();
+  const signals = {
+    mint: (signal) => { invoke(weakSetAdd, hostSignals, [signal]); return signal; },
+    abort: (signal) => { if (invoke(weakSetHas, hostSignals, [signal])) invoke(weakSetAdd, abortedSignals, [signal]); },
+    aborted: (signal) => invoke(weakSetHas, abortedSignals, [signal]),
+  };
   const listenerStore = new WeakMap();
   function listenersOf(target) {
     let map = invoke(weakMapGet, listenerStore, [target]);
@@ -171,6 +180,11 @@
     }
     const once = !!(options && typeof options === "object" && options.once);
     const passive = !!(options && typeof options === "object" && options.passive);
+    const signal = options && typeof options === "object" ? options.signal : null;
+    if (signal !== null && signal !== undefined) {
+      if (!invoke(weakSetHas, hostSignals, [signal])) throw new TypeError("the signal is not an AbortSignal");
+      if (invoke(weakSetHas, abortedSignals, [signal])) return;
+    }
     const capture = options === true
       || !!(options && typeof options === "object" && options.capture);
     const key = StringOf(type);
@@ -182,7 +196,7 @@
     for (let i = 0; i < list.length; i += 1) {
       if (list[i].callback === fn && list[i].capture === capture) return;
     }
-    invoke(arrayPush, list, [{ callback: fn, handler, once, capture, passive, removed: false }]);
+    invoke(arrayPush, list, [{ callback: fn, handler, once, capture, passive, signal, removed: false }]);
   }
   // `options` is accepted and unread: `capture` is a deferred rung, and a
   // signature that refuses it would make the deferral a page-visible error.
@@ -262,6 +276,7 @@
           for (let i = 0; i < snapshot.length; i += 1) {
             const record = snapshot[i];
             if (record.removed) continue;
+            if (record.signal && invoke(weakSetHas, abortedSignals, [record.signal])) { removeListener(node, state.type, record.callback, record.capture); continue; }
             if (phase === CAPTURING_PHASE && !record.capture) continue;
             if (phase === BUBBLING_PHASE && record.capture) continue;
             if (state.stopImmediate) break;
@@ -550,7 +565,7 @@
   Object.defineProperty(g, "__mcsInternals", {
     value: (take) => {
       delete g.__mcsInternals;
-      return take({ g, document, Document, Element, Node, Event, addListener, removeListener, dispatchOn,
+      return take({ g, document, Document, Element, Node, Event, addListener, removeListener, dispatchOn, signals,
         // The base keeps this helper for `MutationObserver` subtree scope; the
         // extension's `contains` calls the same one, so the walk exists once.
         contains,

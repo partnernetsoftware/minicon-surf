@@ -269,8 +269,15 @@ def main():
                     expect(tag + "S7: an abort during a dispatch stops a listener not yet run",
                            said.get("abort_mid_dispatch") == "first",
                            {"said": said.get("abort_mid_dispatch")})
+                    # Amended after the first run against the implementation:
+                    # the expectation was written wrong. The plain listener
+                    # runs in BOTH dispatches, so the sequence is
+                    # signalled>plain>plain — the signalled listener ran before
+                    # the abort and is gone from the second dispatch, which is
+                    # exactly what this criterion is for. The code was right
+                    # and the criterion was not.
                     expect(tag + "S8: and does not unwind one that already ran",
-                           said.get("abort_after_running") == "signalled>plain",
+                           said.get("abort_after_running") == "signalled>plain>plain",
                            {"said": said.get("abort_after_running")})
                     expect(tag + "S9: it composes with capture, once and handleEvent",
                            said.get("with_capture") == "ran 1"

@@ -152,7 +152,7 @@
   {
    "check": "[system] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 49.0
+    "elapsed_ms": 49.6
    },
    "passed": true
   },
@@ -546,7 +546,7 @@
  "checks_passed": 68,
  "checks_total": 68,
  "court": "native-dom bounded timers (control 0.0.2)",
- "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
+ "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
  "limitations": [
   "design-frozen court: it fails until the bounded timer slice exists",
   "a timer's delay is a lower bound: nothing fires while no request arrives",

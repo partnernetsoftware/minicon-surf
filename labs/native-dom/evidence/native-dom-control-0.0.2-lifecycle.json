@@ -197,10 +197,10 @@
   {
    "check": "[system] M1: the frozen fixture's listeners cost at most 65536 live owner bytes",
    "detail": {
-    "listener_workload_bytes": 624,
+    "listener_workload_bytes": 752,
     "listeners_in_fixture": 1,
-    "no_listener_owner_bytes": 313749,
-    "quiet_page_total_bytes": 312554
+    "no_listener_owner_bytes": 321317,
+    "quiet_page_total_bytes": 320122
    },
    "passed": true
   },
@@ -415,10 +415,10 @@
   {
    "check": "[arena] M1: the frozen fixture's listeners cost at most 65536 live owner bytes",
    "detail": {
-    "listener_workload_bytes": 608,
+    "listener_workload_bytes": 800,
     "listeners_in_fixture": 1,
-    "no_listener_owner_bytes": 305077,
-    "quiet_page_total_bytes": 304122
+    "no_listener_owner_bytes": 311237,
+    "quiet_page_total_bytes": 310058
    },
    "passed": true
   },
@@ -454,7 +454,7 @@
   "owner_bytes": 65536,
   "replacements": 128
  },
- "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
+ "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the bounded lifecycle exists",

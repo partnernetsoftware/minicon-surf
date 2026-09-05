@@ -28,6 +28,17 @@ __mcsInternals((internals) => {
     dispatchEvent(event) { return dispatchOn(this, event); }
   }
   g.EventTarget = EventTarget;
+  const signals = internals.signals;
+  class AbortSignal {
+    constructor() { signals.mint(this); }
+    get aborted() { return signals.aborted(this); }
+  }
+  class AbortController {
+    constructor() { this.signal = new AbortSignal(); }
+    abort() { signals.abort(this.signal); }
+  }
+  g.AbortController = AbortController;
+  g.AbortSignal = AbortSignal;
   // A node becomes an EventTarget here rather than in the base, so the chain
   // is right in the realm that can see it. The window is not a node and is
   // ruled to stay outside the chain, keeping the three methods it installs

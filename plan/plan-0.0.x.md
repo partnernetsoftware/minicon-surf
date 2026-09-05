@@ -1282,8 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: `signal` and
-  `AbortController` (`labs/native-dom/abort-signal-audit-0.0.1.md`), the last
+- [~] Implemented and qualified on the native route, court 27 of 27: `signal`
+  and `AbortController` (`labs/native-dom/abort-signal-audit-0.0.1.md`), the last
   rung of the listener ladder and the only one whose obvious implementation is
   unsafe. **The refusal is now measured, not argued**: on the naive candidate a
   page passing `{get aborted(){…}}` gets its own code executed **inside the
@@ -1306,7 +1306,19 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   its exact key set whatever is ruled here. Also recorded: none of the
   candidates gives an `EventTarget` signal, `reason`, `throwIfAborted` or the
   statics, and one `child-frames` M4 footprint-acceleration failure on the base
-  variant did not reproduce in two reruns. G1, G3, P6 and G6 stay open.
+  variant did not reproduce in two reruns. **Ruled and built**: S1 refused, S3
+  taken — classes in the main extension, brand and flags in the base, one new
+  handle entry named `signals`. The court was frozen one commit ahead, **pins
+  the handle's exact key set** whatever happens to this rung, and reads **27 of
+  27** against **4 of 27** on the pre-implementation tree. M1 232,298, M2
+  1,624,588, headroom 13,462, slack 54,560 — the ruled +2,976 per child
+  exactly. **One criterion was amended after its first run against the
+  implementation and the amendment is recorded in §9.1**: S8's expected
+  sequence was written wrong — the plain listener runs in both dispatches — so
+  the code was right and the criterion was not. Twenty-four receipts rerun on
+  the binary. The listener ladder is complete; the signal's own event model,
+  `reason`, `throwIfAborted` and the statics stay separate candidates. G1, G3,
+  P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 30 of 30: passive
   listeners
   (`labs/native-dom/passive-listener-audit-0.0.1.md`). This is the rung that

@@ -1123,8 +1123,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 1039120,
-    "at_8": 1039120,
+    "at_128": 1062976,
+    "at_8": 1062976,
     "cap": 65536,
     "growth": 0
    },
@@ -1133,8 +1133,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 1039120,
-    "at_64": 1039120,
+    "at_128": 1062976,
+    "at_64": 1062976,
     "cap": 8192
    },
    "passed": true
@@ -1142,8 +1142,8 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 997744,
-    "fresh": 1019728
+    "after_submit": 1021600,
+    "fresh": 1043584
    },
    "passed": true
   },
@@ -2308,18 +2308,18 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 1013920,
-    "at_8": 1013936,
+    "at_128": 1033056,
+    "at_8": 1033008,
     "cap": 65536,
-    "growth": -16
+    "growth": 48
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 1013920,
-    "at_64": 1013936,
+    "at_128": 1033056,
+    "at_64": 1033008,
     "cap": 8192
    },
    "passed": true
@@ -2327,8 +2327,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 972384,
-    "fresh": 994064
+    "after_submit": 991456,
+    "fresh": 1013120
    },
    "passed": true
   },
@@ -2412,7 +2412,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
+ "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

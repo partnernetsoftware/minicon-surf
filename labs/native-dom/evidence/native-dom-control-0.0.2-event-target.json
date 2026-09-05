@@ -183,7 +183,7 @@
   "chain": "Element>Element>Node>EventTarget>Object",
   "window_instanceof": false
  },
- "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
+ "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the main extension declares the class",

@@ -1,0 +1,233 @@
+{
+ "checks": [
+  {
+   "check": "H1: the one-shot handle hands over exactly these names",
+   "detail": {
+    "missing": [],
+    "unexpected": []
+   },
+   "passed": true
+  },
+  {
+   "check": "H2: the brand lives in the base and the classes do not",
+   "detail": {
+    "brand_in_base": true,
+    "classes_in_base": false
+   },
+   "passed": true
+  },
+  {
+   "check": "H3: the classes live in the extension and the brand does not",
+   "detail": {
+    "classes_in_main": true,
+    "weakset_in_main": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S1: the constructors exist",
+   "detail": {
+    "said": "function|function"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S2: a page object is not a signal",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S3: nor one with a getter, and the getter never runs",
+   "detail": {
+    "said": "threw:TypeError|getter did not run"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S4: an object shaped like a signal is still not one",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S5: abort removes the listener",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S6: a signal already aborted registers nothing",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S7: an abort during a dispatch stops a listener not yet run",
+   "detail": {
+    "said": "first"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S8: and does not unwind one that already ran",
+   "detail": {
+    "said": "signalled>plain>plain"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S9: it composes with capture, once and handleEvent",
+   "detail": {
+    "capture": "ran 1",
+    "handle_event": "ran 1",
+    "once": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S10: aborted answers the host, and a page cannot write it",
+   "detail": {
+    "said": "false|false|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S11: a child realm still runs no scripts",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S12: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0,
+    "bound": 65536
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S1: the constructors exist",
+   "detail": {
+    "said": "function|function"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S2: a page object is not a signal",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S3: nor one with a getter, and the getter never runs",
+   "detail": {
+    "said": "threw:TypeError|getter did not run"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S4: an object shaped like a signal is still not one",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S5: abort removes the listener",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S6: a signal already aborted registers nothing",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S7: an abort during a dispatch stops a listener not yet run",
+   "detail": {
+    "said": "first"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S8: and does not unwind one that already ran",
+   "detail": {
+    "said": "signalled>plain>plain"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S9: it composes with capture, once and handleEvent",
+   "detail": {
+    "capture": "ran 1",
+    "handle_event": "ran 1",
+    "once": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S10: aborted answers the host, and a page cannot write it",
+   "detail": {
+    "said": "false|false|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S11: a child realm still runs no scripts",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S12: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0,
+    "bound": 65536
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 27,
+ "checks_total": 27,
+ "court": "native-dom branded abort signals (control 0.0.2)",
+ "handle_keys": [
+  "Document",
+  "Element",
+  "Event",
+  "Node",
+  "addListener",
+  "contains",
+  "dispatchOn",
+  "document",
+  "eventStateOf",
+  "focusedElement",
+  "g",
+  "removeListener",
+  "signals"
+ ],
+ "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the branded model exists",
+  "H1 pins the handle's exact key set by design, so any future widening fails this criterion until it is ruled and the set is amended here",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the abort event on a signal, reason, throwIfAborted, the statics and onabort are separate candidates and are deliberately not tested",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

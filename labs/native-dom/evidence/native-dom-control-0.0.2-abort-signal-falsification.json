@@ -1,0 +1,235 @@
+{
+ "checks": [
+  {
+   "check": "H1: the one-shot handle hands over exactly these names",
+   "detail": {
+    "missing": [
+     "signals"
+    ],
+    "unexpected": []
+   },
+   "passed": false
+  },
+  {
+   "check": "H2: the brand lives in the base and the classes do not",
+   "detail": {
+    "brand_in_base": false,
+    "classes_in_base": false
+   },
+   "passed": false
+  },
+  {
+   "check": "H3: the classes live in the extension and the brand does not",
+   "detail": {
+    "classes_in_main": false,
+    "weakset_in_main": false
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S1: the constructors exist",
+   "detail": {
+    "said": "undefined|undefined"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S2: a page object is not a signal",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S3: nor one with a getter, and the getter never runs",
+   "detail": {
+    "said": "accepted|getter did not run"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S4: an object shaped like a signal is still not one",
+   "detail": {
+    "said": "threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S5: abort removes the listener",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S6: a signal already aborted registers nothing",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S7: an abort during a dispatch stops a listener not yet run",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S8: and does not unwind one that already ran",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S9: it composes with capture, once and handleEvent",
+   "detail": {
+    "capture": "probe-threw:ReferenceError",
+    "handle_event": "probe-threw:ReferenceError",
+    "once": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S10: aborted answers the host, and a page cannot write it",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] S11: a child realm still runs no scripts",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S12: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0,
+    "bound": 65536
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S1: the constructors exist",
+   "detail": {
+    "said": "undefined|undefined"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S2: a page object is not a signal",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S3: nor one with a getter, and the getter never runs",
+   "detail": {
+    "said": "accepted|getter did not run"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S4: an object shaped like a signal is still not one",
+   "detail": {
+    "said": "threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S5: abort removes the listener",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S6: a signal already aborted registers nothing",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S7: an abort during a dispatch stops a listener not yet run",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S8: and does not unwind one that already ran",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S9: it composes with capture, once and handleEvent",
+   "detail": {
+    "capture": "probe-threw:ReferenceError",
+    "handle_event": "probe-threw:ReferenceError",
+    "once": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S10: aborted answers the host, and a page cannot write it",
+   "detail": {
+    "said": "probe-threw:ReferenceError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] S11: a child realm still runs no scripts",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S12: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0,
+    "bound": 65536
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 4,
+ "checks_total": 27,
+ "court": "native-dom branded abort signals (control 0.0.2)",
+ "handle_keys": [
+  "Document",
+  "Element",
+  "Event",
+  "Node",
+  "addListener",
+  "contains",
+  "dispatchOn",
+  "document",
+  "eventStateOf",
+  "focusedElement",
+  "g",
+  "removeListener",
+  "signals"
+ ],
+ "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the branded model exists",
+  "H1 pins the handle's exact key set by design, so any future widening fails this criterion until it is ruled and the set is amended here",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the abort event on a signal, reason, throwIfAborted, the statics and onabort are separate candidates and are deliberately not tested",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

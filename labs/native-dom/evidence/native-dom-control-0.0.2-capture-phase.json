@@ -117,7 +117,7 @@
    "check": "[system] A2a: stopping propagation does not stop the host's navigation",
    "detail": {
     "ok": true,
-    "url_tail": "09/next.html"
+    "url_tail": "12/next.html"
    },
    "passed": true
   },
@@ -246,7 +246,7 @@
    "check": "[arena] A2a: stopping propagation does not stop the host's navigation",
    "detail": {
     "ok": true,
-    "url_tail": "09/next.html"
+    "url_tail": "12/next.html"
    },
    "passed": true
   },
@@ -267,7 +267,7 @@
   "order": "doc-cap>box-cap>target>box-bub>win-bub",
   "phases": "1,2,3"
  },
- "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
+ "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the walk has three phases",

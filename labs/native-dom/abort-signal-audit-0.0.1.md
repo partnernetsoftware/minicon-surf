@@ -198,3 +198,18 @@ caps unmoved.
 pins the handle's exact key set, so widening it is a decision that fails a
 check rather than a diff nobody notices — §7 measured that today it is guarded
 by nothing.
+
+### 9.1 Court amendment, recorded chronologically
+
+The frozen court's **S8** expected `signalled>plain` from a fixture with two
+listeners — one carrying the signal, one plain that aborts — dispatched twice.
+That expectation was wrong: the plain listener runs in *both* dispatches, so
+the correct sequence is `signalled>plain>plain`, which is precisely what the
+criterion is about — the abort did not unwind the listener that had already
+run, and the signalled one is gone from the second dispatch.
+
+The implementation produced `signalled>plain>plain` on both allocators and the
+criterion failed. **The code was right and the criterion was not**, so the
+criterion was amended and both builds were re-run against the amended court.
+Nothing about the mechanism changed, no cap or floor moved, and the amendment
+is written here rather than folded silently into the freeze.
