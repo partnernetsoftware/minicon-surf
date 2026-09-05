@@ -333,7 +333,7 @@
   Object.defineProperty(g, "__mcsInternals", {
     value: (take) => {
       delete g.__mcsInternals;
-      return take({ g, document, Document, Event, addListener, removeListener, dispatchOn });
+      return take({ g, document, Document, Element, Event, addListener, removeListener, dispatchOn });
     },
     writable: false, configurable: true, enumerable: false,
   });

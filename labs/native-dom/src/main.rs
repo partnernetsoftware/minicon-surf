@@ -214,8 +214,15 @@ const DOM_SHIM_MAIN_JS: &str = include_str!("dom_shim_main.js");
 /// and refuses the realm if it is still there afterwards.
 const SEAL_JS: &str =
     r#"(() => { delete window.__mcsInternals; return String(typeof window.__mcsInternals); })()"#;
-/// Court-only: whether the handle is present or enumerable in a realm.
-const REALM_PROBE_JS: &str = r#"(() => String(typeof window.__mcsInternals !== "undefined") + ":" + String(Object.keys(window).indexOf("__mcsInternals") >= 0))()"#;
+/// Court-only: whether a realm still has the internals handle, and whether
+/// it has the two main-only page APIs. Three fixed names, three booleans, and
+/// nothing a page owns.
+const REALM_PROBE_JS: &str = r#"(() => [
+  String(typeof window.__mcsInternals !== "undefined"),
+  String(Object.keys(window).indexOf("__mcsInternals") >= 0),
+  String(typeof window.document.body?.classList !== "undefined"),
+  String(typeof window.CustomEvent !== "undefined"),
+].join(":"))()"#;
 const OPERATIONS: &[&str] = &[
     "profile.create",
     "profile.list",
@@ -3890,6 +3897,10 @@ impl Host {
         let mut main_enumerable = false;
         let mut children_present = 0usize;
         let mut children_enumerable = 0usize;
+        let mut main_class_list = false;
+        let mut main_custom_event = false;
+        let mut children_class_list = 0usize;
+        let mut children_custom_event = 0usize;
         for id in ids {
             let Some(target) = self.targets.get(&id) else {
                 continue;
@@ -3900,16 +3911,23 @@ impl Host {
             for (index, realm) in realms.into_iter().enumerate() {
                 let answer = realm
                     .eval(REALM_PROBE_JS, deadline, &id)
-                    .unwrap_or_else(|_| "true:true".to_owned());
+                    .unwrap_or_else(|_| "true:true:false:false".to_owned());
                 probed += 1;
-                let present = answer.starts_with("true");
-                let enumerable = answer.ends_with("true");
+                let mut fields = answer.split(':').map(|field| field == "true");
+                let present = fields.next().unwrap_or(true);
+                let enumerable = fields.next().unwrap_or(true);
+                let class_list = fields.next().unwrap_or(false);
+                let custom_event = fields.next().unwrap_or(false);
                 if index == 0 {
                     main_present |= present;
                     main_enumerable |= enumerable;
+                    main_class_list |= class_list;
+                    main_custom_event |= custom_event;
                 } else {
                     children_present += usize::from(present);
                     children_enumerable += usize::from(enumerable);
+                    children_class_list += usize::from(class_list);
+                    children_custom_event += usize::from(custom_event);
                 }
             }
         }
@@ -3919,6 +3937,10 @@ impl Host {
             "main_enumerable": main_enumerable,
             "children_present": children_present,
             "children_enumerable": children_enumerable,
+            "main_class_list": main_class_list,
+            "main_custom_event": main_custom_event,
+            "children_class_list": children_class_list,
+            "children_custom_event": children_custom_event,
         }))
     }
 

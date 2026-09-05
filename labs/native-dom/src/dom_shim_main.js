@@ -12,6 +12,84 @@ __mcsInternals((internals) => {
   const addListener = internals.addListener;
   const removeListener = internals.removeListener;
   const dispatchOn = internals.dispatchOn;
+  const Element = internals.Element;
+  // `classList` holds no tokens: the `class` attribute is the state and every
+  // call reads and writes it, so a list can never disagree with the attribute
+  // it describes. A call that changes nothing writes nothing, so it produces
+  // no mutation record and does not advance the revision — a deliberate
+  // divergence, because the revision is what gates a caller's action and a
+  // spurious one costs a re-snapshot for a change that did not happen.
+  const tokenError = (name, why) => { const e = new Error(why); e.name = name; return e; };
+  const checkToken = (token) => {
+    const text = String(token);
+    if (text === "") throw tokenError("SyntaxError", "the token is empty");
+    if (/\s/.test(text)) throw tokenError("InvalidCharacterError", "the token has whitespace");
+    return text;
+  };
+  const tokensOf = (el) => {
+    const raw = el.getAttribute("class");
+    const list = [];
+    for (const token of String(raw === null || raw === undefined ? "" : raw).split(/\s+/)) {
+      if (token && list.indexOf(token) < 0) list.push(token);
+    }
+    return list;
+  };
+  const writeTokens = (el, before, after) => {
+    const text = after.join(" ");
+    if (text === before.join(" ") && el.getAttribute("class") === text) return;
+    el.setAttribute("class", text);
+  };
+  const classListOf = (el) => {
+    const tokens = tokensOf(el);
+    return {
+      get length() { return tokens.length; },
+      get value() { return tokens.join(" "); },
+      toString() { return tokens.join(" "); },
+      contains(token) { return tokens.indexOf(checkToken(token)) >= 0; },
+      add(...names) {
+        const after = tokens.slice();
+        for (const name of names) {
+          const token = checkToken(name);
+          if (after.indexOf(token) < 0) after.push(token);
+        }
+        writeTokens(el, tokens, after);
+      },
+      remove(...names) {
+        let after = tokens.slice();
+        for (const name of names) {
+          const token = checkToken(name);
+          after = after.filter((kept) => kept !== token);
+        }
+        writeTokens(el, tokens, after);
+      },
+      toggle(name, force) {
+        const token = checkToken(name);
+        const present = tokens.indexOf(token) >= 0;
+        const wanted = force === undefined ? !present : !!force;
+        if (wanted !== present) {
+          const after = wanted
+            ? tokens.concat([token])
+            : tokens.filter((kept) => kept !== token);
+          writeTokens(el, tokens, after);
+        }
+        return wanted;
+      },
+    };
+  };
+  Object.defineProperty(Element.prototype, "classList", {
+    get() { return classListOf(this); },
+    configurable: true,
+    enumerable: false,
+  });
+  // An event with one own property. `detail` is the page's own value, by
+  // reference, and it reaches no snapshot, receipt, ledger, error or counter.
+  class CustomEvent_ extends Event {
+    constructor(type, init = {}) {
+      super(type, init);
+      this.detail = init.detail === undefined ? null : init.detail;
+    }
+  }
+  g.CustomEvent = CustomEvent_;
   // Bounded fetch bridge: scripts queue requests, the host performs them
   // between evaluation turns under its network policy, then settles them.
   const net = { queue: [], pending: new Map(), next: 0 };
