@@ -239,24 +239,24 @@
      "applied": true,
      "default_prevented": null,
      "found": true,
-     "marker": "handler ran+ancestor",
+     "marker": "handler ran",
      "role": "checkbox"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a patched WeakMap that rewrites the hidden state leaves both handlers running and the decision the host's",
    "detail": {
     "patch_weakmap": {
-     "applied": true,
-     "default_prevented": null,
+     "applied": false,
+     "default_prevented": true,
      "found": true,
      "marker": "handler ran+ancestor",
      "role": "checkbox"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a patched Map cannot fabricate the action's answer",
@@ -279,10 +279,10 @@
      "default_prevented": null,
      "found": true,
      "marker": null,
-     "role": "checkbox"
+     "role": "fabricated"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] an event the host raises is not trusted, and reaches its target at phase 2",
@@ -530,24 +530,24 @@
      "applied": true,
      "default_prevented": null,
      "found": true,
-     "marker": "handler ran+ancestor",
+     "marker": "handler ran",
      "role": "checkbox"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a patched WeakMap that rewrites the hidden state leaves both handlers running and the decision the host's",
    "detail": {
     "patch_weakmap": {
-     "applied": true,
-     "default_prevented": null,
+     "applied": false,
+     "default_prevented": true,
      "found": true,
      "marker": "handler ran+ancestor",
      "role": "checkbox"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a patched Map cannot fabricate the action's answer",
@@ -570,10 +570,10 @@
      "default_prevented": null,
      "found": true,
      "marker": null,
-     "role": "checkbox"
+     "role": "fabricated"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] an event the host raises is not trusted, and reaches its target at phase 2",
@@ -583,10 +583,10 @@
    "passed": true
   }
  ],
- "checks_passed": 62,
+ "checks_passed": 56,
  "checks_total": 62,
  "court": "native-dom bounded Event fidelity (control 0.0.2)",
- "host_sha256": "b11e6363d24846f726e59d2cfccbbdc4ae739d86ab04850b3418a6ca3742bc17",
+ "host_sha256": "44ad1aa47263746672fce18728ed367b55d2b886e5488285fe31a3ed37ae7fd3",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the base Event and dispatcher are faithful",
@@ -597,5 +597,5 @@
   "the unchanged M1 and M2 floors are measured by the child-frame and shim-footprint courts on the same binary",
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
  ],
- "passed": true
+ "passed": false
 }

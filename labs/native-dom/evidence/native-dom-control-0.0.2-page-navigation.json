@@ -704,7 +704,7 @@
   "navigations": 128,
   "owner_bytes": 65536
  },
- "host_sha256": "44ad1aa47263746672fce18728ed367b55d2b886e5488285fe31a3ed37ae7fd3",
+ "host_sha256": "b11e6363d24846f726e59d2cfccbbdc4ae739d86ab04850b3418a6ca3742bc17",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until page-initiated navigation exists",
