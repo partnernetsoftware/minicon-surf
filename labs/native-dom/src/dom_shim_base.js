@@ -429,7 +429,40 @@
   // than through `element.dispatchEvent`, and answers from the hidden state
   // rather than from a property lookup a page can shadow or redefine. Handed
   // to the host once, before any page script runs.
+  // Focus is the host's, not the page's: it moves only when an agent's action
+  // activates a focusable element, it lives in this closure where no page can
+  // reach it, and the extension reads it through a getter that cannot move it.
+  // Nothing the host decides reads this — the day an action is routed by
+  // focus, this stops being page-visible state and belongs behind the bridge.
+  let focused = null;
+  const FOCUSABLE = /^(input|button|select|textarea|a)$/;
+  const focusEvent = (target, type, bubbles) => {
+    dispatchOn(target, new Event(type, { bubbles }));
+  };
+  const moveFocus = (next) => {
+    if (focused === next) return;
+    const previous = focused;
+    focused = next;
+    if (previous) {
+      focusEvent(previous, "blur", false);
+      focusEvent(previous, "focusout", true);
+    }
+    if (next) {
+      focusEvent(next, "focus", false);
+      focusEvent(next, "focusin", true);
+    }
+  };
+  // The host asks for focus explicitly, through the capability bridge it
+  // already holds, because not every activation it performs goes through this
+  // dispatcher — the DOM's own `click()` does not — and hooking the dispatcher
+  // would also let a page's synthetic click move focus, which is the forgery
+  // the design forbids.
+  const FOCUS_REQUEST = "__mcsFocus";
   const dispatchFor = (element, type, cancelable, key) => {
+    if (type === FOCUS_REQUEST) {
+      if (element && FOCUSABLE.test(element.localName)) moveFocus(element);
+      return false;
+    }
     const event = new Event(StringOf(type), { bubbles: true, cancelable: !!cancelable });
     // One fixed extra, named: the keyboard paths need `key` and nothing else
     // needs anything, so no key vocabulary is read off an object at all.
@@ -472,6 +505,9 @@
         // The base keeps this helper for `MutationObserver` subtree scope; the
         // extension's `contains` calls the same one, so the walk exists once.
         contains,
+        // A getter, never a setter: the extension can report focus and cannot
+        // move it.
+        focusedElement: () => focused,
         eventStateOf: (event) => invoke(weakMapGet, eventState, [event]) });
     },
     writable: false, configurable: true, enumerable: false,

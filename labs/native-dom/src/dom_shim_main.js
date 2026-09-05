@@ -72,6 +72,13 @@ __mcsInternals((internals) => {
     get() {
       return this.localName === "textarea" ? this.textContent : (this.getAttribute("value") ?? "");
     }, configurable: true });
+  const focusedElement = internals.focusedElement;
+  Object.defineProperty(document, "activeElement", {
+    get() { return focusedElement() || document.body || null; },
+    configurable: true,
+  });
+  // A page saying it is focused is not evidence that it is: in this host the
+  // agent is who clicks, so these move nothing and raise nothing (§10.1).
   Element.prototype.focus = function () {};
   Element.prototype.blur = function () {};
   Element.prototype.submit = function () {

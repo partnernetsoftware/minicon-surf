@@ -705,6 +705,10 @@ fn form_action_script(
   if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
   if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
   const el = s.nodes[{index}];
+  // An agent's action focuses what it acts on, the way a person's would,
+  // and before anything is applied, so a handler already sees it. The base
+  // decides what is focusable; this only asks.
+  window.__mcsDispatch({capability}, el, "__mcsFocus", false, undefined);
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
   const action = {action};
   // A successful action changes observable state, so the revision advances
@@ -866,6 +870,10 @@ fn act_script(
   if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
   if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
   const el = s.nodes[{index}];
+  // An agent's action focuses what it acts on, the way a person's would,
+  // and before anything is applied, so a handler already sees it. The base
+  // decides what is focusable; this only asks.
+  window.__mcsDispatch({capability}, el, "__mcsFocus", false, undefined);
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
 {activation}
 {serializer}
