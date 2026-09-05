@@ -271,3 +271,115 @@ No protocol change, no new operation, no capture phase, no listener options
 `composedPath`, no event constructors beyond `Event` and `CustomEvent`, no
 child-realm surface, and no change to what the host reads from a dispatch
 beyond making `defaultPrevented` mean what the standard says.
+
+
+## 10. The rulings, and the audit correction that overturned my plan
+
+The root ruled, and one ruling overturns §6 of this record.
+
+**10.1 My extension-subclass plan was wrong, and the base proves it.** §6 said
+the whole of A and C could sit in the main extension with zero base growth,
+because the host's own scripts resolve `Event` through the global. They do —
+but the **base's own code does not**. `dom_shim_base.js` constructs events
+lexically in `Element.reset()` (line 227), `Element.submit()` (237) and
+`Element.click()` (243, 248), and line 245 reads `ev.defaultPrevented` back
+from one of them. A main-only subclass would leave every one of those minting
+the old, forgeable object, so the fix would have covered the events a page
+constructs and missed the events the DOM itself raises — including the one
+whose `defaultPrevented` decides whether a reset happens. Zero base growth was
+not a smaller version of the fix; it was a hole in it.
+
+Ruled: **one faithful bounded `Event` and one dispatcher, in the base**, with
+the measured growth taken and the floors re-measured. If a field cannot be
+made single-authority without materially larger growth, I stop and report
+before implementing it.
+
+**10.2 One dispatcher.** Removal-during-dispatch recheck and
+`stopImmediatePropagation` go in the base loop. No second main-only
+dispatcher. This is dispatcher correctness, and M1/M2 measure its cost.
+
+**10.3 Nothing about an event is page-writable.** Its state lives in
+closure-owned hidden storage — a `WeakMap` keyed by the event — and `type`,
+`bubbles`, `cancelable`, `target`, `currentTarget`, `defaultPrevented`,
+`eventPhase` and `dispatching` are read-only to page script. **The dispatcher
+alone** writes `target`, `currentTarget`, `eventPhase` and `dispatching`;
+**`preventDefault` alone** sets `defaultPrevented`, and only when `cancelable`.
+That is what closes §3: the cancelation rule stops being a method a page can
+step around and becomes the only door.
+
+**10.4 Re-entrant dispatch is refused, completed re-dispatch is not.**
+Dispatching an event that is already dispatching throws an `Error` named
+`InvalidStateError` **before** anything is written, so the outer dispatch is
+not corrupted: it continues with its remaining listeners and its ancestors,
+and its `target` and `currentTarget` are untouched. Dispatching an event whose
+dispatch has finished stays allowed, as it is today and in the standard.
+
+**10.5 Cleanup on every path.** When dispatch ends — normally, or through a
+listener that threw, or through either stop — `currentTarget` is null,
+`eventPhase` is `NONE` and `dispatching` is false, while `target` remains the
+last target dispatched to.
+
+**10.6 `isTrusted` is false for every event, host-driven included.** The host's
+clicks are synthesized by an agent; `true` would be a claim that is not true.
+
+**10.7 `timeStamp` is `performance.now()` at construction**, explicitly tied
+to the clock this realm already inherited and does not model (recorded in the
+timer slice). This slice creates **no new clock guarantee**: it exposes a
+number from a clock that was already there.
+
+**10.8 `composed` defaults to false and follows the dictionary.** It changes
+no dispatch behaviour here, because this host has no shadow tree to cross.
+
+
+## 11. Explicit losses, recorded rather than implied
+
+Listener options (`capture`, `once`, `passive`, `signal`), the capture phase
+and therefore `eventPhase === 1`, `handleEvent` objects, `composedPath()`,
+`Event.NONE`/`AT_TARGET`/`BUBBLING_PHASE` as interface constants, global error
+reporting of an exception a listener threw (it is swallowed; nothing is
+reported to the page or the host), `relatedTarget` and every typed event
+interface other than `Event` and `CustomEvent`, and `srcElement`.
+
+
+## 12. The court, frozen before the code
+
+`event-fidelity-court.py`, headless, both allocators, supervised hosts. Its
+falsifiers, each predicted to fail on `2b6d985fe682…`:
+
+1. **Phase order**: `eventPhase` is `0` before dispatch, `2` in a listener at
+   the target, `3` in a listener on an ancestor, `0` after.
+2. **Stop versus stop-immediate**: `stopPropagation` in the first of two
+   listeners on the target still runs the second and no ancestor;
+   `stopImmediatePropagation` runs neither.
+3. **Add and remove during dispatch**: a listener added during a dispatch does
+   not run in it; a listener removed during a dispatch does not run.
+4. **Nested re-dispatch**: dispatching the same event inside its own dispatch
+   throws `InvalidStateError`, the outer dispatch still reaches its remaining
+   listener and its ancestor, and the event's `target` is unchanged; a
+   re-dispatch after completion runs normally.
+5. **Read-only**: assigning `type`, `bubbles`, `cancelable`, `target`,
+   `currentTarget`, `defaultPrevented`, `eventPhase` or `dispatching` leaves
+   each unchanged.
+6. **Cancelability and return value**: `preventDefault` on a non-cancelable
+   event leaves `defaultPrevented` false and `dispatchEvent` true; on a
+   cancelable one, false.
+7. **Cleanup after a throw**: after a listener throws, `currentTarget` is
+   null, `eventPhase` is 0, `dispatching` is false and `target` is the element
+   dispatched to.
+8. **Host-driven activation authority**: on a link, a handler that writes
+   `defaultPrevented` no longer cancels the navigation, while one that calls
+   `preventDefault` still does.
+9. **`isTrusted`** is false in a page-constructed dispatch and in a
+   host-driven click.
+10. **`timeStamp`** is a number that does not decrease between two
+    constructions; **`composed`** is false by default and true when the
+    dictionary says so.
+11. **Regressions**: `CustomEvent` still carries `detail`, a null dictionary
+    still constructs, the same object still travels the path with `target`
+    fixed and `currentTarget` per node, an exception still does not stop later
+    listeners or ancestors, and the window is still the last hop only when the
+    path reached the document.
+
+The unchanged M1 and M2 floors are measured by the child-frame and
+shim-footprint courts on the same binary, not restated here (§9.1 of the shim
+record is why).
