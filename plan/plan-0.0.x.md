@@ -1255,7 +1255,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   corrected first — both read the revision through the observation that was
   itself the timer boundary, and the no-op page wrote its result in the same
   turn as its no-op calls, so it passed while seeing nothing. The court is 18
-  of 18 and 2 of 18 against the build before it. This slice and the shim split
+  of 18 and 2 of 18 against the build before it. A root audit then found four
+  things in it, each recorded with its falsifier before the fix: the list
+  captured the attribute once, so a held list answered about a stale
+  attribute and a mutation through it dropped what had been written directly;
+  it was a new object on every read where the standard says `SameObject`; its
+  `value` was a getter over the normalized token set rather than the
+  standard's raw getter and setter; and an explicit `null` dictionary crashed
+  `CustomEvent`. The list is now a live view that reparses on every call and
+  the same `WeakMap`-backed object, holding no tokens and dying with the
+  element. One frozen criterion of mine went with them: it asserted the
+  normalized `value`, freezing a divergence I had never declared. The court is
+  28 of 28 and 16 of 28 against the build the audit judged, where it fails
+  every criterion the audit added and no other; M1 is unchanged at 221,657 and
+  a main-only page costs 286,488 against 273,512. This slice and the shim split
   were designed, ruled and qualified by me while the root was unavailable, and
   every ruling is marked as mine in the records for review. G1, G3, P6 and G6
   stay open.

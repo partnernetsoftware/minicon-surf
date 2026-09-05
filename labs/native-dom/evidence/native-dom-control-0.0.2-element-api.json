@@ -15,9 +15,44 @@
    "passed": true
   },
   {
-   "check": "[system] contains and length read the attribute the page wrote, whitespace and all",
+   "check": "[system] token reads are parsed while value and toString are the attribute itself",
    "detail": {
-    "said": "true|false|2|one two"
+    "said": "true|false|2|[  one   two  ]|[  one   two  ]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the list is the same object each time, and never shared between elements",
+   "detail": {
+    "said": "true,true,true|true,2,x y|true,p q|p q r|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and a held list answers about the attribute as it is now, not as it was",
+   "detail": {
+    "said": "true,true,true|true,2,x y|true,p q|p q r|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and adding through a held list keeps what was written directly",
+   "detail": {
+    "said": "true,true,true|true,2,x y|true,p q|p q r|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the value setter writes what it is given and the token reads stay parsed",
+   "detail": {
+    "said": "[  b   c ]|2|true|[  b   c ]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an explicit null dictionary is an empty one, not a crash",
+   "detail": {
+    "said": "court:none|null|false"
    },
    "passed": true
   },
@@ -72,9 +107,44 @@
    "passed": true
   },
   {
-   "check": "[arena] contains and length read the attribute the page wrote, whitespace and all",
+   "check": "[arena] token reads are parsed while value and toString are the attribute itself",
    "detail": {
-    "said": "true|false|2|one two"
+    "said": "true|false|2|[  one   two  ]|[  one   two  ]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the list is the same object each time, and never shared between elements",
+   "detail": {
+    "said": "true,true,true|true,2,x y|true,p q|p q r|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and a held list answers about the attribute as it is now, not as it was",
+   "detail": {
+    "said": "true,true,true|true,2,x y|true,p q|p q r|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and adding through a held list keeps what was written directly",
+   "detail": {
+    "said": "true,true,true|true,2,x y|true,p q|p q r|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the value setter writes what it is given and the token reads stay parsed",
+   "detail": {
+    "said": "[  b   c ]|2|true|[  b   c ]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an explicit null dictionary is an empty one, not a crash",
+   "detail": {
+    "said": "court:none|null|false"
    },
    "passed": true
   },
@@ -164,10 +234,10 @@
    "passed": true
   }
  ],
- "checks_passed": 18,
- "checks_total": 18,
+ "checks_passed": 28,
+ "checks_total": 28,
  "court": "native-dom classList and CustomEvent (control 0.0.2)",
- "host_sha256": "a0b455c0e05a8541354c8c48d6f5d44c260d05b0ef6f042512816d752f449c97",
+ "host_sha256": "2b6d985fe6820d4573d22231846ffb5018a820f1a08d16454acf88c537ae62c4",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until classList and CustomEvent exist",

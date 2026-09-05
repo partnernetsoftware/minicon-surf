@@ -3,19 +3,54 @@
   {
    "check": "[system] what the page adds is what the attribute, the selector and className say",
    "detail": {
-    "said": null
+    "said": "a b|true|a b"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "detail": {
+    "said": "b|false||true|c|false|"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] token reads are parsed while value and toString are the attribute itself",
+   "detail": {
+    "said": "true|false|2|[one two]|[one two]"
    },
    "passed": false
   },
   {
-   "check": "[system] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "check": "[system] the list is the same object each time, and never shared between elements",
+   "detail": {
+    "said": "false,false,true|false,0,|false,|r|false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and a held list answers about the attribute as it is now, not as it was",
+   "detail": {
+    "said": "false,false,true|false,0,|false,|r|false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and adding through a held list keeps what was written directly",
+   "detail": {
+    "said": "false,false,true|false,0,|false,|r|false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the value setter writes what it is given and the token reads stay parsed",
    "detail": {
     "said": null
    },
    "passed": false
   },
   {
-   "check": "[system] contains and length read the attribute the page wrote, whitespace and all",
+   "check": "[system] an explicit null dictionary is an empty one, not a crash",
    "detail": {
     "said": "threw:TypeError"
    },
@@ -28,51 +63,86 @@
      0,
      0
     ],
-    "said": "threw:TypeError"
+    "said": "quiet:keep"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] and a turn that changes the attribute does advance it",
    "detail": {
     "revision": [
      0,
-     0
+     1
     ],
-    "said": "start"
+    "said": "keep added"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] an empty token and a token with a space throw their own names, and neither changes the attribute",
    "detail": {
-    "said": "TypeError|TypeError|a"
+    "said": "SyntaxError|InvalidCharacterError|a"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] a CustomEvent carries its detail through a bubbling dispatch",
    "detail": {
-    "said": null
+    "said": "court:pick|alpha|7|true"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] what the page adds is what the attribute, the selector and className say",
    "detail": {
-    "said": null
+    "said": "a b|true|a b"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "detail": {
+    "said": "b|false||true|c|false|"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] token reads are parsed while value and toString are the attribute itself",
+   "detail": {
+    "said": "true|false|2|[one two]|[one two]"
    },
    "passed": false
   },
   {
-   "check": "[arena] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "check": "[arena] the list is the same object each time, and never shared between elements",
+   "detail": {
+    "said": "false,false,true|false,0,|false,|r|false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and a held list answers about the attribute as it is now, not as it was",
+   "detail": {
+    "said": "false,false,true|false,0,|false,|r|false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and adding through a held list keeps what was written directly",
+   "detail": {
+    "said": "false,false,true|false,0,|false,|r|false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the value setter writes what it is given and the token reads stay parsed",
    "detail": {
     "said": null
    },
    "passed": false
   },
   {
-   "check": "[arena] contains and length read the attribute the page wrote, whitespace and all",
+   "check": "[arena] an explicit null dictionary is an empty one, not a crash",
    "detail": {
     "said": "threw:TypeError"
    },
@@ -85,34 +155,34 @@
      0,
      0
     ],
-    "said": "threw:TypeError"
+    "said": "quiet:keep"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] and a turn that changes the attribute does advance it",
    "detail": {
     "revision": [
      0,
-     0
+     1
     ],
-    "said": "start"
+    "said": "keep added"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] an empty token and a token with a space throw their own names, and neither changes the attribute",
    "detail": {
-    "said": "TypeError|TypeError|a"
+    "said": "SyntaxError|InvalidCharacterError|a"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] a CustomEvent carries its detail through a bubbling dispatch",
    "detail": {
-    "said": null
+    "said": "court:pick|alpha|7|true"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "the realm probe is refused without the private court file",
@@ -126,27 +196,35 @@
    "check": "the main realm has classList and CustomEvent",
    "detail": {
     "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
      "children_enumerable": 0,
      "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
      "main_enumerable": false,
      "main_present": false,
      "realms_probed": 2
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "and no child realm has either, which is what main-only has to mean",
    "detail": {
     "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
      "children_enumerable": 0,
      "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
      "main_enumerable": false,
      "main_present": false,
      "realms_probed": 2
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "the probe seam's court file is gone when the host is",
@@ -156,10 +234,10 @@
    "passed": true
   }
  ],
- "checks_passed": 2,
- "checks_total": 18,
+ "checks_passed": 16,
+ "checks_total": 28,
  "court": "native-dom classList and CustomEvent (control 0.0.2)",
- "host_sha256": "878a86a847d3cccd08f2da6ea1c705b97d17729f2894495098e8ced62f13c538",
+ "host_sha256": "a0b455c0e05a8541354c8c48d6f5d44c260d05b0ef6f042512816d752f449c97",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until classList and CustomEvent exist",
