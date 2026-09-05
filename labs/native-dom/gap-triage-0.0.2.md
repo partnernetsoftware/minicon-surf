@@ -190,3 +190,66 @@ flowchart TD
 4. Whether `EventTarget` as a constructor is worth a base decision later: it is
    the one absent capability whose natural home is the base, and every other
    base-side candidate has been deferred with C2b.
+
+
+## 10. The rulings, and a number of mine that was wrong
+
+**10.1 `dataset` is the next slice**, as a lazy accessor in the main
+extension. `kebab` moves with it, the handle does not widen, and a child realm
+has no `dataset` at all. A separate court is frozen before the code.
+
+**10.2 My per-element figure was wrong by an order.** §3 said "roughly 67
+bytes for each of a document's nodes", inferred from the 8,592-byte M1 saving
+by assuming the child-frame court's fixture holds 128 nodes. It holds about
+ten. Measured directly instead — two child documents, 16 nodes and 112 nodes,
+same host, same order:
+
+| build | 16-node child | 112-node child | marginal, per node |
+| --- | ---: | ---: | ---: |
+| current `e9d7273c310e…` | 552,679 | 752,610 | **2,082.6** |
+| with `dataset` lazy | 530,055 | 650,114 | **1,250.6** |
+
+**`dataset` costs about 832 bytes per element**, not 67, and a node costs
+2,082 bytes today of which two fifths is an API no host script names. The
+current build's numbers reproduced exactly on a repeat run.
+
+**10.3 The shim-split record may carry both price classes** — per prototype
+member, 600 to 960 bytes of M1 per child; and per element for anything a
+constructor allocates, measured here at 832 bytes for one `Proxy` and its
+closures — **and neither is a budget promise for anything future**. They are
+what two measurements said, recorded so a later change is priced rather than
+guessed.
+
+**10.4 The second candidate is not a bundle.** `closest`, `activeElement`,
+`getAttributeNames`, `toggleAttribute` and `cloneNode` are each their own
+design and measurement, `closest` first by agent value, and none is
+implemented now. The 4,768-byte bundle figure in §4 stands only as evidence
+that the whole group is affordable, not as a proposal.
+
+**10.5 The `querySelectorAll` divergence goes into the README's losses** —
+a plain array, with no `item()` and no liveness — and **`EventTarget` as a
+constructor waits for its own base decision**.
+
+
+## 11. The frozen court for this slice
+
+`dataset-court.py`, headless, both allocators, supervised hosts. It measures
+the thing the slice is about — a cost that scales with element count — rather
+than only the totals other courts already hold:
+
+1. **The per-element gate.** Two child documents, 16 nodes and 112 nodes, in
+   the same host and order; the marginal cost per child node must be **at most
+   1,600 bytes**. Today it is 2,082.6 and fails; with the accessor lazy it is
+   1,250.6 and passes, and the gate sits between them with margin on both
+   sides.
+2. **A main realm still has `dataset`**, reading and writing `data-*` with the
+   same kebab conversion, and `element.dataset === element.dataset` — the
+   lazy view is stable per element.
+3. **A child realm has none of it**, read through the court-only realm probe.
+4. **Child invariants**: a child still answers a snapshot, still applies a host
+   action through the bridge, and still runs the DOM's own reset.
+5. **Owner release**: closing every target returns the owners to the empty
+   figure exactly.
+6. **Main slack** stays inside the frozen 65,536, measured by the
+   shim-footprint court on the same binary, and the frozen M1 and M2 floors
+   hold in the child-frame court.

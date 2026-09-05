@@ -121,6 +121,15 @@ a shared prototype costs **600 to 960 bytes of M1 per child**, ten times what
 the same source weighs as text — and per-member is what future base growth is
 priced in (`base-reduction-design-0.0.1.md` §8.3).
 
+There are **two** measured price classes, and neither is a budget promise for
+anything future — each is what one measurement said, recorded so a later
+change is priced rather than guessed:
+
+- **per prototype member**: 600 to 960 bytes of M1 per child;
+- **per element**, for anything a constructor allocates: measured at **832
+  bytes** for `dataset`'s `Proxy` and its closures, against a node that costs
+  about 2,082 bytes in total (`gap-triage-0.0.2.md` §10.2).
+
 The binary grew only because the scratch build embeds the base *in addition
 to* the untouched monolith. A real split embeds base + extension, whose sum
 is the monolith plus a few hundred bytes of handle glue, so binary size

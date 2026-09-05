@@ -862,7 +862,12 @@ re-snapshot for a change that did not happen. The revision advances per
 mutation flush, not per call. An empty token throws `SyntaxError` and a token
 with whitespace throws `InvalidCharacterError`. `CustomEvent` is `Event` plus
 `detail`, which is the page's own value and reaches no snapshot, receipt,
-ledger, error or counter. `CustomEvent` normalizes an explicit `null` dictionary to an empty one;
+ledger, error or counter. `querySelectorAll` answers a **plain array**, not a live `NodeList`: spread
+and `forEach` work, `item()` does not exist, and the result does not update as
+the tree changes. Every host script and every court has always used it that
+way; it is recorded here as a divergence rather than treated as a defect.
+
+`CustomEvent` normalizes an explicit `null` dictionary to an empty one;
 `new Event(type, null)` still throws, which stays a recorded loss because it
 is base source. Other losses: iteration, index access, `item`, `replace`,
 `supports`, and any `DOMTokenList` global. Both live in the main extension, so
