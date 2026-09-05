@@ -104,10 +104,7 @@
   class Node {
     constructor() { this.parentNode = null; this.childNodes = []; }
     get isConnected() { for (let n = this; n; n = n.parentNode) if (n.nodeType === 9) return true; return false; }
-    get firstChild() { return this.childNodes[0] || null; }
-    get lastChild() { return this.childNodes[this.childNodes.length - 1] || null; }
     get children() { return this.childNodes.filter((n) => n.nodeType === 1); }
-    get parentElement() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; }
     get textContent() { return this.nodeType === 3 ? this.data : this.childNodes.map((c) => c.textContent).join(""); }
     set textContent(value) {
       if (this.nodeType === 3) { const oldValue = this.data; this.data = String(value); record("characterData", this, { oldValue }); return; }
@@ -126,9 +123,7 @@
       }
       record("childList", this, { addedNodes, removedNodes: [] });
     }
-    appendChild(node) { this.append(node); return node; }
     removeChild(node) { if (node.parentNode !== this) throw new Error("NotFoundError"); this.__detach(node); record("childList", this, { addedNodes: [], removedNodes: [node] }); return node; }
-    remove() { if (this.parentNode) this.parentNode.removeChild(this); }
     replaceChildren(...nodes) {
       const removedNodes = this.childNodes.splice(0); for (const c of removedNodes) c.parentNode = null;
       const addedNodes = [];
@@ -286,7 +281,6 @@
     // element owns, never from anything outside the realm.
     get disabled() { return this.hasAttribute("disabled"); }
     get readOnly() { return this.hasAttribute("readonly"); }
-    get defaultValue() { return this.localName === "textarea" ? this.textContent : (this.getAttribute("value") ?? ""); }
     get defaultChecked() { return this.hasAttribute("checked"); }
     get checked() { return this.__checked === undefined ? this.defaultChecked : this.__checked; }
     set checked(v) {
@@ -348,8 +342,6 @@
       }
       return true;
     }
-    submit() { return dispatchOn(this, new Event("submit", { bubbles: true, cancelable: true })); }
-    get innerText() { return this.textContent; }
     matches(selector) { return matchChain(this, parseSelector(selector), null); }
     click() {
       if (this.type === "reset" && (this.localName === "input" || this.localName === "button")) {
@@ -361,7 +353,6 @@
       }
       dispatchOn(this, new Event("click", { bubbles: true, cancelable: true }));
     }
-    focus() {} blur() {}
   }
   class Document extends Node {
     constructor() { super(); this.nodeType = 9; this.nodeName = "#document"; this.readyState = "loading"; }
@@ -484,7 +475,7 @@
   Object.defineProperty(g, "__mcsInternals", {
     value: (take) => {
       delete g.__mcsInternals;
-      return take({ g, document, Document, Element, Event, addListener, removeListener, dispatchOn,
+      return take({ g, document, Document, Element, Node, Event, addListener, removeListener, dispatchOn,
         eventStateOf: (event) => invoke(weakMapGet, eventState, [event]) });
     },
     writable: false, configurable: true, enumerable: false,

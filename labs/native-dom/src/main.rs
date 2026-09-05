@@ -223,6 +223,7 @@ const REALM_PROBE_JS: &str = r#"(() => [
   String(typeof window.document.body?.classList !== "undefined"),
   String(typeof window.CustomEvent !== "undefined"),
   String("isTrusted" in window.Event.prototype && "timeStamp" in window.Event.prototype),
+  String("appendChild" in window.Element.prototype && "submit" in window.Element.prototype),
 ].join(":"))()"#;
 const OPERATIONS: &[&str] = &[
     "profile.create",
@@ -3942,6 +3943,8 @@ impl Host {
         let mut children_custom_event = 0usize;
         let mut main_event_view = false;
         let mut children_event_view = 0usize;
+        let mut main_element_view = false;
+        let mut children_element_view = 0usize;
         for id in ids {
             let Some(target) = self.targets.get(&id) else {
                 continue;
@@ -3960,18 +3963,21 @@ impl Host {
                 let class_list = fields.next().unwrap_or(false);
                 let custom_event = fields.next().unwrap_or(false);
                 let event_view = fields.next().unwrap_or(false);
+                let element_view = fields.next().unwrap_or(false);
                 if index == 0 {
                     main_present |= present;
                     main_enumerable |= enumerable;
                     main_class_list |= class_list;
                     main_custom_event |= custom_event;
                     main_event_view |= event_view;
+                    main_element_view |= element_view;
                 } else {
                     children_present += usize::from(present);
                     children_enumerable += usize::from(enumerable);
                     children_class_list += usize::from(class_list);
                     children_custom_event += usize::from(custom_event);
                     children_event_view += usize::from(event_view);
+                    children_element_view += usize::from(element_view);
                 }
             }
         }
@@ -3987,6 +3993,8 @@ impl Host {
             "children_custom_event": children_custom_event,
             "main_event_view": main_event_view,
             "children_event_view": children_event_view,
+            "main_element_view": main_element_view,
+            "children_element_view": children_element_view,
         }))
     }
 

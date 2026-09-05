@@ -14,6 +14,31 @@ __mcsInternals((internals) => {
   const dispatchOn = internals.dispatchOn;
   const Element = internals.Element;
   const eventStateOf = internals.eventStateOf;
+  const Node = internals.Node;
+  // Ten members no child realm can call, so no child realm compiles them: a
+  // member on a shared prototype costs every child 600 to 960 bytes of M1,
+  // and these are reachable from page script alone. Each is the base's own
+  // implementation, moved rather than rewritten.
+  Object.defineProperty(Node.prototype, "firstChild", {
+    get() { return this.childNodes[0] || null; }, configurable: true });
+  Object.defineProperty(Node.prototype, "lastChild", {
+    get() { return this.childNodes[this.childNodes.length - 1] || null; }, configurable: true });
+  Object.defineProperty(Node.prototype, "parentElement", {
+    get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
+    configurable: true });
+  Node.prototype.appendChild = function (node) { this.append(node); return node; };
+  Node.prototype.remove = function () { if (this.parentNode) this.parentNode.removeChild(this); };
+  Object.defineProperty(Element.prototype, "innerText", {
+    get() { return this.textContent; }, configurable: true });
+  Object.defineProperty(Element.prototype, "defaultValue", {
+    get() {
+      return this.localName === "textarea" ? this.textContent : (this.getAttribute("value") ?? "");
+    }, configurable: true });
+  Element.prototype.focus = function () {};
+  Element.prototype.blur = function () {};
+  Element.prototype.submit = function () {
+    return dispatchOn(this, new Event("submit", { bubbles: true, cancelable: true }));
+  };
   // The page-facing view of an event, installed where a page can read it and
   // nowhere else. Every one is read-only, exactly as it was in the base.
   const eventView = {
