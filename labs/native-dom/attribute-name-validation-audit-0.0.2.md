@@ -175,3 +175,37 @@ when a document brings them in.
    and cloning, `removeAttribute` staying lenient, validation before
    lowercasing, `classList`'s vocabulary unchanged, and the redaction still
    answering with its one fixed word.
+
+
+## 8. Ruled
+
+V1 and V2 are both accepted, as measured.
+
+The guard sits in the `setAttribute` funnel, approximates the XML `Name`
+production in ASCII, and throws the base's captured `DOMException` named
+`InvalidCharacterError` with code 5. It runs **before** the name is
+lowercased. `ns:x` is accepted, as measured. The ASCII approximation is
+accepted **as an explicit loss**: a page will not be able to author a
+non-ASCII name such as `aé`, while the parser still produces it, the clone
+still carries it, and every read still returns it. `build`/`__mcsSeed` and
+`cloneNode` write the map directly and are untouched — the parser and a copy
+are not authoring. `removeAttribute` and `toggleAttribute(false)` stay
+lenient.
+
+V2 is taken with it: a `dataset` key carrying a dash before a lowercase letter
+throws `SyntaxError` as a plain named `Error`, in the main extension, matching
+the vocabulary `classList` keeps beside it. `classList` itself does not move.
+
+**The message a page catches carries neither the offending name nor the
+value.** It says what the fault was, not what was written, so a page's own
+string is not handed back inside an error object it may then log; the host's
+`details` keeps saying its one fixed word regardless.
+
+The implementation court is frozen before the code, covering all six funnel
+paths, the parser's ten awkward names surviving a deep clone, `removeAttribute`
+and `toggleAttribute(false)` staying lenient, `toggleAttribute(true)` throwing
+through the funnel, the lowercasing order, V2's dataset rule, `classList`
+unchanged, the message carrying nothing of the page's, and the redaction still
+answering with its fixed word. The floors and the slack are measured by the
+child-frame and shim-footprint courts on the same binary, and a failure there
+stops the slice rather than moving a floor.
