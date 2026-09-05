@@ -1282,7 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: passive listeners
+- [~] Implemented and qualified on the native route, court 30 of 30: passive
+  listeners
   (`labs/native-dom/passive-listener-audit-0.0.1.md`). This is the rung that
   **takes power away from the page**, and the finding is an authority one:
   measured through a real `target.act` on both builds, a link whose own click
@@ -1306,7 +1307,17 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   `target/labs/d4` — the **shipped** binary read the same, and restoring the
   client from the local npm cache brought both builds back to 179/179 and
   82/82. L5 `signal` stays deferred, and no page getter goes into the walk.
-  G1, G3, P6 and G6 stay open.
+  **Ruled and built**: the flag on the record, the window saved and restored
+  around each invocation, `preventDefault` gated by it. The court was frozen
+  one commit ahead and reads **30 of 30** against **16 of 30**, with the
+  authority pair run through a real `target.act` — a passive listener can no
+  longer refuse the agent's navigation, and a plain listener still can, so
+  exactly one route closed. Also pinned by ruling: a late `preventDefault`
+  still writes the flag, and no event type is passive unless the page says so.
+  M1 229,322, M2 1,603,756, headroom 16,438, slack 46,864 — **the ruled +400
+  per child exactly**, with no base comments added this time, the lesson of
+  the capture rung. Twenty-three receipts rerun on the binary. G1, G3, P6 and
+  G6 stay open.
 - [~] Implemented and qualified on the native route, court 36 of 36: the
   capture phase
   (`labs/native-dom/capture-phase-audit-0.0.1.md`), deepening the deferred L4

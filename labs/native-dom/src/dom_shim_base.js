@@ -92,7 +92,7 @@
     // else in this base may grow a dependency on an event's properties, and
     // the host answers from hidden state through its own dispatcher.
     get defaultPrevented() { return invoke(weakMapGet, eventState, [this]).defaultPrevented; }
-    preventDefault() { const s = invoke(weakMapGet, eventState, [this]); if (s.cancelable) s.defaultPrevented = true; }
+    preventDefault() { const s = invoke(weakMapGet, eventState, [this]); if (s.cancelable && !s.passive) s.defaultPrevented = true; }
     stopPropagation() { invoke(weakMapGet, eventState, [this]).stop = true; }
     stopImmediatePropagation() { const s = invoke(weakMapGet, eventState, [this]); s.stop = true; s.stopImmediate = true; }
   }
@@ -170,6 +170,7 @@
       handler = fn.handleEvent;
     }
     const once = !!(options && typeof options === "object" && options.once);
+    const passive = !!(options && typeof options === "object" && options.passive);
     const capture = options === true
       || !!(options && typeof options === "object" && options.capture);
     const key = StringOf(type);
@@ -181,7 +182,7 @@
     for (let i = 0; i < list.length; i += 1) {
       if (list[i].callback === fn && list[i].capture === capture) return;
     }
-    invoke(arrayPush, list, [{ callback: fn, handler, once, capture, removed: false }]);
+    invoke(arrayPush, list, [{ callback: fn, handler, once, capture, passive, removed: false }]);
   }
   // `options` is accepted and unread: `capture` is a deferred rung, and a
   // signature that refuses it would make the deferral a page-visible error.
@@ -267,7 +268,10 @@
             // The receiver is the object for an object listener and the
             // node for a function, as the standard has it. `once` is spent
             // whether or not the handler threw.
+            const outerPassive = state.passive;
+            state.passive = record.passive;
             try { invoke(record.handler, record.handler === record.callback ? node : record.callback, [event]); } catch (error) {}
+            state.passive = outerPassive;
             if (record.once && !record.removed) removeListener(node, state.type, record.callback, record.capture);
           }
         }

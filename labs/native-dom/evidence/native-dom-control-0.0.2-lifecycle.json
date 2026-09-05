@@ -199,8 +199,8 @@
    "detail": {
     "listener_workload_bytes": 624,
     "listeners_in_fixture": 1,
-    "no_listener_owner_bytes": 313349,
-    "quiet_page_total_bytes": 312154
+    "no_listener_owner_bytes": 313749,
+    "quiet_page_total_bytes": 312554
    },
    "passed": true
   },
@@ -417,8 +417,8 @@
    "detail": {
     "listener_workload_bytes": 608,
     "listeners_in_fixture": 1,
-    "no_listener_owner_bytes": 304917,
-    "quiet_page_total_bytes": 303594
+    "no_listener_owner_bytes": 305077,
+    "quiet_page_total_bytes": 304122
    },
    "passed": true
   },
@@ -454,7 +454,7 @@
   "owner_bytes": 65536,
   "replacements": 128
  },
- "host_sha256": "112b303b5edd4ce48fe912096caeffa27e988e6be3508f85517a6136b4f846c8",
+ "host_sha256": "91352a77f0244bb4cbd96e553ac1417b15ea2590ba5725e07fd5084997ddee10",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the bounded lifecycle exists",
