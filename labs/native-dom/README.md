@@ -6,9 +6,12 @@ the shared control `0.0.1` host and courts. Slice 1 was HTML parsing and DOM
 only; slice 2 added a bounded QuickJS script realm with a minimal DOM shim and
 passes the full shared journey; slice 3 adds a bounded `http` fetch with a
 fail-closed address policy, same-origin external scripts, `fetch()` in the
-realm, and a hermetic representative page. There is still no layout, https,
-storage or real timers, and the slice says so with typed failures or
-documented gaps rather than emulating them. The DOM shim is not a
+realm, and a hermetic representative page. There is still no layout, and later slices
+added bounded forms of the three this sentence once denied: `https` under
+explicitly pinned roots, cookies and `localStorage` as the bounded profile
+store, and `setTimeout`/`clearTimeout` as a bounded main-frame timer surface.
+Each says what it does not do with typed failures or documented gaps rather
+than emulating it. The DOM shim is not a
 Web-compatibility claim.
 
 ## Hypothesis
@@ -729,7 +732,11 @@ Timers (`timer-design-0.0.1.md`): `setTimeout` and `clearTimeout` exist in the
 main frame and nowhere else. The realm owns the callbacks and their handles,
 which are per-realm, monotonic and never reused, and refuses to schedule past
 64 pending or past the safe integer; the host owns a monotonic clock, so a
-page can neither read the time nor measure it. A callback runs only at an
+host reads it after the turn that scheduled a timer, so scheduling uses a
+monotonic `Instant` and this surface adds no clock of its own. That is not the
+same as the realm having none: the engine already supplies `Date` and
+`performance`, which this host models in no way, and their fidelity,
+determinism and privacy are an unmodelled gap of their own, untouched here. A callback runs only at an
 operation boundary — an inspect, a snapshot, an act or a wait — at most 32 per
 boundary, ordered by due time then handle, and a zero-delay timer scheduled by
 a callback waits for the next boundary. `target.wait` sleeps to the next due
@@ -748,10 +755,14 @@ would in a script-free document, so no page handler can cancel it; a child
 frame cannot be addressed by `target.navigate` or by CDP, only acted in; no
 sandboxed frames, no nesting, no cross-origin or `srcdoc`
 children, no scripts in a child; no `setInterval`, animation frames, idle
-callbacks, workers or background thread, no timers in a child, no clock a page
-can read, and no string body for `setTimeout`; no capability attenuation on this host, so a request carrying the field
-is refused `invalid_request` (fail-closed, no downgrade); no CDP projection
-of frames or realms here.
+callbacks, workers or background thread, no timers in a child, no clock this
+surface adds and none used for scheduling beyond the host's own monotonic one
+— the engine's inherited `Date` and `performance` are an unmodelled gap, not a
+guarantee — and no string body for `setTimeout`; no capability attenuation on this host, so a request carrying the field
+is refused `invalid_request` (fail-closed, no downgrade); `Page.getFrameTree` is
+projected and qualified, including child frames and each frame's own URL, and
+realm identity is still not projected: no `Runtime.ExecutionContextId`, no
+context events.
 
 The navigating surface is bounded and typed, and it is no longer one action:
 `target.navigate`, `target.reload` and `target.traverse` replace the main
@@ -1909,7 +1920,8 @@ differ across receipts by design:
 | `native-dom-control-0.0.2-arena-soak`, `native-dom-control-0.0.2-arena-concurrent-soak` | the host after the tail-trim reporting fix (`12de192`) | both receipts carry the same hash and their embedded rules equal the committed court scripts |
 | `native-dom-control-0.0.2-frame-realm`, `native-dom-control-0.0.2-cdp-frame-tree`, `native-dom-control-0.0.2-profile` | the host with the profile store (keychain envelope, cookie jar, `localStorage`, one live session per profile) | the frame-realm (62/62) and CDP (58/58) courts and the journeys (27/27, 35/35 under both allocators) were rerun on this build and all three receipts carry its hash |
 | `native-dom-control-0.0.2-profile-attribution`, `native-dom-control-0.0.2-keychain-acl-probe` | the same profile-store host | read-only diagnostics after the P6 verdict; the ACL probe used two scratch builds of the same source (their `cdhash` values are in the receipt) and records the committed host's hash for reference |
-| **current, `161357b0ffa5…`** — `native-dom-control-0.0.2-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64), `-navigation` (90/90) | the host with frame-aware actions, child-local navigation, the two checked revision limits and the activation preflight | every one of these six was rerun on this build and carries its hash. The navigation court passed 90 of 90 **in this batch**; its differential soak criterion has failed in earlier batches on the same code, so the route stays **cross-batch narrow on the default allocator** and this row is not a repair. `-profile` stays 90 of 94, its four D6 footprint checks narrow, and was not rerun here. G1, G3, P6 and G6 stay open |
+| **current, `3b47966ece35…`** — `native-dom-control-0.0.2-timers` (68/68, every frozen group and criterion, CDP included), plus `-frame-actions` (182/182), `-child-frames` (82/82), `-form` (179/179), `-frame-realm` (62/62), `-cdp-frame-tree` (64/64) and `-navigation` (88/90) rerun on it | the host with bounded timers, on the pinned client restored offline from the local npm cache and verified against `cdp-qualification-0.0.1.json` | the timer court's own falsification receipt, `-timers-falsification`, is the earlier build `161357b0ffa5…` and is kept as the record that the frozen court fails there. Navigation's **88 of 90 is this batch**: its differential soak criteria passed in the batch before on the same code, so the route stays **cross-batch narrow on the default allocator** rather than repaired. `-profile` stays 90 of 94, its four D6 checks narrow, and is **older-build evidence not rerun here**. G1, G3, P6 and G6 stay open |
+| `161357b0ffa5…`, superseded by the row above — the same six receipts as they stood on the frame-action build | the host with frame-aware actions, child-local navigation, the two checked revision limits and the activation preflight | every one of these six was rerun on this build and carries its hash. The navigation court passed 90 of 90 **in this batch**; its differential soak criterion has failed in earlier batches on the same code, so the route stays **cross-batch narrow on the default allocator** and this row is not a repair. `-profile` stays 90 of 94, its four D6 footprint checks narrow, and was not rerun here. G1, G3, P6 and G6 stay open |
 | `native-dom-control-0.0.2-profile-helper` | the helper build (commit `906884b`; `host_sha256` in the receipt) against the in-process build as `baseline_sha256` | the experiment failed its frozen C4 and the in-process host was restored in the following commit; the receipt stays as the record |
 | `native-dom-control-0.0.2-https`, `native-dom-control-0.0.2-secure-cookie`, and the rerun `native-dom-control-0.0.2-profile`, `-frame-realm`, `-cdp-frame-tree` | the host with the pinned-roots HTTPS slice, the exact header cap and the court clock offset |
 | `native-dom-control-0.0.2-surface`, `native-dom-control-0.0.2-surface-attribution`, `native-dom-control-0.0.2-surface-snapshot-attribution` | the host with the G3 surface process, the surface-owned mmap frame region and the court-only stage log, host `32343eb5…` (`surface_sha256` names the child binary); these three are visual runs recorded before the headless rule and are not rerun | builds, newest first. `3089ab5d…` (the court-only navigation stage samples) carries `-navigation-attribution`, which has no pass or fail by design. `17f5284f…` (the allowlist sharing candidate, since reverted) carries `-navigation-repair`, recorded rejected. `720656ce…` carries `-navigation` (89 of 90, the differential soak narrow on the default allocator), `-navigation-replication` (cross-batch unstable, not a pass), `-profile` and `-cdp-frame-tree` (64 of 64, its pinned `puppeteer-core 24.15.0` client restored offline from the local npm cache under the ignored `target/labs/d4`, integrity equal to `cdp-qualification-0.0.1.json`, on Node.js v26.7.0). `925d062b…` with child `8e9e51e2…` carries `-surface-headless` (17 of 17) and `-surface-paired-causal` (arm B only). `69778384…` carries `-frame-realm`, `-https` and `-secure-cookie`, which are older-build evidence and are not presented as current. The surface court is visual and waits for a by-hand opted-in run | the journeys (27/27, 35/35 under both allocators) were rerun on the headless rule build |
@@ -1949,7 +1961,10 @@ target by footprint. Every later slice is measured against this row.
 
 ## Exact limitations and next experiment
 
-- No layout, images, fonts or real timers; scripts run after parsing
+- No layout, images, fonts, `setInterval`, animation frames or idle
+  callbacks; `setTimeout` and `clearTimeout` exist in the bounded form above,
+  where a delay is a lower bound and a callback runs only at an operation
+  boundary. Scripts run after parsing
   rather than at parse position; only inline and same-origin external
   scripts run. Cookies and `localStorage` exist only as the bounded profile
   store above (macOS Keychain, no cache or history); `https` exists only
