@@ -1282,6 +1282,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: passive listeners
+  (`labs/native-dom/passive-listener-audit-0.0.1.md`). This is the rung that
+  **takes power away from the page**, and the finding is an authority one:
+  measured through a real `target.act` on both builds, a link whose own click
+  listener is registered `{passive: true}` and calls `preventDefault()`
+  **refuses the agent's navigation today** and does not on the candidate. A
+  page can currently block an agent's action through a route the standard
+  calls inert — declaring a listener passive is a promise not to cancel, and
+  this host honours the cancel anyway. A second escape closes with it: a
+  passive listener can today dispatch a nested event and cancel the **outer**
+  one from inside it, which the candidate refuses while leaving the nested
+  event cancellable. The model is a flag per record and a window opened and
+  closed around each invocation, so passivity never leaks between listeners,
+  phases or dispatches. **+400 bytes per child** (M1 229,322, M2 1,603,756),
+  the cheapest rung in the ladder, headroom 16,438, floors unmoved, and every
+  court passes on the candidate. Recorded divergence: a **late**
+  `preventDefault` after the dispatch still sets the flag on both builds, but
+  the host has already read its answer, so a page can only mislead itself.
+  Also recorded, because it nearly became a false finding: `form` and
+  `child-frames` first read 176/177 and 79/80 on the candidate with checks
+  *missing*, which was the pinned CDP client having vanished from the ignored
+  `target/labs/d4` — the **shipped** binary read the same, and restoring the
+  client from the local npm cache brought both builds back to 179/179 and
+  82/82. L5 `signal` stays deferred, and no page getter goes into the walk.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 36 of 36: the
   capture phase
   (`labs/native-dom/capture-phase-audit-0.0.1.md`), deepening the deferred L4
