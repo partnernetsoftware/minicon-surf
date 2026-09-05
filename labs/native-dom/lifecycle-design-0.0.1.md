@@ -99,7 +99,8 @@ because the footprint instrument is known to be noisy on this route:
 
 | # | Criterion |
 |---|---|
-| M1 | a page with lifecycle listeners costs at most 65,536 live owner bytes more than the identical page whose listeners are removed before the lifecycle runs |
+| M1a | the **infrastructure**: a page that registers no listeners at all costs at most 65,536 live owner bytes more on the lifecycle build than the same page on the build before it — a cross-build number, reported with both figures |
+| M1b | the **frozen fixture's workload**: that page with its stated listeners costs at most 65,536 live owner bytes more than the same page with none. It bounds that fixture and no other page |
 | M2 | 128 document replacements leave the live owners within 65,536 bytes of the one-document baseline |
 | M3 | closing every target returns the live owners to the empty-host baseline exactly |
 
@@ -171,15 +172,29 @@ selector or serialisation sees a new node. The dispatch walks an event path
 that is the node chain and then, when it reaches the document and the event
 bubbles, the window — one explicit step, not a faked link.
 
-### 9.2 The cost is small and bounded, not zero
+### 9.2 Two costs, and only one of them is fixed
 
-§7 said "no resident cost", which is not true and should not be claimed. The
-global carries a listener map and an `onload` slot for the life of the realm,
-and every registered listener is a function the realm holds. It is **small
-and fixed**, it lives inside the existing 16 MiB realm limit and the request
-deadline like everything else in the realm, and **M1 measures it** rather than
-assuming it: the same page with its listeners kept against the same page with
-them removed.
+§7 said "no resident cost", which is false. The first correction said "small
+and fixed", which is also wrong in its second half, because the same sentence
+admitted the realm holds every listener a page registers and a page chooses
+how many. The two costs are separated:
+
+- **The EventTarget infrastructure** — the global's listener map and its
+  `onload` slot — is a **fixed, small, per-realm** cost that exists whether or
+  not a page registers anything.
+- **The listeners themselves are page-owned and variable.** A page may
+  register as many as it likes, and each is a function the realm holds. The
+  only bound is the one that already exists: the 16 MiB realm limit and the
+  request deadline. **This slice adds no per-listener cap**, and it therefore
+  does not claim a tighter bound than those. Claiming one would mean
+  pre-registering a listener count cap, which would be a scope expansion this
+  slice does not take.
+
+**M1 reports the two separately** and never infers one from the other: the
+infrastructure delta measured with a page that registers **no** listeners, and
+the workload delta of one **frozen fixture** with a stated number of
+listeners. Neither number is a statement about an arbitrary page, and the
+record says so.
 
 ### 9.3 What the window's EventTarget is, and is not
 

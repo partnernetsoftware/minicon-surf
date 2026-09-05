@@ -379,10 +379,15 @@ def main():
                                          {"session": session, "url": f"{origin}/listeners.html?keep=1"},
                                          deadline_ms=5000)["target"]
                 measured = owner_bytes(host)
-                expect(tag + f"M1: the lifecycle costs at most {OWNER_BYTES} live owner bytes",
+                # M1b: this fixture's listeners, and this fixture only. The
+                # infrastructure delta is M1a, a cross-build number reported
+                # beside it, and neither bounds an arbitrary page (design §9.2).
+                expect(tag + f"M1b: the frozen fixture's listeners cost at most {OWNER_BYTES} live owner bytes",
                        baseline is not None and measured is not None
                        and abs(measured - baseline) <= OWNER_BYTES,
-                       {"owner_bytes": None if measured is None else measured - baseline})
+                       {"listener_workload_bytes": None if measured is None else measured - baseline,
+                        "listeners_in_fixture": 1,
+                        "no_listener_owner_bytes": baseline})
                 for _ in range(REPLACEMENTS):
                     host.ok("target.navigate",
                             {"target": with_listeners, "url": f"{origin}/listeners.html?keep=1"},
