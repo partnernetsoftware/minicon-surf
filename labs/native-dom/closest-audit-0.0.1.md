@@ -156,3 +156,32 @@ flowchart TD
    `DOMException` — is a pre-existing gap in the base that `closest` would
    inherit. It is not this slice's to fix and it is not free: say whether it
    should become its own candidate.
+
+
+## 10. The rulings
+
+**10.1 `closest` is accepted as a compatibility fix**, not as a capability:
+608 bytes of main, nothing per child, no base growth and no handle widening.
+The ground is the one §2 states — a real page's own script should not die on a
+standard idiom — and the record keeps it on that ground.
+
+**10.2 Its criteria join `element-view-court.py`** rather than a court of
+their own. That court already guards what the main extension installs, what a
+child does not get, and the inventory re-derived from the shipped sources; a
+four-line member does not earn a second file. The amendment covers: tag, id,
+class and attribute selectors; the inclusive match on the element itself; the
+walk stopping at the document rather than running past it or throwing; a
+detached subtree; and the **same refusals `matches` gives** for child
+combinators, commas and pseudo-classes. The child divergence stays as it was
+accepted for the other members.
+
+**10.3 The selector engine's error name is deferred** as its own base
+candidate: those failures throw a plain `Error` whose message begins
+`SyntaxError:`, not a `DOMException` named `SyntaxError`. Nothing in this
+increment changes it, and `closest` inherits it exactly as `matches` has it —
+which is what the court asserts, rather than a fidelity the base does not
+have.
+
+**10.4 The rest is unchanged**: `activeElement`, `getAttributeNames`,
+`toggleAttribute` and `cloneNode` stay individual candidates, C2b stays
+scope-closed, `EventTarget` stays deferred.

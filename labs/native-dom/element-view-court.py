@@ -37,7 +37,10 @@ MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
          "innerText", "defaultValue", "focus", "blur", "submit",
          # C2a: the method moves and calls the base's own helper through the
          # handle, so the walk exists once and cannot drift.
-         "contains")
+         "contains",
+         # A compatibility fix, never in the base: a page that calls it should
+         # not die where a browser would have answered.
+         "closest")
 # The scripts that run in a child realm as well as a main one.
 CHILD_SCRIPTS = ("snapshot_script", "preflight_script", "act_script", "form_action_script",
                  "SERIALIZE_JS", "ACTIVATION_JS", "INSTALL_JS", "REVISION_JS",
@@ -166,6 +169,21 @@ def main():
                     "  submitted=true; ev.preventDefault(); });"
                     "document.getElementById('f').submit();"
                     "out.push(submitted);"
+                    # closest: what it answers, where it stops, and that it
+                    # refuses exactly what matches refuses.
+                    "out.push(a.closest('#host')===host);"
+                    "out.push(a.closest('p')===a);"
+                    "out.push(a.closest('#nothing-here')===null);"
+                    "out.push(document.getElementById('v').closest('form')"
+                    "===document.getElementById('f'));"
+                    "var loose=document.createElement('div');"
+                    "var inner=document.createElement('span');"
+                    "loose.append(inner);"
+                    "out.push(inner.closest('div')===loose);"
+                    "var refused=0;"
+                    "['a > b','a, b','p:first-child'].forEach(function(sel){"
+                    "  try { a.closest(sel); } catch (e) { refused += 1; } });"
+                    "out.push(refused===3);"
                     "out.push(host.contains(a));"
                     "out.push(host.contains(host));"
                     "out.push(!a.contains(host));"
@@ -234,7 +252,8 @@ def main():
                     said = texts[0] if texts else None
                     host.ok("target.close", {"target": opened["result"]["target"]})
                 expect(tag + "a main realm calls every moved member and each answers as it did",
-                       said == "true,true,true,true,true,true,true,true,true,true,true,true",
+                       said == ("true,true,true,true,true,true,true,true"
+                                ",true,true,true,true,true,true,true,true,true,true"),
                        {"said": said})
 
                 opened = host.call("target.open",
