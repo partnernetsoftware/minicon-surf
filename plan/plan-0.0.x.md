@@ -1234,11 +1234,10 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   found in. The receipts committed on that binary are the page-navigation and
   child-frame ones; the rest of the same-binary regression suite was run
   against it as scratch results that were not retained, and their committed
-  receipts still name the earlier build. M1 is left with **182 bytes of
-  headroom**, so further shim growth is blocked until a separate architecture
-  slice reduces what every realm compiles. **M1 is left with 182 bytes of headroom**, 261,962 against an
-  unmoved 262,144: the next change that adds shim source breaks it.
-  G1, G3, P6 and G6 stay open.
+  receipts still name the earlier build. **M1 is left with 182 bytes of
+  headroom**, 261,962 against an unmoved 262,144, so further growth of the
+  shared shim is blocked until a separate architecture slice reduces what
+  every realm compiles. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the
   bounded document lifecycle (`labs/native-dom/lifecycle-design-0.0.1.md`).
   Four observable steps after the document's own scripts, each its own
