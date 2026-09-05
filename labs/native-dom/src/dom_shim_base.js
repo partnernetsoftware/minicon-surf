@@ -33,10 +33,54 @@
     }
     scheduleFlush();
   }
+  // An event's state is closure-owned and keyed by the event, so nothing a
+  // page can reach writes it: `preventDefault` is the only door to
+  // `defaultPrevented`, and the dispatcher is the only writer of `target`,
+  // `currentTarget`, `eventPhase` and `dispatching`. That matters beyond
+  // fidelity — the host reads `defaultPrevented` back to decide whether an
+  // activation proceeds.
+  const eventState = new WeakMap();
+  const NONE = 0;
+  const AT_TARGET = 2;
+  const BUBBLING_PHASE = 3;
   class Event {
-    constructor(type, init = {}) { this.type = type; this.bubbles = !!init.bubbles; this.cancelable = !!init.cancelable; this.defaultPrevented = false; this.target = null; this.currentTarget = null; this.__stop = false; }
-    preventDefault() { if (this.cancelable) this.defaultPrevented = true; }
-    stopPropagation() { this.__stop = true; }
+    constructor(type, init) {
+      // A default parameter covers `undefined` and not `null`, and a page may
+      // pass either.
+      const d = init === null || init === undefined ? {} : init;
+      eventState.set(this, {
+        type: String(type),
+        bubbles: !!d.bubbles,
+        cancelable: !!d.cancelable,
+        composed: !!d.composed,
+        defaultPrevented: false,
+        target: null,
+        currentTarget: null,
+        eventPhase: NONE,
+        dispatching: false,
+        stop: false,
+        stopImmediate: false,
+        // The clock this realm already inherited and does not model; this is
+        // no new guarantee, only a number read from what was already there.
+        timeStamp: g.performance && g.performance.now ? g.performance.now() : 0,
+      });
+    }
+    // Synthesized by an agent, never by a person: `isTrusted` would be a
+    // claim that is not true.
+    get isTrusted() { return false; }
+    get type() { return eventState.get(this).type; }
+    get bubbles() { return eventState.get(this).bubbles; }
+    get cancelable() { return eventState.get(this).cancelable; }
+    get composed() { return eventState.get(this).composed; }
+    get defaultPrevented() { return eventState.get(this).defaultPrevented; }
+    get target() { return eventState.get(this).target; }
+    get currentTarget() { return eventState.get(this).currentTarget; }
+    get eventPhase() { return eventState.get(this).eventPhase; }
+    get dispatching() { return eventState.get(this).dispatching; }
+    get timeStamp() { return eventState.get(this).timeStamp; }
+    preventDefault() { const s = eventState.get(this); if (s.cancelable) s.defaultPrevented = true; }
+    stopPropagation() { eventState.get(this).stop = true; }
+    stopImmediatePropagation() { const s = eventState.get(this); s.stop = true; s.stopImmediate = true; }
   }
   class MutationObserver {
     constructor(callback) { this.__callback = callback; this.__entries = []; }
@@ -119,25 +163,56 @@
   // parentNode: nothing is appended to the tree and document.parentNode
   // stays null.
   function dispatchOn(target, event) {
-    event.target = target;
+    const state = eventState.get(event);
+    if (!state) return true;
+    // An event already in flight is refused before anything is written, so
+    // the dispatch in progress is not corrupted — and a handler that
+    // dispatches the event it was handed no longer recurses until the stack
+    // runs out. A completed event may be dispatched again.
+    if (state.dispatching) {
+      const error = new Error("the event is already being dispatched");
+      error.name = "InvalidStateError";
+      throw error;
+    }
+    state.dispatching = true;
+    state.stop = false;
+    state.stopImmediate = false;
+    state.target = target;
     const path = [];
     if (target && typeof target.nodeType === "number") {
       for (let n = target; n; n = n.parentNode) path.push(n);
       // Only a path that actually reached the document continues to the
       // window: a detached subtree bubbles through its own ancestors and
       // stops there, as the standard has it.
-      if (event.bubbles && path[path.length - 1] === document) path.push(g);
+      if (state.bubbles && path[path.length - 1] === document) path.push(g);
     } else {
       path.push(target);
     }
-    for (const node of path) {
-      event.currentTarget = node;
-      const list = listenersOf(node).get(event.type);
-      if (list) for (const fn of [...list]) { try { fn.call(node, event); } catch (error) {} }
-      if (event.__stop || !event.bubbles) break;
+    try {
+      for (const node of path) {
+        state.currentTarget = node;
+        state.eventPhase = node === target ? AT_TARGET : BUBBLING_PHASE;
+        const list = listenersOf(node).get(state.type);
+        if (list) {
+          // The list is copied so a listener added during this dispatch is
+          // not called by it, and membership is rechecked so one removed
+          // during it is not called either.
+          for (const fn of [...list]) {
+            if (list.indexOf(fn) < 0) continue;
+            try { fn.call(node, event); } catch (error) {}
+            if (state.stopImmediate) break;
+          }
+        }
+        if (state.stop || !state.bubbles) break;
+      }
+    } finally {
+      // Every path out leaves the event clean, and its target is the last one
+      // it was dispatched to.
+      state.currentTarget = null;
+      state.eventPhase = NONE;
+      state.dispatching = false;
     }
-    event.currentTarget = null;
-    return !event.defaultPrevented;
+    return !state.defaultPrevented;
   }
 
   class Text extends Node { constructor(data) { super(); this.nodeType = 3; this.nodeName = "#text"; this.data = String(data); } }

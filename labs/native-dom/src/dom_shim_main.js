@@ -104,12 +104,14 @@ __mcsInternals((internals) => {
   // reference, and it reaches no snapshot, receipt, ledger, error or counter.
   class CustomEvent_ extends Event {
     constructor(type, init) {
-      // A default parameter covers `undefined` and not `null`, and a page may
-      // pass either. `Event` itself still throws on an explicit null: that is
-      // base source and a recorded loss, not this slice's to grow (§9.4).
+      super(type, init);
+      // `Event` normalizes the dictionary itself now; this reads the same one
+      // for its own member, which is read-only like every other.
       const dictionary = init === null || init === undefined ? {} : init;
-      super(type, dictionary);
-      this.detail = dictionary.detail === undefined ? null : dictionary.detail;
+      const detail = dictionary.detail === undefined ? null : dictionary.detail;
+      Object.defineProperty(this, "detail", {
+        value: detail, writable: false, enumerable: true, configurable: true,
+      });
     }
   }
   g.CustomEvent = CustomEvent_;
