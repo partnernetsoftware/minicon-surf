@@ -4709,14 +4709,30 @@ impl Host {
                 deadline,
                 io,
             );
-            if let Some((operation, href)) = asked.take() {
-                let category = built.as_ref().err().map_or("committed", |error| error.code);
-                self.audit_navigation_in(session, id, operation, Some(&href), category);
-            }
-            let target = built?;
+            // A build that failed records its real outcome here; a build
+            // that succeeded is not judged until the candidate is, because a
+            // candidate that raises another intent is abandoned and was never
+            // observable — calling that committed is a lie the ledger must
+            // not tell (§20).
+            let built = match built {
+                Ok(target) => target,
+                Err(error) => {
+                    if let Some((operation, href)) = asked.take() {
+                        self.audit_navigation_in(session, id, operation, Some(&href), error.code);
+                    }
+                    return Err(error);
+                }
+            };
+            let target = built;
             let Some(intent) = target.pending_intent.clone() else {
+                if let Some((operation, href)) = asked.take() {
+                    self.audit_navigation_in(session, id, operation, Some(&href), "committed");
+                }
                 return Ok(target);
             };
+            if let Some((operation, href)) = asked.take() {
+                self.audit_navigation_in(session, id, operation, Some(&href), "superseded");
+            }
             // The abandoned candidate never becomes observable: its spend and
             // its working copy carry forward, everything else is dropped here.
             budget = target.budget.clone();
