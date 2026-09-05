@@ -370,3 +370,15 @@ fails to move a member it claims to have moved will fail its own criterion.
 For this round the claim rests on the inventory criteria over the sources and
 on the fourteen suites passing on the new binary, and that is stated here
 instead of a falsification number that would not mean what it looks like.
+
+**12.5 The receipt is labelled as what it is.** That run was first kept under
+the name `-element-view-falsification` with the court's own `passed: true`,
+which a script reading receipts would take for "the old build passed" or "the
+new behaviour was falsified" — neither of which it says. It is now
+`native-dom-control-0.0.2-element-view-audit-comparison.json`, carrying
+`passed: null`, `verdict: non_discriminating`, a `status` explaining what the
+run cannot decide, and an `annotation` recording that the rename and those
+three fields were set by hand as a provenance fix while every criterion,
+measurement and check result was left exactly as the court emitted it.
+**This round therefore has no falsification receipt**, and both the README and
+the plan say so.

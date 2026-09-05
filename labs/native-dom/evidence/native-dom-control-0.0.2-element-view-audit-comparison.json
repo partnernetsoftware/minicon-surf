@@ -1,4 +1,5 @@
 {
+ "annotation": "The court emitted passed:true; this file was renamed and its verdict, status and passed fields were set by hand as a provenance fix. No criterion, measurement or check result was changed.",
  "checks": [
   {
    "check": "every moved member is declared nowhere in the base",
@@ -181,5 +182,7 @@
   "submit",
   "contains"
  ],
- "passed": true
+ "passed": null,
+ "status": "This is an audit comparison, not a falsification. The court was run against the build before C2a and scored the same as against the build after it, so it separates nothing: its inventory criteria read the shipped sources rather than the binary, `contains` behaves identically whichever realm installs it, and the divergence is visible only through a court-only probe that is part of the binary under test, so an older binary answers with its own older probe. Read `passed: null` as 'this run decides nothing', never as 'the old build passed'.",
+ "verdict": "non_discriminating"
 }

@@ -1312,8 +1312,11 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   walk exists once; the other three stay in the base, scope-closed, and the
   handle does not widen. M1 is **230,106** with **15,654 bytes of headroom**
   under an unchanged floor. That court is 19 of 19, and against the build
-  before it reads 19 of 19 as well, which is **not** a falsification: the
-  record says why rather than letting the number imply one. G1, G3, P6 and G6
+  before it reads 19 of 19 as well, which separates nothing. That run is kept
+  as `-element-view-audit-comparison` with `passed: null` and
+  `verdict: non_discriminating` rather than as a falsification receipt, so no
+  reader or script can take a passing run for a falsified one; **this round has
+  no falsification receipt** and the record says why. G1, G3, P6 and G6
   stay open.
   The `Event` slice left M1 with 2,630 bytes under its floor, so the next
   base change did not fit. A measured base-reduction round
