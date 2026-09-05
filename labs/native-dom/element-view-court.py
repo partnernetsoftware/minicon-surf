@@ -46,7 +46,10 @@ MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
          "getAttributeNames",
          # Validates no name, because its neighbours do not (§10.3 of the
          # toggle audit); the revision follows the members it calls.
-         "toggleAttribute")
+         "toggleAttribute",
+         # Shallow by default, faithful or failed, and carrying no listener,
+         # no focus and no IDL state.
+         "cloneNode")
 # The scripts that run in a child realm as well as a main one.
 CHILD_SCRIPTS = ("snapshot_script", "preflight_script", "act_script", "form_action_script",
                  "SERIALIZE_JS", "ACTIVATION_JS", "INSTALL_JS", "REVISION_JS",
@@ -157,7 +160,10 @@ def main():
                     "<!doctype html><html><body><main><p id=\"m\">start</p>"
                     "<div id=\"host\"><p id=\"a\">alpha</p><p id=\"b\">beta</p></div>"
                     "<form id=\"f\"><input id=\"v\" value=\"kept\"></form>"
-                    "<p id=\"attrs\">attrs</p><p id=\"toggle\">toggle</p></main><script>"
+                    "<p id=\"attrs\">attrs</p><p id=\"toggle\">toggle</p>"
+                    "<div id=\"clone-src\" class=\"c\" data-k=\"v\">text<span>inner</span></div>"
+                    "<input id=\"clone-input\" value=\"orig\">"
+                    "<input id=\"clone-check\" type=\"checkbox\"></main><script>"
                     "var host=document.getElementById('host');"
                     "var a=document.getElementById('a');"
                     "var out=[];"
@@ -176,6 +182,39 @@ def main():
                     "  submitted=true; ev.preventDefault(); });"
                     "document.getElementById('f').submit();"
                     "out.push(submitted);"
+                    # cloneNode: shallow by default, deep on request, what it
+                    # carries and what it refuses.
+                    "var src=document.getElementById('clone-src');"
+                    "var shallow=src.cloneNode();"
+                    "out.push(shallow.childNodes.length===0);"
+                    "out.push(shallow.cloneNode(false).childNodes.length===0);"
+                    "out.push(shallow!==src && shallow.localName===src.localName);"
+                    "out.push(shallow.getAttributeNames().join(',')"
+                    "===src.getAttributeNames().join(','));"
+                    "var deep=src.cloneNode(true);"
+                    "out.push(deep.childNodes.length===src.childNodes.length);"
+                    "out.push(deep.childNodes[0].data==='text');"
+                    "out.push(deep.childNodes[1].localName==='span');"
+                    "out.push(deep.childNodes[1].childNodes[0].data==='inner');"
+                    "var field=document.getElementById('clone-input');"
+                    "field.value='typed';"
+                    "var fieldCopy=field.cloneNode(true);"
+                    "out.push(field.value==='typed' && fieldCopy.value==='orig');"
+                    "var box=document.getElementById('clone-check');"
+                    "box.checked=true;"
+                    "out.push(box.checked===true && box.cloneNode(true).checked===false);"
+                    "var heard=0;"
+                    "src.addEventListener('court:clone', function(){ heard += 1; });"
+                    "var listenerCopy=src.cloneNode(true);"
+                    "listenerCopy.dispatchEvent(new Event('court:clone',{}));"
+                    "out.push(heard===0);"
+                    "src.dispatchEvent(new Event('court:clone',{}));"
+                    "out.push(heard===1);"
+                    "out.push(document.activeElement!==listenerCopy);"
+                    "var refused='none';"
+                    "try { Node.prototype.cloneNode.call({nodeType:8,childNodes:[]}, true); }"
+                    "catch (e) { refused = e.name; }"
+                    "out.push(refused==='TypeError');"
                     # toggleAttribute: both forms, both directions, and what
                     # each call answers.
                     "var tg=document.getElementById('toggle');"
@@ -238,6 +277,20 @@ def main():
             # The revision a toggle moves is read from outside, because
             # window.__mcs is installed after a document's inline scripts and a
             # page cannot see the counter at parse time (§10.4).
+            # A detached copy is outside the observed tree, so it moves
+            # nothing until the page appends it (§10.5).
+            if path == "/clone-revision.html":
+                return self.reply(200, (
+                    "<!doctype html><html><body><main><div id=\"t\">"
+                    "<span>a</span><span>b</span></div></main><script>"
+                    "var t=document.getElementById('t');var copy=null;"
+                    "setTimeout(function(){"
+                    "  copy = t.cloneNode(true);"           # detached: no record
+                    "  setTimeout(function(){"
+                    "    document.body.append(copy);"       # now it counts
+                    "  }, 0);"
+                    "}, 0);"
+                    "</script></body></html>").encode())
             if path == "/toggle-revision.html":
                 return self.reply(200, (
                     "<!doctype html><html><body><main><p id=\"t\">t</p></main><script>"
@@ -299,7 +352,8 @@ def main():
                     said = texts[0] if texts else None
                     host.ok("target.close", {"target": opened["result"]["target"]})
                 expect(tag + "a main realm calls every moved member and each answers as it did",
-                       said == ("true,true,true,true,true,true,true,true"
+                       said == ("true,true,true,true,true,true,true,true,true,true"
+                                ",true,true,true,true"
                                 ",true,true,true,true,true,true,true,true,true,true"
                                 ",true,true,true,true,true"
                                 ",true,true,true,true,true,true,true,true,true,true"),
@@ -318,6 +372,22 @@ def main():
                 expect(tag + "and the base's helper still gives the observer its subtree scope",
                        before is not None and after is not None and after > before,
                        {"revision": [before, after]})
+
+                opened = host.call("target.open",
+                                   {"session": session, "url": f"{origin}/clone-revision.html"},
+                                   deadline_ms=8000)
+                revision = opened["result"]["revision"] if opened.get("ok") else None
+                cloner = opened["result"]["target"] if opened.get("ok") else None
+                made = host.call("target.inspect", {"target": cloner}) if cloner else {}
+                after_clone = (made.get("result") or {}).get("revision")
+                joined = host.call("target.inspect", {"target": cloner}) if cloner else {}
+                after_append = (joined.get("result") or {}).get("revision")
+                expect(tag + "a detached copy moves nothing, and appending it moves the revision",
+                       revision is not None and after_clone == revision
+                       and after_append is not None and after_append > after_clone,
+                       {"revisions": [revision, after_clone, after_append]})
+                if cloner:
+                    host.ok("target.close", {"target": cloner})
 
                 opened = host.call("target.open",
                                    {"session": session, "url": f"{origin}/toggle-revision.html"},

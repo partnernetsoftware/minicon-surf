@@ -185,3 +185,39 @@ flowchart TD
    match the standard exactly — it does in my measurement, since `!!undefined`
    is `false` — or whether the court should pin it explicitly so a later
    refactor cannot flip it quietly. I would pin it.
+
+
+## 10. The rulings
+
+**10.1 `cloneNode` is accepted**: 4,080 bytes of main, nothing per child, no
+base growth, no handle widening.
+
+**10.2 Shallow is the default**, `!!deep` being `false` for a missing
+argument, and the court **pins** it so a later refactor cannot flip it
+quietly.
+
+**10.3 An uncopyable node kind fails closed.** The walk never skips and never
+returns a partial copy: a kind it does not model raises a typed failure and
+the call produces nothing. The kinds it models are a **closed set** — text and
+element, the only two this host's trees hold — and adding a kind means
+updating this record and the court **before** the walk learns it.
+
+*How that failure is spelled, since this is page-facing:* the realm throws a
+real `TypeError` naming the node type it cannot copy. The host's own
+vocabulary for the same thing is `unsupported_capability`, and it does not
+appear here because no host operation is involved — `cloneNode` is page
+surface, and the failure is the page's to catch.
+
+**10.4 What a copy carries stands as §4 recorded it**: attributes yes, IDL
+state no, listeners no, focus no, and `dataset` and `classList` as the copy's
+own views over the copy's own attributes.
+
+**10.5 A detached copy moves nothing.** The revision advances when the page
+appends it, exactly as any append does, and the court measures that from
+outside as the toggle criteria do.
+
+**10.6 The criteria join `element-view-court.py`**: shallow and deep,
+attribute order, the typed `value` and the `checked` property staying behind,
+no listener and no focus on a copy, the closed-set failure path, owner
+release, and the child divergence. Attribute-name validation, the selector
+engine's error name, C2b and `EventTarget` stand as ruled.
