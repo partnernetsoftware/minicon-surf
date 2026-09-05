@@ -321,3 +321,32 @@ My own view, for what it is worth against your ruling: take C2a with the
 helper handed out rather than duplicated — one identifier, no divergence in
 behaviour, no second copy of anything — and leave C2b until a slice actually
 needs the 3,952 bytes.
+
+
+## 12. The C2 rulings
+
+**12.1 C2a is accepted, with the helper handed out rather than duplicated.**
+`Node.prototype.contains` moves to the main extension and calls the base's
+existing helper through the one-shot handle — one identifier, no second copy
+of the ancestor walk, and nothing that can drift. The 400 bytes it saves is
+**below** the 600–960 per-member band, and that is recorded as a small member
+measuring what it measures, not as a reason to rewrite anything to fit the
+band.
+
+**12.2 C2b is deferred and stays scope-closed.** `matches`,
+`removeAttribute` and `replaceChildren` remain in the base. The handle does
+not widen for them: that would be four identifiers for about 3,952 bytes, and
+one of them is `record`, whose meaning is written down in §11.5 — the way a
+mutation moves the revision that gates every action. The dependency map in
+§11.3 stands as the record for whichever slice returns to it.
+
+**12.3 The court is amended rather than duplicated.** `element-view-court.py`
+already guards exactly this claim — a page-only member lives only in the realm
+that can call it — with the inventory re-derived from the shipped sources, the
+child snapshot, action and reset invariants, owner release, and the divergence
+through the court-only probe. `contains` joins its moved list and brings two
+criteria of its own: the method's behaviour where a page can call it, and the
+base helper still doing its other job, which is `MutationObserver` subtree
+scope. The court after this amendment covers C1 and C2a and nothing of C2b,
+which is what was asked for; the amendment is recorded here chronologically
+rather than replacing what the file said before.
