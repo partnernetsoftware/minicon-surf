@@ -303,15 +303,20 @@ struct NavigationIntent {
     /// `assign`, `replace` or `reload`.
     kind: String,
     url: Option<String>,
+    /// The realm refused to retain the address because it was longer than it
+    /// may keep. No part of it crossed; only this marker did.
+    over: bool,
 }
 
 /// Bounded, host-owned attribution for intents. No URL, ever.
 #[derive(Default, Clone, Copy)]
 struct IntentCounters {
-    /// Intents thrown away because the caller navigated explicitly.
+    /// Intents thrown away, whatever the cause.
     discarded: u64,
-    /// Whether the last discard had that cause. One fixed word or none.
-    caller_override: bool,
+    /// The last cause, from a closed vocabulary of two fixed words, or none.
+    /// A caller that navigated explicitly, or a bridge failure whose stale
+    /// slot the host emptied before letting page code run again.
+    last_cause: Option<&'static str>,
 }
 
 impl IntentCounters {
@@ -319,7 +324,7 @@ impl IntentCounters {
         json!({
             "pending": pending,
             "discarded_total": self.discarded,
-            "last_cause": if self.caller_override { "caller_override" } else { "none" },
+            "last_cause": self.last_cause.unwrap_or("none"),
         })
     }
 }
@@ -2192,6 +2197,10 @@ struct Target {
     /// The one navigation intent this document's own scripts raised, taken at
     /// a boundary and never acted on inside an evaluation.
     pending_intent: Option<NavigationIntent>,
+    /// A take failed on this target's realm, so the slot may still hold what
+    /// the page asked for. Page code does not run again on this realm until
+    /// the slot has been emptied and what it held thrown away (§17.1).
+    intent_poisoned: bool,
     /// The main frame's id: minted with the target and kept for its life.
     frame_id: String,
     /// Document generation of the main frame: 1 for the first document,
@@ -2608,6 +2617,10 @@ struct Host {
     /// Court-only (`--court-hold-intent 1`, and only with a court file):
     /// suppress exactly one consumption.
     court_hold_intent: bool,
+    /// Court-only (`--court-break-intent-take 1`, and only with a court
+    /// file): make exactly the first take answer as a failed bridge without
+    /// evaluating anything, which is the case that leaves the slot full.
+    court_break_intent_take: bool,
     /// The one sink every realm this host builds shares. Because a drain adds
     /// to it where the work happens, a failed build, a replaced main or child
     /// document and a closed target all keep what they did.
@@ -3776,6 +3789,9 @@ impl Host {
     /// interrupted at the deadline is discarded and counted, the target stays
     /// usable, and whatever it completed before that stands.
     fn run_due_timers(&mut self, id: &str, deadline: Instant) -> Result<(), ControlError> {
+        // A boundary is where a stale slot is emptied, before any page code
+        // this operation runs can overwrite or hide it (§17.1).
+        self.clear_poisoned_intent(id, deadline)?;
         if !self.targets.contains_key(id) {
             return Ok(());
         }
@@ -3843,24 +3859,51 @@ impl Host {
     /// Read and clear the realm's intent slot. Called only at a boundary:
     /// after an evaluation and its job drain, never between an activation's
     /// two phases and never inside a lifecycle step.
+    /// Take whatever the realm holds. Three outcomes are three different
+    /// things and are never conflated (§17.1): no intent, an intent, or a
+    /// failure. An evaluation that failed propagates as itself — the
+    /// deadline's own error — and output that is neither empty nor a
+    /// well-shaped intent is a typed bridge failure. A caller is never told
+    /// an operation succeeded because a take quietly returned nothing.
     fn take_intent(
         realm: &Realm,
         capability: &str,
         deadline: Instant,
         id: &str,
-    ) -> Option<NavigationIntent> {
-        let text = realm
-            .eval(&take_intent_script(capability), deadline, id)
-            .ok()?;
-        if text.is_empty() {
-            return None;
+        broken: bool,
+    ) -> Result<Option<NavigationIntent>, ControlError> {
+        let bridge_failed = || {
+            ControlError::new(
+                "internal",
+                "the realm did not answer the navigation-intent bridge",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({"reason": "intent_bridge_failed"}))
+        };
+        if broken {
+            // Court-only: the worst case, an answer the host cannot use from
+            // an evaluation that may never have emptied the slot.
+            return Err(bridge_failed());
         }
-        let value: Value = serde_json::from_str(&text).ok()?;
-        let kind = value.get("kind").and_then(Value::as_str)?.to_owned();
-        Some(NavigationIntent {
-            kind,
+        let text = realm.eval(&take_intent_script(capability), deadline, id)?;
+        if text.is_empty() {
+            return Ok(None);
+        }
+        let Ok(value) = serde_json::from_str::<Value>(&text) else {
+            return Err(bridge_failed());
+        };
+        let Some(kind) = value.get("kind").and_then(Value::as_str) else {
+            return Err(bridge_failed());
+        };
+        if !matches!(kind, "assign" | "replace" | "reload") {
+            return Err(bridge_failed());
+        }
+        Ok(Some(NavigationIntent {
+            kind: kind.to_owned(),
             url: value.get("url").and_then(Value::as_str).map(str::to_owned),
-        })
+            over: value.get("over").and_then(Value::as_bool).unwrap_or(false),
+        }))
     }
 
     /// Consume the intent a live document raised, at a boundary. Returns
@@ -3872,10 +3915,10 @@ impl Host {
         id: &str,
         deadline: Instant,
     ) -> Option<Result<Value, ControlError>> {
-        let capability = self.targets.get(id)?.realm.lifecycle.borrow().clone();
-        let intent = {
-            let target = self.targets.get(id)?;
-            Self::take_intent(&target.realm, &capability, deadline, id)?
+        let intent = match self.take_target_intent(id, deadline) {
+            Ok(Some(intent)) => intent,
+            Ok(None) => return None,
+            Err(error) => return Some(Err(error)),
         };
         if self.court_hold_intent && self.held_intent.is_none() {
             // Court-only: exactly one consumption is suppressed, so an intent
@@ -3883,25 +3926,28 @@ impl Host {
             self.held_intent = Some(intent);
             return None;
         }
-        let current = self.targets.get(id)?.url.clone();
-        let href = match intent.kind.as_str() {
-            "reload" => current.clone().map(|url| url.to_string()),
-            _ => match (&current, intent.url.as_deref()) {
-                (Some(url), Some(raw)) => url.join(raw).ok().map(|next| next.to_string()),
-                _ => None,
-            },
+        let operation = match intent.kind.as_str() {
+            "replace" => "page.navigate.replace",
+            "reload" => "page.navigate.reload",
+            _ => "page.navigate.assign",
         };
-        let Some(href) = href else {
-            return Some(Err(ControlError::new(
-                "invalid_request",
-                "the page asked for an address this host cannot resolve",
-                false,
-            )
-            .scoped("target", id)
-            .details(json!({"reason": "malformed_intent"}))));
+        let current = self.targets.get(id)?.url.clone();
+        let href = match Self::resolve_intent(current.as_ref(), &intent, id) {
+            Ok(href) => href,
+            Err(error) => {
+                // A refusal is audited like a commit, and with no origin at
+                // all: the address it named is the page's and reaches nothing.
+                self.audit_navigation(id, operation, None, error.code);
+                return Some(Err(error));
+            }
         };
         let replace = intent.kind != "assign";
         let outcome = self.navigate_with(id, &href, deadline, true);
+        let category = outcome
+            .as_ref()
+            .err()
+            .map_or("committed", |error| error.code);
+        self.audit_navigation(id, operation, Some(href.as_str()), category);
         if outcome.is_ok() {
             // History follows the kind: assign adds an entry, replace and
             // reload leave the ring's length where it was.
@@ -3918,6 +3964,51 @@ impl Host {
             }
         }
         Some(outcome)
+    }
+
+    /// Take this target's intent, poisoning the target if the take fails.
+    fn take_target_intent(
+        &mut self,
+        id: &str,
+        deadline: Instant,
+    ) -> Result<Option<NavigationIntent>, ControlError> {
+        let Some(target) = self.targets.get(id) else {
+            return Ok(None);
+        };
+        let capability = target.realm.lifecycle.borrow().clone();
+        let broken = self.court_break_intent_take;
+        match Self::take_intent(&target.realm, &capability, deadline, id, broken) {
+            Ok(intent) => Ok(intent),
+            Err(error) => {
+                // The evaluation may never have emptied the slot, and it
+                // cannot be retried inside a deadline that has already
+                // expired: the target is poisoned until it is emptied.
+                if let Some(target) = self.targets.get_mut(id) {
+                    target.intent_poisoned = true;
+                }
+                self.court_break_intent_take = false;
+                Err(error)
+            }
+        }
+    }
+
+    /// Before page code runs again on a poisoned realm, empty the slot and
+    /// throw away whatever it held. What a page asked for through a failed
+    /// bridge is never applied later: it is discarded, counted with one fixed
+    /// cause, and its address reaches nothing.
+    fn clear_poisoned_intent(&mut self, id: &str, deadline: Instant) -> Result<(), ControlError> {
+        if !self.targets.get(id).is_some_and(|t| t.intent_poisoned) {
+            return Ok(());
+        }
+        let stale = self.take_target_intent(id, deadline)?;
+        if let Some(target) = self.targets.get_mut(id) {
+            target.intent_poisoned = false;
+        }
+        if stale.is_some() {
+            self.intent_counters.discarded = self.intent_counters.discarded.saturating_add(1);
+            self.intent_counters.last_cause = Some("bridge_failure");
+        }
+        Ok(())
     }
 
     /// The target-global revision: the base plus every live frame's counter.
@@ -4603,8 +4694,11 @@ impl Host {
         let mut source = source;
         let mut budget = budget;
         let mut io = io;
+        // A link the page asked for is recorded when its build has answered,
+        // so the record carries what actually happened to it.
+        let mut asked: Option<(&'static str, String)> = None;
         for _ in 0..=MAX_SCRIPT_CHAIN {
-            let target = self.build_target(
+            let built = self.build_target(
                 id,
                 session,
                 source.clone(),
@@ -4614,7 +4708,12 @@ impl Host {
                 revision_base,
                 deadline,
                 io,
-            )?;
+            );
+            if let Some((operation, href)) = asked.take() {
+                let category = built.as_ref().err().map_or("committed", |error| error.code);
+                self.audit_navigation_in(session, id, operation, Some(&href), category);
+            }
+            let target = built?;
             let Some(intent) = target.pending_intent.clone() else {
                 return Ok(target);
             };
@@ -4624,23 +4723,23 @@ impl Host {
             io = target.io.clone_for_chain();
             let base = target.url.clone();
             drop(target);
-            let next = match intent.kind.as_str() {
-                "reload" => base.clone().map(|url| url.to_string()),
-                _ => match (&base, intent.url.as_deref()) {
-                    (Some(url), Some(raw)) => url.join(raw).ok().map(|next| next.to_string()),
-                    _ => None,
-                },
+            let operation = match intent.kind.as_str() {
+                "replace" => "page.navigate.replace",
+                "reload" => "page.navigate.reload",
+                _ => "page.navigate.assign",
             };
-            let Some(next) = next else {
-                return Err(ControlError::new(
-                    "invalid_request",
-                    "the page asked for an address this host cannot resolve",
-                    false,
-                )
-                .scoped("target", id)
-                .details(json!({"reason":"malformed_intent"})));
+            let next = match Self::resolve_intent(base.as_ref(), &intent, id) {
+                Ok(next) => next,
+                Err(error) => {
+                    self.audit_navigation_in(session, id, operation, None, error.code);
+                    return Err(error);
+                }
             };
+            asked = Some((operation, next.clone()));
             source = Source::Url(next);
+        }
+        if let Some((operation, href)) = asked.take() {
+            self.audit_navigation_in(session, id, operation, Some(&href), "resource_limit");
         }
         Err(ControlError::new(
             "resource_limit",
@@ -5033,6 +5132,7 @@ impl Host {
             base_target,
             timers: Timers::default(),
             pending_intent: None,
+            intent_poisoned: false,
         };
         let read_only = self
             .sessions
@@ -5112,13 +5212,16 @@ impl Host {
             // A step is a boundary. An intent raised in one abandons the
             // remaining steps of this candidate: the document that replaces it
             // runs its own lifecycle from the first phase.
-            if let Some(raised) = Self::take_intent(&target.realm, &capability, deadline, id) {
+            if let Some(raised) =
+                Self::take_intent(&target.realm, &capability, deadline, id, false)?
+            {
                 target.pending_intent = Some(raised);
                 break;
             }
         }
         if target.pending_intent.is_none() {
-            target.pending_intent = Self::take_intent(&target.realm, &capability, deadline, id);
+            target.pending_intent =
+                Self::take_intent(&target.realm, &capability, deadline, id, false)?;
         }
 
         // Court-only seams: they do nothing unless the knobs are given.
@@ -5148,6 +5251,20 @@ impl Host {
         let Some(session) = self.targets.get(target_id).map(|t| t.session_id.clone()) else {
             return;
         };
+        self.audit_navigation_in(&session, target_id, operation, url, outcome);
+    }
+
+    /// The same record for a navigation whose target does not exist yet: a
+    /// page-initiated one raised while its document is still being built.
+    fn audit_navigation_in(
+        &mut self,
+        session: &str,
+        target_id: &str,
+        operation: &'static str,
+        url: Option<&str>,
+        outcome: &'static str,
+    ) {
+        let session = session.to_owned();
         let sequence = self.next_audit_sequence;
         self.next_audit_sequence = self.next_audit_sequence.saturating_add(1);
         let deadline_ms = self.current_deadline_ms;
@@ -5377,6 +5494,48 @@ impl Host {
         Ok(result)
     }
 
+    /// The address a page's intent resolves to, bounded at every step before
+    /// anything is parsed, joined or fetched: the realm's over-length marker,
+    /// the byte bound on what crossed, the join against the committed
+    /// document, and then the same `navigation_url` check a caller's address
+    /// passes. Every refusal answers one fixed redacted reason and carries no
+    /// part of the address (§17.2).
+    fn resolve_intent(
+        base: Option<&Url>,
+        intent: &NavigationIntent,
+        id: &str,
+    ) -> Result<String, ControlError> {
+        let refuse = |reason: &'static str| {
+            ControlError::new(
+                "invalid_request",
+                "the page asked for an address this host cannot use",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({ "reason": reason }))
+        };
+        if intent.over {
+            return Err(refuse("navigation_url"));
+        }
+        let joined = match intent.kind.as_str() {
+            "reload" => base.map(|url| url.to_string()),
+            _ => match (base, intent.url.as_deref()) {
+                (Some(url), Some(raw)) => {
+                    if raw.len() > MAX_URL_BYTES {
+                        return Err(refuse("navigation_url"));
+                    }
+                    url.join(raw).ok().map(|next| next.to_string())
+                }
+                _ => None,
+            },
+        };
+        let Some(joined) = joined else {
+            return Err(refuse("malformed_intent"));
+        };
+        Self::navigation_url(&joined, id).map_err(|_| refuse("navigation_url"))?;
+        Ok(joined)
+    }
+
     /// A URL a navigation may address: absolute, `http` or `https`, bounded.
     /// Whether policy allows reaching it is the fetch's decision, not this one.
     fn navigation_url(value: &str, id: &str) -> Result<Url, ControlError> {
@@ -5429,7 +5588,7 @@ impl Host {
     fn discard_pending_intent(&mut self) {
         if self.held_intent.take().is_some() {
             self.intent_counters.discarded = self.intent_counters.discarded.saturating_add(1);
-            self.intent_counters.caller_override = true;
+            self.intent_counters.last_cause = Some("caller_override");
         }
     }
 
@@ -6810,6 +6969,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut court_timer_handle = 0u64;
     let mut court_lifecycle_abuse = false;
     let mut court_hold_intent = false;
+    let mut court_break_intent_take = false;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -6861,6 +7021,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             }
             "--court-lifecycle-abuse" => court_lifecycle_abuse = pair[1] == "1",
             "--court-hold-intent" => court_hold_intent = pair[1] == "1",
+            "--court-break-intent-take" => court_break_intent_take = pair[1] == "1",
             "--surface-court-snapshot-arm" => {
                 if !matches!(
                     pair[1].as_str(),
@@ -6893,6 +7054,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     // operation can reach or reveal it.
     if court_hold_intent && surface_court_path.is_none() {
         eprintln!("--court-hold-intent: refused without --surface-court-file");
+        std::process::exit(64);
+    }
+    if court_break_intent_take && surface_court_path.is_none() {
+        eprintln!("--court-break-intent-take: refused without --surface-court-file");
         std::process::exit(64);
     }
     // The https slice exists only with explicitly pinned public roots; the
@@ -6968,6 +7133,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         intent_counters: IntentCounters::default(),
         held_intent: None,
         court_hold_intent,
+        court_break_intent_take,
         jobs: std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
         ended_frames: Vec::new(),
         realms_retired_total: 0,
@@ -7601,6 +7767,7 @@ mod revision_tests {
             frames_skipped: [0; FRAME_SKIP_REASONS.len()],
             timers: Timers::default(),
             pending_intent: None,
+            intent_poisoned: false,
         };
         for (index, counter) in counters.iter().enumerate() {
             target.children.push(ChildFrame {

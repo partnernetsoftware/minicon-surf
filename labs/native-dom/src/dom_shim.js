@@ -380,9 +380,18 @@
   // through the location members below, and only the host can read it.
   let committed = null;
   let intent = null;
+  // The realm keeps at most this many characters of an address. The host's
+  // bound is in UTF-8 bytes and is checked again there, so a shorter
+  // non-ASCII address can pass this one and still be refused.
+  const MAX_INTENT_CHARS = 2000;
   const recordIntent = (kind, raw) => {
     // Last write wins: one slot, overwritten, never a queue.
-    intent = { kind, url: raw === undefined ? null : String(raw) };
+    if (raw === undefined) { intent = { kind, url: null, over: false }; return; }
+    const text = String(raw);
+    // An over-length address is not retained at all: the kind and one fixed
+    // marker cross, and the host refuses for one fixed reason.
+    if (text.length > MAX_INTENT_CHARS) { intent = { kind, url: null, over: true }; return; }
+    intent = { kind, url: text, over: false };
   };
   // `live` is true only for a realm that runs page script. A child frame is
   // built script-free, so nothing there can read an accessor or raise an
