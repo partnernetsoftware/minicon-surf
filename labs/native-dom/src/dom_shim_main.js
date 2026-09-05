@@ -26,6 +26,10 @@ __mcsInternals((internals) => {
     if (/\s/.test(text)) throw tokenError("InvalidCharacterError", "the token has whitespace");
     return text;
   };
+  // The attribute is the state and the list is a view of it: every read and
+  // every mutation reparses, so a list held across a direct write to `class`
+  // answers about the attribute as it is now, and a mutation through it never
+  // drops what was written directly.
   const tokensOf = (el) => {
     const raw = el.getAttribute("class");
     const list = [];
@@ -34,47 +38,62 @@ __mcsInternals((internals) => {
     }
     return list;
   };
-  const writeTokens = (el, before, after) => {
+  // A call that changes nothing writes nothing: the comparison is against the
+  // attribute's own string, so a call that would normalize ragged whitespace
+  // is a change and does write.
+  const writeTokens = (el, after) => {
     const text = after.join(" ");
-    if (text === before.join(" ") && el.getAttribute("class") === text) return;
+    if (el.getAttribute("class") === text) return;
     el.setAttribute("class", text);
   };
+  // `element.classList` is the same object every time, per the standard. The
+  // entry is allocated on first access, holds no tokens — it is a handle, not
+  // a cache — and dies with the element.
+  const classLists = new WeakMap();
   const classListOf = (el) => {
-    const tokens = tokensOf(el);
-    return {
-      get length() { return tokens.length; },
-      get value() { return tokens.join(" "); },
-      toString() { return tokens.join(" "); },
-      contains(token) { return tokens.indexOf(checkToken(token)) >= 0; },
+    let list = classLists.get(el);
+    if (list) return list;
+    list = {
+      get length() { return tokensOf(el).length; },
+      get value() {
+        const raw = el.getAttribute("class");
+        return raw === null || raw === undefined ? "" : String(raw);
+      },
+      set value(text) { el.setAttribute("class", String(text)); },
+      toString() {
+        const raw = el.getAttribute("class");
+        return raw === null || raw === undefined ? "" : String(raw);
+      },
+      contains(token) { return tokensOf(el).indexOf(checkToken(token)) >= 0; },
       add(...names) {
-        const after = tokens.slice();
+        const after = tokensOf(el);
         for (const name of names) {
           const token = checkToken(name);
           if (after.indexOf(token) < 0) after.push(token);
         }
-        writeTokens(el, tokens, after);
+        writeTokens(el, after);
       },
       remove(...names) {
-        let after = tokens.slice();
+        let after = tokensOf(el);
         for (const name of names) {
           const token = checkToken(name);
           after = after.filter((kept) => kept !== token);
         }
-        writeTokens(el, tokens, after);
+        writeTokens(el, after);
       },
       toggle(name, force) {
         const token = checkToken(name);
+        const tokens = tokensOf(el);
         const present = tokens.indexOf(token) >= 0;
         const wanted = force === undefined ? !present : !!force;
         if (wanted !== present) {
-          const after = wanted
-            ? tokens.concat([token])
-            : tokens.filter((kept) => kept !== token);
-          writeTokens(el, tokens, after);
+          writeTokens(el, wanted ? tokens.concat([token]) : tokens.filter((k) => k !== token));
         }
         return wanted;
       },
     };
+    classLists.set(el, list);
+    return list;
   };
   Object.defineProperty(Element.prototype, "classList", {
     get() { return classListOf(this); },
@@ -84,9 +103,13 @@ __mcsInternals((internals) => {
   // An event with one own property. `detail` is the page's own value, by
   // reference, and it reaches no snapshot, receipt, ledger, error or counter.
   class CustomEvent_ extends Event {
-    constructor(type, init = {}) {
-      super(type, init);
-      this.detail = init.detail === undefined ? null : init.detail;
+    constructor(type, init) {
+      // A default parameter covers `undefined` and not `null`, and a page may
+      // pass either. `Event` itself still throws on an explicit null: that is
+      // base source and a recorded loss, not this slice's to grow (§9.4).
+      const dictionary = init === null || init === undefined ? {} : init;
+      super(type, dictionary);
+      this.detail = dictionary.detail === undefined ? null : dictionary.detail;
     }
   }
   g.CustomEvent = CustomEvent_;
