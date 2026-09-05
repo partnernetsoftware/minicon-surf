@@ -1282,6 +1282,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+  The `Event` slice left M1 with 2,630 bytes under its floor, so the next
+  base change did not fit. A measured base-reduction round
+  (`labs/native-dom/base-reduction-design-0.0.1.md`) priced the problem: a
+  member of a shared prototype costs **600 to 960 bytes of M1 per child**, ten
+  times what the same source weighs as bulk text, so base growth is budgeted
+  per member from now on and the shim split's 3.4 ratio stays only as
+  historical context. Candidate A was ruled and built: the ten page-facing
+  `Event` accessors moved to the main extension, where the only realm that can
+  read them lives, leaving `defaultPrevented` in the base solely because
+  `Element.reset` reads it. M1 is **236,938** and M2 1,657,068, so the headroom
+  under the unchanged floors went from 2,630 to **8,822 bytes**, and a
+  main-only page costs 33,744 above the `origin/main` baseline, inside its
+  65,536 slack. The court holds the whole trade rather than the saving — a
+  main realm keeps the view and its values, a child still answers a snapshot
+  built with selectors, still applies a host action through the capability
+  bridge and still runs the DOM's own reset — and it is 11 of 11, failing on
+  the build before it exactly where every child realm still carried the ten
+  accessors it can never read. A second candidate was closed by measurement
+  instead of caution: `snapshot_script` uses selectors in child realms, so the
+  selector engine must stay in the base. The next slice is an `Element` member
+  audit, design and measurement first.
+
   A further audit found the privileged path was built from page-mutable tools:
   the `WeakMap` and `Map` prototype methods the hidden state and the listener
   store use, the array iterator the dispatch walked with, `.call` read off a

@@ -1,0 +1,117 @@
+{
+ "checks": [
+  {
+   "check": "[system] a main realm keeps the whole page-facing view, and its values",
+   "detail": {
+    "said": "false|probe|true|true|false|true|true|2|true|number//none-missing"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child realm still answers a snapshot, selectors and all",
+   "detail": {
+    "nodes": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child's host action still applies through the bridge",
+   "detail": {
+    "acted": true,
+    "boxes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the DOM's own reset still reads its own cancellation",
+   "detail": {
+    "checked_after_reset": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a main realm keeps the whole page-facing view, and its values",
+   "detail": {
+    "said": "false|probe|true|true|false|true|true|2|true|number//none-missing"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child realm still answers a snapshot, selectors and all",
+   "detail": {
+    "nodes": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child's host action still applies through the bridge",
+   "detail": {
+    "acted": true,
+    "boxes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the DOM's own reset still reads its own cancellation",
+   "detail": {
+    "checked_after_reset": true
+   },
+   "passed": true
+  },
+  {
+   "check": "the realm probe is refused without the private court file",
+   "detail": {
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "the main realm has the page-facing view and every child realm has none",
+   "detail": {
+    "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "the probe seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 10,
+ "checks_total": 11,
+ "court": "native-dom page-facing Event view (control 0.0.2)",
+ "host_sha256": "b11e6363d24846f726e59d2cfccbbdc4ae739d86ab04850b3418a6ca3742bc17",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: the divergence criterion fails until the accessors move",
+  "the M1 and M2 floors are measured by the child-frame and shim-footprint courts on the same binary",
+  "a child realm's absence of the view is read through the court-only probe, because a child has no eval surface by design",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "view": [
+  "isTrusted",
+  "type",
+  "bubbles",
+  "cancelable",
+  "composed",
+  "target",
+  "currentTarget",
+  "eventPhase",
+  "dispatching",
+  "timeStamp"
+ ]
+}

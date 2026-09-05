@@ -199,10 +199,12 @@
      "children_class_list": 0,
      "children_custom_event": 0,
      "children_enumerable": 0,
+     "children_event_view": 0,
      "children_present": 0,
      "main_class_list": true,
      "main_custom_event": true,
      "main_enumerable": false,
+     "main_event_view": true,
      "main_present": false,
      "realms_probed": 2
     }
@@ -216,10 +218,12 @@
      "children_class_list": 0,
      "children_custom_event": 0,
      "children_enumerable": 0,
+     "children_event_view": 0,
      "children_present": 0,
      "main_class_list": true,
      "main_custom_event": true,
      "main_enumerable": false,
+     "main_event_view": true,
      "main_present": false,
      "realms_probed": 2
     }
@@ -237,7 +241,7 @@
  "checks_passed": 28,
  "checks_total": 28,
  "court": "native-dom classList and CustomEvent (control 0.0.2)",
- "host_sha256": "b11e6363d24846f726e59d2cfccbbdc4ae739d86ab04850b3418a6ca3742bc17",
+ "host_sha256": "7552dbfa52b5759da27a11cbb6365c83118955f684f6cd9cec35abcfaf4dbb38",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until classList and CustomEvent exist",
