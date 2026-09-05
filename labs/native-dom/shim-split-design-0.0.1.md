@@ -231,3 +231,76 @@ extension on main, which costs one more evaluation and the handle glue there;
 its build are throwaway, nothing from them is committed, and none of these
 numbers are qualification — they are the reason to write the code, not
 evidence that it works.
+
+
+## 9. The rulings, and two corrections the court found in itself
+
+The root ruled: candidate **A**; the thresholds freeze at M1 ≤ 245,760,
+M2 ≤ 1,720,320, a physical-footprint recovery of ≥ 16,384 and main-only slack
+≤ 65,536; the selector engine stays in the base; `console` and `navigator`
+move to the extension, because there is no arbitrary child-realm debug or
+eval surface and keeping them would charge production for a hypothetical
+observer; the recovered margin is a **standing floor, not a feature budget**;
+main-only browser APIs live in the extension; and any future base growth needs
+its own proof that child snapshot or action semantics require it, and must
+re-pass the floor.
+
+One criterion was added by ruling: **the one-shot internals handle must be
+gone on both paths** — consumed before any main page script, and explicitly
+destroyed for a base-only child before any later host-driven snapshot or
+action evaluation. No latent global capability may remain reachable or
+enumerable merely because a child happens to run no script today.
+
+Writing the court then found two faults in the court itself, both recorded
+before any product code.
+
+**9.1 Two different measurements compared to one cap.** The court first
+restated the frozen child-frame caps against its own arms. On the same
+binary it reads about a kilobyte higher than the child-frame court does,
+because it measures in a fresh host rather than after that court's earlier
+groups. Asserting one court's numbers against the other's caps compares two
+measurements. The caps stay where they are proven — in the child-frame court,
+on its fixtures, in its order, which the ruling requires to be rerun anyway —
+and this court owns the recovery. Its fixtures are the child-frame court's
+byte for byte, so the two are on one scale, and its floors are therefore
+about a kilobyte stricter than they look.
+
+**9.2 A footprint criterion that could not fail.** The first version read one
+child's `physical_footprint_bytes` growth. That figure moves in 16 KiB pages
+and does not shrink when memory is freed, so a repeat cycle in a warmed host
+measures the allocator's reuse rather than the cost, and — measured against
+**the same binary twice** — it reported a 131,072-byte "recovery" and passed.
+A criterion that passes when nothing changed proves nothing.
+
+It now reads the first growth of **twenty-eight child realms** in a host that
+has done nothing else, three fresh hosts per build, and requires **every
+candidate host to sit below every baseline host** by the frozen 16,384. Two
+runs of the same binary overlap and fail it, which is the check that it can
+fail: measured that way, identical binaries report −311,296 (system) and
+−49,152 (arena), while the split's accounted recovery over those realms is
+about 1.06 MB.
+
+
+## 10. What the court measures, as frozen
+
+`shim-footprint-court.py`, headless, both allocators, two binaries in one
+run — the candidate and the exact baseline it must beat.
+
+1. M1 ≤ 245,760 and M2 ≤ 1,720,320, and both strictly below the baseline
+   build's own numbers, so a floor cannot be met by a number that never moved.
+2. Twenty-eight child realms cost at least 16,384 fewer bytes of process
+   footprint, every candidate host below every baseline host.
+3. A main-only page — page script, a timer, `localStorage`, a `location` read
+   and a `load` listener — costs at most 65,536 bytes more than on the
+   baseline.
+4. Closing every target returns the owners to the empty figure exactly.
+5. A script-bearing child is built exactly as the baseline builds it and still
+   runs nothing: frames, `frames_skipped`, `scripts_skipped` and
+   `script_count` all equal the baseline's.
+6. The internals handle is gone from the main realm and from **every child
+   realm**, present nowhere and enumerable nowhere, read through a court-only
+   realm probe that is refused before the host serves anything without the
+   private court file, and whose court file is gone when the host is.
+
+The receipt attributes both builds' source bytes, binary size, build seconds,
+owner bytes per arm and every footprint sample.
