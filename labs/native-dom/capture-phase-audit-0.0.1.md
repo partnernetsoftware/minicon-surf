@@ -188,3 +188,29 @@ dispatch uses the same walk.
    `handleEvent` composing with capture, the stop flags in each phase, the
    window's place in the path, and the M1/M2 floors measured on the same
    binary.
+
+
+## 8. Ruled
+
+L4 is accepted at +1,664 bytes per child, with 16,838 bytes of M1 headroom and
+the floors and caps unmoved.
+
+The path is the standard one: **capture, then the target, then bubbling**. A
+non-bubbling event still builds the whole path and still runs the ancestors'
+capture listeners; it simply does not bubble afterwards. `capture` joins
+listener identity, so a removal with the wrong flag removes nothing, and
+`stopPropagation`, `stopImmediatePropagation`, `once` and `handleEvent`
+compose with it exactly as measured in §1.
+
+The page-visible change is recorded as a behaviour difference rather than
+smuggled in: a page's capture listener can `stopPropagation()` before the
+target's own listener runs, so on a host-synthesized action the page can keep
+its own target listeners from seeing the event.
+
+The host's decision is unchanged and stays that way: navigation and every
+other default is read from `defaultPrevented` through the bridge, never from
+propagation. §2's measured pair — propagation stopped and the navigation still
+happening, default prevented and the navigation refused — is what the
+implementation court must keep true.
+
+L3 `passive` and L5 `signal`/`AbortController` stay deferred.
