@@ -1282,6 +1282,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: attribute-name
+  validation, re-measured
+  (`labs/native-dom/attribute-name-validation-audit-0.0.2.md`, superseding
+  `-0.0.1`). Two earlier slices changed the answer: the clone copies
+  internally, so the cloning regression that stopped this in `0.0.1` is no
+  longer reachable, and the base captures a `DOMException`, so the vocabulary
+  is already there. **Six authoring surfaces funnel through one
+  `setAttribute`** — `id`, `className`, `dataset`, `classList`,
+  `toggleAttribute` and the method itself — so the slice is one guard in the
+  base, not six. Measured on the shipped build: the parser produces ten
+  awkward names, `-lead .dot 1bad aé id ok-name under_score upper weird:name
+  x.y`, and **the deep clone carries all ten**. Candidate V1 rejects `1bad`,
+  `a b`, the empty name and `a"b` with `InvalidCharacterError` code 5, keeps
+  `ns:x`, still lowercases, leaves `removeAttribute` lenient, and costs **+864
+  bytes per child** (M1 225,626, M2 1,577,884) — a third of the `0.0.1`
+  estimate, because it throws the constructor the base already captured —
+  leaving 20,134 bytes of M1 headroom against unchanged floors. Candidate V2
+  adds the one rule the base cannot see, a dataset key with a dash before a
+  lowercase letter throwing `SyntaxError`, for **800 bytes of main-only slack
+  and nothing per child**. Every court that could notice passes on both,
+  `element-view` 23/23 with its clone criterion included. The recorded loss is
+  the ASCII approximation of the `Name` production: a page will be unable to
+  author `aé` while the parser still produces it and the clone still carries
+  it. Pending: V1, ASCII or a wider table, V2, whether the thrown message may
+  name the attribute, and what the implementation court must falsify. G1, G3,
+  P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 27 of 27: standard
   error classes for the base's own throws
   (`labs/native-dom/error-class-audit-0.0.1.md`), the deferred half of the

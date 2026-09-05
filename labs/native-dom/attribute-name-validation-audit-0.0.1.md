@@ -185,3 +185,14 @@ flowchart TD
    growth — and it is also the honest one, because copying is not authoring.
 3. **One vocabulary for names**, decided across `setAttribute`, `dataset` and
    `classList` together rather than one at a time.
+
+
+## Superseded
+
+The measurements above were taken before the clone copied internally and
+before the base captured a `DOMException`. Both changed the answer — the
+cloning regression is no longer reachable and the vocabulary is now free —
+so `attribute-name-validation-audit-0.0.2.md` re-measures the slice and
+supersedes §3 through §6 here. This document stays as the record of what
+was true when it was written, and of the regression that shaped the
+sequencing.
