@@ -1,0 +1,180 @@
+{
+ "checks": [
+  {
+   "check": "[system] what the page adds is what the attribute, the selector and className say",
+   "detail": {
+    "said": "a b|true|a b"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "detail": {
+    "said": "b|false||true|c|false|"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] contains and length read the attribute the page wrote, whitespace and all",
+   "detail": {
+    "said": "true|false|2|one two"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a turn whose calls change nothing does not advance the revision",
+   "detail": {
+    "revision": [
+     0,
+     0
+    ],
+    "said": "quiet:keep"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and a turn that changes the attribute does advance it",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ],
+    "said": "keep added"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an empty token and a token with a space throw their own names, and neither changes the attribute",
+   "detail": {
+    "said": "SyntaxError|InvalidCharacterError|a"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a CustomEvent carries its detail through a bubbling dispatch",
+   "detail": {
+    "said": "court:pick|alpha|7|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] what the page adds is what the attribute, the selector and className say",
+   "detail": {
+    "said": "a b|true|a b"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "detail": {
+    "said": "b|false||true|c|false|"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] contains and length read the attribute the page wrote, whitespace and all",
+   "detail": {
+    "said": "true|false|2|one two"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a turn whose calls change nothing does not advance the revision",
+   "detail": {
+    "revision": [
+     0,
+     0
+    ],
+    "said": "quiet:keep"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and a turn that changes the attribute does advance it",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ],
+    "said": "keep added"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an empty token and a token with a space throw their own names, and neither changes the attribute",
+   "detail": {
+    "said": "SyntaxError|InvalidCharacterError|a"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a CustomEvent carries its detail through a bubbling dispatch",
+   "detail": {
+    "said": "court:pick|alpha|7|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "the realm probe is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "the main realm has classList and CustomEvent",
+   "detail": {
+    "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "and no child realm has either, which is what main-only has to mean",
+   "detail": {
+    "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "the probe seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 18,
+ "checks_total": 18,
+ "court": "native-dom classList and CustomEvent (control 0.0.2)",
+ "host_sha256": "a0b455c0e05a8541354c8c48d6f5d44c260d05b0ef6f042512816d752f449c97",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until classList and CustomEvent exist",
+  "no iteration, index access, item, replace or supports on the list, and no DOMTokenList global",
+  "a call that changes nothing writes nothing: a recorded divergence, proven in both directions",
+  "the revision advances per mutation flush, not per call, which is the host's existing batching",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

@@ -1080,14 +1080,7 @@
    "check": "[system] an expired deadline refuses the submit without its address",
    "detail": {
     "code": "deadline_exceeded",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
-     "realm": "realm_41",
-     "reason": "navigation_failed",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
+    "message": "queued work did not finish before the deadline",
     "retryable": true,
     "scope": {
      "id": "target_25",
@@ -1130,8 +1123,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 916880,
-    "at_8": 916880,
+    "at_128": 957040,
+    "at_8": 957040,
     "cap": 65536,
     "growth": 0
    },
@@ -1140,8 +1133,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 916880,
-    "at_64": 916880,
+    "at_128": 957040,
+    "at_64": 957040,
     "cap": 8192
    },
    "passed": true
@@ -1149,8 +1142,8 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 866336,
-    "fresh": 901360
+    "after_submit": 904448,
+    "fresh": 939472
    },
    "passed": true
   },
@@ -1159,7 +1152,7 @@
    "detail": {
     "audit_bytes": 7830,
     "audit_capacity_bytes": 7168,
-    "audit_dropped_total": 161,
+    "audit_dropped_total": 160,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -2265,14 +2258,7 @@
    "check": "[arena] an expired deadline refuses the submit without its address",
    "detail": {
     "code": "deadline_exceeded",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
-     "realm": "realm_41",
-     "reason": "read",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
+    "message": "queued work did not finish before the deadline",
     "retryable": true,
     "scope": {
      "id": "target_25",
@@ -2315,18 +2301,18 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 894176,
-    "at_8": 894208,
+    "at_128": 934112,
+    "at_8": 934096,
     "cap": 65536,
-    "growth": -32
+    "growth": 16
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 894176,
-    "at_64": 894224,
+    "at_128": 934112,
+    "at_64": 934096,
     "cap": 8192
    },
    "passed": true
@@ -2334,8 +2320,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 843152,
-    "fresh": 878032
+    "after_submit": 880944,
+    "fresh": 915968
    },
    "passed": true
   },
@@ -2344,7 +2330,7 @@
    "detail": {
     "audit_bytes": 7830,
     "audit_capacity_bytes": 7168,
-    "audit_dropped_total": 161,
+    "audit_dropped_total": 160,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -2419,7 +2405,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "878a86a847d3cccd08f2da6ea1c705b97d17729f2894495098e8ced62f13c538",
+ "host_sha256": "a0b455c0e05a8541354c8c48d6f5d44c260d05b0ef6f042512816d752f449c97",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

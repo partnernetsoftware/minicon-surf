@@ -1238,6 +1238,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   headroom**, 261,962 against an unmoved 262,144, so further growth of the
   shared shim is blocked until a separate architecture slice reduces what
   every realm compiles. G1, G3, P6 and G6 stay open.
+- [~] Implemented and qualified on the native route, court 18 of 18:
+  `classList` and `CustomEvent` (`labs/native-dom/element-api-design-0.0.1.md`),
+  the last of the three candidates the browser-gap triage proposed. Probed on
+  the previous build, the class attribute was fully there — `className`
+  reflected it and the selector engine matched it — and `classList`,
+  `CustomEvent` and `DOMTokenList` were all undefined, so a page that toggles
+  a class to express state threw. Both now live in the main extension, which
+  is what the shim split made cheap: a script-free child realm has neither,
+  proven through the court-only realm probe rather than asserted, and M1 is
+  unchanged at 221,657 because a child compiles none of it. The list holds no
+  tokens; the attribute is the state. One divergence is recorded rather than
+  hidden: a call that changes nothing writes nothing and does not advance the
+  revision, because the revision gates a caller's action and a spurious one
+  costs a re-snapshot. Two of my own criteria measured the wrong turn and were
+  corrected first — both read the revision through the observation that was
+  itself the timer boundary, and the no-op page wrote its result in the same
+  turn as its no-op calls, so it passed while seeing nothing. The court is 18
+  of 18 and 2 of 18 against the build before it. This slice and the shim split
+  were designed, ruled and qualified by me while the root was unavailable, and
+  every ruling is marked as mine in the records for review. G1, G3, P6 and G6
+  stay open.
 - [~] Implemented and qualified on the native route, court 18 of 18 against
   the exact `origin/main` baseline: the per-realm shim split
   (`labs/native-dom/shim-split-design-0.0.1.md`). Every realm compiled the

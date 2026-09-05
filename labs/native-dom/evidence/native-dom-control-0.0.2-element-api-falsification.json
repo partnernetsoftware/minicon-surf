@@ -1,0 +1,172 @@
+{
+ "checks": [
+  {
+   "check": "[system] what the page adds is what the attribute, the selector and className say",
+   "detail": {
+    "said": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "detail": {
+    "said": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] contains and length read the attribute the page wrote, whitespace and all",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a turn whose calls change nothing does not advance the revision",
+   "detail": {
+    "revision": [
+     0,
+     0
+    ],
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and a turn that changes the attribute does advance it",
+   "detail": {
+    "revision": [
+     0,
+     0
+    ],
+    "said": "start"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] an empty token and a token with a space throw their own names, and neither changes the attribute",
+   "detail": {
+    "said": "TypeError|TypeError|a"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a CustomEvent carries its detail through a bubbling dispatch",
+   "detail": {
+    "said": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] what the page adds is what the attribute, the selector and className say",
+   "detail": {
+    "said": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] remove leaves the rest, and toggle answers and acts in all four shapes",
+   "detail": {
+    "said": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] contains and length read the attribute the page wrote, whitespace and all",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a turn whose calls change nothing does not advance the revision",
+   "detail": {
+    "revision": [
+     0,
+     0
+    ],
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and a turn that changes the attribute does advance it",
+   "detail": {
+    "revision": [
+     0,
+     0
+    ],
+    "said": "start"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] an empty token and a token with a space throw their own names, and neither changes the attribute",
+   "detail": {
+    "said": "TypeError|TypeError|a"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a CustomEvent carries its detail through a bubbling dispatch",
+   "detail": {
+    "said": null
+   },
+   "passed": false
+  },
+  {
+   "check": "the realm probe is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "the main realm has classList and CustomEvent",
+   "detail": {
+    "probe": {
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "and no child realm has either, which is what main-only has to mean",
+   "detail": {
+    "probe": {
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "the probe seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 2,
+ "checks_total": 18,
+ "court": "native-dom classList and CustomEvent (control 0.0.2)",
+ "host_sha256": "878a86a847d3cccd08f2da6ea1c705b97d17729f2894495098e8ced62f13c538",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until classList and CustomEvent exist",
+  "no iteration, index access, item, replace or supports on the list, and no DOMTokenList global",
+  "a call that changes nothing writes nothing: a recorded divergence, proven in both directions",
+  "the revision advances per mutation flush, not per call, which is the host's existing batching",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}
