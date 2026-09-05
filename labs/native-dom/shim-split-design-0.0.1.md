@@ -114,9 +114,12 @@ generated base of **19,034 bytes**, main unchanged:
 | incremental build | 4.79 s | 4.86 s | +0.07 s |
 
 The court passing 82 of 82 is the load-bearing number: nothing a child needs
-was in what was removed, measured rather than argued. The ratio is about
-**3.4 live bytes per source byte per realm**, which is the number to hold
-future shim growth against.
+was in what was removed, measured rather than argued. The ratio here is about **3.4 live bytes per source byte per realm** for bulk
+text. **That number is historical context and is not the budgeting rule**: the
+base-reduction record measures the cost that actually dominates — a member of
+a shared prototype costs **600 to 960 bytes of M1 per child**, ten times what
+the same source weighs as text — and per-member is what future base growth is
+priced in (`base-reduction-design-0.0.1.md` §8.3).
 
 The binary grew only because the scratch build embeds the base *in addition
 to* the untouched monolith. A real split embeds base + extension, whose sum

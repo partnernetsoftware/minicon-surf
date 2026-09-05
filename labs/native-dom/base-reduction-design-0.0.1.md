@@ -111,3 +111,27 @@ such members would be worth about 6 to 10 KB of M1.
 One court run per variant, one machine, in a throwaway worktree that has been
 removed. Nothing here is committed as qualification and no receipt was
 written. The navigation soak was not run at all, by standing ruling.
+
+
+## 8. The rulings
+
+**8.1 Candidate A is accepted**, with the divergence stated in §3 rather than
+softened: `Event.prototype` carries the ten page-facing accessors in a main
+realm and not in a child one — invisible there, because nothing in a child can
+look, but real. `defaultPrevented` keeps its base path **only** because
+`Element.reset` reads it; nothing else in the base may grow a dependency on an
+event's properties. Host actions continue to answer through the capability
+bridge and hidden state and never through an event's properties, and a child's
+host actions must stay valid through that bridge even though the child's
+prototype lacks the page-facing view.
+
+**8.2 The next slice is an `Element` member audit**, design and measurement
+first. No member of `Node`, `Text` or `Element` moves until every host-script
+call site and every child-snapshot dependency is inventoried and a court is
+frozen. Nothing is guessed at, and this record's §5 estimate is not a licence.
+
+**8.3 The pricing rule is per member.** 600 to 960 bytes of M1 per member is
+what future base growth is budgeted against. The shim split's 3.4 live-bytes
+per source byte stays in that record as **historical context only** — it
+under-counts by an order of magnitude and is not a justification for any cap
+or for any change's size.
