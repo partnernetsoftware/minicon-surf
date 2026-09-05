@@ -500,7 +500,9 @@ def main():
                     session = host.ok("session.open", {"profile": profile})["session"]
                     opened = open_page(host, session, "/late-intent.html")
                     target = opened["result"]["target"] if opened.get("ok") else None
-                    before = state(host, target) if target else None
+                    # The open's own result is the "before": observing through
+                    # a boundary would spend the one-shot seam.
+                    before = opened.get("result") if opened.get("ok") else None
                     # This boundary runs the timer, so an intent is raised, and
                     # the take of it answers malformed output without having
                     # evaluated anything: the slot is left full.
@@ -524,11 +526,18 @@ def main():
                            {"tail": (after or {}).get("url", "").rsplit("/", 1)[-1],
                             "discarded": counts_after.get("discarded_total"),
                             "cause": counts_after.get("last_cause")})
-                    expect(tag + "and the failure changed nothing about the document",
+                    # A target that was poisoned and then emptied is a
+                    # working target, not a bricked one: it answers, and it is
+                    # still the document the caller opened.
+                    observed = host.call("target.snapshot",
+                                         {"target": target, "format": "semantic",
+                                          "max_bytes": 65536, "max_nodes": 32}) if target else {}
+                    expect(tag + "and the document the caller opened still works after it",
                            before is not None and after is not None
                            and before.get("url") == after.get("url")
-                           and before.get("history") == after.get("history"),
-                           {"same": before == after})
+                           and observed.get("ok") is True,
+                           {"url": (after or {}).get("url", "").rsplit("/", 1)[-1],
+                            "snapshot": observed.get("ok")})
             finally:
                 close(directory, host, label)
                 expect(tag + "the break seam's court file is gone when the host is",

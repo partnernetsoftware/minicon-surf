@@ -565,3 +565,25 @@ What *is* host-owned is everything the design says is host-owned elsewhere:
 the attribution counters, the court-only held intent, and the poison flag.
 §3's wording is corrected rather than the code: the intent slot is
 **realm-closure-owned and host-taken**.
+
+
+## 19. Two of §17's own criteria needed correcting, and one measurement
+
+**19.1 A one-shot seam spent by the criterion before it.** The broken-take
+group observed the target once before the boundary it meant to break, and
+that observation *was* the first live take, so the seam fired there and the
+criterion measured the boundary after it. The "before" is now the open's own
+result, which crosses no boundary.
+
+**19.2 A comparison of two different shapes.** The same group compared the
+open result's history against `target.inspect`'s. `target.open` reports no
+history field at all, so the comparison could never hold, whatever the host
+did. That criterion now asserts something the others do not: after a
+poisoned target has been emptied it is a *working* target — it answers a
+snapshot, and it is still the document the caller opened.
+
+**19.3 A build-path navigation is audited too.** §17.3 said "as applicable".
+It applies: a chain link the page asked for during a build is recorded with
+the session it belongs to, even though the target is not inserted yet, and
+the record carries what actually happened to that link — committed, the
+refusal's code, or `resource_limit` when the chain hit its cap.
