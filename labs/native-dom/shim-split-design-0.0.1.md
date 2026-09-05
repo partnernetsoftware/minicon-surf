@@ -304,3 +304,59 @@ run — the candidate and the exact baseline it must beat.
 
 The receipt attributes both builds' source bytes, binary size, build seconds,
 owner bytes per arm and every footprint sample.
+
+
+## 11. The split as built, and what the court caught in it
+
+`dom_shim.js` is gone. In its place:
+
+- **`dom_shim_base.js`, 19,936 bytes**, compiled by every realm: the tree,
+  `Event`, `MutationObserver`, the listener model, the selector engine, the
+  seed, the plain location object, and a one-shot non-enumerable
+  `__mcsInternals` handle that deletes itself as it hands the base's internals
+  over — `g`, `document`, `Document`, `Event`, `addListener`,
+  `removeListener`, `dispatchOn`, and nothing else.
+- **`dom_shim_main.js`, 11,702 bytes**, compiled only by a realm that runs
+  page script: the fetch bridge, cookies and `localStorage`, the location
+  accessors and the navigation-intent slot, the window as an event target
+  with `onload` and the lifecycle bridge, `queueMicrotask`, timers, `console`
+  and `navigator`. It is one call through the handle, in the same realm,
+  extending the same `document`.
+
+A child realm evaluates the base and is then **sealed by the host**: the
+handle is deleted before anything else is evaluated in that realm, and the
+host refuses the realm if it survives. Which location form a realm has is no
+longer a parameter the host passes — it is which sources that realm compiled,
+so `location_script` lost its `live` argument.
+
+**11.1 The court caught the parameter that was left behind.** The first build
+passed the child-frame court and every footprint gate and failed
+page-navigation at 38 of 80: no intent committed at all. The moved location
+block still carried the `live` parameter from the earlier narrowing, and the
+host no longer passes it, so `undefined` took the plain branch and the main
+realm got a location object with no setters. The split supersedes that
+parameter; removing it is what the accessor form being *the extension's* form
+means. Nothing about the previous slice's semantics changed — the court is
+80 of 80 again.
+
+**11.2 Measured, candidate against the exact baseline, in one court run.**
+
+| | baseline | split | change |
+| --- | ---: | ---: | ---: |
+| M1, one child (system) | 262,969 | **221,657** | −41,312 |
+| M2, seven children (system) | 1,838,507 | **1,549,323** | −289,184 |
+| M1 / M2 (arena) | 255,273 / 1,785,051 | 214,809 / 1,503,307 | −40,464 / −281,744 |
+| main-only page (system) | 272,264 | 273,224 | **+960** |
+| main-only page (arena) | 264,568 | 265,288 | **+720** |
+| 28 child realms, footprint (system) | 9,814,016 min | 8,863,744 max | −950,272 |
+| 28 child realms, footprint (arena) | 13,730,560 min | 11,207,424 max | −2,523,136 |
+| shim source per child | 29,930 | 19,936 | −9,994 |
+| shim source total | 29,930 | 31,638 | +1,708 |
+| binary | 5,754,560 | 5,773,040 | +18,480 |
+| incremental build | 4.79 s | 6.12 s | +1.33 s |
+
+On the child-frame court's own fixtures and order, M1 is **221,658** against
+the unmoved cap of 262,144 — **40,486 bytes of headroom**, where there were
+182. The floor the ruling set is 16 KiB; what stands above it is a floor to
+hold, not a budget: any future base growth owes its own proof that a child's
+snapshot or action semantics require it, and must re-pass the floor.
