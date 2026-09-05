@@ -174,3 +174,27 @@ becomes a decision that fails a criterion rather than a diff nobody notices.
    `throwIfAborted`, the statics — each its own decision, none of them in the
    candidates measured here.
 5. **Pin the handle's key set in a court**, independently of L5.
+
+
+## 9. Ruled
+
+S1 is refused on the §2 measurement. **S3 is accepted**: the classes live in
+the main extension only, the base holds the two closure-owned `WeakSet`s and
+reads them through captured methods, and the one-shot handle gains **one
+named signal-brand entry** and nothing else. The dispatch walk reads the
+host's own aborted set and never a page object or a page getter.
+
+The model is the minimum that is useful: abort removes the listener, a signal
+already aborted registers nothing, an abort during a dispatch stops a listener
+that has not run yet, and it composes with `capture`, `once` and a
+`handleEvent` object. **Not in this slice, each its own candidate**: the signal
+as an `EventTarget` with an `abort` event, `reason`, `throwIfAborted`,
+`AbortSignal.abort()`, `AbortSignal.timeout()` and `onabort`.
+
+Cost accepted at about +2,976 bytes per child, M1 headroom 13,462, floors and
+caps unmoved.
+
+**The handle gets a criterion of its own, whatever happens to L5.** A court
+pins the handle's exact key set, so widening it is a decision that fails a
+check rather than a diff nobody notices — §7 measured that today it is guarded
+by nothing.
