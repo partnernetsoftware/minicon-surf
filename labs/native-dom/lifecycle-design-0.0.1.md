@@ -189,11 +189,12 @@ how many. The two costs are separated:
   pre-registering a listener count cap, which would be a scope expansion this
   slice does not take.
 
-**M1 reports the two separately** and never infers one from the other: the
-infrastructure delta measured with a page that registers **no** listeners, and
-the workload delta of one **frozen fixture** with a stated number of
-listeners. Neither number is a statement about an arbitrary page, and the
-record says so.
+**The two are reported separately and neither is inferred from the other.**
+What is **gated** is the workload delta of one **frozen fixture** with a
+stated number of listeners. What is **reported without a verdict** is the
+quiet page's total owner bytes, inside which the fixed infrastructure lives.
+Neither number is a statement about an arbitrary page, and §10.6 says why the
+infrastructure gets no gate of its own.
 
 ### 9.3 What the window's EventTarget is, and is not
 
@@ -259,3 +260,22 @@ than invent a delta, the court **reports the quiet page's total owner bytes**
 and **gates the kept-versus-removed workload delta**, which is M1. The fixed
 infrastructure is inside the reported total and is not given a number of its
 own.
+
+**10.6 The infrastructure figure is a diagnostic, not a criterion.** §9.2
+first wrote it as a frozen criterion, M1a, comparing the same page across two
+builds. The court has one `--binary` and no baseline binary, no paired
+repetition and no code that would judge such a thing, so leaving it written as
+a criterion would have let a run claim everything passed while never
+evaluating it. And a single-point delta across two builds moves with layout
+and allocator, so `≤ 65,536` would not be a causal gate anyway.
+
+So it is **demoted to a diagnostic**: the court reports the current quiet
+page's total owner bytes, and if an old and a new receipt happen to be
+comparable a cross-build delta may be read from them by hand — with **no
+verdict attached**. The court is not grown into a two-binary harness for it.
+
+The gates that remain are exactly three: **M1**, the frozen fixture's
+listener workload; **M2**, the owner plateau across 128 replacements; and
+**M3**, owners returning to zero on close. No result may be worded to imply
+that an arbitrary page's listener cost, or the infrastructure delta, passed a
+gate.

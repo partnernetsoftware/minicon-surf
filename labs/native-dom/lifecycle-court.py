@@ -400,9 +400,10 @@ def main():
                                          {"session": session, "url": f"{origin}/listeners.html?keep=1"},
                                          deadline_ms=5000)["target"]
                 measured = owner_bytes(host)
-                # M1b: this fixture's listeners, and this fixture only. The
-                # infrastructure delta is M1a, a cross-build number reported
-                # beside it, and neither bounds an arbitrary page (design §9.2).
+                # M1 gates this fixture's listeners and this fixture only.
+                # The quiet page's total is reported beside it as a diagnostic
+                # with no verdict; the fixed infrastructure lives inside that
+                # total and is given no gate of its own (design §10.6).
                 quiet = host.ok("target.open", {"session": session, "url": f"{origin}/quiet.html"},
                                 deadline_ms=5000)["target"]
                 quiet_total = owner_bytes(host)
