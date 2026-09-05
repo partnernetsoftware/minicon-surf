@@ -315,7 +315,7 @@
     // whether anything was restored.
     reset() {
       const ev = new Event("reset", { bubbles: true, cancelable: true });
-      this.dispatchEvent(ev);
+      dispatchOn(this, ev);
       if (ev.defaultPrevented) return false;
       for (const el of this.__controls()) {
         el.__value = null;
@@ -324,18 +324,18 @@
       }
       return true;
     }
-    submit() { return this.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true })); }
+    submit() { return dispatchOn(this, new Event("submit", { bubbles: true, cancelable: true })); }
     get innerText() { return this.textContent; }
     matches(selector) { return matchChain(this, parseSelector(selector), null); }
     click() {
       if (this.type === "reset" && (this.localName === "input" || this.localName === "button")) {
         const form = this.form;
         const ev = new Event("click", { bubbles: true, cancelable: true });
-        this.dispatchEvent(ev);
+        dispatchOn(this, ev);
         if (!ev.defaultPrevented && form) form.reset();
         return;
       }
-      this.dispatchEvent(new Event("click", { bubbles: true, cancelable: true }));
+      dispatchOn(this, new Event("click", { bubbles: true, cancelable: true }));
     }
     focus() {} blur() {}
   }
@@ -415,6 +415,29 @@
   g.window = g; g.self = g; g.document = document;
   g.Node = Node; g.Element = Element; g.Text = Text; g.Document = Document; g.Event = Event; g.MutationObserver = MutationObserver;
   g.location = { href: "minicon-surf://court/fixture", protocol: "minicon-surf:", origin: "null", toString() { return "minicon-surf://court/fixture"; } };
+  // The host's own dispatch, and the only one whose answer decides whether an
+  // action applied. It mints the lexically captured `Event` — never the global
+  // a page can replace — dispatches through the closure-owned walker rather
+  // than through `element.dispatchEvent`, and answers from the hidden state
+  // rather than from a property lookup a page can shadow or redefine. Handed
+  // to the host once, before any page script runs.
+  const dispatchFor = (element, type, cancelable, extras) => {
+    const event = new Event(String(type), { bubbles: true, cancelable: !!cancelable });
+    if (extras) {
+      // Page-visible extras only, never anything the hidden state owns.
+      for (const name of Object.keys(extras)) {
+        try { event[name] = extras[name]; } catch (error) {}
+      }
+    }
+    // `dispatchOn` answers `!defaultPrevented` from the state it owns; the
+    // host asks the opposite question — was the default prevented.
+    return !dispatchOn(element, event);
+  };
+  Object.defineProperty(g, "__mcsArmDispatch", {
+    value: (arm) => { delete g.__mcsArmDispatch; return arm(dispatchFor); },
+    writable: false, configurable: true, enumerable: false,
+  });
+
   // The one door between this base and the main extension. It is not a
   // capability a realm keeps: it deletes itself as it hands the internals
   // over, so a main realm has consumed it before any page script runs, and a

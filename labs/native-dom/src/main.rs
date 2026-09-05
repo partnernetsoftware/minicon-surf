@@ -271,6 +271,30 @@ const SCROLL_REVISION_JS: &str = "(() => { if (!window.__mcs) { return '-1'; } w
 /// property it defines is non-writable, non-configurable and non-enumerable;
 /// a call with a wrong capability, out of order, repeated, or after the
 /// fourth step dispatches nothing.
+/// Arms the host's own dispatch in a realm, with a capability only the host
+/// holds. The global it defines cannot be replaced, removed or enumerated by
+/// page script, and it refuses anything that does not present the capability,
+/// so a page can neither call it nor stand in front of it.
+fn dispatch_arm_script(capability: &str) -> String {
+    format!(
+        r#"(() => {{
+  const arm = window.__mcsArmDispatch;
+  if (typeof arm !== "function") return "unarmed";
+  return arm((dispatchFor) => {{
+    const capability = {capability};
+    Object.defineProperty(window, "__mcsDispatch", {{
+      value: (offered, element, type, cancelable, extras) => {{
+        if (offered !== capability) throw new TypeError("refused");
+        return dispatchFor(element, type, cancelable, extras);
+      }},
+      writable: false, configurable: false, enumerable: false,
+    }});
+    return "armed";
+  }});
+}})()"#
+    )
+}
+
 fn lifecycle_arm_script(capability: &str) -> String {
     format!(
         r#"(() => {{
@@ -657,6 +681,7 @@ fn preflight_script(
     )
 }
 
+#[allow(clippy::too_many_arguments)]
 fn form_action_script(
     revision: u64,
     index: usize,
@@ -664,6 +689,7 @@ fn form_action_script(
     is_child: bool,
     has_base_target: bool,
     signature: &str,
+    capability: &str,
 ) -> String {
     let activation = activation_js(is_child, has_base_target);
     let serializer = SERIALIZE_JS;
@@ -708,19 +734,19 @@ fn form_action_script(
     if (decision !== "allowed") return refuse(decision);
     if (__mcsPreflight(el, action).signature !== {expected}) return refuse("preflight_mismatch");
   }}
-  const fire = (name, cancelable) => {{
-    const ev = new Event(name, {{ bubbles: true, cancelable: !!cancelable }});
-    el.dispatchEvent(ev);
-    return ev.defaultPrevented;
-  }};
+  // Every dispatch whose answer decides what applied goes through the host's
+  // own bridge: it mints the base's own Event, walks the closure-owned
+  // dispatcher and answers from hidden state, so nothing a page can shadow,
+  // redefine or replace stands between the handler and this decision.
+  const fire = (name, cancelable) => window.__mcsDispatch({capability}, el, name, !!cancelable, null);
   const submitForm = (form, submitter) => {{
     const decision = submitDecision(form, submitter);
     if (decision !== "allowed") return refuse(decision);
-    const ev = new Event("submit", {{ bubbles: true, cancelable: true }});
-    form.dispatchEvent(ev);
     // A canceled submit is not applied: no navigation begins. Whatever the
     // handler changed stays, and the revision it moved stays moved.
-    if (ev.defaultPrevented) return JSON.stringify({{ applied: false, default_prevented: true, role: "form" }});
+    if (window.__mcsDispatch({capability}, form, "submit", true, null)) {{
+      return JSON.stringify({{ applied: false, default_prevented: true, role: "form" }});
+    }}
     // The same navigation the preflight approved, built by the same code and
     // from the same submitter.
     const navigation = __mcsFormNavigation(form, submitter);
@@ -778,12 +804,8 @@ fn form_action_script(
     const keyRole = isCheck ? type : (isButton ? "button" : (t === "a" ? "link" : "form"));
     // The ruled sequence: a canceled keydown suppresses keypress, keyup is
     // dispatched in every case, and the activation waits for all of it.
-    const phase = (name) => {{
-      const ev = new Event(name, {{ bubbles: true, cancelable: true }});
-      ev.key = enter ? "Enter" : " ";
-      el.dispatchEvent(ev);
-      return ev.defaultPrevented;
-    }};
+    const phase = (name) =>
+      window.__mcsDispatch({capability}, el, name, true, {{ key: enter ? "Enter" : " " }});
     let canceled = phase("keydown");
     if (!canceled) canceled = phase("keypress");
     if (phase("keyup")) canceled = true;
@@ -828,6 +850,7 @@ fn act_script(
     is_child: bool,
     has_base_target: bool,
     signature: &str,
+    capability: &str,
 ) -> String {
     let activation = activation_js(is_child, has_base_target);
     let serializer = SERIALIZE_JS;
@@ -849,9 +872,9 @@ fn act_script(
     return JSON.stringify({{ unsupported: true, reason: "preflight_mismatch" }});
   }}
   if (t === "a" && el.hasAttribute("href")) {{
-    const ev = new Event("click", {{ bubbles: true, cancelable: true }});
-    el.dispatchEvent(ev);
-    if (ev.defaultPrevented) return JSON.stringify({{ applied: true }});
+    if (window.__mcsDispatch({capability}, el, "click", true, null)) {{
+      return JSON.stringify({{ applied: true }});
+    }}
     return JSON.stringify({{ navigate: el.getAttribute("href") }});
   }}
   if (!(t === "button" || (t === "input" && /^(button|submit|reset)$/.test(el.type)))) {{
@@ -1790,6 +1813,9 @@ struct Realm {
     /// This realm's lifecycle capability, minted by the host and never
     /// written to a log, a record, an error or a receipt.
     lifecycle: std::cell::RefCell<String>,
+    /// This realm's dispatch capability. Every realm has one, children
+    /// included, because a child's actions are dispatched by the host too.
+    dispatch: std::cell::RefCell<String>,
     #[cfg(target_os = "macos")]
     zone_used: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
     #[cfg(target_os = "macos")]
@@ -1840,6 +1866,7 @@ impl Realm {
             runtime,
             jobs,
             lifecycle: std::cell::RefCell::new(String::new()),
+            dispatch: std::cell::RefCell::new(String::new()),
             zone_used,
             zone,
             arena,
@@ -3202,6 +3229,7 @@ impl Host {
                     // takes the same two phases as a control-door click, so a
                     // painted row cannot activate what the door refuses.
                     let has_base_target = target.base_target;
+                    let capability = target.realm.dispatch.borrow().clone();
                     let counter = target.main_counter(current).unwrap_or(u64::MAX);
                     let preflight = Self::eval_json(
                         target,
@@ -3229,7 +3257,14 @@ impl Host {
                         && let Some(signature) = signature
                         && let Ok(outcome) = Self::eval_json(
                             target,
-                            &act_script(counter, index - 1, false, has_base_target, &signature),
+                            &act_script(
+                                counter,
+                                index - 1,
+                                false,
+                                has_base_target,
+                                &signature,
+                                &capability,
+                            ),
                             deadline,
                             &policy,
                         )
@@ -3948,6 +3983,41 @@ impl Host {
     /// main extension, before anything else is evaluated in it, and refuse
     /// the realm if the handle survives. A capability no page can reach today
     /// is still a capability, and this is the only path that would leave one.
+    /// Arm the host's own dispatch in a realm, before any page script can
+    /// run in it. Every realm gets one, children included: a child's actions
+    /// are dispatched by the host too, and the bridge is what makes that
+    /// dispatch unreachable from the page.
+    fn arm_dispatch(realm: &Realm, deadline: Instant, id: &str) -> Result<(), ControlError> {
+        let capability = profile::random_bytes(16)
+            .map(|bytes| {
+                bytes
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>()
+            })
+            .map_err(|_| {
+                ControlError::new(
+                    "internal",
+                    "the dispatch capability could not be minted",
+                    false,
+                )
+                .scoped("target", id)
+            })?;
+        let quoted = serde_json::to_string(&capability).expect("capability serializes");
+        let answer = realm.eval(&dispatch_arm_script(&quoted), deadline, id)?;
+        if answer != "armed" {
+            return Err(ControlError::new(
+                "internal",
+                "the realm would not arm the host's dispatch",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({"reason": "dispatch_unarmed"})));
+        }
+        *realm.dispatch.borrow_mut() = quoted;
+        Ok(())
+    }
+
     fn seal_realm(realm: &Realm, deadline: Instant, id: &str) -> Result<(), ControlError> {
         let answer = realm.eval(SEAL_JS, deadline, id)?;
         if answer != "undefined" {
@@ -5053,6 +5123,7 @@ impl Host {
         let realm = Realm::new(self.realm_allocation, std::rc::Rc::clone(&self.jobs))?;
         realm.eval(DOM_SHIM_BASE_JS, deadline, id)?;
         realm.eval(DOM_SHIM_MAIN_JS, deadline, id)?;
+        Self::arm_dispatch(&realm, deadline, id)?;
         let seed = format!(
             "__mcsSeed({})",
             serde_json::to_string(&tree).expect("tree serializes")
@@ -5193,6 +5264,7 @@ impl Host {
                     ));
                 }
                 realm.eval(DOM_SHIM_BASE_JS, deadline, id)?;
+                Self::arm_dispatch(&realm, deadline, id)?;
                 Self::seal_realm(&realm, deadline, id)?;
                 realm.eval(
                     &format!(
@@ -5955,6 +6027,7 @@ impl Host {
         let built = (|| -> Result<Realm, ControlError> {
             let realm = Realm::new(allocation, std::rc::Rc::clone(&jobs))?;
             realm.eval(DOM_SHIM_BASE_JS, deadline, id)?;
+            Self::arm_dispatch(&realm, deadline, id)?;
             Self::seal_realm(&realm, deadline, id)?;
             realm.eval(
                 &format!(
@@ -6693,6 +6766,13 @@ impl Host {
         }
         let policy = self.policy_for_target(&id);
         let target = self.target_mut(&id)?;
+        // The realm that will run this action is the one whose dispatch
+        // capability it must present: a child's actions are dispatched in the
+        // child's realm.
+        let capability = match frame {
+            None => target.realm.dispatch.borrow().clone(),
+            Some(child) => target.children[child].realm.dispatch.borrow().clone(),
+        };
         let script = if form_action {
             form_action_script(
                 frame_counter,
@@ -6701,9 +6781,17 @@ impl Host {
                 is_child,
                 has_base_target,
                 &signature,
+                &capability,
             )
         } else {
-            act_script(frame_counter, within, is_child, has_base_target, &signature)
+            act_script(
+                frame_counter,
+                within,
+                is_child,
+                has_base_target,
+                &signature,
+                &capability,
+            )
         };
         let outcome = match frame {
             None => Self::eval_json(target, &script, deadline, &policy)?,

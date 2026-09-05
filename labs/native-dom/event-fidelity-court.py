@@ -247,6 +247,43 @@ probe('window_hop', function(){
                     + line +
                     "document.getElementById('m').textContent='handler ran';});"
                     "</script></body></html>").encode())
+            # The authority group. A checkbox, because the document survives
+            # the action, so the court can see both halves: that the page's
+            # real handler ran, and what the host decided. Each fixture's
+            # handler does exactly one thing to the event surface.
+            if path.startswith("/forge-"):
+                how = path[len("/forge-"):-len(".html")]
+                attack = {
+                    "shadow": "Object.defineProperty(ev, 'defaultPrevented',"
+                              " { value: true, configurable: true });",
+                    "proto": "",
+                    "fake_event": "",
+                    "fake_dispatch": "",
+                    "delete_bridge": "",
+                    "prevent": "ev.preventDefault();",
+                    "plain": "",
+                }[how]
+                setup = {
+                    "proto": "Object.defineProperty(Event.prototype, 'defaultPrevented',"
+                             " { get: function(){ return true; }, configurable: true });",
+                    "fake_event": "window.Event = function(type, init){ this.type=type;"
+                                  " this.bubbles=true; this.cancelable=true;"
+                                  " this.defaultPrevented=true; };",
+                    "fake_dispatch": "var fake = function(){ return true; };"
+                                     "Element.prototype.dispatchEvent = fake;"
+                                     "document.getElementById('c').dispatchEvent = fake;",
+                    "delete_bridge": "try { delete window.__mcsDispatch; } catch (e) {}"
+                                     "try { window.__mcsDispatch = function(){ return true; }; }"
+                                     "catch (e) {}",
+                }.get(how, "")
+                return self.reply(200, (
+                    "<!doctype html><html><body><main><p id=\"m\">start</p>"
+                    "<input id=\"c\" type=\"checkbox\"></main><script>"
+                    "document.getElementById('c').addEventListener('click', function(ev){"
+                    "document.getElementById('m').textContent='handler ran';"
+                    + attack +
+                    "});" + setup +
+                    "</script></body></html>").encode())
             if path == "/trusted-click.html":
                 return self.reply(200, (
                     "<!doctype html><html><body><main><p id=\"m\">start</p>"
@@ -379,6 +416,56 @@ probe('window_hop', function(){
                        {"outcomes": outcomes})
                 expect(tag + "and preventDefault still cancels the host's activation",
                        outcomes.get("prevent") == "not_navigated", {"outcomes": outcomes})
+
+                # The authority group: what the host decides when the page has
+                # taken the public event surface apart under it.
+                def act_checkbox(how):
+                    answer = host.call("target.open",
+                                       {"session": session, "url": f"{origin}/forge-{how}.html"},
+                                       deadline_ms=8000)
+                    if not answer.get("ok"):
+                        return {"open": "failed"}
+                    target = answer["result"]["target"]
+                    shot = snapshot(target, nodes=40)
+                    boxes = [n for n in (shot or {}).get("nodes", [])
+                             if n.get("role") in ("checkbox", "switch")]
+                    out = {"found": bool(boxes)}
+                    if boxes:
+                        act = host.call("target.act",
+                                        {"target": target, "reference": boxes[0]["reference"],
+                                         "action": {"kind": "set_checked", "checked": True}},
+                                        deadline_ms=8000)
+                        result = act.get("result") or {}
+                        out["applied"] = result.get("applied")
+                        out["default_prevented"] = result.get("default_prevented")
+                        shot = snapshot(target, nodes=40)
+                        texts = [n.get("name") for n in (shot or {}).get("nodes", [])
+                                 if n.get("role") == "text"]
+                        out["marker"] = texts[0] if texts else None
+                    host.ok("target.close", {"target": target})
+                    return out
+
+                plain = act_checkbox("plain")
+                expect(tag + "the page's handler runs and an uncancelled action applies",
+                       plain.get("applied") is True and plain.get("marker") == "handler ran",
+                       {"plain": plain})
+                prevented = act_checkbox("prevent")
+                expect(tag + "and a real preventDefault still cancels it",
+                       prevented.get("applied") is False
+                       and prevented.get("default_prevented") is True
+                       and prevented.get("marker") == "handler ran",
+                       {"prevent": prevented})
+                for how, why in (("shadow", "an own property shadowing defaultPrevented"),
+                                 ("proto", "a forged prototype getter"),
+                                 ("fake_event", "a replaced global Event"),
+                                 ("fake_dispatch", "a replaced dispatchEvent"),
+                                 ("delete_bridge", "an attempt to remove the bridge")):
+                    seen = act_checkbox(how)
+                    expect(tag + f"{why} cannot cancel what the host decides, and the handler still runs",
+                           seen.get("applied") is True
+                           and seen.get("default_prevented") is None
+                           and seen.get("marker") == "handler ran",
+                           {how: seen})
 
                 # isTrusted and the phase of an event the host itself raises.
                 answer = host.call("target.open",
