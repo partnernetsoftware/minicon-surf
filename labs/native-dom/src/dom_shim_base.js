@@ -129,8 +129,8 @@
       for (let node of nodes) { if (!(node instanceof Node)) node = new Text(String(node)); if (node.parentNode) node.parentNode.__detach(node); node.parentNode = this; this.childNodes.push(node); addedNodes.push(node); }
       record("childList", this, { addedNodes, removedNodes });
     }
-    addEventListener(type, fn) { addListener(this, type, fn); }
-    removeEventListener(type, fn) { removeListener(this, type, fn); }
+    addEventListener(type, fn, options) { addListener(this, type, fn, options); }
+    removeEventListener(type, fn, options) { removeListener(this, type, fn, options); }
     dispatchEvent(event) { return dispatchOn(this, event); }
     __descendants(out = []) { for (const c of this.childNodes) { if (c.nodeType === 1) { out.push(c); c.__descendants(out); } } return out; }
     querySelectorAll(selector) { const chain = parseSelector(selector); return this.__descendants().filter((el) => matchChain(el, chain, this)); }
@@ -156,8 +156,19 @@
   // exactly the dispatches whose snapshot holds that record, and a re-add
   // makes a new record no snapshot in flight contains. The type is a string,
   // whatever the page passed, because an event's type is one too.
-  function addListener(target, type, fn) {
-    if (typeof fn !== "function") return;
+  function addListener(target, type, fn, options) {
+    // An object listener is resolved here, once, and never again: the record
+    // keeps the object as the identity and its method as the handler, so the
+    // walk calls something the host already holds rather than reading a
+    // property off a page object while it is dispatching. A page that swaps
+    // the method afterwards keeps the handler it registered, which is a
+    // divergence the design records rather than hides.
+    let handler = fn;
+    if (typeof fn !== "function") {
+      if (!fn || typeof fn.handleEvent !== "function") return;
+      handler = fn.handleEvent;
+    }
+    const once = !!(options && typeof options === "object" && options.once);
     const key = StringOf(type);
     const map = listenersOf(target);
     if (!invoke(mapHas, map, [key])) invoke(mapSet, map, [key, []]);
@@ -165,9 +176,11 @@
     // The same target, type and function identity is registered once: a
     // repeat is a no-op, as the standard has it within this host's bounds.
     for (let i = 0; i < list.length; i += 1) if (list[i].callback === fn) return;
-    invoke(arrayPush, list, [{ callback: fn, removed: false }]);
+    invoke(arrayPush, list, [{ callback: fn, handler, once, removed: false }]);
   }
-  function removeListener(target, type, fn) {
+  // `options` is accepted and unread: `capture` is a deferred rung, and a
+  // signature that refuses it would make the deferral a page-visible error.
+  function removeListener(target, type, fn, options) {
     const list = invoke(mapGet, listenersOf(target), [StringOf(type)]);
     if (!list) return;
     for (let i = 0; i < list.length; i += 1) {
@@ -231,7 +244,11 @@
             const record = snapshot[i];
             if (record.removed) continue;
             if (state.stopImmediate) break;
-            try { invoke(record.callback, node, [event]); } catch (error) {}
+            // The receiver is the object for an object listener and the
+            // node for a function, as the standard has it. `once` is spent
+            // whether or not the handler threw.
+            try { invoke(record.handler, record.handler === record.callback ? node : record.callback, [event]); } catch (error) {}
+            if (record.once && !record.removed) removeListener(node, state.type, record.callback);
           }
         }
         if (state.stop || !state.bubbles) break;

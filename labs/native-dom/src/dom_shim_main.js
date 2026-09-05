@@ -23,8 +23,8 @@ __mcsInternals((internals) => {
   // come from the one-shot handle, which is not asked for anything new, and
   // the base does not grow: a child realm pays nothing for this.
   class EventTarget {
-    addEventListener(type, fn) { addListener(this, type, fn); }
-    removeEventListener(type, fn) { removeListener(this, type, fn); }
+    addEventListener(type, fn, options) { addListener(this, type, fn, options); }
+    removeEventListener(type, fn, options) { removeListener(this, type, fn, options); }
     dispatchEvent(event) { return dispatchOn(this, event); }
   }
   g.EventTarget = EventTarget;
@@ -391,8 +391,8 @@ __mcsInternals((internals) => {
       value: location, writable: false, configurable: false, enumerable: true,
     });
   };
-  g.addEventListener = (type, fn) => addListener(g, type, fn);
-  g.removeEventListener = (type, fn) => removeListener(g, type, fn);
+  g.addEventListener = (type, fn, options) => addListener(g, type, fn, options);
+  g.removeEventListener = (type, fn, options) => removeListener(g, type, fn, options);
   g.dispatchEvent = (event) => dispatchOn(g, event);
   let onloadHandler = null;
   Object.defineProperty(g, "onload", {

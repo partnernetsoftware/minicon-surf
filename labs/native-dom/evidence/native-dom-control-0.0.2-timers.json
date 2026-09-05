@@ -152,7 +152,7 @@
   {
    "check": "[system] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 49.2
+    "elapsed_ms": 50.2
    },
    "passed": true
   },
@@ -396,7 +396,7 @@
   {
    "check": "[arena] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 50.0
+    "elapsed_ms": 49.1
    },
    "passed": true
   },
@@ -439,7 +439,7 @@
   {
    "check": "[arena] T1: sixty-four pending timers cost at most 65,536 live owner bytes",
    "detail": {
-    "owner_bytes": 37281,
+    "owner_bytes": 37521,
     "pending": 64
    },
    "passed": true
@@ -466,7 +466,7 @@
    "check": "[arena] T3: a long callback chain does not accelerate the footprint",
    "detail": {
     "first_half": 0,
-    "second_half": 0
+    "second_half": 16384
    },
    "passed": true
   },
@@ -546,7 +546,7 @@
  "checks_passed": 68,
  "checks_total": 68,
  "court": "native-dom bounded timers (control 0.0.2)",
- "host_sha256": "6177450e0cc0ff03e13557caa95b4c8334d72a0b4543ae03262b6b1d11d89c54",
+ "host_sha256": "799895aab74000810fb7c82b0273be16b0bd9dd673122b44b635ce2fba794e36",
  "limitations": [
   "design-frozen court: it fails until the bounded timer slice exists",
   "a timer's delay is a lower bound: nothing fires while no request arrives",

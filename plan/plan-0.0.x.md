@@ -1282,8 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: listener options,
-  `handleEvent` and `AbortController`
+- [~] First rung implemented and qualified on the native route, court 30 of
+  30: listener options, `handleEvent` and `AbortController`
   (`labs/native-dom/listener-options-audit-0.0.1.md`). Two of the gaps are
   worse than unimplemented, measured: `removeEventListener(t, f, false)`
   **removes** a listener added with `capture: true`, which the standard
@@ -1307,7 +1307,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   code inside the host's walk — the audit measures the naive version and
   recommends branding host-minted signals through a closure-owned `WeakSet`
   instead. Window divergence, C2b and the attribute-name and selector losses
-  stay as they are. G1, G3, P6 and G6 stay open.
+  stay as they are. **Ruled and built, first rung only**: L0 forwards the
+  options at all three call sites, L1 spends a `{once:true}` registration after
+  one run — including under two of the agent's own clicks — and L2 calls an
+  object with `handleEvent` with itself as the receiver. The handler is
+  resolved **at registration**, so the walk reads no page property while
+  dispatching; a page that swaps the method keeps what it registered, recorded
+  as a deliberate divergence from the standard's re-read. `capture`, `passive`
+  and `signal` stay deferred and are deliberately unpinned by the court, so
+  they can land without amending it. The court was frozen one commit ahead and
+  reads **30 of 30** against **14 of 30**. M1 225,626 to 227,258, M2 1,589,308,
+  slack 44,768, headroom 18,502 — all inside unchanged floors. **The rung cost
+  more than the audit priced it**, +1,632 against +1,392, and the difference
+  was measured rather than assumed: the three explanatory comments I added to
+  the base cost **384 bytes per child** by themselves, so the code is +1,248
+  and my prose is the rest. Prose in the base is priced per child like
+  everything else there. Twenty-one receipts rerun on the binary. G1, G3, P6
+  and G6 stay open.
 - [~] Implemented and qualified on the native route, court 24 of 24: an
   `EventTarget` constructor (`labs/native-dom/event-target-audit-0.0.1.md`). Measured on the
   shipped build: `EventTarget` is **`undefined`** and an element's chain is

@@ -1,0 +1,237 @@
+{
+ "checks": [
+  {
+   "check": "S1: all three call sites forward the options",
+   "detail": {
+    "forwarding_sites": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "S2: handleEvent is resolved in the registration and never read by the walk",
+   "detail": {
+    "in_dispatch": false,
+    "in_registration": false
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L1: a once listener runs once on a page's dispatch",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L1: and a listener without options still runs every time",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L1: after it fires, removing is a no-op and a re-add is a new registration",
+   "detail": {
+    "said": "ran 3"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L1: a once listener that throws is still removed",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L2: an object with handleEvent is called with itself as the receiver",
+   "detail": {
+    "said": "ran 0|this is the object false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L2: the object is its own identity for removal",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L2: the handler is resolved at registration, not read during dispatch",
+   "detail": {
+    "said": "registered 0|swapped 0"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L2: an object without a callable handleEvent is ignored quietly",
+   "detail": {
+    "said": "ignored quietly"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L1+L2: they compose",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L0: window and EventTarget honour the options like a node",
+   "detail": {
+    "eventtarget": "ran 2",
+    "window": "ran 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] cancelling is unchanged by this rung",
+   "detail": {
+    "said": "returned false|prevented true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the page could register for the host's click",
+   "detail": {
+    "said": "registered"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L1: two of the agent's own clicks run a once listener once",
+   "detail": {
+    "said": "clicks 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0,
+    "bound": 65536
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L1: a once listener runs once on a page's dispatch",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L1: and a listener without options still runs every time",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L1: after it fires, removing is a no-op and a re-add is a new registration",
+   "detail": {
+    "said": "ran 3"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L1: a once listener that throws is still removed",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L2: an object with handleEvent is called with itself as the receiver",
+   "detail": {
+    "said": "ran 0|this is the object false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L2: the object is its own identity for removal",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L2: the handler is resolved at registration, not read during dispatch",
+   "detail": {
+    "said": "registered 0|swapped 0"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L2: an object without a callable handleEvent is ignored quietly",
+   "detail": {
+    "said": "ignored quietly"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L1+L2: they compose",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L0: window and EventTarget honour the options like a node",
+   "detail": {
+    "eventtarget": "ran 2",
+    "window": "ran 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] cancelling is unchanged by this rung",
+   "detail": {
+    "said": "returned false|prevented true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the page could register for the host's click",
+   "detail": {
+    "said": "registered"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L1: two of the agent's own clicks run a once listener once",
+   "detail": {
+    "said": "clicks 2"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0,
+    "bound": 65536
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 14,
+ "checks_total": 30,
+ "court": "native-dom listener options, first rung (control 0.0.2)",
+ "host_sha256": "6177450e0cc0ff03e13557caa95b4c8334d72a0b4543ae03262b6b1d11d89c54",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the options are forwarded and once and handleEvent are honoured",
+  "capture, passive and signal are deferred rungs and are deliberately not pinned here, so this court needs no amendment when they land",
+  "two criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary; a failure there stops the rung",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "thresholds": {
+  "owner_return_bytes": 65536
+ }
+}
