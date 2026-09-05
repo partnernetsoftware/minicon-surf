@@ -27,6 +27,19 @@ __mcsInternals((internals) => {
     get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
     configurable: true });
   const containsHelper = internals.contains;
+  // Validates no name, because setAttribute and removeAttribute beside it do
+  // not, and a method that disagreed with its neighbours about what a name is
+  // would be worse than either. The revision follows the members it calls: a
+  // toggle that changes the attribute moves it once, one that does not moves
+  // nothing.
+  Element.prototype.toggleAttribute = function (name, force) {
+    const present = this.hasAttribute(name);
+    const wanted = force === undefined ? !present : !!force;
+    if (wanted !== present) {
+      if (wanted) this.setAttribute(name, ""); else this.removeAttribute(name);
+    }
+    return wanted;
+  };
   // The element's own attribute map is the state; `attributes` is a view over
   // it that allocates an object per attribute. This reads the state, returns a
   // new array every call as the standard has it, and claims to be nothing
