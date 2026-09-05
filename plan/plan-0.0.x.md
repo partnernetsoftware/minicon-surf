@@ -1282,6 +1282,29 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: the capture phase
+  (`labs/native-dom/capture-phase-audit-0.0.1.md`), deepening the deferred L4
+  row. Measured on the shipped build against a candidate: today the order is
+  `target > box-cap > box-bub > doc-cap > win-bub` and would become
+  `doc-cap > box-cap > target > box-bub > win-bub`; `eventPhase` would read
+  1,2,3 instead of 2,3,3; a **non-bubbling event never leaves its target
+  today** and would reach ancestor capture listeners, which is a real
+  behavioural expansion and not just a phase; and `removeEventListener` with
+  the wrong flag stops removing a listener it must not. **The authority
+  boundary is measured on both builds and separates cleanly**: a page's
+  capture listener would run before the target's own on the host's synthesized
+  click and could suppress it with `stopPropagation` — the target's listener
+  ran on the shipped build and does not on the candidate — while the host's
+  own decision does not move at all: with `stopPropagation` the navigation
+  happens on both builds, with `preventDefault` it is refused on both, and
+  `target.act` answers ok either way. So the phase is a new place for a page
+  to stand, not new power, and what it suppresses is the page's own listeners.
+  Cost **+1,664 bytes per child** (M1 228,922, M2 1,600,956), the **third
+  independent measurement of that same figure**, leaving 16,838 bytes of M1
+  headroom against unchanged floors, slack 46,464. Every court that could feel
+  an ordering change passes on the candidate, `lifecycle` and `page-navigation`
+  included. It is base-only, so every child pays and no child can use it. L3
+  `passive` and L5 `signal` stay deferred. G1, G3, P6 and G6 stay open.
 - [~] First rung implemented and qualified on the native route, court 30 of
   30: listener options, `handleEvent` and `AbortController`
   (`labs/native-dom/listener-options-audit-0.0.1.md`). Two of the gaps are
