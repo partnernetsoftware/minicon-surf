@@ -593,3 +593,60 @@ retry of the navigation court.
   narrow** the README already documents.
 - If the two cannot be told apart with what this mechanism reports, that is
   the finding: I record the uncertainty and name the missing observable.
+
+
+## 18. What the attribution measured
+
+One matched run per binary, both allocators, `--repetitions 1`, no product
+change and no retry of the navigation court.
+
+**The answer to §17's question: no accumulation, and no difference in
+accumulation.** Owner growth across the 128-navigation run is **identical**
+between round one (`abd1ed744721…`) and round two (`a91bdf2c85b7…`), field for
+field, on both allocators:
+
+```
+audit_bytes 7198   audit_capacity_bytes 7168   document_bytes 0
+document_fetches 0 history_bytes 231           realm_malloc_bytes 0
+```
+
+`realm_malloc_bytes` grows by **zero** across 128 navigations on both builds,
+and after the target and session close every owner is **0** on both. The live
+realm after the run differs by a constant — 353,008 → 354,208 bytes on system,
+344,112 → 345,264 on arena — which is one live document's realm being slightly
+larger, not a per-navigation term.
+
+**Where the footprint separates: the candidate build, and it is released.**
+Per-stage sums over 128 navigations are the same on both builds —
+`candidate_fetched->candidate_built` carries all of it (1,081,344 bytes of
+footprint on system; 53,021,696 on arena, which the arena hands back at
+`after_swap`). What differs between the builds at that stage is `in_use`:
+36,032,432 → 36,478,224 on system, about **+3.5 KB per navigation while a
+candidate is being built**, matched by a corresponding negative at
+`after_swap`. That is the larger shim being compiled and then released, not
+state being kept.
+
+**Reading, as pre-registered.** Owners are bounded, return to zero on close,
+and grow identically on both builds; the divergence appears during the
+candidate build and is released there. That is the second of the two readings
+fixed in §17: **`Event` stays qualified under its own frozen floors** — M1
+234,042 and M2 1,636,012 against 245,760 and 1,720,320 — **and the navigation
+soak stays the cross-batch, default-allocator narrow** the README already
+documents, now with a measured reason: the system allocator keeps released
+pages resident, the arena returns them, and this round's larger per-build
+transient is what pushes a criterion that was already sitting on its line.
+
+**Uncertainty, recorded rather than smoothed.** At one run per cell the
+process-footprint totals do **not** discriminate: system navigating +180,224,
+system navigating with stage sampling −49,152, arena navigating −65,536, arena
+navigating with sampling +49,152. The sign is not stable, and I am not reading
+a direction out of it. What is stable, and what the reading rests on, is the
+owner arithmetic — identical growth, zero after close — and the per-stage
+placement, which agree across both allocators and both builds.
+
+**Gaps, named rather than filled.** There is no owner for `Event` or listener
+state, so "live Event bytes" is not a number this host can report and I have
+not inferred one. This court records `in_use` but not libmalloc allocated or
+resident, and does not record the arena returned or leak counters; both exist
+in `memory.report`, and adding them here would be instrumentation, which this
+run was not permitted to do.
