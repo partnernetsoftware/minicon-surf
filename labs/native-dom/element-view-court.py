@@ -40,7 +40,10 @@ MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
          "contains",
          # A compatibility fix, never in the base: a page that calls it should
          # not die where a browser would have answered.
-         "closest")
+         "closest",
+         # Reads the element's own attribute map, and claims to be nothing
+         # more than a new array of names.
+         "getAttributeNames")
 # The scripts that run in a child realm as well as a main one.
 CHILD_SCRIPTS = ("snapshot_script", "preflight_script", "act_script", "form_action_script",
                  "SERIALIZE_JS", "ACTIVATION_JS", "INSTALL_JS", "REVISION_JS",
@@ -150,7 +153,8 @@ def main():
                 return self.reply(200, (
                     "<!doctype html><html><body><main><p id=\"m\">start</p>"
                     "<div id=\"host\"><p id=\"a\">alpha</p><p id=\"b\">beta</p></div>"
-                    "<form id=\"f\"><input id=\"v\" value=\"kept\"></form></main><script>"
+                    "<form id=\"f\"><input id=\"v\" value=\"kept\"></form>"
+                    "<p id=\"attrs\">attrs</p></main><script>"
                     "var host=document.getElementById('host');"
                     "var a=document.getElementById('a');"
                     "var out=[];"
@@ -169,6 +173,19 @@ def main():
                     "  submitted=true; ev.preventDefault(); });"
                     "document.getElementById('f').submit();"
                     "out.push(submitted);"
+                    # getAttributeNames: empty, repeated, mixed case, order
+                    # after a removal, and a new array every call.
+                    "var bare=document.createElement('p');"
+                    "out.push(bare.getAttributeNames().length===0);"
+                    "var at=document.getElementById('attrs');"
+                    "at.setAttribute('data-one','1');"
+                    "at.setAttribute('data-one','2');"
+                    "at.setAttribute('MixedCase','3');"
+                    "out.push(at.getAttributeNames().join(',')==='id,data-one,mixedcase');"
+                    "at.removeAttribute('data-one');"
+                    "out.push(at.getAttributeNames().join(',')==='id,mixedcase');"
+                    "out.push(at.getAttributeNames()!==at.getAttributeNames());"
+                    "out.push(Array.isArray(at.getAttributeNames()));"
                     # closest: what it answers, where it stops, and that it
                     # refuses exactly what matches refuses.
                     "out.push(a.closest('#host')===host);"
@@ -253,6 +270,7 @@ def main():
                     host.ok("target.close", {"target": opened["result"]["target"]})
                 expect(tag + "a main realm calls every moved member and each answers as it did",
                        said == ("true,true,true,true,true,true,true,true"
+                                ",true,true,true,true,true"
                                 ",true,true,true,true,true,true,true,true,true,true"),
                        {"said": said})
 

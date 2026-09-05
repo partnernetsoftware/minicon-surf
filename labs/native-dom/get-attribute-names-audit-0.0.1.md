@@ -162,3 +162,33 @@ flowchart TD
 3. **Whether the `attributes` divergence goes into the README's losses now**,
    as `querySelectorAll`'s did. It is unrelated to whether the method lands,
    and it is the larger of the two facts this audit found.
+
+
+## 10. The rulings
+
+**10.1 `getAttributeNames` is accepted** as a compatibility fix: about 784
+bytes of main, nothing per child, no base growth and no handle widening.
+
+**10.2 It reads `__attrs` directly**, the element's own `Map`, taking its keys
+in insertion order — already lowercased, because `setAttribute` lowercases on
+the way in. It does **not** derive from `attributes`, so it allocates no
+intermediate object per attribute and it reads the state rather than a view of
+it.
+
+**10.3 It claims nothing it is not.** The return is a **new array** on every
+call, which is what the standard says and what a browser does; it is not a
+`NamedNodeMap`, its entries are not `Attr` nodes, and it has no identity
+across calls to claim.
+
+**10.4 The `attributes` divergence is recorded in the README's losses**,
+independently of this method: a fresh plain array of plain objects, built on
+every read, with no `item`, no `getNamedItem`, no identity across reads and no
+live update.
+
+**10.5 The criteria join `element-view-court.py`**, covering an element with
+no attributes, a repeated `setAttribute` of the same name, mixed case, the
+order after a removal, the fresh array on each call, the child divergence, and
+owner release — with the floors and the slack held where they already are.
+
+`toggleAttribute`, `cloneNode`, the selector engine's error name, C2b and
+`EventTarget` all stand as previously ruled.

@@ -895,7 +895,15 @@ re-snapshot for a change that did not happen. The revision advances per
 mutation flush, not per call. An empty token throws `SyntaxError` and a token
 with whitespace throws `InvalidCharacterError`. `CustomEvent` is `Event` plus
 `detail`, which is the page's own value and reaches no snapshot, receipt,
-ledger, error or counter. `querySelectorAll` answers a **plain array**, not a live `NodeList`: spread
+ledger, error or counter. `element.attributes` answers a **fresh plain array of plain `{name, value}`
+objects**, not a live `NamedNodeMap` of `Attr` nodes: there is no `item()` or
+`getNamedItem()`, `el.attributes === el.attributes` is `false`, a page holding
+one sees a list that does not update, and each read allocates. The names it
+reports are lowercased and in insertion order, which does match. Note the trap
+in the shape: `attributes.map(…)` works here and throws in a browser, while
+`Array.from(attributes)` works in both.
+
+`querySelectorAll` answers a **plain array**, not a live `NodeList`: spread
 and `forEach` work, `item()` does not exist, and the result does not update as
 the tree changes. Every host script and every court has always used it that
 way; it is recorded here as a divergence rather than treated as a defect.
