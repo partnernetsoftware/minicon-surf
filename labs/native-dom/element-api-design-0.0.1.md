@@ -176,3 +176,69 @@ is a turn of pure no-op calls whose revision must not move, and the text that
 arrives on the next boundary is what proves the calls ran at all rather than
 threw — without which the criterion would pass on a host where `classList`
 does not exist.
+
+
+## 9. Root audit: four findings, and one criterion of mine that froze a
+## divergence I had not declared
+
+**9.1 The list was a snapshot, not a view.** `classListOf` parsed the
+attribute once, when the accessor was read, and every method then operated on
+that captured array. `const list = el.classList; el.className = "x y";` and
+`list` still answered about the old attribute — and worse, `list.add("z")`
+would have written the *stale* set plus `z`, silently dropping whatever had
+been written directly. That contradicts §4 of this record, which says the
+attribute is the state, and it contradicts `DOMTokenList`, which is live.
+Every read and every mutation now reparses the attribute.
+
+*Falsifier:* hold a list across a direct `className` write and a direct
+`setAttribute`, then assert `contains`, `length`, `value` and `toString`
+answer about the current attribute, and that `add` through the held list
+preserves what was written directly.
+
+**9.2 The list was a new object every time.** `element.classList` is
+`[SameObject]` in the standard: `el.classList === el.classList`. Mine
+allocated a fresh view per read, so identity failed, and a page that stores
+the list — which is the ordinary way to use it — held something the standard
+says is the same object.
+
+*Ruled, mine:* implement `SameObject`, backed by a `WeakMap` keyed by the
+element, allocated on first access only. It holds **no tokens** — 9.1 stands,
+every call still reparses — so the object is a handle, not a cache, and it
+dies with the element. The entry is page-owned and lives under the existing
+per-realm limit like everything else the page allocates. I am not trading
+this away for memory: the cost is one small object per element a page
+actually touches, and the M1 floor is measured on child realms which have no
+`classList` at all.
+
+*Falsifier:* `el.classList === el.classList`, identity survives a direct
+attribute write, two elements never share one, and the held object is still
+live after that write.
+
+**9.3 `value` was mine, not the standard's.** §2 listed `value` without
+saying it was getter-only, and I implemented it as a getter returning the
+*normalized* token set. The standard's `value` is the attribute's own string,
+raw, and it has a setter that writes the attribute.
+
+Both halves are now standard: the getter returns the attribute value
+unchanged — `"  one   two  "` reads back as `"  one   two  "` — and the setter
+writes what it is given. Token reads over that raggedness stay parsed, so
+`length` is 2 and `contains("two")` is true.
+
+*This overturns a frozen criterion of mine.* The court asserted
+`value === "one two"` for that ragged attribute, which froze an undeclared
+divergence as if it were the design. The criterion is corrected rather than
+kept: it now asserts the raw string from `value` and `toString`, and the
+parsed answers from `length` and `contains`, which is the distinction that
+actually matters.
+
+**9.4 `new CustomEvent(type, null)` crashed.** A default parameter only
+covers `undefined`, so an explicit `null` dictionary reached property access
+on `null`. Normalized to an empty dictionary before anything reads it, with
+`detail` then `null`.
+
+*Recorded loss, not expanded here:* `new Event(type, null)` still throws, for
+the same reason, in the base. Fixing it is base source growth and belongs to
+whatever slice earns it, not to this one.
+
+Everything above is in the main extension. The base keeps the one identifier
+already measured, and the child M1 floor is re-measured rather than argued.
