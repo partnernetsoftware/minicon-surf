@@ -334,3 +334,72 @@ with no capability and with a wrong one, calls the steps out of order and
 repeatedly, and assigns `window.__listeners`. After all of that the normal
 four steps must still be observed **exactly once each, in order**, and the
 capability must appear in no snapshot, no audit record and no receipt.
+
+## 12. Two more before the slice is qualified
+
+**12.1 The event path reached the window from anywhere.** The new dispatch
+pushed the window onto the path for **any** bubbling event on **any** node, so
+a custom bubbling event dispatched on a detached element — one whose chain
+never reaches the document — arrived at a window listener. That is wrong
+against the standard, and it changes the behaviour of the node dispatch that
+existed before this slice. The window is appended **only when the path's last
+node is the document**. A detached subtree bubbles through its own ancestors
+and stops there; `document.parentNode` stays `null` either way.
+
+The court gains three criteria: a connected element's bubbling event reaches
+the document and then the window; a detached element's reaches its detached
+ancestors and never the document or the window; and `document.parentNode` is
+still `null`.
+
+**12.2 A page's wrong capability proves only the gate.** The hostile page
+shows that a call without the capability, or with a wrong one, dispatches
+nothing — which is the **token** gate and says nothing about the **phase**
+state machine, because the page can never get far enough to test order. The
+order needs a caller that holds the real capability, so a court-only knob
+makes the host itself replay a step and call one out of order after the
+sequence has run. The events must still be observed exactly once each, which
+is the only way this court can falsify the phase machine rather than assume
+it.
+
+## 13. The phase falsifier, and the harness that ran it
+
+**13.1 Terminal rejections prove nothing about the machine.** The court-only
+replay called steps 2 and 1 **after** the whole sequence, when the phase
+counter already stood at 4, so both were refused for being past the end. That
+says nothing about whether an intermediate state accepts only its next step.
+The knob now interleaves refusals with the real run —
+`2, 1, 1, 3, 2, 4, 3, 2, 4, 4` — so a refusal is tested at every phase, and
+the observation afterwards must still be each step exactly once, in order.
+
+**13.2 The phase group had no watchdog.** It spawned the host itself and used
+a blocking read, so a host that regressed into a hang would hang the court —
+against this file's own opening discipline and against J5, which the rest of
+the court honours. It uses the supervised helper like every other group: a
+wall bound per request, an exact-pid kill and a reap on a miss, the kill
+counted in `hosts_killed`, and the run failed by it. The helper takes extra
+arguments so a court-only knob does not cost the supervision.
+
+## 14. Duplicate listeners are de-duplicated, not frozen as a divergence
+
+§9.3 recorded "a duplicate listener runs twice" as an existing divergence to
+be preserved. That was the wrong instinct. This slice is already extracting
+the shared listener model, the behaviour wastes memory as well as diverging,
+and nothing is served by freezing it as qualified. It is **fixed**:
+
+- Within this host's bounds — no capture, no options — the same **target,
+  type and function identity** is registered **once**. A repeated
+  `addEventListener` with all three equal is a **no-op**.
+- `removeEventListener` removes that one registration, after which nothing
+  fires, as before.
+- The fix applies to **both** a node and the window, because they now share
+  one implementation.
+
+The frozen criterion changes with it: one dispatch observes **exactly one**
+call. It is falsified against the pushed build, where the old node model
+answers **two** — and the fixture uses an **element**, not the window, so it
+runs on that build at all.
+
+Listener options, `handleEvent` objects, capture and
+`stopImmediatePropagation` stay recorded losses. Nothing else about the
+request or result shapes changes, and the form and frame-action courts are
+rerun because both dispatch through this path.

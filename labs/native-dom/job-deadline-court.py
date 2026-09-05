@@ -74,8 +74,28 @@ class Supervised:
     """One host, and a wall clock over it. A request that does not answer in
     time costs the host its life: killed by pid, reaped, and recorded."""
 
-    def __init__(self, binary, directory, origin, allocator):
+    def __init__(self, binary, directory, origin, allocator, extra=()):
         self.host = RETENTION.Host(binary, directory, origin, allocator)
+        if extra:
+            # Court-only knobs are supervised like everything else: the host is
+            # restarted with them and keeps the same wall-clock discipline.
+            self.host.process.stdin.close()
+            self.host.process.wait(timeout=15)
+            environment = dict(os.environ)
+            for knob in RETENTION.ALLOCATOR_KNOBS.values():
+                if knob:
+                    environment.pop(knob, None)
+            knob = RETENTION.ALLOCATOR_KNOBS[allocator]
+            if knob:
+                environment[knob] = "1"
+            environment.pop(VISIBLE_ENV, None)
+            self.host.process = subprocess.Popen(
+                [binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+                 "--config-dir", str(Path(directory) / "config2"), "--allow-origin", origin,
+                 *extra],
+                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                text=True, env=environment)
+            self.host.counter = 0
         self.killed = False
         self.timeouts = []
 

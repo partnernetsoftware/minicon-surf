@@ -23,6 +23,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import signal
 import sys
 import tempfile
@@ -130,10 +131,16 @@ def main():
                                      "window.dispatchEvent(new Event('court'));"
                                      # Its own event: the same function added twice,
                                      # dispatched once, must run twice.
-                                     "var twice=function(){note('twice');};"
-                                     "window.addEventListener('dup',twice);"
-                                     "window.addEventListener('dup',twice);"
-                                     "window.dispatchEvent(new Event('dup'));"
+                                     "}"
+                                     "var once=function(){note('once');};"
+                                     "var host=document.createElement('div');"
+                                     "document.body.appendChild(host);"
+                                     "host.addEventListener('dup',once);"
+                                     "host.addEventListener('dup',once);"
+                                     "host.dispatchEvent(new Event('dup'));"
+                                     "host.removeEventListener('dup',once);"
+                                     "host.dispatchEvent(new Event('dup'));"
+                                     "if(typeof window.addEventListener==='function'){"
                                      # onload as a property: set, cleared with null,
                                      # proven not to fire on an independent event,
                                      # then set again for the real load to verify.
@@ -169,6 +176,50 @@ def main():
                                     "document.addEventListener('DOMContentLoaded',function(){"
                                     "write('child lifecycle ran');});"),
                 "/quiet.html": page("Quiet", ""),
+                # The event path: connected reaches document then window,
+                # detached reaches its own ancestors and stops.
+                "/path.html": page("Path",
+                                   "var seen=[];"
+                                   "var note=function(t){seen.push(t);write(seen.join(' '));};"
+                                   "var host=document.createElement('div');"
+                                   "var kid=document.createElement('span');"
+                                   "host.appendChild(kid);"
+                                   "document.body.appendChild(host);"
+                                   "host.addEventListener('court',function(){note('ancestor');});"
+                                   "document.addEventListener('court',function(){note('document');});"
+                                   "window.addEventListener('court',function(){note('window');});"
+                                   "kid.dispatchEvent(new Event('court',{bubbles:true}));"
+                                   "var loose=document.createElement('div');"
+                                   "var looseKid=document.createElement('span');"
+                                   "loose.appendChild(looseKid);"
+                                   "loose.addEventListener('court',function(){note('detached-ancestor');});"
+                                   "looseKid.dispatchEvent(new Event('court',{bubbles:true}));"
+                                   "note('docparent:'+(document.parentNode===null?'null':'set'));"),
+                # A page that attacks the bridge from every angle it has, then
+                # records the lifecycle it actually observes.
+                "/hostile.html": page("Hostile",
+                                      "var seen=[];"
+                                      "var note=function(t){seen.push(t);write(seen.join(' '));};"
+                                      "var tried=[];"
+                                      "try{window.__mcsLifecycle=function(){note('forged');};"
+                                      "tried.push('assign:'+(typeof window.__mcsLifecycle));}"
+                                      "catch(e){tried.push('assign:threw');}"
+                                      "try{Object.defineProperty(window,'__mcsLifecycle',"
+                                      "{value:function(){note('forged');}});tried.push('define:ok');}"
+                                      "catch(e){tried.push('define:threw');}"
+                                      "try{tried.push('nocap:'+String(window.__mcsLifecycle(1)));}"
+                                      "catch(e){tried.push('nocap:threw');}"
+                                      "try{tried.push('wrongcap:'+String(window.__mcsLifecycle('court',2)));}"
+                                      "catch(e){tried.push('wrongcap:threw');}"
+                                      "try{tried.push('arm:'+(typeof window.__mcsArmLifecycle));}"
+                                      "catch(e){tried.push('arm:threw');}"
+                                      "try{window.__listeners={};tried.push('store:set');}"
+                                      "catch(e){tried.push('store:threw');}"
+                                      "document.addEventListener('readystatechange',"
+                                      "function(){note('rsc:'+document.readyState);});"
+                                      "document.addEventListener('DOMContentLoaded',function(){note('dcl');});"
+                                      "window.addEventListener('load',function(){note('load');});"
+                                      "note('tried:'+tried.join(','));"),
             }
             if path in pages:
                 return self.reply(200, pages[path])
@@ -200,7 +251,16 @@ def main():
                 host.finish()
                 directory.cleanup()
 
+            def open_page(host, session, path, deadline_ms=5000):
+                """A target, or None when this host cannot build the page at
+                all. A court must fail against such a host, never crash."""
+                answer = host.call("target.open", {"session": session, "url": f"{origin}{path}"},
+                                   deadline_ms=deadline_ms)
+                return answer["result"]["target"] if answer.get("ok") else None
+
             def observe(host, target):
+                if target is None:
+                    return None, []
                 answer = host.call("target.snapshot",
                                    {"target": target, "format": "semantic",
                                     "max_bytes": 65536, "max_nodes": 64})
@@ -222,8 +282,7 @@ def main():
             try:
                 profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 session = host.ok("session.open", {"profile": profile})["session"]
-                target = host.ok("target.open", {"session": session, "url": f"{origin}/order.html"},
-                                 deadline_ms=5000)["target"]
+                target = open_page(host, session, "/order.html")
                 line, _ = observe(host, target)
                 steps = (line or "").split()
                 expect(tag + "the four steps happen in the order the standard gives them",
@@ -248,8 +307,7 @@ def main():
                 expect(tag + "the window's listener runs after the document's own, in path order",
                        len(steps) == 6 and steps.index("dclwin:doc:win") > 2,
                        {"steps": len(steps)})
-                late = host.ok("target.open", {"session": session, "url": f"{origin}/late.html"},
-                               deadline_ms=5000)["target"]
+                late = open_page(host, session, "/late.html")
                 _, late_texts = observe(host, late)
                 expect(tag + "a page that builds itself on DOMContentLoaded is not inert",
                        any("built late" == t for t in late_texts), {"texts": len(late_texts)})
@@ -261,15 +319,14 @@ def main():
             try:
                 profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 session = host.ok("session.open", {"profile": profile})["session"]
-                target = host.ok("target.open", {"session": session, "url": f"{origin}/target.html"},
-                                 deadline_ms=5000)["target"]
+                target = open_page(host, session, "/target.html")
                 line, _ = observe(host, target)
                 steps = (line or "").split()
                 expect(tag + "a custom event on the window is delivered once and removal stops it",
                        steps[:1] == ["custom"] and steps.count("custom") == 1,
                        {"steps": steps[:3]})
-                expect(tag + "a duplicate listener is not de-duplicated and runs twice: a divergence",
-                       steps.count("twice") == 2, {"twice": steps.count("twice")})
+                expect(tag + "the same function registered twice is registered once, and removal clears it",
+                       steps.count("once") == 1, {"calls": steps.count("once")})
                 expect(tag + "window.onload cleared with null reads null and does not fire",
                        "onload-null:yes" in steps and "onload-cleared-ran" not in steps,
                        {"steps": len(steps)})
@@ -285,8 +342,7 @@ def main():
             try:
                 profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 session = host.ok("session.open", {"profile": profile})["session"]
-                target = host.ok("target.open", {"session": session, "url": f"{origin}/microtask.html"},
-                                 deadline_ms=5000)["target"]
+                target = open_page(host, session, "/microtask.html")
                 line, _ = observe(host, target)
                 expect(tag + "a job queued in DOMContentLoaded runs before load begins",
                        (line or "").split() == ["dcl", "job", "load"],
@@ -313,17 +369,18 @@ def main():
             try:
                 profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 session = host.ok("session.open", {"profile": profile})["session"]
-                target = host.ok("target.open", {"session": session, "url": f"{origin}/order.html"},
-                                 deadline_ms=5000)["target"]
+                target = open_page(host, session, "/order.html")
                 first, _ = observe(host, target)
                 again, _ = observe(host, target)
                 expect(tag + "the sequence does not run again when the same document is observed",
                        first == again and (first or "").count("load:") == 1,
                        {"stable": first == again})
-                host.ok("target.reload", {"target": target}, deadline_ms=5000)
+                if target is not None:
+                    host.ok("target.reload", {"target": target}, deadline_ms=5000)
                 reloaded, _ = observe(host, target)
-                host.ok("target.navigate", {"target": target, "url": f"{origin}/order.html"},
-                        deadline_ms=5000)
+                if target is not None:
+                    host.ok("target.navigate", {"target": target, "url": f"{origin}/order.html"},
+                            deadline_ms=5000)
                 navigated, _ = observe(host, target)
                 expect(tag + "a reload and a navigation each run the whole sequence for the new document",
                        (reloaded or "").count("load:") == 1
@@ -357,9 +414,8 @@ def main():
             try:
                 profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 session = host.ok("session.open", {"profile": profile})["session"]
-                target = host.ok("target.open", {"session": session, "url": f"{origin}/parent.html"},
-                                 deadline_ms=5000)["target"]
-                frames = host.ok("target.inspect", {"target": target})["frames"]
+                target = open_page(host, session, "/parent.html")
+                frames = host.ok("target.inspect", {"target": target})["frames"] if target else []
                 child = frames[1]["frame"] if len(frames) > 1 else None
                 answer = host.call("target.snapshot",
                                    {"target": target, "format": "semantic",
@@ -377,34 +433,80 @@ def main():
             finally:
                 close(directory, host, label)
 
+            # 11.3: a page cannot forge, replace or drive the bridge, and the
+            # capability appears nowhere it could be read.
+            directory, host, label = group("hostile")
+            try:
+                profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                session = host.ok("session.open", {"profile": profile})["session"]
+                target = open_page(host, session, "/hostile.html")
+                line, _ = observe(host, target)
+                steps = (line or "").split()
+                expect(tag + "a page can neither forge the bridge nor drive a step",
+                       "forged" not in steps
+                       and any(s.startswith("tried:") for s in steps)
+                       and "nocap:refused" in (line or "") and "wrongcap:refused" in (line or ""),
+                       {"steps": len(steps)})
+                expect(tag + "and the four real steps still happen exactly once, in order",
+                       [s for s in steps if not s.startswith("tried:")]
+                       == ["rsc:interactive", "dcl", "rsc:complete", "load"],
+                       {"observed": [s for s in steps if not s.startswith("tried:")]})
+                audit = host.call("session.inspect", {"session": session})
+                blob = json.dumps(audit.get("result") or {}) + json.dumps(
+                    host.call("target.snapshot",
+                              {"target": target, "format": "semantic",
+                               "max_bytes": 65536, "max_nodes": 64}).get("result") or {})
+                # The court cannot know the capability, so it looks for its
+                # shape: 32 hex characters minted per realm.
+                shaped = re.findall(r"\b[0-9a-f]{32}\b", blob)
+                expect(tag + "no value shaped like the capability is in a snapshot or an audit record",
+                       not shaped, {"matches": len(shaped), "bytes": len(blob)})
+            finally:
+                close(directory, host, label)
+
+            # 12.1: the event path stops at the document unless it got there.
+            directory, host, label = group("event-path")
+            try:
+                profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                session = host.ok("session.open", {"profile": profile})["session"]
+                target = open_page(host, session, "/path.html")
+                line, _ = observe(host, target)
+                steps = (line or "").split()
+                expect(tag + "a connected element's bubbling event reaches the document and then the window",
+                       steps[:3] == ["ancestor", "document", "window"], {"steps": steps[:4]})
+                expect(tag + "a detached element's reaches its own ancestors and never the document or window",
+                       steps.count("document") == 1 and steps.count("window") == 1
+                       and "detached-ancestor" in steps, {"steps": len(steps)})
+                expect(tag + "document.parentNode is still null",
+                       "docparent:null" in steps, {"steps": len(steps)})
+            finally:
+                close(directory, host, label)
+
             # 10 and 11: the revision, and the memory criteria.
             directory, host, label = group("memory")
             try:
                 profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                 session = host.ok("session.open", {"profile": profile})["session"]
                 empty = owner_bytes(host)
-                target = host.ok("target.open", {"session": session, "url": f"{origin}/late.html"},
-                                 deadline_ms=5000)["target"]
-                state = host.ok("target.inspect", {"target": target})
+                target = open_page(host, session, "/late.html")
+                state = host.ok("target.inspect", {"target": target}) if target else {"revision": 0}
                 _, texts = observe(host, target)
                 expect(tag + "what a lifecycle handler mutates is in the first snapshot and the revision",
                        any("built late" == t for t in texts) and state["revision"] > 0,
                        {"revision": state.get("revision"), "texts": len(texts)})
-                host.ok("target.close", {"target": target})
+                if target is not None:
+                    host.ok("target.close", {"target": target})
                 # A quiet total is only a quiet total when nothing else is
                 # live: opened, sampled and closed alone (design §10.7).
-                quiet = host.ok("target.open", {"session": session, "url": f"{origin}/quiet.html"},
-                                deadline_ms=5000)["target"]
+                quiet = open_page(host, session, "/quiet.html")
                 quiet_total = owner_bytes(host)
-                host.ok("target.close", {"target": quiet})
-                without = host.ok("target.open",
-                                  {"session": session, "url": f"{origin}/listeners.html?keep=0"},
-                                  deadline_ms=5000)["target"]
+                if quiet is not None:
+                    host.ok("target.close", {"target": quiet})
+                without = open_page(host, session, "/listeners.html?keep=0")
                 baseline = owner_bytes(host)
-                host.ok("target.close", {"target": without})
-                with_listeners = host.ok("target.open",
-                                         {"session": session, "url": f"{origin}/listeners.html?keep=1"},
-                                         deadline_ms=5000)["target"]
+                if without is not None:
+                    host.ok("target.close", {"target": without})
+                with_listeners = open_page(host, session, "/listeners.html?keep=1")
                 measured = owner_bytes(host)
                 # M1 gates this fixture's listeners and this fixture only.
                 # The quiet page's total is reported beside it as a diagnostic
@@ -417,7 +519,7 @@ def main():
                         "listeners_in_fixture": 1,
                         "no_listener_owner_bytes": baseline,
                         "quiet_page_total_bytes": quiet_total})
-                for _ in range(REPLACEMENTS):
+                for _ in range(REPLACEMENTS if with_listeners is not None else 0):
                     host.ok("target.navigate",
                             {"target": with_listeners, "url": f"{origin}/listeners.html?keep=1"},
                             deadline_ms=5000)
@@ -426,13 +528,47 @@ def main():
                        after is not None and measured is not None
                        and abs(after - measured) <= OWNER_BYTES,
                        {"owner_bytes": None if after is None else after - measured})
-                host.ok("target.close", {"target": with_listeners})
+                if with_listeners is not None:
+                    host.ok("target.close", {"target": with_listeners})
                 closed = owner_bytes(host)
                 expect(tag + "M3: closing every target returns the owners exactly",
                        closed is not None and empty is not None and closed == empty,
                        {"owner_bytes": None if closed is None else closed - empty})
             finally:
                 close(directory, host, label)
+        # 12.2 and 13: only a caller holding the real capability can test the
+        # phase machine, so a court-only knob interleaves refusals with the
+        # real run — and the host that runs it is supervised like every other.
+        directory = tempfile.TemporaryDirectory(prefix="minicon-surf-life-")
+        host = JOBS.Supervised(args.binary, directory.name, origin, "system",
+                               extra=("--court-lifecycle-abuse", "1"))
+        try:
+            answer = host.call("profile.create", {"persistence": "ephemeral"})
+            if not answer.get("ok"):
+                expect("[phase] the host accepts the court-only replay seam", False,
+                       {"reason": (answer.get("error") or {}).get("code", "refused")})
+            else:
+                profile = answer["result"]["profile"]
+                session = host.ok("session.open", {"profile": profile})["session"]
+                opened = host.call("target.open", {"session": session, "url": f"{origin}/order.html"},
+                                   deadline_ms=5000)
+                observed = host.call("target.snapshot",
+                                     {"target": opened["result"]["target"], "format": "semantic",
+                                      "max_bytes": 65536, "max_nodes": 64}) if opened.get("ok") else {}
+                texts = [n.get("name") or "" for n in observed["result"]["nodes"]
+                         if n.get("role") == "text"] if observed.get("ok") else []
+                line = texts[0] if texts else ""
+                expect("[phase] a refusal at every phase dispatches nothing, and each step still runs once",
+                       line.count("rsc:interactive") == 1 and line.count("dcl:") == 1
+                       and line.count("rsc:complete") == 1 and line.count("load:") == 1,
+                       {"interactive": line.count("rsc:interactive"), "dcl": line.count("dcl:"),
+                        "complete": line.count("rsc:complete"), "load": line.count("load:")})
+        finally:
+            if host.timeouts:
+                killed_hosts.append({"group": "phase", "allocator": "system",
+                                     "timeouts": host.timeouts})
+            host.finish()
+            directory.cleanup()
     finally:
         server.shutdown()
 
