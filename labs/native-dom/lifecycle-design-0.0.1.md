@@ -403,3 +403,26 @@ Listener options, `handleEvent` objects, capture and
 `stopImmediatePropagation` stay recorded losses. Nothing else about the
 request or result shapes changes, and the form and frame-action courts are
 rerun because both dispatch through this path.
+
+## 15. What the `Event` shim is not, recorded before the code lands
+
+This slice dispatches more events than the host used to, so what an `Event`
+actually is here must be stated rather than assumed.
+
+`Event` is a plain shim object. Its `type`, `bubbles`, `cancelable`, `target`
+and `currentTarget` are **ordinary writable properties**, not the immutable
+accessors the standard defines, and the dispatch sets `target` and
+`currentTarget` on the same object every listener receives. There is no
+`eventPhase`, no `composed`, no `isTrusted`, no `timeStamp`, no
+`stopImmediatePropagation`, and no re-dispatch guard.
+
+The consequence, stated plainly: **a handler can rewrite the event it is
+given**, including its `target`, `bubbles` and `currentTarget`, and a later
+listener — or the remainder of the path — will see what it wrote. So nothing
+here is proof against a hostile handler, and no criterion in this court should
+be read as one. What the court does prove is the host's own behaviour: the
+capability, the phase machine, the ordering of the four steps, and the path.
+Those live in the host and in a closure, not on the event object.
+
+Making `Event` faithful — immutable accessors, a real phase, a trusted flag —
+is its own slice with its own court, and this record does not start it.
