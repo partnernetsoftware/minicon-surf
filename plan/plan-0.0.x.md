@@ -1238,7 +1238,34 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   headroom**, 261,962 against an unmoved 262,144, so further growth of the
   shared shim is blocked until a separate architecture slice reduces what
   every realm compiles. G1, G3, P6 and G6 stay open.
-- [~] Implemented and qualified on the native route, court 18 of 18:
+- [~] Implemented and qualified on the native route, court 28 of 28: bounded
+  `Event` fidelity (`labs/native-dom/event-fidelity-design-0.0.1.md`). Written
+  from twenty-three measurements through the control door rather than from the
+  source: the dispatch shape was already right, and what was wrong was the
+  event object's integrity, three absent members and one dispatch rule. One
+  finding had authority in it — the host reads `defaultPrevented` to decide
+  whether an activation proceeds, and the field was plainly writable, so on a
+  link a handler that assigned it cancelled a host-driven navigation without
+  ever calling `preventDefault`. The court's dry run found a second: a handler
+  that dispatched the event it was handed recursed until the engine raised
+  `RangeError`. My own plan was overturned by the root's audit before any
+  code: a main-only `Event` subclass would have missed the events the base
+  itself raises from `click`, `submit` and `reset`, one of which reads
+  `defaultPrevented` back — zero base growth was a hole, not a smaller fix.
+  Ruled and built: one faithful `Event` and one dispatcher in the base, state
+  closure-owned and keyed by the event, `preventDefault` the only door to
+  `defaultPrevented`, the dispatcher the only writer of `target`,
+  `currentTarget`, `eventPhase` and `dispatching`, a re-entrant dispatch
+  refused with `InvalidStateError` before the outer dispatch is touched,
+  cleanup on every path including a throwing one, a listener removed during a
+  dispatch not called, `stopImmediatePropagation` honoured, `isTrusted` false
+  everywhere and `timeStamp` from the clock the realm already inherited. This
+  is the first slice to spend the shim split's margin deliberately: the base
+  grew 3,230 source bytes, M1 moved to 232,938 and M2 to 1,628,284, both under
+  the 245,760 and 1,720,320 floors, leaving 12,822 bytes of M1 headroom under
+  the floor. The court is 28 of 28 and 8 of 28 against the build before it.
+  G1, G3, P6 and G6 stay open.
+- [~] Implemented and qualified on the native route, court 28 of 28:
   `classList` and `CustomEvent` (`labs/native-dom/element-api-design-0.0.1.md`),
   the last of the three candidates the browser-gap triage proposed. Probed on
   the previous build, the class attribute was fully there — `className`
