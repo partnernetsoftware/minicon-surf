@@ -464,3 +464,52 @@ as `"2"` runs for `new Event(2)`: `numeric,string`.
 All four stay inside the one base dispatcher and the hidden event state. No
 listener options, no capture phase and no `handleEvent` object comes with
 them.
+
+**14.5 The re-add criterion asked for something the standard forbids.** With
+the records in place the court answered `first/first`, and the second half is
+the host being right, not wrong. My fixture removed and re-added the listener
+on **every** dispatch, so the second dispatch also re-registered it after its
+own snapshot was taken — and a listener registered during a dispatch is not
+called by that dispatch. The listener would never run, at any depth, and my
+criterion demanded that it eventually did.
+
+Corrected: the first listener removes and re-adds only once, so the second
+dispatch begins with the re-added record already registered and calls it.
+That is the distinction the criterion was meant to draw — *not yet, but next
+time* — and it now draws it.
+
+
+## 15. A work-in-progress fix that was wrong, corrected before it was committed
+
+While narrowing the memory cost of §14.1 I replaced the per-registration
+records with a per-dispatch `Set` of removed **functions**, shared by every
+dispatch in flight. The root caught it in the working tree before it was
+committed, and it is wrong for two reasons that no criterion I had written
+would have caught:
+
+- the set is keyed by the callback alone, so removing a function from one
+  target — or from one event type — suppresses **the same function** wherever
+  else it is registered, on an ancestor or under another type, for the rest of
+  that dispatch;
+- a removal is broadcast to every dispatch in flight without asking whether
+  that dispatch's snapshot has anything to do with the target or type the
+  removal touched.
+
+Both are the same mistake: identity is the **registration**, not the callback.
+Reverted to listener records — `{ callback, removed }` in each target/type
+list — where a dispatch snapshots record identities, a removal marks exactly
+that record and drops it, a re-add creates a distinct record the snapshot does
+not contain, and the dispatch invokes the snapshot's records whose `removed`
+bit is clear. The overhead is one small object per live registration, page-
+owned under the realm limit like every other thing a page allocates, and the
+floors measure it.
+
+Two falsifiers are added, because the ones I had could not tell the two
+implementations apart:
+
+- the same callback registered on the target **and** on an ancestor: removing
+  it from the target during the dispatch must not stop the ancestor's copy
+  from running;
+- the same callback registered under two types, with a nested dispatch of the
+  second type inside a listener for the first: removing the first type's
+  registration must not suppress the second's.
