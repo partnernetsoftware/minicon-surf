@@ -99,8 +99,7 @@ because the footprint instrument is known to be noisy on this route:
 
 | # | Criterion |
 |---|---|
-| M1a | the **infrastructure**: a page that registers no listeners at all costs at most 65,536 live owner bytes more on the lifecycle build than the same page on the build before it — a cross-build number, reported with both figures |
-| M1b | the **frozen fixture's workload**: that page with its stated listeners costs at most 65,536 live owner bytes more than the same page with none. It bounds that fixture and no other page |
+| M1 | the **frozen fixture's workload**, gated: that page with its stated listeners costs at most 65,536 live owner bytes more than the same page with none. It bounds that fixture and no other page. The quiet page's **total** owner bytes are reported beside it; the fixed infrastructure lives inside that total and is given no number of its own, because the two arms cannot isolate it (§10.5) |
 | M2 | 128 document replacements leave the live owners within 65,536 bytes of the one-document baseline |
 | M3 | closing every target returns the live owners to the empty-host baseline exactly |
 
@@ -222,3 +221,41 @@ window; that a **document** listener for `load` never fires; and that the
 window listener runs after the document's own, in path order. The duplicate
 listener divergence is asserted as the divergence it is, so the record cannot
 drift back into claiming standard behaviour.
+
+## 10. Four criteria that could not prove what they claimed
+
+Recorded before the court changes and before any product code.
+
+**10.1 The duplicate-listener criterion never registered a duplicate.** It
+reused the custom event that is added once, dispatched, removed and
+dispatched again, and then asserted that the note appeared once — which is
+the *removal* criterion asserted a second time. It cannot show that a
+duplicate runs twice. It gets its own event type, the same function added
+twice, one dispatch, and an observation of **two** notes.
+
+**10.2 `onload = null` was never tested.** The criterion only replaced one
+function with another. It now assigns a function, assigns `null`, observes
+that the getter reads `null` and that a dispatch of an **independent** event
+does not reach it, and only then assigns the pair that the real `load` will
+verify — so a hand-dispatched `load` never pollutes the exactly-once count.
+
+**10.3 The "not inert" criterion passed on the old host.** It asserted only
+that a snapshot came back, which is true of a page that never ran its
+handler. It now asserts that the snapshot **contains what the handler built**.
+That the revision group also checks it is not a defence: a named criterion
+must not be able to pass vacuously.
+
+**10.4 A child's `readyState` is not observable, so nothing claims it.** §5
+says a child may pass through the same transitions, and there is no control
+surface that reports a frame's `readyState`. The court therefore proves only
+what it can see: the child frame exists, and its script and its lifecycle
+handler did not run. The record does not claim the court proved the
+transition.
+
+**10.5 The infrastructure delta cannot be isolated, so it is not faked.**
+§9.2's M1a wanted the fixed cost measured on its own, and the keep/remove arms
+cannot separate it: both build the same document in the same realm. Rather
+than invent a delta, the court **reports the quiet page's total owner bytes**
+and **gates the kept-versus-removed workload delta**, which is M1. The fixed
+infrastructure is inside the reported total and is not given a number of its
+own.

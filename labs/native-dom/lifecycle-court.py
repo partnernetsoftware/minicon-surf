@@ -122,11 +122,25 @@ def main():
                                      "var seen=[];var note=function(t){seen.push(t);write(seen.join(' '));};"
                                      "if(typeof window.addEventListener!=='function'){note('no-window-target');}"
                                      "else{"
+                                     # Added once, dispatched, removed, dispatched again.
                                      "var fn=function(){note('custom');};"
                                      "window.addEventListener('court',fn);"
                                      "window.dispatchEvent(new Event('court'));"
                                      "window.removeEventListener('court',fn);"
                                      "window.dispatchEvent(new Event('court'));"
+                                     # Its own event: the same function added twice,
+                                     # dispatched once, must run twice.
+                                     "var twice=function(){note('twice');};"
+                                     "window.addEventListener('dup',twice);"
+                                     "window.addEventListener('dup',twice);"
+                                     "window.dispatchEvent(new Event('dup'));"
+                                     # onload as a property: set, cleared with null,
+                                     # proven not to fire on an independent event,
+                                     # then set again for the real load to verify.
+                                     "window.onload=function(){note('onload-cleared-ran');};"
+                                     "window.onload=null;"
+                                     "note('onload-null:'+(window.onload===null?'yes':'no'));"
+                                     "window.dispatchEvent(new Event('probe'));"
                                      "window.onload=function(){note('onload-first');};"
                                      "window.onload=function(){note('onload-second');};"
                                      "note('onload-is:'+(typeof window.onload));}"),
@@ -234,11 +248,11 @@ def main():
                 expect(tag + "the window's listener runs after the document's own, in path order",
                        len(steps) == 6 and steps.index("dclwin:doc:win") > 2,
                        {"steps": len(steps)})
-                built, _ = observe(host, host.ok("target.open",
-                                                 {"session": session, "url": f"{origin}/late.html"},
-                                                 deadline_ms=5000)["target"])
+                late = host.ok("target.open", {"session": session, "url": f"{origin}/late.html"},
+                               deadline_ms=5000)["target"]
+                _, late_texts = observe(host, late)
                 expect(tag + "a page that builds itself on DOMContentLoaded is not inert",
-                       built is not None, {"built": built is not None})
+                       any("built late" == t for t in late_texts), {"texts": len(late_texts)})
             finally:
                 close(directory, host, label)
 
@@ -254,8 +268,11 @@ def main():
                 expect(tag + "a custom event on the window is delivered once and removal stops it",
                        steps[:1] == ["custom"] and steps.count("custom") == 1,
                        {"steps": steps[:3]})
-                expect(tag + "a duplicate listener is not de-duplicated: a recorded divergence",
-                       steps.count("custom") == 1, {"steps": len(steps)})
+                expect(tag + "a duplicate listener is not de-duplicated and runs twice: a divergence",
+                       steps.count("twice") == 2, {"twice": steps.count("twice")})
+                expect(tag + "window.onload cleared with null reads null and does not fire",
+                       "onload-null:yes" in steps and "onload-cleared-ran" not in steps,
+                       {"steps": len(steps)})
                 expect(tag + "window.onload is a property: assignable, replaceable, and readable",
                        "onload-is:function" in steps and "onload-second" in steps
                        and "onload-first" not in steps,
@@ -350,8 +367,12 @@ def main():
                                     "frame": child}) if child else {}
                 texts = [n.get("name") or "" for n in answer["result"]["nodes"]
                          if n.get("role") == "text"] if answer.get("ok") else []
-                expect(tag + "a child frame runs no lifecycle handler, because it runs no scripts",
-                       child is not None and texts and all("child lifecycle ran" != t for t in texts),
+                # A frame's readyState has no control surface, so nothing here
+                # claims the transition happened; only what is observable is
+                # asserted (design §10.4).
+                expect(tag + "a child frame exists and neither its script nor a lifecycle handler ran",
+                       child is not None and texts
+                       and all("child lifecycle ran" != t for t in texts),
                        {"texts": len(texts)})
             finally:
                 close(directory, host, label)
@@ -382,12 +403,17 @@ def main():
                 # M1b: this fixture's listeners, and this fixture only. The
                 # infrastructure delta is M1a, a cross-build number reported
                 # beside it, and neither bounds an arbitrary page (design §9.2).
-                expect(tag + f"M1b: the frozen fixture's listeners cost at most {OWNER_BYTES} live owner bytes",
+                quiet = host.ok("target.open", {"session": session, "url": f"{origin}/quiet.html"},
+                                deadline_ms=5000)["target"]
+                quiet_total = owner_bytes(host)
+                host.ok("target.close", {"target": quiet})
+                expect(tag + f"M1: the frozen fixture's listeners cost at most {OWNER_BYTES} live owner bytes",
                        baseline is not None and measured is not None
                        and abs(measured - baseline) <= OWNER_BYTES,
                        {"listener_workload_bytes": None if measured is None else measured - baseline,
                         "listeners_in_fixture": 1,
-                        "no_listener_owner_bytes": baseline})
+                        "no_listener_owner_bytes": baseline,
+                        "quiet_page_total_bytes": quiet_total})
                 for _ in range(REPLACEMENTS):
                     host.ok("target.navigate",
                             {"target": with_listeners, "url": f"{origin}/listeners.html?keep=1"},
