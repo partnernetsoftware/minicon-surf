@@ -31,7 +31,7 @@
   {
    "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
    },
    "passed": true
   },
@@ -39,6 +39,17 @@
    "check": "[system] and the base's helper still gives the observer its subtree scope",
    "detail": {
     "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a detached copy moves nothing, and appending it moves the revision",
+   "detail": {
+    "revisions": [
+     0,
      0,
      1
     ]
@@ -88,7 +99,7 @@
   {
    "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
    },
    "passed": true
   },
@@ -96,6 +107,17 @@
    "check": "[arena] and the base's helper still gives the observer its subtree scope",
    "detail": {
     "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a detached copy moves nothing, and appending it moves the revision",
+   "detail": {
+    "revisions": [
+     0,
      0,
      1
     ]
@@ -180,10 +202,10 @@
    "passed": true
   }
  ],
- "checks_passed": 21,
- "checks_total": 21,
+ "checks_passed": 23,
+ "checks_total": 23,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "744153d182945694ae949d743f4ac86bd9ca44aa347835de6ab2d22b940af0a2",
+ "host_sha256": "eaf4de9b68b6282ef43c27d056b4a2f6196825c479d834ed65b4de3930ac032d",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -206,7 +228,8 @@
   "contains",
   "closest",
   "getAttributeNames",
-  "toggleAttribute"
+  "toggleAttribute",
+  "cloneNode"
  ],
  "passed": true
 }

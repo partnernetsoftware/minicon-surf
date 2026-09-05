@@ -1282,6 +1282,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 23 of 23:
+  `cloneNode` (`labs/native-dom/clone-node-audit-0.0.1.md`), the last of the
+  five page-only additions and the only one whose failure mode was silence.
+  The audit found the good news first: this host already keeps an element's
+  IDL state apart from its attributes — a typed `value` reads back typed while
+  the attribute stays `orig` — so a copy built from attributes carries the
+  right things by construction, and listeners are not carried because they
+  live keyed by node in a closure-owned map. Ruled: shallow by default, pinned
+  by a criterion; and a node kind the walk does not model **fails the whole
+  call** with a typed error rather than being skipped, with text and element
+  named as a closed set that a future kind may not join without updating the
+  record and the court first. A detached copy moves no revision until the page
+  appends it, which the court reads from outside. **4,080 bytes of main and
+  nothing per child**: M1 unchanged at 224,458, main slack 38,240. The court
+  is 23 of 23 and 19 of 23 against the build before it, and its page fixture
+  now asserts a count of its own checks as well as their values — which is how
+  I found my expected string was short by eight. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 21 of 21:
   `toggleAttribute` (`labs/native-dom/toggle-attribute-audit-0.0.1.md`), the
   thinnest compatibility case of the series at **848 bytes of main and nothing

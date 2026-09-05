@@ -46,7 +46,7 @@
    "passed": true
   },
   {
-   "check": "[system] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "check": "[system] a detached copy moves nothing, and appending it moves the revision",
    "detail": {
     "revisions": [
      0,
@@ -55,6 +55,17 @@
     ]
    },
    "passed": false
+  },
+  {
+   "check": "[system] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "detail": {
+    "revisions": [
+     0,
+     1,
+     1
+    ]
+   },
+   "passed": true
   },
   {
    "check": "[system] a child realm still answers a snapshot, selectors and all",
@@ -103,7 +114,7 @@
    "passed": true
   },
   {
-   "check": "[arena] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "check": "[arena] a detached copy moves nothing, and appending it moves the revision",
    "detail": {
     "revisions": [
      0,
@@ -112,6 +123,17 @@
     ]
    },
    "passed": false
+  },
+  {
+   "check": "[arena] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "detail": {
+    "revisions": [
+     0,
+     1,
+     1
+    ]
+   },
+   "passed": true
   },
   {
    "check": "[arena] a child realm still answers a snapshot, selectors and all",
@@ -180,10 +202,10 @@
    "passed": true
   }
  ],
- "checks_passed": 17,
- "checks_total": 21,
+ "checks_passed": 19,
+ "checks_total": 23,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "1e472770aa50d0f97879e813be0560d1f672be67e314869c5189512fb2c7144c",
+ "host_sha256": "744153d182945694ae949d743f4ac86bd9ca44aa347835de6ab2d22b940af0a2",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -206,7 +228,8 @@
   "contains",
   "closest",
   "getAttributeNames",
-  "toggleAttribute"
+  "toggleAttribute",
+  "cloneNode"
  ],
  "passed": false
 }

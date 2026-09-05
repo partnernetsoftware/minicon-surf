@@ -125,7 +125,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:52896/about.html"
+        "url": "http://127.0.0.1:60105/about.html"
       },
       "passed": true
     },
@@ -193,7 +193,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:52896/notfound"
+          "url": "http://127.0.0.1:60105/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -373,7 +373,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:52896/about.html"
+        "url": "http://127.0.0.1:60105/about.html"
       },
       "passed": true
     },
@@ -441,7 +441,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:52896/notfound"
+          "url": "http://127.0.0.1:60105/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -501,17 +501,17 @@
   "checks_total": 62,
   "footprint_bytes": {
     "arena": {
-      "empty": 1950032,
-      "post_close": 3031376,
-      "two_fixture_targets_live": 3195264
+      "empty": 1982800,
+      "post_close": 2933072,
+      "two_fixture_targets_live": 3309952
     },
     "system": {
       "empty": 1966416,
-      "post_close": 4800848,
-      "two_fixture_targets_live": 3883344
+      "post_close": 5046608,
+      "two_fixture_targets_live": 3998032
     }
   },
-  "host_sha256": "744153d182945694ae949d743f4ac86bd9ca44aa347835de6ab2d22b940af0a2",
+  "host_sha256": "eaf4de9b68b6282ef43c27d056b4a2f6196825c479d834ed65b4de3930ac032d",
   "losses": [
     "child frames are bounded, same-origin, depth one and script-free: this court's fixtures embed none, so every target here is one main frame; the child-frame court owns those criteria",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",
