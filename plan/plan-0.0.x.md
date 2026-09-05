@@ -1282,6 +1282,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: the selector
+  engine's error names (`labs/native-dom/selector-error-name-audit-0.0.1.md`).
+  Measured, not read: a page catching a selector refusal reads `e.name ===
+  "Error"`, because the word `SyntaxError` is only a message prefix, while
+  `classList`, the dispatch guard and `localStorage` in the same host set
+  `e.name` properly — three conventions, one host. The engine already ships a
+  real `DOMException` with the standard `name`, the legacy `code` (12 for
+  `SyntaxError`, 8 for `NotFoundError`), a read-only `name` and its own
+  `[object DOMException]` tag, so the standard option costs **+304 bytes per
+  child** (M1 224,762, M2 1,571,836) against **+640** for a hand-rolled named
+  `Error` — the standard shape is the cheaper one, and both sit ~21,000 bytes
+  under the unchanged floors. Nothing in the host depends on the shape: no
+  `.rs` file reads `.name`, and no selector crosses the boundary at all. Two
+  risks recorded: the global constructor is page-replaceable and must be
+  captured at base load (today's `new Error` is exposed the same way), and a
+  `DOMException` blinds the host's own diagnostic, because rquickjs's
+  `as_exception()` returns `None` and `engine_error` falls back to a
+  contentless string. **A separate and more urgent finding came out of the
+  same measurement** and is recorded unfixed in §7: an uncaught page throw puts
+  its message verbatim into `details.engine_error`, so a page that builds a
+  string from a form value and throws leaks that value into a control error —
+  measured, general to any `throw`, and against the standing rule. It needs a
+  host-side ruling of its own and must not be repaired as a side effect of the
+  error class. Both throwaway candidate builds were discarded with their
+  worktree. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 23 of 23: the
   clone copies internally (`labs/native-dom/clone-node-audit-0.0.1.md` §11),
   the first half of the attribute-name validation ruling. **Copying is not
@@ -1299,7 +1324,13 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   since nothing validates yet, so I checked that it discriminates rather than
   assuming: against a throwaway build carrying a validator beside the old
   re-authoring clone it fails 21 of 23 on both allocators, and that receipt is
-  labelled as belonging to no commit. The unified validator itself stays
+  labelled as belonging to no commit. Provenance correction, kept because the
+  record should show it: the approval for this push named the range
+  `d730734..8cc0200`, but `d730734` was already eighteen commits back on the
+  remote; `origin/main` was verified at `78bd78a` immediately before the push,
+  so the fast-forward that ran was `78bd78a..8cc0200` — the same three
+  reviewed commits, with nothing extra re-pushed — and the reviewer confirmed
+  that reading. The unified validator itself stays
   **design-pending** — no `setAttribute`, `dataset` or `classList` vocabulary
   moved in this slice. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 23 of 23:
