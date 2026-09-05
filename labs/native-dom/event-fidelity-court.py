@@ -148,9 +148,11 @@ probe('preset_stop', function(){
 });
 probe('non_event', function(){
   var ran='no'; t.addEventListener('r3', function(){ ran='yes'; });
+  // A real TypeError, not an Error wearing the name: a page that tests with
+  // instanceof must see what a browser shows it.
   var thrown='none';
   try { t.dispatchEvent({ type: 'r3' }); thrown='returned'; }
-  catch (e) { thrown = e.name; }
+  catch (e) { thrown = e.name + ':' + String(e instanceof TypeError); }
   return thrown + ',' + ran;
 });
 probe('type_is_a_string', function(){
@@ -323,7 +325,7 @@ probe('window_hop', function(){
                 expect(tag + "a stop flag set before a dispatch holds for it, and is cleared by its end",
                        said.get("preset_stop") == "none/ran", {"said": said.get("preset_stop")})
                 expect(tag + "dispatching something that is not an event is refused, not reported",
-                       said.get("non_event") == "TypeError,no", {"said": said.get("non_event")})
+                       said.get("non_event") == "TypeError:true,no", {"said": said.get("non_event")})
                 expect(tag + "a listener type is a string, whatever the page passed",
                        said.get("type_is_a_string") == "numeric,string",
                        {"said": said.get("type_is_a_string")})

@@ -175,11 +175,7 @@
     const state = eventState.get(event);
     // Dispatching something that is not an event is refused: answering `true`
     // would report a dispatch that never happened.
-    if (!state) {
-      const error = new Error("the argument is not an event");
-      error.name = "TypeError";
-      throw error;
-    }
+    if (!state) throw new TypeError("the argument is not an event");
     // An event already in flight is refused before anything is written, so
     // the dispatch in progress is not corrupted — and a handler that
     // dispatches the event it was handed no longer recurses until the stack
