@@ -24,6 +24,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import threading
@@ -74,6 +75,10 @@ def main():
 
     network = RETENTION.load_network_module()
     requested = []
+    # A reload rebuilds the document from scratch, so no in-page flag can make
+    # one one-shot: the second response for this path carries no script, and
+    # the court measures a single rebuild rather than the chain cap (§13).
+    reload_served = []
 
     class Handler(network.Handler):
         def do_GET(self):
@@ -85,6 +90,13 @@ def main():
                 step = int(path.rsplit("-", 1)[1].partition(".")[0])
                 return self.reply(200, page(f"Chain {step}",
                                             f"location.href='/chain-{step + 1}.html';"))
+            if path == "/reload-call.html":
+                first = not reload_served
+                reload_served.append(path)
+                return self.reply(200, page(
+                    "Reload call",
+                    "document.addEventListener('DOMContentLoaded',function(){"
+                    "location.reload();});" if first else "write('rebuilt');"))
             pages = {
                 # The defect itself: an assignment that must commit.
                 "/assign-href.html": page("Assign href",
@@ -96,10 +108,7 @@ def main():
                 "/replace-call.html": page("Replace call",
                                            "document.addEventListener('DOMContentLoaded',"
                                            "function(){location.replace('/landed.html');});"),
-                "/reload-call.html": page("Reload call",
-                                          "document.addEventListener('DOMContentLoaded',"
-                                          "function(){if(!document.body.__done){"
-                                          "document.body.__done=1;location.reload();}});"),
+
                 # Three writes in one turn: only the last may be fetched.
                 "/last-write.html": page("Last write",
                                          "document.addEventListener('DOMContentLoaded',function(){"
@@ -206,13 +215,17 @@ def main():
                            {"history": (live or {}).get("history")})
                     if answer.get("ok"):
                         host.ok("target.close", {"target": answer["result"]["target"]})
+                del reload_served[:]
+                del requested[:]
                 answer = open_page(host, session, "/reload-call.html")
                 live = state(host, answer["result"]["target"]) if answer.get("ok") else None
                 expect(tag + "reload rebuilds the same URL and leaves history alone",
                        live is not None and (live.get("url") or "").endswith("/reload-call.html")
+                       and requested.count("/reload-call.html") == 2
                        and (live.get("history") or {}).get("length") == 1
                        and (live.get("history") or {}).get("position") == 0,
-                       {"history": (live or {}).get("history")})
+                       {"history": (live or {}).get("history"),
+                        "fetches": requested.count("/reload-call.html")})
             finally:
                 close(directory, host, label)
 
@@ -341,8 +354,26 @@ def main():
                 close(directory, host, label)
 
             # 8 and 9: the caller wins, and the slot is empty between operations.
+            # The seam is doubly constrained: it is accepted only inside the
+            # private court mechanism, so the court must also hand the host a
+            # court file, and that file must be gone when the host is (§14).
+            seam_directory = tempfile.TemporaryDirectory(prefix="minicon-surf-pagenav-seam-")
+            seam_file = Path(seam_directory.name) / "court.ndjson"
+            # A host asked to hold an intent without the private court file
+            # must refuse before it serves anything: this is the fail-closed
+            # falsifier, and it fails if a plain host ever accepts the knob.
+            closed = subprocess.run(
+                [args.binary, "serve", "--stdio", "--fixture-root", str(RETENTION.FIXTURE_ROOT),
+                 "--config-dir", str(Path(seam_directory.name) / "closed"),
+                 "--allow-origin", origin, "--court-hold-intent", "1"],
+                input="", capture_output=True, text=True, timeout=30,
+                env={k: v for k, v in os.environ.items() if k != VISIBLE_ENV})
+            expect(tag + "the seam is refused without the private court file",
+                   closed.returncode != 0 and not closed.stdout.strip(),
+                   {"code": closed.returncode, "answered": len(closed.stdout)})
             directory, host, label = group("caller-override",
-                                           extra=("--court-hold-intent", "1"))
+                                           extra=("--court-hold-intent", "1",
+                                                  "--surface-court-file", str(seam_file)))
             try:
                 answer = host.call("profile.create", {"persistence": "ephemeral"})
                 if not answer.get("ok"):
@@ -353,6 +384,12 @@ def main():
                     session = host.ok("session.open", {"profile": profile})["session"]
                     opened = open_page(host, session, "/late-intent.html")
                     target = opened["result"]["target"] if opened.get("ok") else None
+                    # `memory.report` is not a timer boundary, so the intent
+                    # this page raises from a timer needs one observation to
+                    # exist at all; the seam then holds what that boundary
+                    # would have consumed (§14).
+                    if target:
+                        state(host, target)
                     before = counters(host)
                     if target:
                         host.ok("target.navigate", {"target": target, "url": f"{origin}/quiet.html"},
@@ -368,8 +405,17 @@ def main():
                     expect(tag + "and the discarded address is nowhere in the counters",
                            "landed" not in json.dumps(after) and "http" not in json.dumps(after),
                            {"counters": sorted(after)})
+                    expect(tag + "the held intent was pending, and the seam is named nowhere",
+                           before.get("pending") == 1 and after.get("pending") == 0
+                           and "hold" not in json.dumps(state(host, target) or {}),
+                           {"pending": [before.get("pending"), after.get("pending")]})
             finally:
                 close(directory, host, label)
+                # The private court file belongs to the host's life, not to the
+                # court's: when the host is gone, so is the file.
+                expect(tag + "the private court file is gone when the host is",
+                       not seam_file.exists(), {"court_file": seam_file.exists()})
+                seam_directory.cleanup()
 
             # 9b, 10, 11: the empty slot, secrecy, and the owners.
             directory, host, label = group("owners")

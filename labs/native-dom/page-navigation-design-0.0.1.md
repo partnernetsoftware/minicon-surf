@@ -334,3 +334,100 @@ Corrected before any product code: a replace-like intent asserts
 `length == 1` and `position == 0`, a reload asserts the same, and the
 post-lifecycle `href` setter asserts `length == 2` and `position == 1`. The
 history's shape is what the host reports, not what the criterion assumed.
+
+
+## 13. Three court corrections found while running it
+
+The frozen court judged the first implementation at 32/42, then 38/42, then
+40/42. Three of the remaining failures were the court's, not the host's, and
+each is recorded here before the code that answers it.
+
+**13.1 A reload fixture that could not stop.** `/reload-call.html` guarded
+its `location.reload()` with a flag on `document.body`. A reload rebuilds the
+document from scratch, so the flag is gone every time and the page reloaded
+forever until the build chain hit its cap — the criterion measured
+`MAX_SCRIPT_CHAIN`, not one rebuild, and no correct host could pass it. The
+fixture is now one-shot **at the server**: the first response for that path
+carries the reload script and the second carries none. The criterion also
+asserts the path was fetched exactly twice, so a host that never reloads
+fails instead of passing on an unchanged URL.
+
+**13.2 A hold that nothing could have raised.** The caller-override group
+opened a page whose intent comes from a timer, then read `memory.report`.
+`memory.report` is not a timer boundary — `target.inspect`, `target.snapshot`,
+`target.act` and `target.wait` are — so at that moment nothing had run, the
+slot was empty, and the criterion measured the absence of a feature rather
+than the discard. One observation now precedes the counters.
+
+**13.3 The seam had one criterion where it needed three.** The frozen court
+asked only that the host accept `--court-hold-intent`. The ruling requires
+the seam to be *doubly* constrained, and acceptance alone cannot show that.
+Two criteria are added: a host started with the knob and **no**
+`--surface-court-file` must refuse before it serves anything (measured as a
+non-zero exit with an empty stdout), and the private court file must be gone
+once the host is. A fourth criterion asserts the held intent was actually
+pending (`pending == 1` before the override, `0` after) and that no ordinary
+result surface names the seam.
+
+The caps did not move. 42 criteria became 50; the four new ones are all
+falsifiers for the ruling's fail-closed condition.
+
+
+## 14. The seam's fail-closed shape, and where the court log is created
+
+`--court-hold-intent 1` is accepted only when `--surface-court-file` is also
+given: otherwise the host prints one line and exits 64 **before serving**, so
+no operation can reach it. The knob suppresses exactly one consumption; the
+intent it would have committed is taken into a host-owned slot instead, which
+is what `pending` reports and what the next explicit `target.navigate`,
+`target.reload` or `target.traverse` discards as `caller_override`. In
+ordinary operation that slot is always empty at the end of an operation,
+because every intent is consumed at a boundary inside the operation that
+raised it.
+
+The private log is now created **after** every configuration check that can
+exit — pinned roots, the realm-allocation conflict, the visible-window
+refusal. `CourtLog`'s destructor removes the file, and a `process::exit` does
+not run destructors, so creating it last is what makes "removed on every exit
+path" true rather than aspirational. A normal return, an end of input and an
+unwinding panic all take the file with them; a `SIGKILL` does not, and no
+in-process mechanism can make it.
+
+
+## 15. One frozen memory cap, and the single narrowing pre-registered for it
+
+Measured on the same court, same binary copy, both allocators:
+
+| criterion | frozen cap | HEAD before the slice | with the slice |
+| --- | --- | --- | --- |
+| child-frame M1, one child | 262144 | 255226 | 262970 |
+| child-frame M2, seven children | 1835008 | 1784300 | 1838508 |
+
+The slice costs about 7.7 KiB of live owner bytes per child realm, and M1 had
+6.9 KiB of headroom. **The caps do not move.** The cost is narrowed instead,
+and this is the only candidate, registered before the code exists:
+
+*The change.* `__mcsLocation(parts, live)` gains a second argument. A
+**script-running** realm — the main document's — receives the accessor form:
+fourteen closures over the committed parts, the setters, `assign`, `replace`,
+`reload` and the intent slot they write. A **script-free** realm — every child
+frame — receives exactly the plain immutable data object it received before
+this slice, with no setters, no `assign`/`replace`/`reload` and no slot.
+
+*The semantic proof.* A child frame is built script-free by construction:
+`build_target`'s child loop parses `text/html`, seeds the tree and the
+location and never evaluates page script, and the design forbids child
+scripts. No page code runs in that realm, so no page code can read those
+getters, call those methods, or raise an intent there. The two forms are
+therefore indistinguishable to every observer that exists — the difference is
+unobservable, not hidden. A host-side attempt to take an intent from a child
+realm is already impossible: intents are taken from the main realm's
+capability alone. Nothing on a script-running realm changes, so no lie is
+introduced where a page can look.
+
+*The expected recovery.* Removing the per-child accessor form should return
+each child to its pre-slice cost: M1 back to about 255 KiB (under 262144) and
+M2 to about 1.79 MiB (under 1835008), leaving the main realm's cost as the
+slice's only memory change. If either cap still fails after this one change,
+the slice stops and is reported; there is no second optimization and no
+amended cap.
