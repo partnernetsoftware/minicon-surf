@@ -1282,6 +1282,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 23 of 23: the
+  clone copies internally (`labs/native-dom/clone-node-audit-0.0.1.md` §11),
+  the first half of the attribute-name validation ruling. **Copying is not
+  authoring**: the clone writes the element's own attribute map directly, the
+  way the parser's own build does, instead of replaying every attribute
+  through `setAttribute`. It is taken before the validator exists rather than
+  after it breaks something — the validation audit measured that a validating
+  `setAttribute` makes an ordinary parsed element **throw on clone**, because
+  a parsed document legitimately holds names like `1bad` and `weird:name` that
+  authoring would reject. The fix costs nothing; it removes a call. M1 is
+  unchanged at **224,457**, M2 **1,569,707** against unchanged floors of
+  245,760 and 1,720,320, and main-only slack is 38,496 inside 65,536, with
+  sixteen receipts rerun on the binary. The criterion was frozen one commit
+  ahead of the code and **passes on every committed build by construction**,
+  since nothing validates yet, so I checked that it discriminates rather than
+  assuming: against a throwaway build carrying a validator beside the old
+  re-authoring clone it fails 21 of 23 on both allocators, and that receipt is
+  labelled as belonging to no commit. The unified validator itself stays
+  **design-pending** — no `setAttribute`, `dataset` or `classList` vocabulary
+  moved in this slice. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 23 of 23:
   `cloneNode` (`labs/native-dom/clone-node-audit-0.0.1.md`), the last of the
   five page-only additions and the only one whose failure mode was silence.

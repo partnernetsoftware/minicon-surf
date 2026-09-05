@@ -586,7 +586,7 @@
  "checks_passed": 62,
  "checks_total": 62,
  "court": "native-dom bounded Event fidelity (control 0.0.2)",
- "host_sha256": "eaf4de9b68b6282ef43c27d056b4a2f6196825c479d834ed65b4de3930ac032d",
+ "host_sha256": "4a5836f43b3814ca39cea206609fe5045ab0565067fae2455ae3d0c737b7cf66",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the base Event and dispatcher are faithful",

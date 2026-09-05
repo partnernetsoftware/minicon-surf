@@ -42,9 +42,13 @@ __mcsInternals((internals) => {
       copy = document.createTextNode(node.data);
     } else if (node.nodeType === ELEMENT_NODE) {
       copy = document.createElement(node.localName);
+      // Copying is not authoring: the attributes go into the element's own
+      // map, exactly as the parser's own build does, so a copy carries what
+      // the document holds — including a name html5ever accepted and
+      // authoring would not — and never re-decides whether it was allowed.
       const names = node.getAttributeNames();
       for (let i = 0; i < names.length; i += 1) {
-        copy.setAttribute(names[i], node.getAttribute(names[i]));
+        copy.__attrs.set(names[i], node.getAttribute(names[i]));
       }
     } else {
       throw new TypeError("cloneNode: this host does not model node type " + node.nodeType);

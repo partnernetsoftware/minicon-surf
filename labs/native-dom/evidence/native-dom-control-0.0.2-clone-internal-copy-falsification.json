@@ -1,4 +1,5 @@
 {
+ "annotation": "this receipt is the element-view court run against a throwaway build that is in no commit: it carries a Name-production validator on setAttribute together with the clone that still re-authors through setAttribute. It is recorded because the clone criterion cannot fail on any committed build \u2014 nothing validates yet \u2014 so this is the only build that shows it discriminates. Only this annotation was added by hand; no criterion, measurement or check result was changed.",
  "checks": [
   {
    "check": "every moved member is declared nowhere in the base",
@@ -31,9 +32,9 @@
   {
    "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": null
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] and the base's helper still gives the observer its subtree scope",
@@ -99,9 +100,9 @@
   {
    "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": null
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] and the base's helper still gives the observer its subtree scope",
@@ -202,10 +203,10 @@
    "passed": true
   }
  ],
- "checks_passed": 23,
+ "checks_passed": 21,
  "checks_total": 23,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "4a5836f43b3814ca39cea206609fe5045ab0565067fae2455ae3d0c737b7cf66",
+ "host_sha256": "b91b42c3d4fe7d5316fd31e079068004b578635298583b1e8a864b8add361f38",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -231,5 +232,5 @@
   "toggleAttribute",
   "cloneNode"
  ],
- "passed": true
+ "passed": false
 }
