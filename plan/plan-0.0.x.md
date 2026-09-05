@@ -1162,6 +1162,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Proposed, design only, nothing implemented and nothing measured:
+  closing the pending-job deadline escape
+  (`labs/native-dom/job-deadline-design-0.0.1.md`). The mechanism is
+  established rather than guessed: `eval_staged` removes the interrupt
+  handler **before** it drains the queued jobs, and `drain_jobs` checks the
+  deadline only between jobs, so a single job that never returns runs forever
+  with nothing to stop it. The engine is not the problem — a scratch build
+  that moved the uninstall to after the drain interrupted the same page's
+  runaway job at exactly its deadline and answered the next request normally,
+  where the shipped host hangs indefinitely, so `JS_ExecutePendingJob` does
+  honour the runtime interrupt and no API constraint stands in the way. That
+  probe exposed a second defect: with the interrupt restored, the drain
+  swallowed the interrupted job's error and the operation answered `ok`, so
+  the caller was told a document built normally while the page's own code had
+  been cut off mid-run. The design keeps the handler installed across the
+  drain, distinguishes the drain's three outcomes, fails the operation with
+  `deadline_exceeded` only when a job was interrupted, counts a job that
+  merely threw and continues, and adds no count bound because the request's
+  deadline is the bound and a count would cut legitimate chains. Promise and
+  queueMicrotask stay, ordering stays, no background thread and no virtual
+  time. The frozen court supervises every host it starts, killing and reaping
+  one that misses a wall-clock limit and recording that timeout as the
+  falsification rather than waiting. Three decisions wait on the root. G1, G3,
+  P6 and G6 stay open.
 - [~] Implemented and fully qualified on the native route, court 68 of 68
   against every frozen group and criterion: a bounded timer slice
   (`labs/native-dom/timer-design-0.0.1.md`). The audit's finding is that the
