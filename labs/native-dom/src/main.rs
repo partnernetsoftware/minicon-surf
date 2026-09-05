@@ -204,7 +204,18 @@ const MAX_FIXTURE_BYTES: u64 = 1_048_576;
 const REALM_MEMORY_LIMIT: usize = 16 * 1024 * 1024;
 const REALM_STACK_LIMIT: usize = 512 * 1024;
 const MAX_NETWORK_ROUNDS: usize = 64;
-const DOM_SHIM_JS: &str = include_str!("dom_shim.js");
+/// The base every realm compiles, and the page surface only a realm that
+/// runs script compiles. A child frame gets the base and then the seal
+/// below; nothing else is ever evaluated to build it.
+const DOM_SHIM_BASE_JS: &str = include_str!("dom_shim_base.js");
+const DOM_SHIM_MAIN_JS: &str = include_str!("dom_shim_main.js");
+/// A realm that gets no extension keeps no door: the host removes the base's
+/// one-shot handle itself, before anything else is evaluated in that realm,
+/// and refuses the realm if it is still there afterwards.
+const SEAL_JS: &str =
+    r#"(() => { delete window.__mcsInternals; return String(typeof window.__mcsInternals); })()"#;
+/// Court-only: whether the handle is present or enumerable in a realm.
+const REALM_PROBE_JS: &str = r#"(() => String(typeof window.__mcsInternals !== "undefined") + ":" + String(Object.keys(window).indexOf("__mcsInternals") >= 0))()"#;
 const OPERATIONS: &[&str] = &[
     "profile.create",
     "profile.list",
@@ -330,13 +341,13 @@ impl IntentCounters {
 }
 
 /// The realm-side location seed for a document, used by the main frame and by
-/// every child frame so an embedded document reports its own address. `live`
-/// is true only where page script runs: a script-free child realm is seeded
-/// with the plain object, which no code in that realm can tell apart from the
-/// accessor form and which costs the owners far less (§15).
-fn location_script(url: &Url, live: bool) -> String {
+/// every child frame so an embedded document reports its own address. Which
+/// form answers it is the realm's: a base-only realm installs the plain
+/// object, and the main extension replaces that with the accessor form and
+/// the intent slot behind it.
+fn location_script(url: &Url) -> String {
     format!(
-        "__mcsLocation({}, {live})",
+        "__mcsLocation({})",
         json!({
             "href": url.as_str(),
             "origin": url.origin().ascii_serialization(),
@@ -2621,6 +2632,9 @@ struct Host {
     /// file): make exactly the first take answer as a failed bridge without
     /// evaluating anything, which is the case that leaves the slot full.
     court_break_intent_take: bool,
+    /// Court-only (`--court-realm-probe 1`, and only with a court file):
+    /// report whether the internals handle survives in any live realm.
+    court_realm_probe: bool,
     /// The one sink every realm this host builds shares. Because a drain adds
     /// to it where the work happens, a failed build, a replaced main or child
     /// document and a closed target all keep what they did.
@@ -3859,6 +3873,73 @@ impl Host {
     /// Read and clear the realm's intent slot. Called only at a boundary:
     /// after an evaluation and its job drain, never between an activation's
     /// two phases and never inside a lifecycle step.
+    /// Court-only (`--court-realm-probe 1`, and only with a court file): ask
+    /// every live realm whether the base's internals handle is still there or
+    /// enumerable. Counts and fixed keys only — no page data can reach this,
+    /// and without the private court file the host refuses to start at all.
+    fn realm_probe(&self) -> Option<Value> {
+        if !self.court_realm_probe {
+            return None;
+        }
+        // The probe is court-only and answers inside its own bounded slice,
+        // never the caller's remaining deadline.
+        let deadline = Instant::now() + Duration::from_millis(250);
+        let ids: Vec<String> = self.targets.keys().cloned().collect();
+        let mut probed = 0usize;
+        let mut main_present = false;
+        let mut main_enumerable = false;
+        let mut children_present = 0usize;
+        let mut children_enumerable = 0usize;
+        for id in ids {
+            let Some(target) = self.targets.get(&id) else {
+                continue;
+            };
+            let realms: Vec<&Realm> = std::iter::once(&target.realm)
+                .chain(target.children.iter().map(|child| &child.realm))
+                .collect();
+            for (index, realm) in realms.into_iter().enumerate() {
+                let answer = realm
+                    .eval(REALM_PROBE_JS, deadline, &id)
+                    .unwrap_or_else(|_| "true:true".to_owned());
+                probed += 1;
+                let present = answer.starts_with("true");
+                let enumerable = answer.ends_with("true");
+                if index == 0 {
+                    main_present |= present;
+                    main_enumerable |= enumerable;
+                } else {
+                    children_present += usize::from(present);
+                    children_enumerable += usize::from(enumerable);
+                }
+            }
+        }
+        Some(json!({
+            "realms_probed": probed,
+            "main_present": main_present,
+            "main_enumerable": main_enumerable,
+            "children_present": children_present,
+            "children_enumerable": children_enumerable,
+        }))
+    }
+
+    /// Remove the base's one-shot internals handle from a realm that gets no
+    /// main extension, before anything else is evaluated in it, and refuse
+    /// the realm if the handle survives. A capability no page can reach today
+    /// is still a capability, and this is the only path that would leave one.
+    fn seal_realm(realm: &Realm, deadline: Instant, id: &str) -> Result<(), ControlError> {
+        let answer = realm.eval(SEAL_JS, deadline, id)?;
+        if answer != "undefined" {
+            return Err(ControlError::new(
+                "internal",
+                "the realm kept its internals handle",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({"reason": "realm_not_sealed"})));
+        }
+        Ok(())
+    }
+
     /// Take whatever the realm holds. Three outcomes are three different
     /// things and are never conflated (§17.1): no intent, an intent, or a
     /// failure. An evaluation that failed propagates as itself — the
@@ -4948,14 +5029,15 @@ impl Host {
         drop(document);
 
         let realm = Realm::new(self.realm_allocation, std::rc::Rc::clone(&self.jobs))?;
-        realm.eval(DOM_SHIM_JS, deadline, id)?;
+        realm.eval(DOM_SHIM_BASE_JS, deadline, id)?;
+        realm.eval(DOM_SHIM_MAIN_JS, deadline, id)?;
         let seed = format!(
             "__mcsSeed({})",
             serde_json::to_string(&tree).expect("tree serializes")
         );
         realm.eval(&seed, deadline, id)?;
         if let Some(base_url) = &base {
-            realm.eval(&location_script(base_url, true), deadline, id)?;
+            realm.eval(&location_script(base_url), deadline, id)?;
             io.origin = base_url.origin().ascii_serialization();
             io.document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
         } else {
@@ -5088,7 +5170,8 @@ impl Host {
                         false,
                     ));
                 }
-                realm.eval(DOM_SHIM_JS, deadline, id)?;
+                realm.eval(DOM_SHIM_BASE_JS, deadline, id)?;
+                Self::seal_realm(&realm, deadline, id)?;
                 realm.eval(
                     &format!(
                         "__mcsSeed({})",
@@ -5097,7 +5180,7 @@ impl Host {
                     deadline,
                     id,
                 )?;
-                realm.eval(&location_script(&response.url, false), deadline, id)?;
+                realm.eval(&location_script(&response.url), deadline, id)?;
                 realm.eval("__mcsComplete()", deadline, id)?;
                 realm.eval(INSTALL_JS, deadline, id)?;
                 Ok(realm)
@@ -5849,7 +5932,8 @@ impl Host {
         drop(parsed);
         let built = (|| -> Result<Realm, ControlError> {
             let realm = Realm::new(allocation, std::rc::Rc::clone(&jobs))?;
-            realm.eval(DOM_SHIM_JS, deadline, id)?;
+            realm.eval(DOM_SHIM_BASE_JS, deadline, id)?;
+            Self::seal_realm(&realm, deadline, id)?;
             realm.eval(
                 &format!(
                     "__mcsSeed({})",
@@ -5858,7 +5942,7 @@ impl Host {
                 deadline,
                 id,
             )?;
-            realm.eval(&location_script(&response.url, false), deadline, id)?;
+            realm.eval(&location_script(&response.url), deadline, id)?;
             realm.eval("__mcsComplete()", deadline, id)?;
             realm.eval(INSTALL_JS, deadline, id)?;
             Ok(realm)
@@ -6801,6 +6885,7 @@ impl Host {
     }
 
     fn memory_report(&self) -> Value {
+        let realm_probe = self.realm_probe();
         // Document owners count every frame's document, children included.
         let fixture_bytes: usize = self.targets.values().map(Target::document_bytes).sum();
         let frames_skipped_total: u64 = self.targets.values().fold(0u64, |total, t| {
@@ -6883,6 +6968,7 @@ impl Host {
                     "frame":self.surface_frame_owner(),
                     "process":self.surface_stats.to_json(self.surface_generation, self.surfaces.len())},
                 "script_realms":{"objects":frame_objects,"malloc_bytes":realm_bytes,"memory_limit_bytes":REALM_MEMORY_LIMIT,"dedicated_zones":zones,"dedicated_arenas":arenas},
+                "realm_probe":realm_probe,
                 "network":{"fetches":fetches,"bytes":network_bytes,"denied":denied,"limits":{"redirects":net::MAX_REDIRECTS,"response_bytes":net::MAX_RESPONSE_BYTES,"per_fetch_ms":net::PER_FETCH_TIMEOUT.as_millis() as u64,"pending_per_turn":net::MAX_PENDING_PER_TURN,"fetches_per_document":net::MAX_FETCHES_PER_DOCUMENT,"bytes_per_document":net::MAX_BYTES_PER_DOCUMENT,"allowed_origins":self.policy.allowed_origins.len()},"tls":self.tls_owner()},
             },
             "allocator":{"realm_allocation":self.realm_allocation.name(),"realm_zone":self.realm_allocation == RealmAllocation::Zone,"realm_arena":self.realm_allocation == RealmAllocation::Arena,"realm_arena_reserved_bytes":REALM_ARENA_BYTES,"rust_global":"system","zones_destroyed":ZONES_DESTROYED.load(std::sync::atomic::Ordering::Relaxed),"zone_blocks_leaked_total":ZONE_BLOCKS_LEAKED.load(std::sync::atomic::Ordering::Relaxed),"arenas_unmapped":arenas_unmapped,"arena_blocks_leaked_total":arena_leaked},
@@ -6986,6 +7072,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut court_lifecycle_abuse = false;
     let mut court_hold_intent = false;
     let mut court_break_intent_take = false;
+    let mut court_realm_probe = false;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -7038,6 +7125,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             "--court-lifecycle-abuse" => court_lifecycle_abuse = pair[1] == "1",
             "--court-hold-intent" => court_hold_intent = pair[1] == "1",
             "--court-break-intent-take" => court_break_intent_take = pair[1] == "1",
+            "--court-realm-probe" => court_realm_probe = pair[1] == "1",
             "--surface-court-snapshot-arm" => {
                 if !matches!(
                     pair[1].as_str(),
@@ -7074,6 +7162,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     if court_break_intent_take && surface_court_path.is_none() {
         eprintln!("--court-break-intent-take: refused without --surface-court-file");
+        std::process::exit(64);
+    }
+    if court_realm_probe && surface_court_path.is_none() {
+        eprintln!("--court-realm-probe: refused without --surface-court-file");
         std::process::exit(64);
     }
     // The https slice exists only with explicitly pinned public roots; the
@@ -7150,6 +7242,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         held_intent: None,
         court_hold_intent,
         court_break_intent_take,
+        court_realm_probe,
         jobs: std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
         ended_frames: Vec::new(),
         realms_retired_total: 0,
@@ -7503,7 +7596,12 @@ mod zone_tests {
         )
         .unwrap();
         let deadline = Instant::now() + Duration::from_secs(5);
-        realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
+        realm
+            .eval(DOM_SHIM_BASE_JS, deadline, "target_test")
+            .unwrap();
+        realm
+            .eval(DOM_SHIM_MAIN_JS, deadline, "target_test")
+            .unwrap();
         realm
             .eval(
                 "__mcsSeed([{e:'html',a:{},c:[{e:'body',a:{},c:[{e:'h1',a:{},c:[{x:'x'}]}]}]}]); \
@@ -7547,7 +7645,12 @@ mod arena_realm_tests {
 
     fn grow_until_throw(realm: &Realm) {
         let deadline = Instant::now() + Duration::from_secs(20);
-        realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
+        realm
+            .eval(DOM_SHIM_BASE_JS, deadline, "target_test")
+            .unwrap();
+        realm
+            .eval(DOM_SHIM_MAIN_JS, deadline, "target_test")
+            .unwrap();
         let over = realm.eval(
             "globalThis.big = []; while (true) big.push(new Array(4096).fill(1));",
             deadline,
@@ -7597,7 +7700,12 @@ mod arena_realm_tests {
         )
         .unwrap();
         let deadline = Instant::now() + Duration::from_secs(5);
-        realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
+        realm
+            .eval(DOM_SHIM_BASE_JS, deadline, "target_test")
+            .unwrap();
+        realm
+            .eval(DOM_SHIM_MAIN_JS, deadline, "target_test")
+            .unwrap();
         realm
             .eval(
                 "__mcsSeed([{e:'html',a:{},c:[{e:'body',a:{},c:[{e:'h1',a:{},c:[{x:'x'}]}]}]}]); \
