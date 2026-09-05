@@ -99,13 +99,19 @@ def main():
                     '<p id="m">start</p><p id="t">target</p>'),
                 # 4: a turn that changes nothing must not advance the
                 # revision; the same page changes something on demand.
+                # The no-op turn must touch nothing at all, so what it
+                # learned is written on the turn after it: the first boundary
+                # is pure no-op calls, and the text that arrives on the second
+                # is what proves they ran rather than threw.
                 "/quiet.html": page(
                     "var t=document.getElementById('t');"
                     "t.className='keep';"
-                    "window.__court=function(){"
-                    "t.classList.remove('absent');t.classList.add('keep');"
-                    "return t.getAttribute('class');};"
-                    "setTimeout(function(){write(window.__court());},0);",
+                    "setTimeout(function(){"
+                    "var seen;"
+                    "try{t.classList.remove('absent');t.classList.add('keep');"
+                    "seen='quiet:'+t.getAttribute('class');}"
+                    "catch(e){seen='threw:'+e.name;}"
+                    "setTimeout(function(){write(seen);},0);},0);",
                     '<p id="m">start</p><p id="t">target</p>'),
                 "/loud.html": page(
                     "var t=document.getElementById('t');"
@@ -208,21 +214,24 @@ def main():
                     host.ok("target.close", {"target": target})
 
                 # A turn that changes nothing must not advance the revision.
+                # The "before" is the revision the open itself reports, because
+                # an observation is the boundary that runs the due timer.
                 opened = open_page(session, "/quiet.html")
                 quiet = opened["result"]["target"] if opened.get("ok") else None
-                before = revision(quiet) if quiet else None
-                said = mark(quiet) if quiet else None
+                before = opened["result"]["revision"] if opened.get("ok") else None
+                # This boundary runs the no-op turn and nothing else.
                 after = revision(quiet) if quiet else None
+                said = mark(quiet) if quiet else None
                 expect(tag + "a turn whose calls change nothing does not advance the revision",
-                       said == "keep" and before is not None and before == after,
+                       said == "quiet:keep" and before is not None and before == after,
                        {"said": said, "revision": [before, after]})
                 if quiet:
                     host.ok("target.close", {"target": quiet})
                 opened = open_page(session, "/loud.html")
                 loud = opened["result"]["target"] if opened.get("ok") else None
-                before = revision(loud) if loud else None
-                said = mark(loud) if loud else None
+                before = opened["result"]["revision"] if opened.get("ok") else None
                 after = revision(loud) if loud else None
+                said = mark(loud) if loud else None
                 expect(tag + "and a turn that changes the attribute does advance it",
                        said == "keep added" and before is not None and after is not None
                        and after > before,

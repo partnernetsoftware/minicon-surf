@@ -150,3 +150,29 @@ No protocol change, no new operation, no new authority, no resident host
 state, no child-realm surface, and no event-model change: the same listener
 store, the same path, the same absence of capture, options and
 `stopImmediatePropagation`.
+
+
+## 8. Two criteria of mine that measured the wrong turn
+
+Both revision criteria were wrong in the same way, and the implementation is
+what exposed them.
+
+**8.1 The observation was the boundary.** "A turn that changes the attribute
+advances the revision" read the revision twice through `target.inspect`. But
+`target.inspect` *is* the boundary that runs the due timer, so the first read
+already included the change: `[1, 1]`, and the criterion failed against a host
+that was behaving correctly. The "before" is now the revision `target.open`
+itself reports, which crosses no timer boundary.
+
+**8.2 The quiet page proved nothing.** The no-op page called `remove` for an
+absent token and `add` for a present one — and then wrote its result into its
+own marked element **in the same turn**. That write is a mutation, so the
+revision would advance whatever `classList` did, and the criterion could not
+see the thing it was written to see. Worse, it passed.
+
+The no-op turn now touches nothing: it makes its calls and schedules a second
+timer, and only that later turn writes what it learned. So the first boundary
+is a turn of pure no-op calls whose revision must not move, and the text that
+arrives on the next boundary is what proves the calls ran at all rather than
+threw — without which the criterion would pass on a host where `classList`
+does not exist.
