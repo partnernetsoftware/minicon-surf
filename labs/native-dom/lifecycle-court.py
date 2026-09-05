@@ -391,6 +391,12 @@ def main():
                        any("built late" == t for t in texts) and state["revision"] > 0,
                        {"revision": state.get("revision"), "texts": len(texts)})
                 host.ok("target.close", {"target": target})
+                # A quiet total is only a quiet total when nothing else is
+                # live: opened, sampled and closed alone (design §10.7).
+                quiet = host.ok("target.open", {"session": session, "url": f"{origin}/quiet.html"},
+                                deadline_ms=5000)["target"]
+                quiet_total = owner_bytes(host)
+                host.ok("target.close", {"target": quiet})
                 without = host.ok("target.open",
                                   {"session": session, "url": f"{origin}/listeners.html?keep=0"},
                                   deadline_ms=5000)["target"]
@@ -404,10 +410,6 @@ def main():
                 # The quiet page's total is reported beside it as a diagnostic
                 # with no verdict; the fixed infrastructure lives inside that
                 # total and is given no gate of its own (design §10.6).
-                quiet = host.ok("target.open", {"session": session, "url": f"{origin}/quiet.html"},
-                                deadline_ms=5000)["target"]
-                quiet_total = owner_bytes(host)
-                host.ok("target.close", {"target": quiet})
                 expect(tag + f"M1: the frozen fixture's listeners cost at most {OWNER_BYTES} live owner bytes",
                        baseline is not None and measured is not None
                        and abs(measured - baseline) <= OWNER_BYTES,

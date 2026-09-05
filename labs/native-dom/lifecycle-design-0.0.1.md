@@ -279,3 +279,13 @@ listener workload; **M2**, the owner plateau across 128 replacements; and
 **M3**, owners returning to zero on close. No result may be worded to imply
 that an arbitrary page's listener cost, or the infrastructure delta, passed a
 gate.
+
+**10.7 The quiet-page diagnostic was measuring two targets.** The memory group
+opened the quiet page while the listener page was still live and then sampled,
+so the number labelled "quiet page total" was the sum of both documents. The
+label was false and §10.6's description with it. The order is fixed: after the
+late page is closed, the quiet page is opened, sampled and closed **alone**;
+then the no-listener arm is opened, sampled and closed; then the listener arm
+is opened and sampled, and that sample is what M1 and M2 use. **Any sample
+labelled a quiet total is taken with only the quiet target live.** It stays a
+diagnostic and changes no gate.
