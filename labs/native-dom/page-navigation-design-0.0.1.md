@@ -212,3 +212,110 @@ Criteria, frozen here:
    existing `target.reload` path and it is the fourth thing a page reaches
    for. I have left it out to keep the scope as ruled, and I would rather be
    told to add it than add it unasked.
+
+## 11. The rulings, and four corrections they came with
+
+§§1–10 stay as written except where this section says otherwise.
+
+### 11.1 The three blockers, ruled
+
+- **The chain cap stays 3**, and it is **its own budget**. It is not shared
+  with, and does not consume, `net::MAX_REDIRECTS`: an HTTP redirect chain of
+  three hops inside one link is still allowed, and a script chain of three
+  links is still allowed, and neither borrows from the other. The two are
+  counted separately and refused separately, with `navigation_chain_limit`
+  for the script chain.
+- **An explicit agent navigation wins.** `target.navigate`, `target.reload`
+  and `target.traverse` discard any pending intent **before** the explicit
+  operation begins, so nothing the page asked for can be applied to a document
+  the caller has already replaced. The discard increments a bounded
+  host-owned `discarded_total` with the fixed cause `caller_override`, and
+  **the discarded URL is never logged, recorded or reported.**
+- **`location.reload()` is in scope**, no-argument only. It reloads the
+  relevant document's current URL through the same deadline, policy and
+  atomic path as everything else, and it **does not add, move or replace** a
+  history entry. It takes the same single slot as the others.
+
+**One slot, and the last write decides everything.** A later `href`, `assign`,
+`replace` or `reload` replaces whatever was pending and determines **both**
+the destination **and** the history behaviour. A `replace` after an `assign`
+replaces one entry; an `assign` after a `replace` adds one; a `reload` after
+either touches history not at all.
+
+### 11.2 An intent during build or lifecycle is replace-like
+
+WHATWG is explicit: a `Location` navigation from a document that is **not
+completely loaded**, without transient activation, uses **replace** handling.
+This host has no activation model at all — it cannot tell a user gesture from
+a script — so it takes the conservative half of that rule unconditionally:
+
+> **Every intent raised while the document is still building, and every intent
+> raised during the four lifecycle steps, is replace-like.** It adds no
+> history entry.
+
+That is a deliberate mapping, not an accident: without an activation model the
+alternative would be to add entries a browser would not, and inventing history
+a user never created is the worse error. An intent raised **after** the
+lifecycle has finished — from a timer, a job or an action handler — follows
+§6: `href` and `assign` add an entry, `replace` replaces one, `reload` leaves
+history alone. The court proves the build and lifecycle cases add **no** entry
+and that the ring's length is unchanged.
+
+### 11.3 The `href` getter reads the committed document
+
+`location.href` answers the **relevant document's current URL** — the one the
+host has committed — and it keeps answering that until a new document is
+committed. Recording an intent does **not** change what the getter returns.
+So a page that assigns and then reads back gets the old URL, which is a
+divergence from a browser, where the getter reflects the pending navigation
+early in some cases; it is recorded here rather than hidden, and it is the
+honest direction: the getter never claims a navigation that has not happened.
+
+### 11.4 What `target.act` answers when a handler queues a navigation
+
+The public result shape does not change, and the operation never claims
+success before the queued navigation's outcome is known. The intent is
+consumed at the boundary **inside the same `target.act`**, so the outcome is
+always known before the answer is written, and the rule is exactly the one the
+form submit already established:
+
+- **The navigation commits.** The answer is the navigation-shaped action
+  result the click and submit paths already return — `navigated`, the new
+  `frame`, `generation`, `realm`, `retired_realm`, `ended_frames`, `url`,
+  `fixture` and `network` — carrying the action's own `action` and `role`
+  fields where the named version has them. `applied` refers to the action's
+  own effect, and `revision` is the new document's.
+- **The navigation fails.** The operation answers the navigation's **typed
+  failure**, not a success. Whatever the handler completed stands and the
+  revision reflects it, exactly as a failed submit does today, and because a
+  page's URL can carry page data the failure is redacted in the same
+  sensitive mode: a typed reason and the identity, never the address, the
+  query or any free text that could hold either.
+
+No third shape is introduced, and no field is added to say "there was also a
+navigation".
+
+### 11.5 The slot is cleared on every path, and why `caller_override` exists
+
+The slot is cleared **before** the host acts on it, on every path out:
+consumption, a refused preflight, a deadline, and the retirement of the realm
+that holds it. A refusal in particular must clear it, or the same refused
+intent would be retried at the next boundary forever.
+
+**The invariant this produces:** at the end of every operation the slot is
+empty, because an intent is always consumed at a boundary inside the operation
+that raised it. That has a consequence worth stating rather than discovering:
+**`caller_override` is not reachable in production today.** No pending intent
+survives an operation, so no explicit navigation can ever find one.
+
+It is kept, and it is reachable **only through a deterministic court-only
+seam** that suppresses exactly one consumption, so the court can then run
+`target.navigate` and observe the discard, the counter and the fixed cause.
+There is no product race to exercise and none is invented. The counter exists
+because the invariant above is a property of today's boundaries, not a law: if
+a later slice ever defers a consumption, the discard must already be defined,
+counted and silent about its URL rather than improvised then.
+
+The court asserts both halves: the slot is empty after every operation, and
+the seam-driven discard counts exactly one `caller_override` with no URL
+anywhere.
