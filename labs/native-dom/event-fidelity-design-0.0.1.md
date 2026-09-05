@@ -722,3 +722,58 @@ decided.** Each fixture's handler writes a marker and then does one thing:
 
 Nothing here moves a cap, and the frozen M1 and M2 floors are re-measured
 after it.
+
+
+## 20. The bridge is privileged; its tools were not
+
+§19 moved the host's dispatch behind a capability, and the dispatch then did
+its work with intrinsics it looked up **after** page script had run:
+
+- `eventState.get` and `.set` resolve `WeakMap.prototype.get`/`set` at call
+  time — a page that patches those sees, and can answer for, the hidden state
+  the whole authority claim rests on;
+- `listenersOf` resolves `Map.prototype.get`/`set`/`has` and constructs with
+  the global `Map`;
+- the dispatch copies its listener list with a spread and walks it with
+  `for…of`, both of which go through `Array.prototype[Symbol.iterator]`, and
+  registration uses `indexOf`, `push`, `splice` and `filter` from the same
+  mutable prototype;
+- a listener is invoked as `record.callback.call(node, event)`, which reads
+  `.call` off a page-owned function;
+- `String(type)` and `Object.keys(extras)` read the global `String` and
+  `Object`.
+
+So the capability kept a page from *calling* the bridge while leaving it able
+to change what the bridge is made of. That is the same defect as §19 one level
+down, and my own criteria could not see it for the same reason: they exercise
+the bridge, not its tools.
+
+**Ruled, mine: capture the intrinsics once, before any page script runs, and
+use only the captured values on the privileged path.** The shim already runs
+before page script — that is the whole basis of the capability — so the
+capture point exists and needs no new mechanism. `Reflect.apply` is captured
+too, so the privileged path never reads `.call` off anything a page owns, and
+the listener walk uses an index loop over a captured `slice`, never the
+iterator protocol. The extras argument becomes a **fixed key vocabulary**: the
+only extra any host action passes is `key`, so it is a parameter, and
+`Object.keys` disappears from the path rather than being hardened.
+
+Nothing outside the `Event`, dispatch and listener path changes. A page that
+breaks `Array.prototype.indexOf` for itself still breaks its own code.
+
+**Falsifiers, all on the checkbox fixture so both halves stay visible, and all
+falsified against `44ad1aa47263…`:**
+
+1. a handler patches `WeakMap.prototype.get` and `.set` after load, keeping
+   the originals so the page can read and rewrite the hidden state it is
+   handed, and tries to force a cancellation: the host must still apply, and
+   the real handler must still run;
+2. a page patches `Map.prototype.get`/`has`/`set` and
+   `Array.prototype[Symbol.iterator]` and `slice`: the registered handler must
+   still run and the decision must still be the host's;
+3. a page replaces the global `String` and `Object` before the action: the
+   host action must still work.
+
+In every case the alternative outcome the court will not accept is a
+**fabricated** answer — an `applied` or a `default_prevented` reported without
+the real handler having run.
