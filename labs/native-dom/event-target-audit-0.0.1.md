@@ -179,3 +179,30 @@ a name and not a capability.
    name, the chain, `new EventTarget()` as a bus, subclassing, the three
    containment probes of §2 re-run against the constructor, `window`'s answer
    whichever way it is ruled, and the M1/M2 floors unmoved.
+
+
+## 9. Ruled
+
+The main-only slice is accepted: the constructor, `instanceof`, subclassing,
+and `EventTarget` in the chain between `Node` and `Object`, for roughly 2,352
+bytes of main-only slack and **nothing per child**. The base does not grow,
+the handle does not widen, and the existing `WeakMap` listener store and the
+single `dispatchOn` remain the only dispatch authority — the class is a name
+over the helpers the handle already hands across.
+
+`window instanceof EventTarget` **stays `false`**, as an explicit loss: the
+window is not a node and its prototype is not re-parented. It keeps its own
+three methods, which already work.
+
+`{once}`, `{capture}`, `{signal}`, `handleEvent` objects and
+`AbortController` are **not in this slice**. They stay a separate
+listener-options candidate, and §5's measurements stand as the record of what
+a page does not get in the meantime — including the `handleEvent` listener
+that is registered and silently never called.
+
+The implementation court is frozen before the code, covering the name, the
+chain, `new EventTarget()` as a bus, subclassing, the borrowed plain-object
+bus that already worked, the three authority containment probes, the window
+divergence, and the node dispatch semantics that must not shift. The M1 and M2
+floors and the main-only slack are measured by the child-frame and
+shim-footprint courts on the same binary, and a failure there stops the slice.
