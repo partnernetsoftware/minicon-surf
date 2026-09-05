@@ -152,7 +152,7 @@
   {
    "check": "[system] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 49.5
+    "elapsed_ms": 49.6
    },
    "passed": true
   },
@@ -221,8 +221,8 @@
   {
    "check": "[system] T3: a long callback chain does not accelerate the footprint",
    "detail": {
-    "first_half": 16384,
-    "second_half": 16384
+    "first_half": 0,
+    "second_half": 0
    },
    "passed": true
   },
@@ -396,7 +396,7 @@
   {
    "check": "[arena] T5: the wait returns within 250 ms of the fifty-millisecond timer",
    "detail": {
-    "elapsed_ms": 48.9
+    "elapsed_ms": 49.6
    },
    "passed": true
   },
@@ -466,7 +466,7 @@
    "check": "[arena] T3: a long callback chain does not accelerate the footprint",
    "detail": {
     "first_half": 0,
-    "second_half": 16384
+    "second_half": 32768
    },
    "passed": true
   },
@@ -546,7 +546,7 @@
  "checks_passed": 68,
  "checks_total": 68,
  "court": "native-dom bounded timers (control 0.0.2)",
- "host_sha256": "3b47966ece35e48729998875f814b8b1f89072ad746e22f14ca8c3b7e79ec58f",
+ "host_sha256": "561062d146e6017039e08b0784a6b4093c5d218918f864c43cb14c1bd7130f89",
  "limitations": [
   "design-frozen court: it fails until the bounded timer slice exists",
   "a timer's delay is a lower bound: nothing fires while no request arrives",

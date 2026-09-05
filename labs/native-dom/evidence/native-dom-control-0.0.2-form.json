@@ -1080,14 +1080,7 @@
    "check": "[system] an expired deadline refuses the submit without its address",
    "detail": {
     "code": "deadline_exceeded",
-    "details": {
-     "generation": 1,
-     "navigation": "failed",
-     "realm": "realm_41",
-     "reason": "connect",
-     "redacted": true
-    },
-    "message": "the form submission did not navigate",
+    "message": "queued work did not finish before the deadline",
     "retryable": true,
     "scope": {
      "id": "target_25",
@@ -1159,7 +1152,7 @@
    "detail": {
     "audit_bytes": 7830,
     "audit_capacity_bytes": 7168,
-    "audit_dropped_total": 161,
+    "audit_dropped_total": 160,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -2419,7 +2412,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "3b47966ece35e48729998875f814b8b1f89072ad746e22f14ca8c3b7e79ec58f",
+ "host_sha256": "561062d146e6017039e08b0784a6b4093c5d218918f864c43cb14c1bd7130f89",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",

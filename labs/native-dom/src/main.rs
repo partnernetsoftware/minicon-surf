@@ -1604,9 +1604,71 @@ const REALM_ARENA_BYTES: usize = 32 * 1024 * 1024;
 /// before the optional zone that served them is destroyed. The optional
 /// arena is shared with the runtime's allocator through an `Rc`, so its
 /// mapping outlives every allocator call whatever the order.
+/// How a drain ended. Only `Interrupted` changes what a caller is told.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Drain {
+    /// The queue emptied inside the deadline.
+    Done,
+    /// The deadline arrived with work still queued, or a job was cut off by
+    /// the interrupt. The operation fails.
+    Interrupted,
+}
+
+/// Where every realm's job attribution goes, shared with the host. A drain
+/// adds to it in place, so work is counted when it happens and no lifetime —
+/// a failed build, a replaced document, a closed target — can lose it.
+type JobSink = std::rc::Rc<std::cell::Cell<JobCounters>>;
+
+/// Saturating attribution for the realm's job queue. Each call to
+/// `execute_pending_job` lands in exactly one of these or in an empty queue,
+/// which is not an event and is not counted.
+#[derive(Default, Clone, Copy)]
+struct JobCounters {
+    /// Jobs that ran to completion. Never a failed attempt.
+    run: u64,
+    /// Drains that ended at the deadline with work still queued. One per
+    /// drain, not one per job.
+    ///
+    /// There is deliberately no counter for a job that raised: this engine
+    /// surfaces no such error through `execute_pending_job`, so the host
+    /// cannot observe one and does not claim to (design §11.3).
+    drains_interrupted: u64,
+}
+
+impl JobCounters {
+    fn to_json(self) -> Value {
+        json!({
+            "run_total": self.run,
+            "drains_interrupted_total": self.drains_interrupted,
+        })
+    }
+}
+
+/// Installs the runtime's interrupt handler and removes it on every path out,
+/// so no early return can leave a stale one behind.
+struct InterruptGuard<'a> {
+    runtime: &'a Runtime,
+}
+
+impl<'a> InterruptGuard<'a> {
+    fn new(runtime: &'a Runtime, deadline: Instant) -> InterruptGuard<'a> {
+        runtime.set_interrupt_handler(Some(Box::new(move || Instant::now() >= deadline)));
+        InterruptGuard { runtime }
+    }
+}
+
+impl Drop for InterruptGuard<'_> {
+    fn drop(&mut self) {
+        self.runtime.set_interrupt_handler(None);
+    }
+}
+
 struct Realm {
     context: Context,
     runtime: Runtime,
+    /// The host's sink, shared by every realm. A realm never owns its own
+    /// totals, so nothing is lost when the realm is.
+    jobs: JobSink,
     #[cfg(target_os = "macos")]
     zone_used: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
     #[cfg(target_os = "macos")]
@@ -1617,7 +1679,7 @@ struct Realm {
 
 impl Realm {
     #[cfg(target_os = "macos")]
-    fn new(allocation: RealmAllocation) -> Result<Self, ControlError> {
+    fn new(allocation: RealmAllocation, jobs: JobSink) -> Result<Self, ControlError> {
         let zone = if allocation == RealmAllocation::Zone {
             Some(Zone::create()?)
         } else {
@@ -1655,6 +1717,7 @@ impl Realm {
         Ok(Realm {
             context,
             runtime,
+            jobs,
             zone_used,
             zone,
             arena,
@@ -1662,7 +1725,7 @@ impl Realm {
     }
 
     #[cfg(not(target_os = "macos"))]
-    fn new(allocation: RealmAllocation) -> Result<Self, ControlError> {
+    fn new(allocation: RealmAllocation, jobs: JobSink) -> Result<Self, ControlError> {
         if allocation != RealmAllocation::System {
             return Err(ControlError::new(
                 "unsupported_capability",
@@ -1745,8 +1808,10 @@ impl Realm {
         target_id: &str,
         stage: &mut dyn FnMut(&str, Option<Value>),
     ) -> Result<String, ControlError> {
-        self.runtime
-            .set_interrupt_handler(Some(Box::new(move || Instant::now() >= deadline)));
+        // One guard for the whole turn: the evaluation, the string crossing
+        // that follows it and every job the turn queued. It is removed by its
+        // own Drop, on every path out including the failure return below.
+        let _interrupt = InterruptGuard::new(&self.runtime, deadline);
         let outcome = self
             .context
             .with(|ctx| match ctx.eval::<rquickjs::Value, _>(script) {
@@ -1773,7 +1838,6 @@ impl Realm {
                     Err(message)
                 }
             });
-        self.runtime.set_interrupt_handler(None);
         stage("after_js_value_drop", self.arena_statistics());
         let result = match outcome {
             Ok(text) => text,
@@ -1792,16 +1856,58 @@ impl Realm {
                 .details(json!({"engine_error":message.chars().take(256).collect::<String>()})));
             }
         };
-        self.drain_jobs(deadline);
+        let mut counters = JobCounters::default();
+        let drained = self.drain_jobs(deadline, &mut counters);
+        // Straight into the host's sink, here and now.
+        let mut total = self.jobs.get();
+        total.run = total.run.saturating_add(counters.run);
+        total.drains_interrupted = total
+            .drains_interrupted
+            .saturating_add(counters.drains_interrupted);
+        self.jobs.set(total);
         stage("after_jobs_drained", self.arena_statistics());
+        // An interrupted drain fails the operation: a caller is never told a
+        // turn succeeded when the page's code was cut off in the middle. And
+        // work that finished after the deadline is refused rather than
+        // accepted, however it finished.
+        if drained == Drain::Interrupted || Instant::now() >= deadline {
+            return Err(ControlError::new(
+                "deadline_exceeded",
+                "queued work did not finish before the deadline",
+                true,
+            )
+            .scoped("target", target_id));
+        }
         Ok(result)
     }
 
-    fn drain_jobs(&self, deadline: Instant) {
-        while Instant::now() < deadline {
+    /// Run the queued jobs under the caller's deadline. The interrupt handler
+    /// is the caller's; this only classifies what happens. A job that raised
+    /// before the deadline is the page's own error: counted, never read, and
+    /// the drain continues. The deadline arriving with work still queued is an
+    /// interruption, which the caller turns into a failure.
+    fn drain_jobs(&self, deadline: Instant, counters: &mut JobCounters) -> Drain {
+        loop {
+            if Instant::now() >= deadline {
+                return if self.runtime.is_job_pending() {
+                    counters.drains_interrupted = counters.drains_interrupted.saturating_add(1);
+                    Drain::Interrupted
+                } else {
+                    Drain::Done
+                };
+            }
             match self.runtime.execute_pending_job() {
-                Ok(true) => continue,
-                _ => break,
+                Ok(true) => counters.run = counters.run.saturating_add(1),
+                Ok(false) => return Drain::Done,
+                Err(_) => {
+                    // Only the deadline is this host's business here. Any
+                    // other raise is the page's own: the drain continues and
+                    // no counter claims an observation this host cannot make.
+                    if Instant::now() >= deadline {
+                        counters.drains_interrupted = counters.drains_interrupted.saturating_add(1);
+                        return Drain::Interrupted;
+                    }
+                }
             }
         }
     }
@@ -2373,6 +2479,10 @@ struct Host {
     next_realm: u64,
     /// Saturating attribution for every timer outcome, across the host.
     timer_counters: TimerCounters,
+    /// The one sink every realm this host builds shares. Because a drain adds
+    /// to it where the work happens, a failed build, a replaced main or child
+    /// document and a closed target all keep what they did.
+    jobs: JobSink,
     /// The child frames the last committed navigation ended, read once by the
     /// result that reports them.
     ended_frames: Vec<String>,
@@ -4433,7 +4543,7 @@ impl Host {
         }
         drop(document);
 
-        let realm = Realm::new(self.realm_allocation)?;
+        let realm = Realm::new(self.realm_allocation, std::rc::Rc::clone(&self.jobs))?;
         realm.eval(DOM_SHIM_JS, deadline, id)?;
         let seed = format!(
             "__mcsSeed({})",
@@ -4566,7 +4676,7 @@ impl Host {
             // Every construction failure here is this child's alone: the
             // half-built realm is dropped and the parent still commits.
             let built = (|| -> Result<Realm, ControlError> {
-                let realm = Realm::new(self.realm_allocation)?;
+                let realm = Realm::new(self.realm_allocation, std::rc::Rc::clone(&self.jobs))?;
                 if self.court_child_build_failure {
                     return Err(ControlError::new(
                         "internal",
@@ -4651,6 +4761,12 @@ impl Host {
         }
         for (index, (origin, script)) in scripts.iter().enumerate() {
             if let Err(error) = target.eval(script, deadline, &policy) {
+                // A script the deadline cut off is not a script that threw:
+                // the deadline passes through as itself, retryable, and only a
+                // real throw becomes target_crashed.
+                if error.code == "deadline_exceeded" {
+                    return Err(error);
+                }
                 let mut details = error.details.clone().unwrap_or_else(|| json!({}));
                 details["script_index"] = json!(index);
                 details["script"] = json!(origin);
@@ -5089,6 +5205,7 @@ impl Host {
         let policy = self.policy_for_target(id);
         let now = profile::now_seconds();
         let allocation = self.realm_allocation;
+        let jobs = std::rc::Rc::clone(&self.jobs);
         let refuse = |code: &'static str, reason: &'static str| -> ControlError {
             ControlError::new(code, "the embedded document could not be replaced", false)
                 .scoped("target", id)
@@ -5199,7 +5316,7 @@ impl Host {
         serialize_children(&parsed.root(), &mut tree);
         drop(parsed);
         let built = (|| -> Result<Realm, ControlError> {
-            let realm = Realm::new(allocation)?;
+            let realm = Realm::new(allocation, std::rc::Rc::clone(&jobs))?;
             realm.eval(DOM_SHIM_JS, deadline, id)?;
             realm.eval(
                 &format!(
@@ -6207,6 +6324,7 @@ impl Host {
                         let lifetime = self.lifetimes.get(&target.id).copied().unwrap_or_default();
                         json!({"target":target.id,"network":lifetime.to_json(&target.budget)})
                     }).collect::<Vec<_>>()},
+                "jobs":self.jobs.get().to_json(),
                 "timers":self.timer_counters.to_json(
                     self.targets.values().map(|t| t.timers.len()).sum(),
                     self.targets.len()),
@@ -6460,6 +6578,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_frame: 0,
         next_realm: 0,
         timer_counters: TimerCounters::default(),
+        jobs: std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
         ended_frames: Vec::new(),
         realms_retired_total: 0,
         navigations_total: 0,
@@ -6805,7 +6924,11 @@ mod zone_tests {
         let _guard = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
         let before = ZONE_BLOCKS_LEAKED.load(Ordering::Relaxed);
         let destroyed = ZONES_DESTROYED.load(Ordering::Relaxed);
-        let realm = Realm::new(RealmAllocation::Zone).unwrap();
+        let realm = Realm::new(
+            RealmAllocation::Zone,
+            std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
+        )
+        .unwrap();
         let deadline = Instant::now() + Duration::from_secs(5);
         realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
         realm
@@ -6866,7 +6989,11 @@ mod arena_realm_tests {
         // come from quickjs-ng's malloc wrappers, which check malloc_limit
         // before calling any allocator, so the arena (twice the cap) is never
         // the binding constraint.
-        let realm = Realm::new(RealmAllocation::Arena).unwrap();
+        let realm = Realm::new(
+            RealmAllocation::Arena,
+            std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
+        )
+        .unwrap();
         grow_until_throw(&realm);
         let counted = realm.runtime.memory_usage().malloc_size.max(0) as usize;
         assert!(
@@ -6891,7 +7018,11 @@ mod arena_realm_tests {
     #[test]
     fn realm_frees_every_block_before_its_arena_is_unmapped() {
         let before = arena::ARENA_BLOCKS_LEAKED.load(Ordering::Relaxed);
-        let realm = Realm::new(RealmAllocation::Arena).unwrap();
+        let realm = Realm::new(
+            RealmAllocation::Arena,
+            std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
+        )
+        .unwrap();
         let deadline = Instant::now() + Duration::from_secs(5);
         realm.eval(DOM_SHIM_JS, deadline, "target_test").unwrap();
         realm
@@ -6929,7 +7060,11 @@ mod arena_realm_tests {
 
     #[test]
     fn trim_on_a_live_arena_realm_reports_its_free_tail() {
-        let realm = Realm::new(RealmAllocation::Arena).unwrap();
+        let realm = Realm::new(
+            RealmAllocation::Arena,
+            std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
+        )
+        .unwrap();
         grow_until_throw(&realm);
         let deadline = Instant::now() + Duration::from_secs(5);
         realm
@@ -7051,7 +7186,11 @@ mod revision_tests {
             script_count: 0,
             skipped_scripts: Vec::new(),
             budget: net::Budget::default(),
-            realm: Realm::new(RealmAllocation::System).expect("a realm"),
+            realm: Realm::new(
+                RealmAllocation::System,
+                std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
+            )
+            .expect("a realm"),
             last_snapshot: None,
             base_target: false,
             frame_id: "frame_1".into(),
@@ -7076,7 +7215,11 @@ mod revision_tests {
                 id: format!("frame_{}", index + 2),
                 generation: 1,
                 realm_id: format!("realm_{}", index + 2),
-                realm: Realm::new(RealmAllocation::System).expect("a realm"),
+                realm: Realm::new(
+                    RealmAllocation::System,
+                    std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
+                )
+                .expect("a realm"),
                 counter: *counter,
                 snapshot: None,
                 base_target: false,

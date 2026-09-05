@@ -728,6 +728,24 @@ ends its children, and the click path names them in `ended_frames`. One child
 costs about 247 KB of live owner bytes, seven about 1.7 MB, and the whole
 cost returns on close.
 
+Queued jobs (`job-deadline-design-0.0.1.md`): a promise job or a
+`queueMicrotask` callback shares the deadline of the request whose turn queued
+it. The interrupt handler is installed by a guard that covers the evaluation,
+the string crossing and the whole drain and is removed on every path out, so
+a job that never returns is cut off at the deadline instead of running
+forever. A drain that ends with work still queued fails its operation with a
+retryable `deadline_exceeded` — a caller is never told a turn succeeded when
+the page's code was cut off — and work that finishes after the deadline is
+refused rather than accepted. A job that raises is the page's business: the
+drain continues and the operation stands. There is **no job-count cap**: the
+request's deadline and the 16 MiB realm limit are the bounds, so a finite
+microtask chain that fits still runs to the end. `memory.report` reports
+`jobs` as `run_total` and `drains_interrupted_total` into one host-owned sink
+every realm shares, so a failed build, a replaced document and a closed target
+all keep what they did. There is deliberately **no counter for a job that
+raised**: this engine surfaces no such error through the drain, and the host
+does not claim an observation it cannot make.
+
 Timers (`timer-design-0.0.1.md`): `setTimeout` and `clearTimeout` exist in the
 main frame and nowhere else. The realm owns the callbacks and their handles,
 which are per-realm, monotonic and never reused, and refuses to schedule past

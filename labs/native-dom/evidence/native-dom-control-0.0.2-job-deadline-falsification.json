@@ -1,0 +1,448 @@
+{
+ "checks": [
+  {
+   "check": "[system] J1: an infinite job's open answers inside its deadline and margin",
+   "detail": {
+    "code": "host_timeout",
+    "elapsed_ms": 2505.1
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the open fails deadline_exceeded, retryable, and says nothing of the page",
+   "detail": {
+    "error": "host_timeout"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] J3 and atomicity: the host answers next and committed no target",
+   "detail": {
+    "elapsed_ms": 0,
+    "targets": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a failed build's own interruption is still counted",
+   "detail": {
+    "after": null,
+    "before": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] J4: the owners return to the empty-host baseline",
+   "detail": {
+    "owner_bytes": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] an interrupted build reports the deadline and commits nothing",
+   "detail": {
+    "error": "host_timeout"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] an action whose handler queues an infinite job fails deadline_exceeded",
+   "detail": {
+    "code": "host_timeout",
+    "elapsed_ms": 2001.4
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the handler's mutation stands and the next observation shows it",
+   "detail": {
+    "marks": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the revision includes it and the target keeps answering",
+   "detail": {
+    "revision": [
+     0,
+     null
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] J2: a chain of 1000 jobs finishes and the document commits",
+   "detail": {
+    "elapsed_ms": 7.3,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the jobs it ran are counted as completions",
+   "detail": {
+    "run_total": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a throwing job does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a throwing queueMicrotask does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unhandled rejection does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no counter claims an exception this host cannot observe",
+   "detail": {
+    "counters": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a job queued by a timer callback runs at that boundary",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an infinite job from a timer callback is interrupted, not endless",
+   "detail": {
+    "code": "host_timeout",
+    "elapsed_ms": 2001.9
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] J3: the target still answers after that interruption",
+   "detail": {
+    "elapsed_ms": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the interrupted drain is counted once as a drain",
+   "detail": {
+    "drains_interrupted_total": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a navigation, a reload and a close never lower the job totals",
+   "detail": {
+    "run_totals": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] no job source, rejection value or page text in the ledger",
+   "detail": {
+    "audit_bytes": 1352
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] J1: an infinite job's open answers inside its deadline and margin",
+   "detail": {
+    "code": "host_timeout",
+    "elapsed_ms": 2500.5
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the open fails deadline_exceeded, retryable, and says nothing of the page",
+   "detail": {
+    "error": "host_timeout"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] J3 and atomicity: the host answers next and committed no target",
+   "detail": {
+    "elapsed_ms": 0,
+    "targets": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a failed build's own interruption is still counted",
+   "detail": {
+    "after": null,
+    "before": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] J4: the owners return to the empty-host baseline",
+   "detail": {
+    "owner_bytes": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] an interrupted build reports the deadline and commits nothing",
+   "detail": {
+    "error": "host_timeout"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] an action whose handler queues an infinite job fails deadline_exceeded",
+   "detail": {
+    "code": "host_timeout",
+    "elapsed_ms": 2001.6
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the handler's mutation stands and the next observation shows it",
+   "detail": {
+    "marks": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the revision includes it and the target keeps answering",
+   "detail": {
+    "revision": [
+     0,
+     null
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] J2: a chain of 1000 jobs finishes and the document commits",
+   "detail": {
+    "elapsed_ms": 6.3,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the jobs it ran are counted as completions",
+   "detail": {
+    "run_total": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a throwing job does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a throwing queueMicrotask does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unhandled rejection does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no counter claims an exception this host cannot observe",
+   "detail": {
+    "counters": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a job queued by a timer callback runs at that boundary",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an infinite job from a timer callback is interrupted, not endless",
+   "detail": {
+    "code": "host_timeout",
+    "elapsed_ms": 2001.6
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] J3: the target still answers after that interruption",
+   "detail": {
+    "elapsed_ms": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the interrupted drain is counted once as a drain",
+   "detail": {
+    "drains_interrupted_total": null
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a navigation, a reload and a close never lower the job totals",
+   "detail": {
+    "run_totals": [
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] no job source, rejection value or page text in the ledger",
+   "detail": {
+    "audit_bytes": 1352
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 12,
+ "checks_total": 42,
+ "court": "native-dom pending-job deadline (control 0.0.2)",
+ "criteria": {
+  "chain_deadline_ms": 5000,
+  "chain_jobs": 1000,
+  "deadline_margin_ms": 500,
+  "next_request_ms": 1000,
+  "owner_return_bytes": 65536
+ },
+ "host_sha256": "3b47966ece35e48729998875f814b8b1f89072ad746e22f14ca8c3b7e79ec58f",
+ "hosts_killed": [
+  {
+   "allocator": "system",
+   "group": "infinite-open",
+   "timeouts": [
+    {
+     "deadline_ms": 2000,
+     "operation": "target.open",
+     "waited_ms": 2505.1,
+     "wall_ms": 2500
+    }
+   ]
+  },
+  {
+   "allocator": "system",
+   "group": "mutate-then-hang",
+   "timeouts": [
+    {
+     "deadline_ms": 2000,
+     "operation": "target.open",
+     "waited_ms": 2504.6,
+     "wall_ms": 2500
+    }
+   ]
+  },
+  {
+   "allocator": "system",
+   "group": "handler-hang",
+   "timeouts": [
+    {
+     "deadline_ms": 1500,
+     "operation": "target.act",
+     "waited_ms": 2001.4,
+     "wall_ms": 2000
+    }
+   ]
+  },
+  {
+   "allocator": "system",
+   "group": "timer-job",
+   "timeouts": [
+    {
+     "deadline_ms": 1500,
+     "operation": "target.snapshot",
+     "waited_ms": 2001.9,
+     "wall_ms": 2000
+    }
+   ]
+  },
+  {
+   "allocator": "arena",
+   "group": "infinite-open",
+   "timeouts": [
+    {
+     "deadline_ms": 2000,
+     "operation": "target.open",
+     "waited_ms": 2500.5,
+     "wall_ms": 2500
+    }
+   ]
+  },
+  {
+   "allocator": "arena",
+   "group": "mutate-then-hang",
+   "timeouts": [
+    {
+     "deadline_ms": 2000,
+     "operation": "target.open",
+     "waited_ms": 2505.1,
+     "wall_ms": 2500
+    }
+   ]
+  },
+  {
+   "allocator": "arena",
+   "group": "handler-hang",
+   "timeouts": [
+    {
+     "deadline_ms": 1500,
+     "operation": "target.act",
+     "waited_ms": 2001.6,
+     "wall_ms": 2000
+    }
+   ]
+  },
+  {
+   "allocator": "arena",
+   "group": "timer-job",
+   "timeouts": [
+    {
+     "deadline_ms": 1500,
+     "operation": "target.snapshot",
+     "waited_ms": 2001.6,
+     "wall_ms": 2000
+    }
+   ]
+  }
+ ],
+ "limitations": [
+  "design-frozen court: it fails until the pending-job deadline is enforced",
+  "a host that does not answer inside its wall-clock bound is killed by pid and reaped; that timeout is the falsification",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
+  "no job source, rejection value or page text is recorded"
+ ],
+ "passed": false
+}

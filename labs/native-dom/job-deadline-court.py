@@ -188,7 +188,7 @@ def main():
                                            "document.getElementById('go').addEventListener('click',"
                                            "function(){write('handler ran');"
                                            "Promise.resolve().then(function(){for(;;){}});});",
-                                           '<a id="go" href="#stay">go</a>'),
+                                           '<button id="go" type="button">go</button>'),
                 # A finite chain that must be allowed to finish.
                 "/chain.html": page("Chain",
                                     "var n=0;var step=function(){n=n+1;write('n '+n);"
@@ -260,6 +260,7 @@ def main():
                     profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
                     session = host.ok("session.open", {"profile": profile})["session"]
                     empty = owner_bytes(host)
+                    before_counters = counters(host)
                     opened = host.call("target.open",
                                        {"session": session, "url": f"{origin}/infinite.html"},
                                        deadline_ms=2000,
@@ -281,6 +282,15 @@ def main():
                            listed.get("ok") and targets == [],
                            {"targets": len(targets),
                             "elapsed_ms": round(listed.get("elapsed_ms", 0), 1)})
+                    # The realm of a build that never committed still did work
+                    # and was still interrupted: a host that only absorbed
+                    # counters from targets it kept would lose both.
+                    after_counters = counters(host)
+                    expect(tag + "a failed build's own interruption is still counted",
+                           after_counters.get("drains_interrupted_total", 0)
+                           == before_counters.get("drains_interrupted_total", 0) + 1,
+                           {"before": before_counters.get("drains_interrupted_total"),
+                            "after": after_counters.get("drains_interrupted_total")})
                     after = owner_bytes(host)
                     expect(tag + "J4: the owners return to the empty-host baseline",
                            after is not None and empty is not None
@@ -330,8 +340,10 @@ def main():
                     snap = host.call("target.snapshot",
                                      {"target": target, "format": "semantic",
                                       "max_bytes": 65536, "max_nodes": 32})
+                    # A button, not a link: a fragment or a target this host
+                    # does not model would be refused before any event.
                     link = next((n["reference"] for n in snap["result"]["nodes"]
-                                 if n.get("role") == "link"), None) if snap.get("ok") else None
+                                 if n.get("role") == "button"), None) if snap.get("ok") else None
                     acted = host.call("target.act",
                                       {"target": target, "reference": link,
                                        "action": {"kind": "click"}},
@@ -423,11 +435,15 @@ def main():
                                opened.get("ok") and any("after" in (m or "") for m in marks),
                                {"ok": opened.get("ok"), "marks": len(marks)})
                     after = counters(host)
-                    threw = after.get("threw_total", 0) - before.get("threw_total", 0)
-                    expect(tag + "the raises the host can observe are counted, and only those",
-                           isinstance(after.get("threw_total"), int) and threw >= 1
-                           and "source" not in json.dumps(after) and "court" not in json.dumps(after),
-                           {"threw_delta": threw, "counters": sorted(after)})
+                    # This engine surfaces no job exception through the drain
+                    # (design §11.3), so the host claims no counter for one.
+                    # What is provable is that such a page costs nothing: the
+                    # operation succeeds, later jobs run, and the counters that
+                    # do exist carry no page text.
+                    expect(tag + "no counter claims an exception this host cannot observe",
+                           sorted(after) == ["drains_interrupted_total", "run_total"]
+                           and "court" not in json.dumps(after),
+                           {"counters": sorted(after)})
                 finally:
                     if host.timeouts:
                         killed_hosts.append({"group": "throwing", "allocator": allocator,
@@ -475,6 +491,37 @@ def main():
                 finally:
                     if host.timeouts:
                         killed_hosts.append({"group": "timer-job", "allocator": allocator,
+                                             "timeouts": host.timeouts})
+                    host.finish()
+
+            # 8b: replacing a document never lowers a total. A main navigation,
+            # a reload and a child replacement each retire a realm, and the
+            # work those realms did stays counted.
+            with tempfile.TemporaryDirectory(prefix="minicon-surf-job-") as directory:
+                host = fresh(directory)
+                try:
+                    profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                    session = host.ok("session.open", {"profile": profile})["session"]
+                    target = host.ok("target.open",
+                                     {"session": session, "url": f"{origin}/chain.html"},
+                                     deadline_ms=CHAIN_DEADLINE_MS,
+                                     wall_ms=CHAIN_DEADLINE_MS + 4000)["target"]
+                    marks = [counters(host).get("run_total", 0)]
+                    host.ok("target.navigate", {"target": target, "url": f"{origin}/chain.html"},
+                            deadline_ms=CHAIN_DEADLINE_MS, wall_ms=CHAIN_DEADLINE_MS + 4000)
+                    marks.append(counters(host).get("run_total", 0))
+                    host.ok("target.reload", {"target": target},
+                            deadline_ms=CHAIN_DEADLINE_MS, wall_ms=CHAIN_DEADLINE_MS + 4000)
+                    marks.append(counters(host).get("run_total", 0))
+                    host.ok("target.close", {"target": target})
+                    marks.append(counters(host).get("run_total", 0))
+                    expect(tag + "a navigation, a reload and a close never lower the job totals",
+                           all(marks[i] <= marks[i + 1] for i in range(len(marks) - 1))
+                           and marks[-1] >= CHAIN_JOBS,
+                           {"run_totals": marks})
+                finally:
+                    if host.timeouts:
+                        killed_hosts.append({"group": "monotonic", "allocator": allocator,
                                              "timeouts": host.timeouts})
                     host.finish()
 

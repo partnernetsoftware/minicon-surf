@@ -1,0 +1,357 @@
+{
+ "checks": [
+  {
+   "check": "[system] J1: an infinite job's open answers inside its deadline and margin",
+   "detail": {
+    "code": "deadline_exceeded",
+    "elapsed_ms": 2001.6
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the open fails deadline_exceeded, retryable, and says nothing of the page",
+   "detail": {
+    "error": "deadline_exceeded"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] J3 and atomicity: the host answers next and committed no target",
+   "detail": {
+    "elapsed_ms": 1.4,
+    "targets": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a failed build's own interruption is still counted",
+   "detail": {
+    "after": 1,
+    "before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] J4: the owners return to the empty-host baseline",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an interrupted build reports the deadline and commits nothing",
+   "detail": {
+    "error": "deadline_exceeded"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an action whose handler queues an infinite job fails deadline_exceeded",
+   "detail": {
+    "code": "deadline_exceeded",
+    "elapsed_ms": 1501.3
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the handler's mutation stands and the next observation shows it",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the revision includes it and the target keeps answering",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] J2: a chain of 1000 jobs finishes and the document commits",
+   "detail": {
+    "elapsed_ms": 7.9,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the jobs it ran are counted as completions",
+   "detail": {
+    "run_total": 2000
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a throwing job does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a throwing queueMicrotask does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an unhandled rejection does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no counter claims an exception this host cannot observe",
+   "detail": {
+    "counters": [
+     "drains_interrupted_total",
+     "run_total"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a job queued by a timer callback runs at that boundary",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an infinite job from a timer callback is interrupted, not endless",
+   "detail": {
+    "code": "deadline_exceeded",
+    "elapsed_ms": 1501.3
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] J3: the target still answers after that interruption",
+   "detail": {
+    "elapsed_ms": 1.5
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the interrupted drain is counted once as a drain",
+   "detail": {
+    "drains_interrupted_total": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a navigation, a reload and a close never lower the job totals",
+   "detail": {
+    "run_totals": [
+     2000,
+     4000,
+     6000,
+     6000
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] no job source, rejection value or page text in the ledger",
+   "detail": {
+    "audit_bytes": 1352
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] J1: an infinite job's open answers inside its deadline and margin",
+   "detail": {
+    "code": "deadline_exceeded",
+    "elapsed_ms": 2001.7
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the open fails deadline_exceeded, retryable, and says nothing of the page",
+   "detail": {
+    "error": "deadline_exceeded"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] J3 and atomicity: the host answers next and committed no target",
+   "detail": {
+    "elapsed_ms": 1.1,
+    "targets": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a failed build's own interruption is still counted",
+   "detail": {
+    "after": 1,
+    "before": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] J4: the owners return to the empty-host baseline",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an interrupted build reports the deadline and commits nothing",
+   "detail": {
+    "error": "deadline_exceeded"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an action whose handler queues an infinite job fails deadline_exceeded",
+   "detail": {
+    "code": "deadline_exceeded",
+    "elapsed_ms": 1501.3
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the handler's mutation stands and the next observation shows it",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the revision includes it and the target keeps answering",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] J2: a chain of 1000 jobs finishes and the document commits",
+   "detail": {
+    "elapsed_ms": 6.1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the jobs it ran are counted as completions",
+   "detail": {
+    "run_total": 2000
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a throwing job does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a throwing queueMicrotask does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an unhandled rejection does not fail the operation and the drain continues",
+   "detail": {
+    "marks": 1,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no counter claims an exception this host cannot observe",
+   "detail": {
+    "counters": [
+     "drains_interrupted_total",
+     "run_total"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a job queued by a timer callback runs at that boundary",
+   "detail": {
+    "marks": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an infinite job from a timer callback is interrupted, not endless",
+   "detail": {
+    "code": "deadline_exceeded",
+    "elapsed_ms": 1501.4
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] J3: the target still answers after that interruption",
+   "detail": {
+    "elapsed_ms": 1.3
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the interrupted drain is counted once as a drain",
+   "detail": {
+    "drains_interrupted_total": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a navigation, a reload and a close never lower the job totals",
+   "detail": {
+    "run_totals": [
+     2000,
+     4000,
+     6000,
+     6000
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] no job source, rejection value or page text in the ledger",
+   "detail": {
+    "audit_bytes": 1352
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 42,
+ "checks_total": 42,
+ "court": "native-dom pending-job deadline (control 0.0.2)",
+ "criteria": {
+  "chain_deadline_ms": 5000,
+  "chain_jobs": 1000,
+  "deadline_margin_ms": 500,
+  "next_request_ms": 1000,
+  "owner_return_bytes": 65536
+ },
+ "host_sha256": "561062d146e6017039e08b0784a6b4093c5d218918f864c43cb14c1bd7130f89",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the pending-job deadline is enforced",
+  "a host that does not answer inside its wall-clock bound is killed by pid and reaped; that timeout is the falsification",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
+  "no job source, rejection value or page text is recorded"
+ ],
+ "passed": true
+}
