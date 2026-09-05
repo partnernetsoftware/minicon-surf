@@ -27,6 +27,15 @@ __mcsInternals((internals) => {
     get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
     configurable: true });
   const containsHelper = internals.contains;
+  // A compatibility fix, not a capability: a page could write this walk over
+  // `matches` itself, and a real one instead calls `closest` and dies where a
+  // browser would have answered. It refuses exactly what `matches` refuses.
+  Element.prototype.closest = function (selector) {
+    for (let node = this; node && node.nodeType === 1; node = node.parentNode) {
+      if (node.matches(selector)) return node;
+    }
+    return null;
+  };
   // `dataset` used to be built in every `Element` constructor — a `Proxy`, its
   // handler and three closures on every element of every document in every
   // realm, measured at about 832 bytes an element, for an API no host script
