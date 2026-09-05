@@ -650,3 +650,75 @@ not inferred one. This court records `in_use` but not libmalloc allocated or
 resident, and does not record the arena returned or leak counters; both exist
 in `memory.report`, and adding them here would be instrumentation, which this
 run was not permitted to do.
+
+
+## 19. The authority claim was not closed: hidden state, public surface
+
+§10.3 said `defaultPrevented` stops being a field a page can step around. That
+closed **assignment** and nothing else. The host's action scripts still do
+
+```js
+const ev = new Event(name, { bubbles: true, cancelable });
+el.dispatchEvent(ev);
+return ev.defaultPrevented;
+```
+
+and every one of those three lines is page-reachable surface:
+
+- `Object.defineProperty(ev, "defaultPrevented", { value: true })` on the
+  event a handler was handed shadows the prototype getter with an own
+  property, and the host reads the own property;
+- redefining `Event.prototype.defaultPrevented` as a getter returning `true`
+  does the same for every event;
+- replacing the global `Event` gives the host's `new Event(...)` an object of
+  the page's own shape;
+- replacing `Element.prototype.dispatchEvent`, or the element's own
+  `dispatchEvent`, means the host's dispatch never reaches the real listener
+  model at all, and whatever the page returns is what the host believes.
+
+The court's read-only criteria could not see any of this: they test that
+**assignment** does not take, which is true and beside the point.
+
+**Ruled, mine, for review: a single-authority host action bridge.** The base
+defines one non-writable, non-configurable, non-enumerable global that takes
+the per-realm capability the host already mints, and that, given an element, a
+type and a cancelability:
+
+- constructs the **lexically captured** `Event` — the class the base closed
+  over, never the global a page can replace;
+- calls the closure-owned `dispatchOn` directly, never `element.dispatchEvent`;
+- returns the cancellation answer from the **hidden state**, not from any
+  property lookup on the event.
+
+A wrong capability is a typed refusal. A page cannot replace the bridge
+(non-writable, non-configurable) and cannot call it (it never sees the
+capability, exactly as with the lifecycle bridge). If the bridge is absent the
+host's action fails typed; there is no fallback to the public methods, because
+a fallback is the hole.
+
+The base's own `Element.click`, `submit` and `reset` take the same path:
+they call `dispatchOn` directly instead of `this.dispatchEvent`, so a page
+cannot intercept the DOM's own activation either.
+
+**Scope.** Every host action path whose answer decides `applied`,
+`default_prevented`, a navigation, a reset or a submit: the `fire` helper, the
+keyboard `phase` helper and the form-submit dispatch. This is not general
+hostile-page hardening: unrelated DOM operations are untouched, and a page
+that breaks its own `dispatchEvent` still breaks its own code.
+
+**Falsifiers, all on a checkbox so the document survives the action and both
+halves are observable — that the real handler ran, and what the host
+decided.** Each fixture's handler writes a marker and then does one thing:
+
+1. `Object.defineProperty` of `defaultPrevented` on the received event: the
+   host must **not** cancel, and the marker must show the handler ran;
+2. a forged `Event.prototype.defaultPrevented` getter: must not cancel;
+3. a replaced global `Event`: must not cancel, and the handler must still run;
+4. a replaced `Element.prototype.dispatchEvent` **and** own `dispatchEvent`:
+   the handler must still run and the host must still decide correctly;
+5. an attempted `delete` and reassignment of the bridge: the action still
+   works, because neither is permitted;
+6. a real `preventDefault`: still cancels, and the checkbox is put back.
+
+Nothing here moves a cap, and the frozen M1 and M2 floors are re-measured
+after it.
