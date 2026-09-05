@@ -1282,6 +1282,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, and the court written but held for a freeze ruling:
+  page-authored text in a host error
+  (`labs/native-dom/page-error-redaction-design-0.0.1.md`). The defect is one
+  site, `src/main.rs:2020`: the realm's `eval` copies an exception's message
+  into `details.engine_error`, so an uncaught throw in a page's own top-level
+  script hands the caller whatever the page put in it — a value read from an
+  input, measured, verbatim. The eleven-criterion court reads **17 of 23,
+  `passed: false`** on `4a5836f43b38…`, failing R1, R2 and R8 on both
+  allocators and nothing else, which is narrower than the audit assumed: a
+  listener throwing in the lifecycle, a timer callback, a listener under
+  `target.act` and an unhandled rejection are all **contained today**, and the
+  session's ledger is clean. R8 is the criterion with teeth — two pages
+  throwing one class with two values must produce byte-identical details, so a
+  hash, a length or a truncation fails it too. The first run of the court
+  failed R11 **on itself**, because the synthetic values were readable and
+  shared eight characters with the criteria that report them; the values are
+  now opaque. Recommended repair: `engine_error` stops carrying an exception
+  message at all and says one of a closed host vocabulary, keeping the typed
+  code, the retryable bit, the scope and the fixed reason. Explicitly **not**
+  the repair: candidate A from the error-name audit blanks the message as a
+  side effect, which hides this instance without fixing it, so the redaction
+  must be verified on a build without candidate A. Pending: whether details
+  may name the exception's class, and `details.script` carrying an external
+  script's `src`. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented and no court frozen: the selector
   engine's error names (`labs/native-dom/selector-error-name-audit-0.0.1.md`).
   Measured, not read: a page catching a selector refusal reads `e.name ===
