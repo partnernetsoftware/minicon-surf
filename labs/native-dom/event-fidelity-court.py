@@ -44,7 +44,7 @@ JOBS = load_module("job_deadline_court", Path(__file__).with_name("job-deadline-
 
 # Each probe writes into its own slot, because one long string is truncated by
 # the snapshot's byte bound and a truncated answer is not an answer.
-SLOTS = 24
+SLOTS = 28
 
 
 def page(script, extra=""):
@@ -98,6 +98,41 @@ probe('add_remove_during', function(){
   t.addEventListener('d', function(){ hit.push('first'); t.addEventListener('d', late); t.removeEventListener('d', second); });
   t.addEventListener('d', second);
   t.dispatchEvent(new Event('d',{})); return hit.join(',');
+});
+probe('readd_during', function(){
+  var hit=[]; var second=function(){ hit.push('second'); };
+  t.addEventListener('r1', function(){ hit.push('first');
+    t.removeEventListener('r1', second); t.addEventListener('r1', second); });
+  t.addEventListener('r1', second);
+  t.dispatchEvent(new Event('r1',{}));
+  var inThisOne = hit.join(',');
+  hit = [];
+  t.dispatchEvent(new Event('r1',{}));
+  return inThisOne + '/' + hit.join(',');
+});
+probe('preset_stop', function(){
+  var hit=[]; t.addEventListener('r2', function(){ hit.push('ran'); });
+  var e=new Event('r2',{}); e.stopPropagation();
+  t.dispatchEvent(e);
+  var first = hit.join(',') || 'none';
+  hit = [];
+  t.dispatchEvent(e);
+  return first + '/' + (hit.join(',') || 'none');
+});
+probe('non_event', function(){
+  var ran='no'; t.addEventListener('r3', function(){ ran='yes'; });
+  var thrown='none';
+  try { t.dispatchEvent({ type: 'r3' }); thrown='returned'; }
+  catch (e) { thrown = e.name; }
+  return thrown + ',' + ran;
+});
+probe('type_is_a_string', function(){
+  var hit=[];
+  t.addEventListener(1, function(){ hit.push('numeric'); });
+  t.dispatchEvent(new Event('1',{}));
+  t.addEventListener('2', function(){ hit.push('string'); });
+  t.dispatchEvent(new Event(2,{}));
+  return hit.join(',') || 'none';
 });
 probe('nested_redispatch', function(){
   var hit=[]; var e=new Event('f',{bubbles:true}); var inner_err='none';
@@ -249,6 +284,16 @@ probe('window_hop', function(){
                 expect(tag + "a re-entrant dispatch is refused without corrupting the one in flight",
                        said.get("nested_redispatch") == "InvalidStateError/onetwoup/true/again=2",
                        {"said": said.get("nested_redispatch")})
+                expect(tag + "a listener removed and re-added during a dispatch waits for the next one",
+                       said.get("readd_during") == "first/first,second",
+                       {"said": said.get("readd_during")})
+                expect(tag + "a stop flag set before a dispatch holds for it, and is cleared by its end",
+                       said.get("preset_stop") == "none/ran", {"said": said.get("preset_stop")})
+                expect(tag + "dispatching something that is not an event is refused, not reported",
+                       said.get("non_event") == "TypeError,no", {"said": said.get("non_event")})
+                expect(tag + "a listener type is a string, whatever the page passed",
+                       said.get("type_is_a_string") == "numeric,string",
+                       {"said": said.get("type_is_a_string")})
                 expect(tag + "nothing about an event is page-writable",
                        said.get("read_only") == "all-read-only", {"said": said.get("read_only")})
                 expect(tag + "preventDefault is ignored unless the event is cancelable, "
