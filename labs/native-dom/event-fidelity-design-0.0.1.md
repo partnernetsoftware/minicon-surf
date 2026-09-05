@@ -777,3 +777,37 @@ falsified against `44ad1aa47263…`:**
 In every case the alternative outcome the court will not accept is a
 **fabricated** answer — an `applied` or a `default_prevented` reported without
 the real handler having run.
+
+**20.1 A mechanical replacement that must not land, and a scope I had
+widened.** Hardening the intrinsics, I replaced `String(` and
+`JSON.stringify(` across every host script by pattern. Two things were wrong
+with that and the root caught both in the working tree:
+
+- `c.charCodeAt(0).toString(16)` in `SERIALIZE_JS` became
+  `.to__mcsString(16)` — not a method, and it would have broken GET form
+  serialization outright;
+- snapshot, timers, lifecycle, the seal, the realm probe and the serializer
+  are **not** the privileged path this round was ruled to fix. A page that
+  replaces `String` and then breaks its own snapshot gets a typed failure,
+  which is an acceptable outcome under the stated scope; what is not
+  acceptable is a host **action** fabricating a result.
+
+Reverted to the justified minimum, and the reasons are per-site rather than
+per-pattern:
+
+- the base captures `String` and `JSON.stringify` once and leaves them where
+  only the host looks (`__mcsString`, `__mcsJson`, both non-writable and
+  non-enumerable);
+- `Realm::eval` reads every result through `__mcsString`. This is not a script
+  rewrite: it is how the **host** turns any realm answer into a string, and a
+  page that replaces the global otherwise decides what every answer says;
+- `act_script` and `form_action_script` serialise their answers with
+  `__mcsJson`, because those answers *are* the action's result — a page that
+  replaced `JSON.stringify` could return well-formed JSON saying
+  `{"applied": true}` for an action that did nothing, which is exactly the
+  fabrication the ruling forbids;
+- everything else is back on the ordinary globals, and a page that breaks them
+  breaks its own page.
+
+The form court's GET-submission criteria are the check on the typo, and they
+are rerun on the fixed build.
