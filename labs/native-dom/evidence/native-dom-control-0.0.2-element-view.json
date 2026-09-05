@@ -133,12 +133,14 @@
     "probe": {
      "children_class_list": 0,
      "children_custom_event": 0,
+     "children_dataset": 0,
      "children_element_view": 0,
      "children_enumerable": 0,
      "children_event_view": 0,
      "children_present": 0,
      "main_class_list": true,
      "main_custom_event": true,
+     "main_dataset": true,
      "main_element_view": true,
      "main_enumerable": false,
      "main_event_view": true,
@@ -159,7 +161,7 @@
  "checks_passed": 19,
  "checks_total": 19,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "e9d7273c310e7891430ebe2e65d7958fe5019db7a0780dc56eea32d2dae1592c",
+ "host_sha256": "64e77ee292d7786c65922971ac24247ea9776fb84fb818b3c893e633766faa6c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",

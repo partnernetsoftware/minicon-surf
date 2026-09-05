@@ -17,9 +17,9 @@
      "closed_owners": 0,
      "empty_owners": 0,
      "footprints": [
+      13796096,
       13763328,
-      13828864,
-      13796096
+      13812480
      ],
      "frames_skipped": [],
      "m1": 254041,
@@ -30,21 +30,21 @@
      "scripts_skipped": []
     },
     "candidate": {
-     "base_footprint": 2736512,
-     "base_owners": 287889,
+     "base_footprint": 2720104,
+     "base_owners": 284289,
      "child_frames": 2,
      "closed_owners": 0,
      "empty_owners": 0,
      "footprints": [
-      11977472,
-      11977472,
+      12010240,
+      11961088,
       11977472
      ],
      "frames_skipped": [],
-     "m1": 223705,
-     "m1_footprint": 458776,
-     "m2": 1565147,
-     "main_live": 298120,
+     "m1": 214825,
+     "m1_footprint": 475160,
+     "m2": 1502107,
+     "main_live": 292488,
      "script_count": null,
      "scripts_skipped": []
     }
@@ -57,34 +57,34 @@
      "closed_owners": 0,
      "empty_owners": 0,
      "footprints": [
-      9879552,
-      9895936,
-      9977856
+      9994240,
+      10027008,
+      10207232
      ],
      "frames_skipped": [],
      "m1": 261961,
-     "m1_footprint": 491520,
+     "m1_footprint": 557056,
      "m2": 1831451,
      "main_live": 273512,
      "script_count": null,
      "scripts_skipped": []
     },
     "candidate": {
-     "base_footprint": 3227984,
-     "base_owners": 295649,
+     "base_footprint": 3391824,
+     "base_owners": 292609,
      "child_frames": 2,
      "closed_owners": 0,
      "empty_owners": 0,
      "footprints": [
-      9076736,
-      9240576,
-      8896512
+      8929280,
+      8683520,
+      9043968
      ],
      "frames_skipped": [],
-     "m1": 230105,
-     "m1_footprint": 475136,
-     "m2": 1609243,
-     "main_live": 305704,
+     "m1": 221513,
+     "m1_footprint": 458752,
+     "m2": 1549099,
+     "main_live": 301000,
      "script_count": null,
      "scripts_skipped": []
     }
@@ -92,8 +92,8 @@
   },
   "source_bytes": {
    "dom_shim.js": null,
-   "dom_shim_base.js": 27304,
-   "dom_shim_main.js": 18618
+   "dom_shim_base.js": 26874,
+   "dom_shim_main.js": 19743
   }
  },
  "baseline_sha256": "7f2429d96df8ad1839f52b163e3672e229458d531ae324c1610068a03e7bc0e6",
@@ -102,7 +102,7 @@
    "check": "[system] one child leaves at least 16 KiB of M1 headroom (<= 245760)",
    "detail": {
     "baseline": 261961,
-    "m1": 230105
+    "m1": 221513
    },
    "passed": true
   },
@@ -110,15 +110,15 @@
    "check": "[system] seven children leave seven times it (<= 1720320)",
    "detail": {
     "baseline": 1831451,
-    "m2": 1609243
+    "m2": 1549099
    },
    "passed": true
   },
   {
    "check": "[system] and the recovery is a real difference from the baseline build",
    "detail": {
-    "m1_delta": 31856,
-    "m2_delta": 222208
+    "m1_delta": 40448,
+    "m2_delta": 282352
    },
    "passed": true
   },
@@ -126,16 +126,16 @@
    "check": "[system] 28 child realms cost at least 16384 fewer bytes of process footprint, every host below every baseline host",
    "detail": {
     "baseline": [
-     9879552,
-     9895936,
-     9977856
+     9994240,
+     10027008,
+     10207232
     ],
     "candidate": [
-     9076736,
-     9240576,
-     8896512
+     8929280,
+     8683520,
+     9043968
     ],
-    "recovered": 638976
+    "recovered": 950272
    },
    "passed": true
   },
@@ -143,8 +143,8 @@
    "check": "[system] a main-only page costs no more than 65536 bytes above the baseline",
    "detail": {
     "baseline": 273512,
-    "candidate": 305704,
-    "slack": 32192
+    "candidate": 301000,
+    "slack": 27488
    },
    "passed": true
   },
@@ -169,7 +169,7 @@
    "check": "[arena] one child leaves at least 16 KiB of M1 headroom (<= 245760)",
    "detail": {
     "baseline": 254041,
-    "m1": 223705
+    "m1": 214825
    },
    "passed": true
   },
@@ -177,15 +177,15 @@
    "check": "[arena] seven children leave seven times it (<= 1720320)",
    "detail": {
     "baseline": 1776427,
-    "m2": 1565147
+    "m2": 1502107
    },
    "passed": true
   },
   {
    "check": "[arena] and the recovery is a real difference from the baseline build",
    "detail": {
-    "m1_delta": 30336,
-    "m2_delta": 211280
+    "m1_delta": 39216,
+    "m2_delta": 274320
    },
    "passed": true
   },
@@ -193,16 +193,16 @@
    "check": "[arena] 28 child realms cost at least 16384 fewer bytes of process footprint, every host below every baseline host",
    "detail": {
     "baseline": [
+     13796096,
      13763328,
-     13828864,
-     13796096
+     13812480
     ],
     "candidate": [
-     11977472,
-     11977472,
+     12010240,
+     11961088,
      11977472
     ],
-    "recovered": 1785856
+    "recovered": 1753088
    },
    "passed": true
   },
@@ -210,8 +210,8 @@
    "check": "[arena] a main-only page costs no more than 65536 bytes above the baseline",
    "detail": {
     "baseline": 265720,
-    "candidate": 298120,
-    "slack": 32400
+    "candidate": 292488,
+    "slack": 26768
    },
    "passed": true
   },
@@ -246,12 +246,14 @@
     "probe": {
      "children_class_list": 0,
      "children_custom_event": 0,
+     "children_dataset": 0,
      "children_element_view": 0,
      "children_enumerable": 0,
      "children_event_view": 0,
      "children_present": 0,
      "main_class_list": true,
      "main_custom_event": true,
+     "main_dataset": true,
      "main_element_view": true,
      "main_enumerable": false,
      "main_event_view": true,
@@ -267,12 +269,14 @@
     "probe": {
      "children_class_list": 0,
      "children_custom_event": 0,
+     "children_dataset": 0,
      "children_element_view": 0,
      "children_enumerable": 0,
      "children_event_view": 0,
      "children_present": 0,
      "main_class_list": true,
      "main_custom_event": true,
+     "main_dataset": true,
      "main_element_view": true,
      "main_enumerable": false,
      "main_event_view": true,
@@ -293,7 +297,7 @@
  "checks_passed": 18,
  "checks_total": 18,
  "court": "native-dom per-realm shim split (control 0.0.2)",
- "host_sha256": "e9d7273c310e7891430ebe2e65d7958fe5019db7a0780dc56eea32d2dae1592c",
+ "host_sha256": "64e77ee292d7786c65922971ac24247ea9776fb84fb818b3c893e633766faa6c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the shim is split",

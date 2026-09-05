@@ -1282,6 +1282,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 15 of 15: `dataset`
+  built when a page reads it (`labs/native-dom/gap-triage-0.0.2.md`). A
+  read-only triage of forty capabilities through the existing control door
+  found the cost that mattered was not an absence at all: `dataset` was a
+  `Proxy`, its handler and three closures allocated in **every `Element`
+  constructor in every realm**, for an API no host script names. Measured
+  directly with 16-node and 112-node child documents — after a figure of mine
+  that was wrong by an order and is corrected in the record — a node costs
+  about 2,082 bytes today of which `dataset` is about **832**. The lazy
+  accessor moved to the main extension with the `kebab` helper that serves
+  nothing else, so the one-shot handle did not widen and a child realm has no
+  `dataset` at all. The marginal bytes per child node fall to 1,253 (system)
+  and 1,202 (arena) against a frozen gate of 1,600; M1 is **221,514** with
+  **24,246 bytes of headroom**, and a main-only page is *cheaper* than before,
+  because a page now pays only on the elements it touches. The court is 15 of
+  15 and 12 of 15 against the build before it, failing the per-element gate on
+  both allocators. The triage also recorded that `querySelectorAll` answers a
+  plain array rather than a live `NodeList`, and left the five page-only
+  additions — `closest` first — as individual candidates rather than a bundle.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 17 of 17: the
   `Element` member audit (`labs/native-dom/element-audit-design-0.0.1.md`).
   Fifty-six members of `Node`, `Text` and `Element` were matched mechanically

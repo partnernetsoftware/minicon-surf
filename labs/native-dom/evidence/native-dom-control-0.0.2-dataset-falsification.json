@@ -1,0 +1,158 @@
+{
+ "checks": [
+  {
+   "check": "[system] a child node costs at most 1600 bytes at the margin",
+   "detail": {
+    "large": 752834,
+    "per_node": 2084.6145833333335,
+    "small": 552711
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a main realm reads and writes data-* and gets the same view twice",
+   "detail": {
+    "said": "true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child realm still answers a snapshot",
+   "detail": {
+    "nodes": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and still applies a host action through the bridge",
+   "detail": {
+    "acted": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and still runs the DOM's own reset",
+   "detail": {
+    "checked_after_reset": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child node costs at most 1600 bytes at the margin",
+   "detail": {
+    "large": 733762,
+    "per_node": 2038.4479166666667,
+    "small": 538071
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a main realm reads and writes data-* and gets the same view twice",
+   "detail": {
+    "said": "true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child realm still answers a snapshot",
+   "detail": {
+    "nodes": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and still applies a host action through the bridge",
+   "detail": {
+    "acted": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and still runs the DOM's own reset",
+   "detail": {
+    "checked_after_reset": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "the realm probe is refused without the private court file",
+   "detail": {
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "the main realm has dataset and every child realm has none",
+   "detail": {
+    "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
+     "children_element_view": 0,
+     "children_enumerable": 0,
+     "children_event_view": 0,
+     "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
+     "main_element_view": true,
+     "main_enumerable": false,
+     "main_event_view": true,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "the probe seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 12,
+ "checks_total": 15,
+ "court": "native-dom lazy dataset (control 0.0.2)",
+ "gate": {
+  "large_nodes": 112,
+  "per_node_bytes": 1600,
+  "small_nodes": 16
+ },
+ "host_sha256": "e9d7273c310e7891430ebe2e65d7958fe5019db7a0780dc56eea32d2dae1592c",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: the per-element gate and the divergence fail until dataset is lazy",
+  "the gate is a marginal cost between two child documents, not a total; the M1 and M2 floors and the main slack stay with the child-frame and shim-footprint courts",
+  "a child realm's absence of dataset is read through the court-only probe, because a child has no eval surface by design",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "measured": {
+  "arena": {
+   "large": 733762,
+   "per_node": 2038.4479166666667,
+   "small": 538071
+  },
+  "system": {
+   "large": 752834,
+   "per_node": 2084.6145833333335,
+   "small": 552711
+  }
+ },
+ "passed": false
+}
