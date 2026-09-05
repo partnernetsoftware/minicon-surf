@@ -587,3 +587,42 @@ It applies: a chain link the page asked for during a build is recorded with
 the session it belongs to, even though the target is not inserted yet, and
 the record carries what actually happened to that link — committed, the
 refusal's code, or `resource_limit` when the chain hit its cap.
+
+
+## 20. A ledger that called an abandoned document committed
+
+§7 says only the last link of a build chain is ever observable: every earlier
+candidate is dropped before anything can see it. The audit added in §17.3
+contradicted that. It recorded the link the page asked for as soon as
+`build_target` returned, **before** looking at whether that candidate had
+itself raised another intent — so a candidate that was abandoned in the very
+next statement was written into the ledger with the outcome `committed`. A
+three-link chain left three commits in the record where the caller could
+observe exactly one document.
+
+That is not a redaction problem; it is a truth problem. The ledger is
+evidence, and it was saying a navigation happened that never became visible
+to anyone.
+
+The record is now written after the candidate is judged, from a closed
+vocabulary:
+
+- a build that **failed** records the link with its real typed outcome, as it
+  already did;
+- a candidate that **raised another intent** records the link that asked for
+  it as `superseded` — it was built, it was dropped, and nothing observed it;
+- a candidate with **no further intent** is the one the caller sees, and only
+  that link records `committed`;
+- at the cap, the intent that is refused records `resource_limit`, while the
+  candidate that raised it stays `superseded`. A refused chain therefore
+  contains no `committed` record at all.
+
+*Falsifier:* a three-link chain that ends — each document asks for the next,
+the last asks for a document that asks for nothing. The court reads the
+session's page-navigation records **in sequence order** and asserts they are
+exactly `superseded`, `superseded`, `committed`: one commit, at the end, for
+the one document that became observable. It also asserts the refused chain's
+records are three `superseded` and one `resource_limit` with no commit, that
+every record names an origin and no path or query, and that the ring stays
+bounded. Against the build this finding was found in, the ordered records are
+three `committed` and the criterion fails.

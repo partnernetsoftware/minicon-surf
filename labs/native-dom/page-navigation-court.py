@@ -88,6 +88,13 @@ def main():
             network.Handler.hits.append(path)
             requested.append(path)
             # A chain of documents, each assigning the next during its build.
+            # A chain that ends: link 3 asks for a document that asks for
+            # nothing, so exactly one candidate becomes observable (§20).
+            if path.startswith("/link-"):
+                step = int(path.rsplit("-", 1)[1].partition(".")[0])
+                nxt = f"/link-{step + 1}.html" if step < 3 else "/landed.html"
+                return self.reply(200, page(f"Link {step}",
+                                            f"location.href='{nxt}';"))
             if path.startswith("/chain-"):
                 step = int(path.rsplit("-", 1)[1].partition(".")[0])
                 return self.reply(200, page(f"Chain {step}",
@@ -567,6 +574,33 @@ def main():
                        {"ledger_bytes": len(blob)})
                 if target:
                     host.ok("target.close", {"target": target})
+                # §20: the ordered record of a chain that ends. Only the
+                # document the caller can observe is a commit.
+                chained = open_page(host, session, "/link-1.html")
+                audit = host.call("session.inspect", {"session": session})
+                entries = ((audit.get("result") or {}).get("audit") or {}).get("entries") or []
+                page_records = [e for e in sorted(entries, key=lambda e: e.get("sequence", 0))
+                                if str(e.get("operation", "")).startswith("page.navigate.")]
+                outcomes = [e.get("outcome") for e in page_records[-3:]]
+                expect(tag + "a chain that ends records one commit, at the end, and no false ones",
+                       chained.get("ok") is True
+                       and outcomes == ["superseded", "superseded", "committed"]
+                       and all(e.get("origin") == origin for e in page_records[-3:]),
+                       {"outcomes": outcomes})
+                if chained.get("ok"):
+                    host.ok("target.close", {"target": chained["result"]["target"]})
+                # §20: a chain that is refused commits nothing at all.
+                before_records = len(page_records)
+                refused_chain = open_page(host, session, "/chain-1.html")
+                audit = host.call("session.inspect", {"session": session})
+                entries = ((audit.get("result") or {}).get("audit") or {}).get("entries") or []
+                page_records = [e for e in sorted(entries, key=lambda e: e.get("sequence", 0))
+                                if str(e.get("operation", "")).startswith("page.navigate.")]
+                added = [e.get("outcome") for e in page_records[before_records:]]
+                expect(tag + "and a refused chain records no commit at all",
+                       (not refused_chain.get("ok"))
+                       and added == ["superseded", "superseded", "superseded", "resource_limit"],
+                       {"added": added})
                 opened = open_page(host, session, "/wide-late.html")
                 refused = opened["result"]["target"] if opened.get("ok") else None
                 if refused:
