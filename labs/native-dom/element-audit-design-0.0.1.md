@@ -208,3 +208,17 @@ its own dependency audit, not as a saving forgone by accident.
 `dispatchOn`. Moving only the registration half would split one listener model
 across two files for about 1.3 KB, and that is not authorized. My §7.3
 recommendation stands as ruled.
+
+
+## 10. What the court found in itself
+
+**10.1 A criterion that read the Rust around a script.** The source-inventory
+criterion took each child-capable script's body as a fixed window after its
+declaration, and the window ran off the end of the string literal into the
+Rust that follows it. It duly reported that a host script calls `.remove()` —
+the line it had found was `self.entries.remove(0)`, a Rust call on a Rust
+collection, and on that evidence `remove` would have been struck from C1 for
+no reason at all.
+
+The body is now the script's own literal and nothing after it, raw string or
+plain, and the criterion says what it meant to say.
