@@ -1282,6 +1282,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+  A final root audit then found the authority claim was not closed at all:
+  hidden state stopped assignment, while the host's action scripts still
+  constructed through the global `Event`, dispatched through an element's own
+  `dispatchEvent` and read a public property — so a page could shadow the
+  property on the event it was handed, redefine the prototype getter, replace
+  the class, or replace `dispatchEvent` and never run the real listener model.
+  Measured on the build before the fix: the first two cancelled a host action
+  outright, the third broke it, and the fourth let the host report an applied
+  action whose handler never ran. Every host action path that decides
+  `applied`, `default_prevented`, a navigation, a reset or a submit now goes
+  through one capability-guarded bridge that mints the base's own `Event`,
+  walks the closure-owned dispatcher and answers from hidden state, armed in
+  every realm including children before any page script runs, with a typed
+  refusal and no fallback. The court is **54 of 54** and 46 of 54 against the
+  build before the bridge; M1 is 236,074 and M2 1,650,236, still under the
+  unchanged floors.
+
   The navigation court's differential soak failed repeatedly on
   `a91bdf2c85b7…` — 88, 90 and 89 of 90 — and I stopped on it rather than
   moving anything. A pre-registered read-only attribution then compared round

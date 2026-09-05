@@ -169,37 +169,37 @@
    "check": "[system] an own property shadowing defaultPrevented cannot cancel what the host decides, and the handler still runs",
    "detail": {
     "shadow": {
-     "applied": true,
-     "default_prevented": null,
+     "applied": false,
+     "default_prevented": true,
      "found": true,
      "marker": "handler ran"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a forged prototype getter cannot cancel what the host decides, and the handler still runs",
    "detail": {
     "proto": {
-     "applied": true,
-     "default_prevented": null,
+     "applied": false,
+     "default_prevented": true,
      "found": true,
      "marker": "handler ran"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a replaced global Event cannot cancel what the host decides, and the handler still runs",
    "detail": {
     "fake_event": {
-     "applied": true,
+     "applied": null,
      "default_prevented": null,
      "found": true,
-     "marker": "handler ran"
+     "marker": "start"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a replaced dispatchEvent cannot cancel what the host decides, and the handler still runs",
@@ -208,10 +208,10 @@
      "applied": true,
      "default_prevented": null,
      "found": true,
-     "marker": "handler ran"
+     "marker": "start"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] an attempt to remove the bridge cannot cancel what the host decides, and the handler still runs",
@@ -401,37 +401,37 @@
    "check": "[arena] an own property shadowing defaultPrevented cannot cancel what the host decides, and the handler still runs",
    "detail": {
     "shadow": {
-     "applied": true,
-     "default_prevented": null,
+     "applied": false,
+     "default_prevented": true,
      "found": true,
      "marker": "handler ran"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a forged prototype getter cannot cancel what the host decides, and the handler still runs",
    "detail": {
     "proto": {
-     "applied": true,
-     "default_prevented": null,
+     "applied": false,
+     "default_prevented": true,
      "found": true,
      "marker": "handler ran"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a replaced global Event cannot cancel what the host decides, and the handler still runs",
    "detail": {
     "fake_event": {
-     "applied": true,
+     "applied": null,
      "default_prevented": null,
      "found": true,
-     "marker": "handler ran"
+     "marker": "start"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a replaced dispatchEvent cannot cancel what the host decides, and the handler still runs",
@@ -440,10 +440,10 @@
      "applied": true,
      "default_prevented": null,
      "found": true,
-     "marker": "handler ran"
+     "marker": "start"
     }
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] an attempt to remove the bridge cannot cancel what the host decides, and the handler still runs",
@@ -465,10 +465,10 @@
    "passed": true
   }
  ],
- "checks_passed": 54,
+ "checks_passed": 46,
  "checks_total": 54,
  "court": "native-dom bounded Event fidelity (control 0.0.2)",
- "host_sha256": "44ad1aa47263746672fce18728ed367b55d2b886e5488285fe31a3ed37ae7fd3",
+ "host_sha256": "ec20ffab6af3fdb309593bf345bf690bae694dc0214b6cd4efea9602e89635ef",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the base Event and dispatcher are faithful",
@@ -479,5 +479,5 @@
   "the unchanged M1 and M2 floors are measured by the child-frame and shim-footprint courts on the same binary",
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
  ],
- "passed": true
+ "passed": false
 }
