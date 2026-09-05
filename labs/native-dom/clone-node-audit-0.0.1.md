@@ -221,3 +221,29 @@ attribute order, the typed `value` and the `checked` property staying behind,
 no listener and no focus on a copy, the closed-set failure path, owner
 release, and the child divergence. Attribute-name validation, the selector
 engine's error name, C2b and `EventTarget` stand as ruled.
+
+
+## 11. The copy stops going through the authoring path
+
+Ruled, and taken before any validator exists rather than after it breaks
+something: **copying is not authoring.** A clone writes the element's own
+attribute map directly, exactly as `build()` does for what the parser
+produced, instead of replaying every attribute through `setAttribute`.
+
+The reason is measured in `attribute-name-validation-audit-0.0.1.md` §3: a
+parsed document legitimately holds names like `1bad` and `weird:name`, which
+HTML parsing accepts and authoring would not, and a clone that re-authors them
+would start throwing the moment `setAttribute` learns to validate. It is also
+simply the right shape — a copy carries what exists; it does not re-decide
+whether it was allowed to exist.
+
+Nothing else about the copy changes: the same closed set of node kinds, the
+same typed failure for a kind it does not model, no listeners, no IDL state,
+no focus, and no revision movement until the page appends it. The handle does
+not widen — `__attrs` is the element's own property — and the base does not
+grow.
+
+**The criterion**, in `element-view-court.py`: a document whose element
+carries a parser-produced name that authoring would reject is cloned, and the
+copy carries that name. It fails on any build whose clone re-authors, whether
+or not a validator exists yet.

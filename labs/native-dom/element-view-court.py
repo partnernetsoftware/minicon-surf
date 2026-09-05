@@ -35,7 +35,7 @@ HERE = Path(__file__).resolve().parent
 # Exactly the ten the ruling moves. Nothing else, and no more.
 # How many assertions the main-realm page fixture makes. It is a criterion in
 # its own right: a fixture that loses an assertion fails rather than passes.
-PAGE_CHECKS = 47
+PAGE_CHECKS = 49
 
 MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
          "innerText", "defaultValue", "focus", "blur", "submit",
@@ -167,7 +167,9 @@ def main():
                     "<p id=\"attrs\">attrs</p><p id=\"toggle\">toggle</p>"
                     "<div id=\"clone-src\" class=\"c\" data-k=\"v\">text<span>inner</span></div>"
                     "<input id=\"clone-input\" value=\"orig\">"
-                    "<input id=\"clone-check\" type=\"checkbox\"></main><script>"
+                    "<input id=\"clone-check\" type=\"checkbox\">"
+                    "<p id=\"clone-odd\" data-ok=\"1\" weird:name=\"2\" 1bad=\"3\">odd</p>"
+                    "</main><script>"
                     "var host=document.getElementById('host');"
                     "var a=document.getElementById('a');"
                     "var out=[];"
@@ -215,6 +217,13 @@ def main():
                     "src.dispatchEvent(new Event('court:clone',{}));"
                     "out.push(heard===1);"
                     "out.push(document.activeElement!==listenerCopy);"
+                    # A clone carries what the parser produced, including a
+                    # name authoring would reject: copying is not authoring.
+                    "var odd=document.getElementById('clone-odd');"
+                    "var oddCopy=odd.cloneNode(true);"
+                    "out.push(oddCopy.getAttributeNames().join(',')"
+                    "===odd.getAttributeNames().join(','));"
+                    "out.push(oddCopy.getAttribute('1bad')==='3');"
                     "var refused='none';"
                     "try { Node.prototype.cloneNode.call({nodeType:8,childNodes:[]}, true); }"
                     "catch (e) { refused = e.name; }"
