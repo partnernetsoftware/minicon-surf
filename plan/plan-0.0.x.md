@@ -1282,6 +1282,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 16 of 16:
+  host-driven focus (`labs/native-dom/active-element-audit-0.0.1.md`). The
+  audit found focus absent everywhere — no `activeElement`, no events from
+  `focus()`, no `tabIndex`, and a host click that changed nothing — and named
+  the cheap fix as the one to avoid: tracking focus inside a page's own
+  `focus()` calls would have made the host lie louder, because a page that
+  clicks a field through the agent and reads `activeElement` would see
+  whatever it last focused itself. Ruled narrow instead: **only a host-driven
+  action moves focus**, the state is hidden in the base's closure, the
+  extension reads it through a getter that cannot move it, and a page's
+  `focus()` moves nothing and raises nothing — a divergence recorded rather
+  than hidden. Three faults surfaced, two of them mine: my fixture clicked
+  text inputs, which this host refuses, and reported only from click
+  listeners, so a `set_value` criterion read a stale value; the host's was
+  real — the button path ends in the DOM's own `click()`, so a hook in the
+  dispatcher would have missed it while hooking `dispatchOn` would have let a
+  page's synthetic click forge focus. The host asks explicitly through the
+  bridge instead. This slice costs child realms, because the state must be
+  base-side to be unforgeable: M1 221,514 to **224,458** against an unchanged
+  floor, leaving 21,302 bytes of headroom, with main slack 31,872. The court is
+  16 of 16 and **2 of 16** against the build before it. G1, G3, P6 and G6 stay
+  open.
 - [~] Implemented and qualified on the native route, court 19 of 19:
   `Element.closest` (`labs/native-dom/closest-audit-0.0.1.md`), taken as a
   **compatibility fix rather than a capability** and recorded on that ground.

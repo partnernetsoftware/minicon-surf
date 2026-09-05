@@ -1,0 +1,131 @@
+{
+ "checks": [
+  {
+   "check": "[system] before anything is activated, the body is what is active",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a host click focuses what it clicked",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and a second click moves it",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the four events fire in the standard's order, and only focusin and focusout reach an ancestor",
+   "detail": {
+    "events": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and the action that applies to a text field focuses it",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a page cannot forge focus, and the host's click still decides it",
+   "detail": {
+    "after": "b|tried=own-property+assign+page-focus"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a new document starts with nothing focused",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] before anything is activated, the body is what is active",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a host click focuses what it clicked",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and a second click moves it",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the four events fire in the standard's order, and only focusin and focusout reach an ancestor",
+   "detail": {
+    "events": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and the action that applies to a text field focuses it",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a page cannot forge focus, and the host's click still decides it",
+   "detail": {
+    "after": "b|tried=own-property+assign+page-focus"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a new document starts with nothing focused",
+   "detail": {
+    "active": "none"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 2,
+ "checks_total": 16,
+ "court": "native-dom host-driven focus (control 0.0.2)",
+ "host_sha256": "0ac5a9a7dbbf245d89febbccfb52b302add669ceaf29cea6c9f67fb84e89bef2",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until a host action moves focus",
+  "the narrow model by ruling: a page's own focus() moves nothing, so a page that focuses itself and reads activeElement sees what the agent last activated",
+  "no tabindex, contenteditable, autofocus, Tab navigation, :focus, hasFocus, cross-frame focus or relatedTarget; no focus field in the snapshot",
+  "the M1 and M2 floors and the main-only slack, including the handle identifier's cost, are measured by the child-frame and shim-footprint courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

@@ -1123,8 +1123,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 989312,
-    "at_8": 989312,
+    "at_128": 1000544,
+    "at_8": 1000544,
     "cap": 65536,
     "growth": 0
    },
@@ -1133,8 +1133,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 989312,
-    "at_64": 989312,
+    "at_128": 1000544,
+    "at_64": 1000544,
     "cap": 8192
    },
    "passed": true
@@ -1142,8 +1142,8 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 947936,
-    "fresh": 967872
+    "after_submit": 959168,
+    "fresh": 979104
    },
    "passed": true
   },
@@ -2301,8 +2301,8 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 964576,
-    "at_8": 964576,
+    "at_128": 975648,
+    "at_8": 975648,
     "cap": 65536,
     "growth": 0
    },
@@ -2311,8 +2311,8 @@
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 964576,
-    "at_64": 964592,
+    "at_128": 975648,
+    "at_64": 975680,
     "cap": 8192
    },
    "passed": true
@@ -2320,8 +2320,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 923136,
-    "fresh": 942736
+    "after_submit": 934240,
+    "fresh": 953824
    },
    "passed": true
   },
@@ -2330,7 +2330,7 @@
    "detail": {
     "audit_bytes": 7830,
     "audit_capacity_bytes": 7168,
-    "audit_dropped_total": 160,
+    "audit_dropped_total": 161,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -2405,7 +2405,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "0ac5a9a7dbbf245d89febbccfb52b302add669ceaf29cea6c9f67fb84e89bef2",
+ "host_sha256": "8546428d23d91cec1b3252692d1fb0866392652ddc25f78440c5b0ef462442b2",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",
