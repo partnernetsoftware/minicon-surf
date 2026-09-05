@@ -73,9 +73,14 @@ RECORDER = (
     "note('dcl:'+document.readyState+':'+(e.target===document?'doc':'other')"
     "+':'+(e.currentTarget===document?'doc':'other')+':'+(e.bubbles?'b':'nb')"
     "+':'+(e.cancelable?'c':'nc'));});"
+    "document.addEventListener('load',function(){note('load-reached-document');});"
     "if(typeof window.addEventListener==='function'){"
+    "window.addEventListener('DOMContentLoaded',function(e){"
+    "note('dclwin:'+(e.target===document?'doc':'other')"
+    "+':'+(e.currentTarget===window?'win':'other'));});"
     "window.addEventListener('load',function(e){"
-    "note('load:'+document.readyState+':'+(e.target===window?'win':'other'));});}"
+    "note('load:'+document.readyState+':'+(e.target===window?'win':'other')"
+    "+':'+(e.bubbles?'b':'nb'));});}"
     "else{note('no-window-target');}"
 )
 
@@ -209,18 +214,26 @@ def main():
                 steps = (line or "").split()
                 expect(tag + "the four steps happen in the order the standard gives them",
                        steps == ["script:loading", "rsc:interactive",
-                                 "dcl:interactive:doc:doc:nb:nc", "rsc:complete",
-                                 "load:complete:win"],
-                       {"steps": len(steps)})
+                                 "dcl:interactive:doc:doc:b:nc", "dclwin:doc:win",
+                                 "rsc:complete", "load:complete:win:nb"],
+                       {"steps": steps})
                 expect(tag + "readyState is loading, then interactive, then complete",
-                       len(steps) == 5 and steps[0].endswith("loading")
-                       and steps[1].endswith("interactive") and steps[3].endswith("complete"),
+                       len(steps) == 6 and steps[0].endswith("loading")
+                       and steps[1].endswith("interactive") and steps[4].endswith("complete"),
                        {"steps": len(steps)})
                 expect(tag + "DOMContentLoaded targets the document and load targets the window",
-                       len(steps) == 5 and ":doc:doc:" in steps[2] and steps[4].endswith(":win"),
+                       len(steps) == 6 and ":doc:doc:" in steps[2]
+                       and steps[5].startswith("load:complete:win"),
                        {"steps": len(steps)})
-                expect(tag + "neither bubbles and neither is cancelable",
-                       len(steps) == 5 and steps[2].endswith(":nb:nc"), {"steps": len(steps)})
+                expect(tag + "DOMContentLoaded bubbles to the window, load does not bubble at all",
+                       len(steps) == 6 and steps[2].endswith(":b:nc")
+                       and steps[3] == "dclwin:doc:win"
+                       and steps[5].endswith(":nb")
+                       and "load-reached-document" not in steps,
+                       {"steps": len(steps)})
+                expect(tag + "the window's listener runs after the document's own, in path order",
+                       len(steps) == 6 and steps.index("dclwin:doc:win") > 2,
+                       {"steps": len(steps)})
                 built, _ = observe(host, host.ok("target.open",
                                                  {"session": session, "url": f"{origin}/late.html"},
                                                  deadline_ms=5000)["target"])
@@ -241,6 +254,8 @@ def main():
                 expect(tag + "a custom event on the window is delivered once and removal stops it",
                        steps[:1] == ["custom"] and steps.count("custom") == 1,
                        {"steps": steps[:3]})
+                expect(tag + "a duplicate listener is not de-duplicated: a recorded divergence",
+                       steps.count("custom") == 1, {"steps": len(steps)})
                 expect(tag + "window.onload is a property: assignable, replaceable, and readable",
                        "onload-is:function" in steps and "onload-second" in steps
                        and "onload-first" not in steps,
