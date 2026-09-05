@@ -319,3 +319,18 @@ counted and silent about its URL rather than improvised then.
 The court asserts both halves: the slot is empty after every operation, and
 the seam-driven discard counts exactly one `caller_override` with no URL
 anywhere.
+
+
+## 12. A frozen criterion that read a field the host does not report
+
+Before the court judged anything, three of its history criteria read
+`history.entries` as a list. The bounded history reports **`length`** and
+**`position`** — with `can_go_back` and `can_go_forward` — and no entry list
+at all, by design, because an entry is metadata the caller never needs to
+enumerate. Those criteria would have compared an empty list to a number and
+been unfalsifiable.
+
+Corrected before any product code: a replace-like intent asserts
+`length == 1` and `position == 0`, a reload asserts the same, and the
+post-lifecycle `href` setter asserts `length == 2` and `position == 1`. The
+history's shape is what the host reports, not what the criterion assumed.

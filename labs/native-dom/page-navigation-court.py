@@ -198,17 +198,21 @@ def main():
                            {"tail": (live or {}).get("url", "").rsplit("/", 1)[-1]})
                     # Every one of these is raised during the lifecycle, so all
                     # three are replace-like and none adds an entry (§11.2).
+                    # The bounded history reports a length and a position, not
+                    # an entry list: a replace-like intent leaves both alone.
                     expect(tag + f"{kind} during the lifecycle adds no history entry",
-                           live is not None and len((live.get("history") or {}).get("entries", [])) == 1,
-                           {"entries": len(((live or {}).get("history") or {}).get("entries", []))})
+                           live is not None and (live.get("history") or {}).get("length") == 1
+                           and (live.get("history") or {}).get("position") == 0,
+                           {"history": (live or {}).get("history")})
                     if answer.get("ok"):
                         host.ok("target.close", {"target": answer["result"]["target"]})
                 answer = open_page(host, session, "/reload-call.html")
                 live = state(host, answer["result"]["target"]) if answer.get("ok") else None
                 expect(tag + "reload rebuilds the same URL and leaves history alone",
                        live is not None and (live.get("url") or "").endswith("/reload-call.html")
-                       and len((live.get("history") or {}).get("entries", [])) == 1,
-                       {"entries": len(((live or {}).get("history") or {}).get("entries", []))})
+                       and (live.get("history") or {}).get("length") == 1
+                       and (live.get("history") or {}).get("position") == 0,
+                       {"history": (live or {}).get("history")})
             finally:
                 close(directory, host, label)
 
@@ -271,11 +275,14 @@ def main():
                 target = answer["result"]["target"] if answer.get("ok") else None
                 before = state(host, target) if target else None
                 after = state(host, target) if target else None
-                expect(tag + "an intent from a timer commits at the boundary that ran it",
+                # This one is raised after the lifecycle, from a timer, so the
+                # href setter adds an entry: length two, position one.
+                expect(tag + "an intent from a timer commits at the boundary that ran it and adds an entry",
                        after is not None and (after.get("url") or "").endswith("/landed.html")
-                       and len((after.get("history") or {}).get("entries", [])) == 2,
+                       and (after.get("history") or {}).get("length") == 2
+                       and (after.get("history") or {}).get("position") == 1,
                        {"tail": (after or {}).get("url", "").rsplit("/", 1)[-1],
-                        "entries": len(((after or {}).get("history") or {}).get("entries", []))})
+                        "history": (after or {}).get("history")})
             finally:
                 close(directory, host, label)
 
