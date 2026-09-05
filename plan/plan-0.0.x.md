@@ -1282,6 +1282,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+  A further audit found the privileged path was built from page-mutable tools:
+  the `WeakMap` and `Map` prototype methods the hidden state and the listener
+  store use, the array iterator the dispatch walked with, `.call` read off a
+  page-owned function, and the global `String` and `JSON` the host reads its
+  answers through. Measured on the build before the fix, from inside a click
+  handler while the host's own dispatch was in flight: a patched `WeakMap`
+  reached the hidden state and forced `applied: false`, a patched `Map` hid the
+  ancestor's listener from the walk, a replaced array iterator did the same to
+  the path, and a replaced `JSON.stringify` made the host report an action
+  result the page had written. The privileged path now captures its intrinsics
+  before any page script and walks everything by index; the host reads realm
+  answers and serialises action results through captured intrinsics, and
+  nothing else was hardened, because a typed failure outside the action path is
+  an acceptable outcome and a fabricated result is not. Two corrections of mine
+  came first: a mechanical replacement that turned `toString(16)` into
+  `to__mcsString(16)` and would have broken GET form submission, and criteria
+  whose attacks ran at load time, where they broke the page's own build and
+  could not tell two builds apart. The court is **62 of 62** and 56 of 62
+  against the build before it. **M1 is 243,130 against the 245,760 floor —
+  2,630 bytes of headroom**, so this slice has spent nearly all of the shim
+  split's margin.
+
   A final root audit then found the authority claim was not closed at all:
   hidden state stopped assignment, while the host's action scripts still
   constructed through the global `Event`, dispatched through an element's own
