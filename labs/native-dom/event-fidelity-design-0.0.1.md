@@ -545,3 +545,51 @@ allocator** — but this is the first time it has failed repeatedly on one
 binary while passing repeatedly on the two before it, which is a different
 thing from the flake that route has shown before, and I am not going to call
 it one.
+
+
+## 17. Pre-registration: one read-only attribution, before it is measured
+
+Written and committed **before** the measurement, so the reading cannot be
+chosen after the numbers are seen.
+
+**The question.** Did round two add live or owned `Event`/listener state that
+**accumulates across navigations**, or is the divergence only released
+realm/build allocations that the default zone keeps resident?
+
+**Method.** The existing `navigation-attribution-court.py`, read-only, which
+produces no pass and no fail, moves no cap and is followed by no optimisation.
+One matched run per binary — exact round one `abd1ed744721…` and exact round
+two `a91bdf2c85b7…` — same fixture, order and request shape, both allocators,
+`--repetitions 1`. No product change, no arm change, no allocator change, no
+retry of the navigation court.
+
+**Observations required, and what this mechanism can and cannot give.**
+
+- *the stage where footprint separates*: available — per-stage footprint and
+  in-use deltas over the six navigation stages;
+- *realm in-use*: available as `realm_malloc_bytes` and as the per-stage
+  `in_use`;
+- *libmalloc allocated and resident beside in-use*: **the court records
+  in-use only**; allocated and resident exist in `memory.report` and
+  `sample_process` but this court does not sample them, and extending it is
+  instrumentation, so it is reported as a gap rather than added;
+- *live `Event`/listener owner bytes*: **not available at all**. There is no
+  owner for event or listener state; `realm_malloc_bytes` is the whole
+  realm's allocator, and nothing decomposes it. I will say so rather than
+  attribute by arithmetic;
+- *owners after target and session close*: available;
+- *arena returned and leak counters*: **not recorded by this court**, though
+  `memory.report` carries them; same gap, same treatment.
+
+**The reading, fixed in advance.**
+
+- If owner or in-use bytes **accumulate** across the run and are attributable
+  to live `Event`/listener state, this round is **not qualified** and must be
+  rescaled.
+- If owners stay bounded and return to zero on close, and the divergence
+  appears during the candidate build and persists only as released pages the
+  default zone keeps resident, then `Event` may remain qualified under its own
+  frozen floors while navigation stays the **cross-batch, default-allocator
+  narrow** the README already documents.
+- If the two cannot be told apart with what this mechanism reports, that is
+  the finding: I record the uncertainty and name the missing observable.
