@@ -236,3 +236,88 @@ behaviour, and the receipt says so rather than letting the number read as a
 weak falsification. Against the *sources* of the build before C1 the inventory
 criteria do fail; that state is not reachable from a receipt taken today, and
 it is not claimed as one.
+
+
+## 11. The C2 dependency audit
+
+Design and read-only measurement, from clean `origin/main` `681c48f`. No
+product code, no implementation court frozen, no navigation soak, no surface
+path. The variants were built in a throwaway worktree that has been removed.
+
+**11.1 Call sites, re-verified mechanically.** Each of the four was matched
+against every child-capable host script's own literal, against the base's own
+code and against the extension: `contains`, `matches`, `removeAttribute` and
+`replaceChildren` are named by **no host script, no extension code, and — for
+three of them — no base code either**.
+
+**11.2 A correction to §4: `contains` needs nothing.** §4 said all four are
+written in terms of base internals. That is wrong for `contains`. What the
+base uses at line 44 is the free helper `contains(a, b)`, for
+`MutationObserver` subtree scope; the **method** `Node.prototype.contains` is
+page-only and is one `parentNode` walk. The extension can carry that walk
+without the handle growing by a single identifier.
+
+**11.3 What the other three actually need.** Exactly four identifiers, and
+`Node` is already in the handle from C1:
+
+| member | needs from the base |
+| --- | --- |
+| `matches` | `parseSelector`, `matchChain` |
+| `removeAttribute` | `record` (the element's `__attrs` is an own property and needs nothing) |
+| `replaceChildren` | `record`, `Text` (`__detach` is a prototype method and needs nothing) |
+
+**11.4 Measured, both sub-candidates.**
+
+| | current `main` | C2a: `contains` alone | C2b: all four |
+| --- | ---: | ---: | ---: |
+| handle identifiers added | — | **0** | **4** |
+| M1 (system) | 230,506 | 230,106 | **226,154** |
+| M1 headroom under the 245,760 floor | 15,254 | 15,654 | **19,606** |
+| M2 (system) | 1,612,044 | 1,609,244 | **1,581,580** |
+| M1 / M2 (arena) | 224,298 / 1,568,172 | 223,594 / 1,565,148 | 219,898 / 1,537,196 |
+| per member | — | 400 | 1,088 |
+| main-only slack against the `origin/main` baseline | 32,032 | — | 31,952 |
+
+`contains` is **below** the ruled 600–960 band at 400 bytes, and the other
+three are **above** it at about 1,088 each: they are larger methods than the
+ten C1 moved, and the band is a guide rather than a law. Courts on the C2b
+scratch build: child-frames 82/82, element-view 17/17, event-view 11/11,
+event-fidelity 62/62, element-api 28/28, form 179/179, frame-actions 182/182,
+page-navigation 80/80, lifecycle 53/53, timers 68/68, job-deadline 42/42,
+frame-realm 62/62, cdp-frame-tree 64/64, shim-footprint 18/18.
+
+**11.5 What handing out `record` would mean.** `record` is how a mutation
+becomes a `MutationObserver` record, and `MutationObserver` is how
+`window.__mcs.revision` moves — the revision being the primitive that gates
+every action a caller takes against a snapshot. Handing it to the extension
+does **not** put it within reach of page script: the handle is one-shot,
+consumed before any page script runs, and deleted in a child realm outright.
+So this is coupling, not a page-reachable authority hole — but it is the first
+time anything outside the base could move the gate, and it should be ruled on
+those terms rather than on its byte count.
+
+`Text` and the two selector functions carry no such consideration:
+constructing a text node and matching a parsed selector are what the extension
+already causes through public members.
+
+**11.6 The one loss, in C2a.** Moving `contains` means the ancestor walk
+exists twice — the base's helper for observer scope, and the extension's
+method for pages. Four lines, two copies, and they can drift. The alternative
+is to hand out the helper, which is one more identifier for one small member.
+
+**11.7 What I need ruled.**
+
+1. **C2a** — `contains` alone, 400 bytes, no handle change, at the cost of a
+   duplicated four-line walk (11.6). Or hand out the helper and duplicate
+   nothing, for one identifier.
+2. **C2b** — the other three, 3,952 bytes more, for `record`, `parseSelector`,
+   `matchChain` and `Text` in the handle, with `record`'s meaning as in 11.5.
+3. Whether either is worth doing **now**, given M1 already has 15,254 bytes of
+   headroom under an unchanged floor: neither is needed to unblock anything,
+   and both spend the one-shot handle's narrowness, which is the thing that
+   has made every audit since the split cheap to reason about.
+
+My own view, for what it is worth against your ruling: take C2a with the
+helper handed out rather than duplicated — one identifier, no divergence in
+behaviour, no second copy of anything — and leave C2b until a slice actually
+needs the 3,952 bytes.
