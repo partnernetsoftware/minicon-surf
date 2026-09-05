@@ -1282,6 +1282,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: an `EventTarget`
+  constructor (`labs/native-dom/event-target-audit-0.0.1.md`). Measured on the
+  shipped build: `EventTarget` is **`undefined`** and an element's chain is
+  `Element > Element > Node > Object`, but **the behaviour is already there** —
+  the base keys listeners by object in a `WeakMap`, so borrowing
+  `addEventListener` onto a plain object works, and a detached element is a
+  working bus today. Three containment probes hold and are recorded: a forged
+  `{parentNode: realElement}` does **not** reach the real element's listeners,
+  a page dispatching the reserved focus type moves nothing, and a page that
+  overwrites `dispatchEvent` on the prototype does **not** intercept the
+  host's own `target.act` — measured on both builds. The candidate is
+  **main-only and widens nothing**, because the handle already hands over
+  `addListener`, `removeListener`, `dispatchOn` and `Node`: a three-method
+  class plus one `setPrototypeOf`. It costs **nothing per child** — M1 225,626
+  and M2 1,577,884 do not move — and 2,352 bytes of main-only slack (40,576 to
+  42,928, 22,608 left), the exact inverse of the error-class slice where every
+  child paid for something no child could observe. The loss matrix records
+  what the constructor does **not** fix, all measured: `{once:true}` ignored
+  so the listener ran twice, `capture` accepted and ignored, `AbortController`
+  undefined, and a `handleEvent` object registered and **silently never
+  called**. My recommendation is written into the audit: the cost is the
+  lowest of the batch and so is the value, so rule on `EventTarget` and the
+  listener options together, or take it knowing it is a name and not a
+  capability. C2b stays scope-closed and the selector error names stay as
+  built. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 34 of 34:
   attribute-name validation, re-measured
   (`labs/native-dom/attribute-name-validation-audit-0.0.2.md`, superseding
