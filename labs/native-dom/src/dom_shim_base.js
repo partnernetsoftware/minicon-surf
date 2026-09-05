@@ -253,11 +253,6 @@
     constructor(tag) {
       super(); this.nodeType = 1; this.localName = String(tag).toLowerCase(); this.tagName = this.localName.toUpperCase(); this.nodeName = this.tagName;
       this.__attrs = new Map(); this.__value = null;
-      this.dataset = new Proxy({}, {
-        get: (_, key) => typeof key === "string" ? this.getAttribute("data-" + kebab(key)) ?? undefined : undefined,
-        set: (_, key, value) => { this.setAttribute("data-" + kebab(key), String(value)); return true; },
-        has: (_, key) => this.hasAttribute("data-" + kebab(key)),
-      });
     }
     getAttribute(name) { const v = this.__attrs.get(String(name).toLowerCase()); return v === undefined ? null : v; }
     hasAttribute(name) { return this.__attrs.has(String(name).toLowerCase()); }
@@ -363,7 +358,6 @@
     createTextNode(data) { return new Text(data); }
     getElementById(id) { id = String(id); for (const el of this.__descendants()) if (el.getAttribute("id") === id) return el; return null; }
   }
-  function kebab(key) { return String(key).replace(/[A-Z]/g, (m) => "-" + m.toLowerCase()); }
   const selectorCache = new Map();
   function parseSelector(selector) {
     selector = String(selector).trim();

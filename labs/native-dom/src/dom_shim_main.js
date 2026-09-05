@@ -27,6 +27,33 @@ __mcsInternals((internals) => {
     get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
     configurable: true });
   const containsHelper = internals.contains;
+  // `dataset` used to be built in every `Element` constructor — a `Proxy`, its
+  // handler and three closures on every element of every document in every
+  // realm, measured at about 832 bytes an element, for an API no host script
+  // names. It is a lazy accessor here: a page pays for it on the elements it
+  // touches, and a child realm, which cannot read it at all, pays nothing.
+  const kebab = (key) => String(key).replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
+  const datasets = new WeakMap();
+  Object.defineProperty(Element.prototype, "dataset", {
+    get() {
+      let view = datasets.get(this);
+      if (view) return view;
+      const el = this;
+      view = new Proxy({}, {
+        get: (_, key) => typeof key === "string"
+          ? el.getAttribute("data-" + kebab(key)) ?? undefined
+          : undefined,
+        set: (_, key, value) => {
+          el.setAttribute("data-" + kebab(key), String(value));
+          return true;
+        },
+        has: (_, key) => el.hasAttribute("data-" + kebab(key)),
+      });
+      datasets.set(this, view);
+      return view;
+    },
+    configurable: true,
+  });
   Node.prototype.contains = function (other) { return containsHelper(this, other); };
   Node.prototype.appendChild = function (node) { this.append(node); return node; };
   Node.prototype.remove = function () { if (this.parentNode) this.parentNode.removeChild(this); };
