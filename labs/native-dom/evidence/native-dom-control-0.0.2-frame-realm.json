@@ -125,7 +125,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:49481/about.html"
+        "url": "http://127.0.0.1:57600/about.html"
       },
       "passed": true
     },
@@ -193,7 +193,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:49481/notfound"
+          "url": "http://127.0.0.1:57600/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -373,7 +373,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:49481/about.html"
+        "url": "http://127.0.0.1:57600/about.html"
       },
       "passed": true
     },
@@ -441,7 +441,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:49481/notfound"
+          "url": "http://127.0.0.1:57600/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -501,17 +501,17 @@
   "checks_total": 62,
   "footprint_bytes": {
     "arena": {
-      "empty": 1950032,
-      "post_close": 2867536,
-      "two_fixture_targets_live": 3031424
+      "empty": 1966416,
+      "post_close": 2883920,
+      "two_fixture_targets_live": 3080576
     },
     "system": {
-      "empty": 1950032,
-      "post_close": 4620624,
-      "two_fixture_targets_live": 3752272
+      "empty": 1966416,
+      "post_close": 4669776,
+      "two_fixture_targets_live": 3768656
     }
   },
-  "host_sha256": "561062d146e6017039e08b0784a6b4093c5d218918f864c43cb14c1bd7130f89",
+  "host_sha256": "099b46da419961f7e0f52cf1894400d6bbdd3317df7cc512682fd0e90c41e512",
   "losses": [
     "child frames are bounded, same-origin, depth one and script-free: this court's fixtures embed none, so every target here is one main frame; the child-frame court owns those criteria",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",

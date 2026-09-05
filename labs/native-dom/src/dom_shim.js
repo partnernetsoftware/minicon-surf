@@ -41,7 +41,7 @@
     takeRecords() { const out = []; for (const e of this.__entries) { out.push(...e.records); e.records = []; } return out; }
   }
   class Node {
-    constructor() { this.parentNode = null; this.childNodes = []; this.__listeners = new Map(); }
+    constructor() { this.parentNode = null; this.childNodes = []; }
     get isConnected() { for (let n = this; n; n = n.parentNode) if (n.nodeType === 9) return true; return false; }
     get firstChild() { return this.childNodes[0] || null; }
     get lastChild() { return this.childNodes[this.childNodes.length - 1] || null; }
@@ -74,24 +74,68 @@
       for (let node of nodes) { if (!(node instanceof Node)) node = new Text(String(node)); if (node.parentNode) node.parentNode.__detach(node); node.parentNode = this; this.childNodes.push(node); addedNodes.push(node); }
       record("childList", this, { addedNodes, removedNodes });
     }
-    addEventListener(type, fn) { if (typeof fn !== "function") return; if (!this.__listeners.has(type)) this.__listeners.set(type, []); this.__listeners.get(type).push(fn); }
-    removeEventListener(type, fn) { const l = this.__listeners.get(type); if (!l) return; const i = l.indexOf(fn); if (i >= 0) l.splice(i, 1); }
-    dispatchEvent(event) {
-      event.target = this;
-      const path = []; for (let n = this; n; n = n.parentNode) path.push(n);
-      for (const n of path) {
-        event.currentTarget = n;
-        const l = n.__listeners.get(event.type);
-        if (l) for (const fn of [...l]) { try { fn.call(n, event); } catch (e) {} }
-        if (event.__stop || !event.bubbles) break;
-      }
-      event.currentTarget = null;
-      return !event.defaultPrevented;
-    }
+    addEventListener(type, fn) { addListener(this, type, fn); }
+    removeEventListener(type, fn) { removeListener(this, type, fn); }
+    dispatchEvent(event) { return dispatchOn(this, event); }
     __descendants(out = []) { for (const c of this.childNodes) { if (c.nodeType === 1) { out.push(c); c.__descendants(out); } } return out; }
     querySelectorAll(selector) { const chain = parseSelector(selector); return this.__descendants().filter((el) => matchChain(el, chain, this)); }
     querySelector(selector) { const chain = parseSelector(selector); for (const el of this.__descendants()) if (matchChain(el, chain, this)) return el; return null; }
   }
+  // The listener model, shared by every event target. A listener is a
+  // function in a list, and the same target, type and function identity is
+  // registered once. There are no options and no handleEvent objects, which
+  // the design records as divergences rather than hiding.
+  // Closure-owned, keyed by the target: a page cannot replace, read or
+  // corrupt the store by assigning a property, and a target that dies takes
+  // its listeners with it.
+  const listenerStore = new WeakMap();
+  function listenersOf(target) {
+    let map = listenerStore.get(target);
+    if (!map) { map = new Map(); listenerStore.set(target, map); }
+    return map;
+  }
+  function addListener(target, type, fn) {
+    if (typeof fn !== "function") return;
+    const map = listenersOf(target);
+    if (!map.has(type)) map.set(type, []);
+    const list = map.get(type);
+    // The same target, type and function identity is registered once: a
+    // repeat is a no-op, as the standard has it within this host's bounds.
+    if (list.indexOf(fn) >= 0) return;
+    list.push(fn);
+  }
+  function removeListener(target, type, fn) {
+    const list = listenersOf(target).get(type);
+    if (!list) return;
+    const at = list.indexOf(fn);
+    if (at >= 0) list.splice(at, 1);
+  }
+  // The path is the node chain, and then — only for an event that bubbles —
+  // the window, which is the document's parent *event target* and never a
+  // parentNode: nothing is appended to the tree and document.parentNode
+  // stays null.
+  function dispatchOn(target, event) {
+    event.target = target;
+    const path = [];
+    if (target && typeof target.nodeType === "number") {
+      for (let n = target; n; n = n.parentNode) path.push(n);
+      // Only a path that actually reached the document continues to the
+      // window: a detached subtree bubbles through its own ancestors and
+      // stops there, as the standard has it.
+      if (event.bubbles && path[path.length - 1] === document) path.push(g);
+    } else {
+      path.push(target);
+    }
+    for (const node of path) {
+      event.currentTarget = node;
+      const list = listenersOf(node).get(event.type);
+      if (list) for (const fn of [...list]) { try { fn.call(node, event); } catch (error) {} }
+      if (event.__stop || !event.bubbles) break;
+    }
+    event.currentTarget = null;
+    return !event.defaultPrevented;
+  }
+
   class Text extends Node { constructor(data) { super(); this.nodeType = 3; this.nodeName = "#text"; this.data = String(data); } }
   class Element extends Node {
     constructor(tag) {
@@ -333,6 +377,44 @@
   // The realm has no URL global; the host passes the parsed parts of the document URL.
   g.__mcsLocation = (parts) => { g.location = { href: parts.href, origin: parts.origin, protocol: parts.protocol, host: parts.host, hostname: parts.hostname, port: parts.port, pathname: parts.pathname, search: parts.search, hash: parts.hash, toString() { return parts.href; } }; };
   g.window = g; g.self = g; g.document = document;
+  g.addEventListener = (type, fn) => addListener(g, type, fn);
+  g.removeEventListener = (type, fn) => removeListener(g, type, fn);
+  g.dispatchEvent = (event) => dispatchOn(g, event);
+  let onloadHandler = null;
+  Object.defineProperty(g, "onload", {
+    get() { return onloadHandler; },
+    set(fn) {
+      if (onloadHandler) removeListener(g, "load", onloadHandler);
+      onloadHandler = typeof fn === "function" ? fn : null;
+      if (onloadHandler) addListener(g, "load", onloadHandler);
+    },
+    configurable: true,
+    enumerable: false,
+  });
+  // The four observable steps are not exposed here. The host arms them once,
+  // before any page script runs, with a capability only it holds; see
+  // `lifecycle_arm_script`. This function is handed to that installer and is
+  // never reachable from the global.
+  const runLifecycleStep = (step) => {
+    if (step === 1) {
+      document.readyState = "interactive";
+      dispatchOn(document, new Event("readystatechange", {}));
+    } else if (step === 2) {
+      dispatchOn(document, new Event("DOMContentLoaded", { bubbles: true }));
+    } else if (step === 3) {
+      document.readyState = "complete";
+      dispatchOn(document, new Event("readystatechange", {}));
+    } else if (step === 4) {
+      dispatchOn(g, new Event("load", {}));
+    }
+  };
+  // One-shot, non-enumerable and removed by the installer the moment it has
+  // been consumed, so only the first caller — the host, before page scripts —
+  // can ever arm the bridge.
+  Object.defineProperty(g, "__mcsArmLifecycle", {
+    value: (arm) => { delete g.__mcsArmLifecycle; return arm(runLifecycleStep, dispatchOn); },
+    writable: false, configurable: true, enumerable: false,
+  });
   g.Node = Node; g.Element = Element; g.Text = Text; g.Document = Document; g.Event = Event; g.MutationObserver = MutationObserver;
   g.queueMicrotask = (fn) => { Promise.resolve().then(fn); };
   // Timers. The realm owns the callbacks and their handles; the host owns the

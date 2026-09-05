@@ -243,6 +243,41 @@ type SemanticRows = Vec<(String, String, String)>;
 /// A host-side scroll advances the revision like any other page mutation.
 const SCROLL_REVISION_JS: &str = "(() => { if (!window.__mcs) { return '-1'; } window.__mcs.revision += 1; return String(window.__mcs.revision); })()";
 
+/// Arms the lifecycle bridge with a capability only the host holds. It runs
+/// once, before any page script, and closes over both the capability and the
+/// phase counter, so the page can neither call a step nor learn how. The
+/// property it defines is non-writable, non-configurable and non-enumerable;
+/// a call with a wrong capability, out of order, repeated, or after the
+/// fourth step dispatches nothing.
+fn lifecycle_arm_script(capability: &str) -> String {
+    format!(
+        r#"(() => {{
+  const arm = window.__mcsArmLifecycle;
+  if (typeof arm !== "function") return "unarmed";
+  return arm((runStep) => {{
+    const capability = {capability};
+    let phase = 0;
+    Object.defineProperty(window, "__mcsLifecycle", {{
+      value: (offered, step) => {{
+        if (offered !== capability) return "refused";
+        if (step !== phase + 1 || step < 1 || step > 4) return "refused";
+        phase = step;
+        runStep(step);
+        return String(step);
+      }},
+      writable: false, configurable: false, enumerable: false,
+    }});
+    return "armed";
+  }});
+}})()"#
+    )
+}
+
+/// One lifecycle step, called by the host with the realm's capability.
+fn lifecycle_step_script(capability: &str, step: u8) -> String {
+    format!(r#"(() => window.__mcsLifecycle({capability}, {step}))()"#)
+}
+
 /// The realm-side location seed for a document, used by the main frame and by
 /// every child frame so an embedded document reports its own address.
 fn location_script(url: &Url) -> String {
@@ -1669,6 +1704,9 @@ struct Realm {
     /// The host's sink, shared by every realm. A realm never owns its own
     /// totals, so nothing is lost when the realm is.
     jobs: JobSink,
+    /// This realm's lifecycle capability, minted by the host and never
+    /// written to a log, a record, an error or a receipt.
+    lifecycle: std::cell::RefCell<String>,
     #[cfg(target_os = "macos")]
     zone_used: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
     #[cfg(target_os = "macos")]
@@ -1718,6 +1756,7 @@ impl Realm {
             context,
             runtime,
             jobs,
+            lifecycle: std::cell::RefCell::new(String::new()),
             zone_used,
             zone,
             arena,
@@ -2546,6 +2585,10 @@ struct Host {
     /// Court-only (`--court-timer-handle N`): a realm's next timer handle
     /// starts here, so the safe-integer boundary is reachable.
     court_timer_handle: u64,
+    /// Court-only (`--court-lifecycle-abuse 1`): after the four steps the host
+    /// replays one and calls another out of order, with the real capability,
+    /// so the phase machine is falsified rather than assumed.
+    court_lifecycle_abuse: bool,
     surface_snapshot_arm: Option<String>,
     surface_court_gc: bool,
     /// Visible windows need a double opt-in: `--visual 1` and the
@@ -4750,6 +4793,28 @@ impl Host {
             .and_then(|s| self.profiles.get(&s.profile_id))
             .is_some_and(|p| p.read_only);
         target.seed_store(deadline, read_only)?;
+        // The lifecycle bridge is armed here: before any page script runs, so
+        // nothing a page does can reach the capability or the steps behind it.
+        // The capability is 128 bits of the same entropy the profile store
+        // uses, and it never leaves the host and this realm's closure.
+        let capability = profile::random_bytes(16)
+            .map(|bytes| {
+                bytes
+                    .iter()
+                    .map(|byte| format!("{byte:02x}"))
+                    .collect::<String>()
+            })
+            .map_err(|_| {
+                ControlError::new(
+                    "internal",
+                    "the lifecycle capability could not be minted",
+                    false,
+                )
+                .scoped("target", id)
+            })?;
+        let quoted = serde_json::to_string(&capability).expect("capability serializes");
+        target.eval(&lifecycle_arm_script(&quoted), deadline, &policy)?;
+        *target.realm.lifecycle.borrow_mut() = quoted;
         // Court-only: the realm's next timer handle, seeded before any page
         // script runs so the safe-integer boundary is reachable.
         if self.court_timer_handle > 0 {
@@ -4775,8 +4840,30 @@ impl Host {
                     .details(details));
             }
         }
-        target.eval("__mcsComplete()", deadline, &policy)?;
+        // The revision instrumentation is installed before the lifecycle, so
+        // what a lifecycle handler mutates is counted like any page mutation.
         target.eval(INSTALL_JS, deadline, &policy)?;
+        // The four observable steps, each its own evaluation. Every one of
+        // them ends with the job drain under this request's deadline, so the
+        // microtasks a handler queues finish before the next step begins and
+        // DOMContentLoaded and load are never fired from one turn.
+        let capability = target.realm.lifecycle.borrow().clone();
+        // Court-only: refusals interleaved with the real run, so a refusal is
+        // tested at every phase rather than only past the end. With the knob
+        // off this is exactly 1, 2, 3, 4.
+        let order: &[u8] = if self.court_lifecycle_abuse {
+            &[2, 1, 1, 3, 2, 4, 3, 2, 4, 4]
+        } else {
+            &[1, 2, 3, 4]
+        };
+        for step in order {
+            target.eval(
+                &lifecycle_step_script(&capability, *step),
+                deadline,
+                &policy,
+            )?;
+        }
+
         // Court-only seams: they do nothing unless the knobs are given.
         if self.court_frame_counter > 0 {
             let seed = format!(
@@ -6437,6 +6524,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut court_revision_base = 0u64;
     let mut court_frame_counter = 0u64;
     let mut court_timer_handle = 0u64;
+    let mut court_lifecycle_abuse = false;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -6486,6 +6574,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             "--court-timer-handle" => {
                 court_timer_handle = pair[1].parse::<u64>().unwrap_or_else(|_| usage())
             }
+            "--court-lifecycle-abuse" => court_lifecycle_abuse = pair[1] == "1",
             "--surface-court-snapshot-arm" => {
                 if !matches!(
                     pair[1].as_str(),
@@ -6612,6 +6701,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         court_revision_base,
         court_frame_counter,
         court_timer_handle,
+        court_lifecycle_abuse,
         surface_snapshot_arm,
         surface_court_gc,
         surface_visual,

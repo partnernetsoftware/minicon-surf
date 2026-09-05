@@ -1,0 +1,430 @@
+{
+ "checks": [
+  {
+   "check": "[system] the four steps happen in the order the standard gives them",
+   "detail": {
+    "steps": [
+     "script:loading",
+     "no-window-target"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] readyState is loading, then interactive, then complete",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] DOMContentLoaded targets the document and load targets the window",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] DOMContentLoaded bubbles to the window, load does not bubble at all",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the window's listener runs after the document's own, in path order",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a page that builds itself on DOMContentLoaded is not inert",
+   "detail": {
+    "texts": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a custom event on the window is delivered once and removal stops it",
+   "detail": {
+    "steps": [
+     "no-window-target",
+     "once",
+     "once"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the same function registered twice is registered once, and removal clears it",
+   "detail": {
+    "calls": 3
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] window.onload cleared with null reads null and does not fire",
+   "detail": {
+    "steps": 4
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] window.onload is a property: assignable, replaceable, and readable",
+   "detail": {
+    "steps": 4
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a job queued in DOMContentLoaded runs before load begins",
+   "detail": {
+    "steps": [
+     "start"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a listener that throws stops neither the next listener nor the next step",
+   "detail": {
+    "ok": true,
+    "steps": [
+     "start"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] the sequence does not run again when the same document is observed",
+   "detail": {
+    "stable": true
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a reload and a navigation each run the whole sequence for the new document",
+   "detail": {
+    "navigate_ok": true,
+    "reload_ok": true
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] an infinite job from a lifecycle handler is interrupted and commits nothing",
+   "detail": {
+    "error": null,
+    "targets": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a child frame exists and neither its script nor a lifecycle handler ran",
+   "detail": {
+    "texts": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a page can neither forge the bridge nor drive a step",
+   "detail": {
+    "steps": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and the four real steps still happen exactly once, in order",
+   "detail": {
+    "observed": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] no value shaped like the capability is in a snapshot or an audit record",
+   "detail": {
+    "bytes": 1344,
+    "matches": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a connected element's bubbling event reaches the document and then the window",
+   "detail": {
+    "steps": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] a detached element's reaches its own ancestors and never the document or window",
+   "detail": {
+    "steps": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] document.parentNode is still null",
+   "detail": {
+    "steps": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] what a lifecycle handler mutates is in the first snapshot and the revision",
+   "detail": {
+    "revision": 0,
+    "texts": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] M1: the frozen fixture's listeners cost at most 65536 live owner bytes",
+   "detail": {
+    "listener_workload_bytes": -320,
+    "listeners_in_fixture": 1,
+    "no_listener_owner_bytes": 253029,
+    "quiet_page_total_bytes": 251418
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M2: 128 replacements stay within the one-document baseline",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] M3: closing every target returns the owners exactly",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the four steps happen in the order the standard gives them",
+   "detail": {
+    "steps": [
+     "script:loading",
+     "no-window-target"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] readyState is loading, then interactive, then complete",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] DOMContentLoaded targets the document and load targets the window",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] DOMContentLoaded bubbles to the window, load does not bubble at all",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the window's listener runs after the document's own, in path order",
+   "detail": {
+    "steps": 2
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a page that builds itself on DOMContentLoaded is not inert",
+   "detail": {
+    "texts": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a custom event on the window is delivered once and removal stops it",
+   "detail": {
+    "steps": [
+     "no-window-target",
+     "once",
+     "once"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the same function registered twice is registered once, and removal clears it",
+   "detail": {
+    "calls": 3
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] window.onload cleared with null reads null and does not fire",
+   "detail": {
+    "steps": 4
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] window.onload is a property: assignable, replaceable, and readable",
+   "detail": {
+    "steps": 4
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a job queued in DOMContentLoaded runs before load begins",
+   "detail": {
+    "steps": [
+     "start"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a listener that throws stops neither the next listener nor the next step",
+   "detail": {
+    "ok": true,
+    "steps": [
+     "start"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] the sequence does not run again when the same document is observed",
+   "detail": {
+    "stable": true
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a reload and a navigation each run the whole sequence for the new document",
+   "detail": {
+    "navigate_ok": true,
+    "reload_ok": true
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] an infinite job from a lifecycle handler is interrupted and commits nothing",
+   "detail": {
+    "error": null,
+    "targets": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a child frame exists and neither its script nor a lifecycle handler ran",
+   "detail": {
+    "texts": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a page can neither forge the bridge nor drive a step",
+   "detail": {
+    "steps": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and the four real steps still happen exactly once, in order",
+   "detail": {
+    "observed": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] no value shaped like the capability is in a snapshot or an audit record",
+   "detail": {
+    "bytes": 1344,
+    "matches": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a connected element's bubbling event reaches the document and then the window",
+   "detail": {
+    "steps": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] a detached element's reaches its own ancestors and never the document or window",
+   "detail": {
+    "steps": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] document.parentNode is still null",
+   "detail": {
+    "steps": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] what a lifecycle handler mutates is in the first snapshot and the revision",
+   "detail": {
+    "revision": 0,
+    "texts": 1
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] M1: the frozen fixture's listeners cost at most 65536 live owner bytes",
+   "detail": {
+    "listener_workload_bytes": -288,
+    "listeners_in_fixture": 1,
+    "no_listener_owner_bytes": 245125,
+    "quiet_page_total_bytes": 243722
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M2: 128 replacements stay within the one-document baseline",
+   "detail": {
+    "owner_bytes": 16
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] M3: closing every target returns the owners exactly",
+   "detail": {
+    "owner_bytes": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[phase] the host accepts the court-only replay seam",
+   "detail": {
+    "reason": "host_exited"
+   },
+   "passed": false
+  }
+ ],
+ "checks_passed": 10,
+ "checks_total": 53,
+ "court": "native-dom document lifecycle (control 0.0.2)",
+ "criteria": {
+  "owner_bytes": 65536,
+  "replacements": 128
+ },
+ "host_sha256": "561062d146e6017039e08b0784a6b4093c5d218918f864c43cb14c1bd7130f89",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the bounded lifecycle exists",
+  "four steps of an event loop, not an event loop: no defer/async ordering, no resource load, no pageshow, beforeunload or visibility",
+  "a host that does not answer inside its wall-clock bound is killed by pid and reaped; that timeout is the falsification",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
+  "memory is judged by bounded owners and paired differentials, never an absolute footprint gate"
+ ],
+ "passed": false
+}

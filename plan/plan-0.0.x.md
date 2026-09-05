@@ -1162,6 +1162,29 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [~] Implemented and qualified on the native route, court 53 of 53: the
+  bounded document lifecycle (`labs/native-dom/lifecycle-design-0.0.1.md`).
+  Four observable steps after the document's own scripts, each its own
+  evaluation so a handler's jobs drain before the next: interactive with a
+  `readystatechange`, `DOMContentLoaded` at the document which bubbles to the
+  window, complete with another `readystatechange`, and `load` at the window
+  which does not. The window becomes a bounded event target sharing one
+  listener model with every node, held in a closure a page cannot reach, with
+  `onload` as one accessor over it. Six corrections were recorded in order,
+  each before the change it justified: `DOMContentLoaded` bubbles, which an
+  earlier ruling and my own text had frozen as a loss; the cost is a fixed
+  infrastructure plus page-owned listeners bounded only by the realm limit,
+  not one "small and fixed" number; the infrastructure figure is a diagnostic
+  because two arms cannot isolate it; four criteria could not prove what they
+  claimed, including a duplicate-listener check that never registered a
+  duplicate and a not-inert check that passed on the old host; the bridge was
+  a forgeable global, now a non-writable property behind a per-realm
+  capability with a phase machine, falsified by a court-only interleaved
+  replay; and the event path reached the window from a detached subtree. A
+  final ruling reversed a divergence rather than freezing it: a duplicate
+  listener is de-duplicated, which the pushed build falsifies at three calls
+  against one. The court passes 53 of 53 and fails 43 of 53 against the
+  pushed build. G1, G3, P6 and G6 stay open.
 - [ ] Triage only, read-only, nothing implemented and nothing measured
   beyond one probe: standard-browser gap triage
   (`labs/native-dom/browser-gap-triage-0.0.1.md`). Three candidates, each
@@ -1173,11 +1196,14 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   while the host committed nothing, which is a silent approximation rather
   than an honest absence; and `classList`, absent while the snapshot's
   selector engine already matches `.x`, so this host can query a class a page
-  cannot idiomatically change. The lifecycle is recommended first: most
-  real-web behaviour per line, no authority, no resident memory, no protocol
-  change, and it composes with the timer and job bounds already landed rather
-  than needing its own. Page-initiated navigation is second and needs a
-  re-entrancy ruling first, because a page may assign during its own build.
+  cannot idiomatically change. The lifecycle was recommended first: most
+  real-web behaviour per line, no authority, no protocol change, and it composes with the timer and job bounds already landed rather
+  than needing its own. **Superseded by the implemented node above:** this
+  triage said the lifecycle carried "no resident memory", and the slice as
+  built carries a fixed small per-realm infrastructure plus page-owned
+  listeners bounded only by the realm limit and the request deadline.
+  Page-initiated navigation is second and needs a re-entrancy ruling first,
+  because a page may assign during its own build.
   G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 42 of 42:
   closing the pending-job deadline escape
