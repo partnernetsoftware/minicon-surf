@@ -1282,8 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: attribute-name
-  validation, re-measured
+- [~] Implemented and qualified on the native route, court 34 of 34:
+  attribute-name validation, re-measured
   (`labs/native-dom/attribute-name-validation-audit-0.0.2.md`, superseding
   `-0.0.1`). Two earlier slices changed the answer: the clone copies
   internally, so the cloning regression that stopped this in `0.0.1` is no
@@ -1305,9 +1305,22 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   `element-view` 23/23 with its clone criterion included. The recorded loss is
   the ASCII approximation of the `Name` production: a page will be unable to
   author `aé` while the parser still produces it and the clone still carries
-  it. Pending: V1, ASCII or a wider table, V2, whether the thrown message may
-  name the attribute, and what the implementation court must falsify. G1, G3,
-  P6 and G6 stay open.
+  it. **Ruled and built**: both candidates
+  taken, the guard running before the lowercasing, `ns:x` accepted, the ASCII
+  approximation accepted as an explicit loss, the parser and the copy
+  untouched, `removeAttribute` and `toggleAttribute(false)` lenient,
+  `classList` unchanged, and the thrown message carrying neither the offending
+  name nor the value. The court was frozen one commit ahead of the code and
+  reads **34 of 34** against **12 of 34** on the build before, where every bad
+  name — including one with a space, an empty one and one with a quote — was
+  accepted. M1 225,626, M2 1,577,884, main-only slack 40,576, all inside the
+  unchanged floors with 20,134 bytes of M1 headroom, so nothing had to stop.
+  Nineteen receipts rerun on the binary. **One unreproduced test failure is on
+  the record**: a single `cargo test` run reported 53 passed and 1 failed in
+  0.42 s right after a rebuild, and its name was lost to the filter I ran it
+  through; twelve runs since, including the same build-then-test sequence, are
+  54 of 54. It is written down rather than swallowed, and it is not a claim
+  that the suite is clean. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 27 of 27: standard
   error classes for the base's own throws
   (`labs/native-dom/error-class-audit-0.0.1.md`), the deferred half of the

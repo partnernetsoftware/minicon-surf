@@ -256,7 +256,7 @@
     }
     getAttribute(name) { const v = this.__attrs.get(String(name).toLowerCase()); return v === undefined ? null : v; }
     hasAttribute(name) { return this.__attrs.has(String(name).toLowerCase()); }
-    setAttribute(name, value) { name = String(name).toLowerCase(); const oldValue = this.getAttribute(name); this.__attrs.set(name, String(value)); record("attributes", this, { attributeName: name, oldValue }); }
+    setAttribute(name, value) { name = String(name); if (!VALID_NAME.test(name)) throw new DOMExceptionCtor("the attribute name is not a valid name", "InvalidCharacterError"); name = name.toLowerCase(); const oldValue = this.getAttribute(name); this.__attrs.set(name, String(value)); record("attributes", this, { attributeName: name, oldValue }); }
     removeAttribute(name) { name = String(name).toLowerCase(); if (!this.__attrs.has(name)) return; const oldValue = this.getAttribute(name); this.__attrs.delete(name); record("attributes", this, { attributeName: name, oldValue }); }
     get attributes() { return [...this.__attrs].map(([name, value]) => ({ name, value })); }
     get id() { return this.getAttribute("id") ?? ""; } set id(v) { this.setAttribute("id", v); }
@@ -362,6 +362,10 @@
   // on: a page can replace globalThis.DOMException, and what this host
   // throws must not be a constructor the page chose.
   const DOMExceptionCtor = DOMException;
+  // The XML Name production, approximated in ASCII: what authoring may write.
+  // The parser is not authoring and neither is a copy, so both write the map
+  // directly and a document keeps every name it arrived with.
+  const VALID_NAME = /^[A-Za-z_:][A-Za-z0-9_:.\-]*$/;
   const selectorCache = new Map();
   function parseSelector(selector) {
     selector = String(selector).trim();

@@ -1,0 +1,281 @@
+{
+ "checks": [
+  {
+   "check": "[system] A1: funnel_setattribute refuses a bad name through the funnel",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A1: funnel_toggle_true refuses a bad name through the funnel",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A1: funnel_dataset refuses a bad name through the funnel",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A2: id, className and classList still write",
+   "detail": {
+    "classList": "one two",
+    "className": "a b",
+    "id": "fine|id"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A3: refuse_space is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A3: refuse_empty is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A3: refuse_quote is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A3: refuse_leading_dash is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A4: a colon and a dot are legal names and stay legal",
+   "detail": {
+    "colon": "ns:x",
+    "dotted": "x.y"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A5: a valid name is stored lowercased, an invalid one refused in any case",
+   "detail": {
+    "invalid_upper": "accepted",
+    "lowercased": "mixed"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A6: removeAttribute and toggleAttribute(false) stay lenient",
+   "detail": {
+    "remove": "lenient",
+    "toggle": "lenient"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A7: the parser's ten names survive, read back, and deep-clone",
+   "detail": {
+    "clone": "-lead,.dot,1bad,a\u00e9,id,ok-name,under_score,upper,weird:name,x.y",
+    "names": "-lead,.dot,1bad,a\u00e9,id,ok-name,under_score,upper,weird:name,x.y",
+    "read": "a"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A8: a dataset key with a dash before a lowercase letter is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A9: and camelCase and leading digits still write",
+   "detail": {
+    "camel": "data-foo-bar",
+    "digit": "data-1x"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A10: classList keeps the vocabulary it was ruled to keep",
+   "detail": {
+    "empty": "SyntaxError|undefined|[object Error]",
+    "space": "InvalidCharacterError|undefined|[object Error]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A11: the message carries neither the name nor the value",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] A12: an uncaught refusal still says the host's fixed word only",
+   "detail": {
+    "engine_error": null,
+    "name_present": false,
+    "value_present": false
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A1: funnel_setattribute refuses a bad name through the funnel",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A1: funnel_toggle_true refuses a bad name through the funnel",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A1: funnel_dataset refuses a bad name through the funnel",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A2: id, className and classList still write",
+   "detail": {
+    "classList": "one two",
+    "className": "a b",
+    "id": "fine|id"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A3: refuse_space is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A3: refuse_empty is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A3: refuse_quote is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A3: refuse_leading_dash is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A4: a colon and a dot are legal names and stay legal",
+   "detail": {
+    "colon": "ns:x",
+    "dotted": "x.y"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A5: a valid name is stored lowercased, an invalid one refused in any case",
+   "detail": {
+    "invalid_upper": "accepted",
+    "lowercased": "mixed"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A6: removeAttribute and toggleAttribute(false) stay lenient",
+   "detail": {
+    "remove": "lenient",
+    "toggle": "lenient"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A7: the parser's ten names survive, read back, and deep-clone",
+   "detail": {
+    "clone": "-lead,.dot,1bad,a\u00e9,id,ok-name,under_score,upper,weird:name,x.y",
+    "names": "-lead,.dot,1bad,a\u00e9,id,ok-name,under_score,upper,weird:name,x.y",
+    "read": "a"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A8: a dataset key with a dash before a lowercase letter is refused",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A9: and camelCase and leading digits still write",
+   "detail": {
+    "camel": "data-foo-bar",
+    "digit": "data-1x"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A10: classList keeps the vocabulary it was ruled to keep",
+   "detail": {
+    "empty": "SyntaxError|undefined|[object Error]",
+    "space": "InvalidCharacterError|undefined|[object Error]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A11: the message carries neither the name nor the value",
+   "detail": {
+    "said": "accepted"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] A12: an uncaught refusal still says the host's fixed word only",
+   "detail": {
+    "engine_error": null,
+    "name_present": false,
+    "value_present": false
+   },
+   "passed": false
+  }
+ ],
+ "checks_passed": 12,
+ "checks_total": 34,
+ "court": "native-dom attribute-name validation (control 0.0.2)",
+ "expected": {
+  "bad_name": "InvalidCharacterError|5|[object DOMException]",
+  "dataset_key": "SyntaxError|undefined|[object Error]",
+  "parser_names": 10
+ },
+ "host_sha256": "7545d393b69cfba620c38cafd8f0a9eac90e6aa11c5947f6f275a4b6f987d39e",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the setAttribute funnel validates",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary; a failure there stops the slice",
+  "the guard approximates the XML Name production in ASCII by ruling, so a non-ASCII name the parser produces cannot be authored; this court pins the parser half and does not test authoring one",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

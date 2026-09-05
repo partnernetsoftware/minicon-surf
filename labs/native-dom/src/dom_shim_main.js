@@ -109,6 +109,9 @@ __mcsInternals((internals) => {
           ? el.getAttribute("data-" + kebab(key)) ?? undefined
           : undefined,
         set: (_, key, value) => {
+          // The one rule the base cannot see: it is about the key, not the
+          // attribute name the key becomes.
+          if (/-[a-z]/.test(String(key))) throw tokenError("SyntaxError", "a dataset key may not carry a dash before a lowercase letter");
           el.setAttribute("data-" + kebab(key), String(value));
           return true;
         },

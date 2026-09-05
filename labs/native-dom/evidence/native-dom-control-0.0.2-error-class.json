@@ -212,7 +212,7 @@
    "setTimeout"
   ]
  },
- "host_sha256": "7545d393b69cfba620c38cafd8f0a9eac90e6aa11c5947f6f275a4b6f987d39e",
+ "host_sha256": "f19f20f01aff7346abf596cc732d909a12ea1482fcf34892ca5f51dca395ee46",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the base captures the constructor and throws it",
