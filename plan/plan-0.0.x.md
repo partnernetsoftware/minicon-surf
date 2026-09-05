@@ -1263,8 +1263,39 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   is the first slice to spend the shim split's margin deliberately: the base
   grew 3,230 source bytes, M1 moved to 232,938 and M2 to 1,628,284, both under
   the 245,760 and 1,720,320 floors, leaving 12,822 bytes of M1 headroom under
-  the floor. The court is 28 of 28 and 8 of 28 against the build before it.
-  G1, G3, P6 and G6 stay open.
+  the floor. A second root audit then found four more, each measured before
+  its fix: a listener removed and re-added during a dispatch still ran,
+  because the recheck asked the live list about a callback rather than asking
+  a registration whether it was removed; a stop flag set before a dispatch was
+  discarded and a completed event's flags were left set, both from clearing at
+  the start instead of the end; dispatching a plain object answered true,
+  reporting a dispatch that never happened; and a listener added under the
+  number 1 never matched an event typed "1". A fix of mine was caught in the
+  working tree before it was committed and is recorded as wrong: a per-dispatch
+  set of removed callbacks suppresses that callback wherever else it is
+  registered and broadcasts removals to unrelated dispatches, because identity
+  is the registration and not the callback. As built: listener records with a
+  removed bit, snapshotted per dispatch; flags cleared only at completion; a
+  real `TypeError` for a non-event; listener types converted to strings. The
+  court is **40 of 40** on `ec20ffab6af3…`, 8 of 28 against the build before
+  the slice, 28 of 36 against round one and 38 of 40 against the build before
+  the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
+  unchanged floors of 245,760 and 1,720,320.
+
+  The navigation court's differential soak failed repeatedly on
+  `a91bdf2c85b7…` — 88, 90 and 89 of 90 — and I stopped on it rather than
+  moving anything. A pre-registered read-only attribution then compared round
+  one and round two: owner growth across 128 navigations is identical field
+  for field on both builds and both allocators, `realm_malloc_bytes` grows by
+  zero, every owner is zero after close, and the divergence appears during the
+  candidate build and is released at the swap. So `Event` is qualified under
+  its own unchanged floors while navigation stays the cross-batch,
+  default-allocator narrow it already was — now with a measured reason rather
+  than a shrug. **No cap was moved and navigation was not rerun.** The
+  attribution could not report live `Event` or listener owner bytes, because
+  no such owner exists, and did not sample libmalloc allocated or resident or
+  the arena counters; both gaps are named in the design record rather than
+  filled. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 28 of 28:
   `classList` and `CustomEvent` (`labs/native-dom/element-api-design-0.0.1.md`),
   the last of the three candidates the browser-gap triage proposed. Probed on

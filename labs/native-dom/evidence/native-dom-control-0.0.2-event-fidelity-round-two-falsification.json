@@ -31,44 +31,30 @@
   {
    "check": "[system] a listener removed and re-added during a dispatch waits for the next one",
    "detail": {
-    "said": "first/first,second"
+    "said": "first,second/first,second"
    },
-   "passed": true
-  },
-  {
-   "check": "[system] removing a callback from one target leaves the ancestor's own registration alone",
-   "detail": {
-    "said": "ancestor"
-   },
-   "passed": true
-  },
-  {
-   "check": "[system] and removing it under one type does not reach a nested dispatch of another",
-   "detail": {
-    "said": "r7,r6"
-   },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a stop flag set before a dispatch holds for it, and is cleared by its end",
    "detail": {
-    "said": "none/ran"
+    "said": "ran/ran"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] dispatching something that is not an event is refused, not reported",
    "detail": {
-    "said": "TypeError:true,no"
+    "said": "returned,no"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a listener type is a string, whatever the page passed",
    "detail": {
-    "said": "numeric,string"
+    "said": "string"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] nothing about an event is page-writable",
@@ -179,44 +165,30 @@
   {
    "check": "[arena] a listener removed and re-added during a dispatch waits for the next one",
    "detail": {
-    "said": "first/first,second"
+    "said": "first,second/first,second"
    },
-   "passed": true
-  },
-  {
-   "check": "[arena] removing a callback from one target leaves the ancestor's own registration alone",
-   "detail": {
-    "said": "ancestor"
-   },
-   "passed": true
-  },
-  {
-   "check": "[arena] and removing it under one type does not reach a nested dispatch of another",
-   "detail": {
-    "said": "r7,r6"
-   },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a stop flag set before a dispatch holds for it, and is cleared by its end",
    "detail": {
-    "said": "none/ran"
+    "said": "ran/ran"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] dispatching something that is not an event is refused, not reported",
    "detail": {
-    "said": "TypeError:true,no"
+    "said": "returned,no"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a listener type is a string, whatever the page passed",
    "detail": {
-    "said": "numeric,string"
+    "said": "string"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] nothing about an event is page-writable",
@@ -297,10 +269,10 @@
    "passed": true
   }
  ],
- "checks_passed": 40,
- "checks_total": 40,
+ "checks_passed": 28,
+ "checks_total": 36,
  "court": "native-dom bounded Event fidelity (control 0.0.2)",
- "host_sha256": "ec20ffab6af3fdb309593bf345bf690bae694dc0214b6cd4efea9602e89635ef",
+ "host_sha256": "abd1ed74472181a2dc02275a72911ee19f6adae99347eec104cd412b44a93f82",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the base Event and dispatcher are faithful",
@@ -311,5 +283,5 @@
   "the unchanged M1 and M2 floors are measured by the child-frame and shim-footprint courts on the same binary",
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
  ],
- "passed": true
+ "passed": false
 }

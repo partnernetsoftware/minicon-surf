@@ -59,9 +59,9 @@
   {
    "check": "[system] dispatching something that is not an event is refused, not reported",
    "detail": {
-    "said": "TypeError:true,no"
+    "said": "TypeError:false,no"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a listener type is a string, whatever the page passed",
@@ -207,9 +207,9 @@
   {
    "check": "[arena] dispatching something that is not an event is refused, not reported",
    "detail": {
-    "said": "TypeError:true,no"
+    "said": "TypeError:false,no"
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a listener type is a string, whatever the page passed",
@@ -297,10 +297,10 @@
    "passed": true
   }
  ],
- "checks_passed": 40,
+ "checks_passed": 38,
  "checks_total": 40,
  "court": "native-dom bounded Event fidelity (control 0.0.2)",
- "host_sha256": "ec20ffab6af3fdb309593bf345bf690bae694dc0214b6cd4efea9602e89635ef",
+ "host_sha256": "a91bdf2c85b7aafb5f8fc57a2d68c2519bba9782b9755b4398c128aa0875b8c9",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the base Event and dispatcher are faithful",
@@ -311,5 +311,5 @@
   "the unchanged M1 and M2 floors are measured by the child-frame and shim-footprint courts on the same binary",
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
  ],
- "passed": true
+ "passed": false
 }
