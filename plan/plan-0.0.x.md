@@ -1282,6 +1282,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: listener options,
+  `handleEvent` and `AbortController`
+  (`labs/native-dom/listener-options-audit-0.0.1.md`). Two of the gaps are
+  worse than unimplemented, measured: `removeEventListener(t, f, false)`
+  **removes** a listener added with `capture: true`, which the standard
+  forbids, and an object with `handleEvent` is dropped **silently at
+  registration**, so nothing runs and nothing says why. `CAPTURING_PHASE` is
+  not even a constant in the base. The options are not lost in the store —
+  `addListener` never receives them, because **three call sites forward two
+  arguments**: the base's `Node` methods, the window's arrows and the new
+  `EventTarget` class. That prerequisite, L0, is worth nothing alone and is
+  required by all five candidates: L1 `once`, L2 `handleEvent`, L3 `passive`,
+  L4 `capture`, L5 `signal`/`AbortController`. A cumulative ladder was built
+  and priced: **+1,392 bytes per child** for L1-L3 (M1 227,018), **+1,664**
+  more for capture (228,682), **+1,376** more for the signal (230,058) —
+  **+4,432 in total**, which leaves M1 headroom at 15,702 against unchanged
+  floors, and main slack 49,760 inside 65,536. Every existing court passes at
+  every rung. The authority note is the one to read: L3 **reduces** page power,
+  since a passive listener can cancel today and the host reads that same flag
+  for navigation; L4 lets a page stop the host's own synthesized event before
+  the target sees it; and L5 as measured **puts a page object inside the
+  dispatch loop**, so a page could pass `{get aborted(){…}}` and run its own
+  code inside the host's walk — the audit measures the naive version and
+  recommends branding host-minted signals through a closure-owned `WeakSet`
+  instead. Window divergence, C2b and the attribute-name and selector losses
+  stay as they are. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 24 of 24: an
   `EventTarget` constructor (`labs/native-dom/event-target-audit-0.0.1.md`). Measured on the
   shipped build: `EventTarget` is **`undefined`** and an element's chain is
