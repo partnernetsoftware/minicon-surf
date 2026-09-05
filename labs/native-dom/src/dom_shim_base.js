@@ -7,6 +7,23 @@
 // throw, and timers do not exist at this layer.
 (() => {
   const g = globalThis;
+  // The privileged path — the host's dispatch, the event state and the
+  // listener store — uses only these, captured here, before any page script
+  // can run. A page may still patch its own prototypes; it will not be
+  // patching the tools the host decides with (§20).
+  const reflectApply = Reflect.apply;
+  const StringOf = String;
+  const MapOf = Map;
+  const weakMapGet = WeakMap.prototype.get;
+  const weakMapSet = WeakMap.prototype.set;
+  const mapGet = Map.prototype.get;
+  const mapSet = Map.prototype.set;
+  const mapHas = Map.prototype.has;
+  const arraySlice = Array.prototype.slice;
+  const arrayPush = Array.prototype.push;
+  const arrayIndexOf = Array.prototype.indexOf;
+  const arraySplice = Array.prototype.splice;
+  const invoke = (fn, self, args) => reflectApply(fn, self, args);
   const observers = [];
   let flushScheduled = false;
   function contains(a, b) { for (let n = b; n; n = n.parentNode) if (n === a) return true; return false; }
@@ -48,8 +65,8 @@
       // A default parameter covers `undefined` and not `null`, and a page may
       // pass either.
       const d = init === null || init === undefined ? {} : init;
-      eventState.set(this, {
-        type: String(type),
+      invoke(weakMapSet, eventState, [this, {
+        type: StringOf(type),
         bubbles: !!d.bubbles,
         cancelable: !!d.cancelable,
         composed: !!d.composed,
@@ -63,24 +80,24 @@
         // The clock this realm already inherited and does not model; this is
         // no new guarantee, only a number read from what was already there.
         timeStamp: g.performance && g.performance.now ? g.performance.now() : 0,
-      });
+      }]);
     }
     // Synthesized by an agent, never by a person: `isTrusted` would be a
     // claim that is not true.
     get isTrusted() { return false; }
-    get type() { return eventState.get(this).type; }
-    get bubbles() { return eventState.get(this).bubbles; }
-    get cancelable() { return eventState.get(this).cancelable; }
-    get composed() { return eventState.get(this).composed; }
-    get defaultPrevented() { return eventState.get(this).defaultPrevented; }
-    get target() { return eventState.get(this).target; }
-    get currentTarget() { return eventState.get(this).currentTarget; }
-    get eventPhase() { return eventState.get(this).eventPhase; }
-    get dispatching() { return eventState.get(this).dispatching; }
-    get timeStamp() { return eventState.get(this).timeStamp; }
-    preventDefault() { const s = eventState.get(this); if (s.cancelable) s.defaultPrevented = true; }
-    stopPropagation() { eventState.get(this).stop = true; }
-    stopImmediatePropagation() { const s = eventState.get(this); s.stop = true; s.stopImmediate = true; }
+    get type() { return invoke(weakMapGet, eventState, [this]).type; }
+    get bubbles() { return invoke(weakMapGet, eventState, [this]).bubbles; }
+    get cancelable() { return invoke(weakMapGet, eventState, [this]).cancelable; }
+    get composed() { return invoke(weakMapGet, eventState, [this]).composed; }
+    get defaultPrevented() { return invoke(weakMapGet, eventState, [this]).defaultPrevented; }
+    get target() { return invoke(weakMapGet, eventState, [this]).target; }
+    get currentTarget() { return invoke(weakMapGet, eventState, [this]).currentTarget; }
+    get eventPhase() { return invoke(weakMapGet, eventState, [this]).eventPhase; }
+    get dispatching() { return invoke(weakMapGet, eventState, [this]).dispatching; }
+    get timeStamp() { return invoke(weakMapGet, eventState, [this]).timeStamp; }
+    preventDefault() { const s = invoke(weakMapGet, eventState, [this]); if (s.cancelable) s.defaultPrevented = true; }
+    stopPropagation() { invoke(weakMapGet, eventState, [this]).stop = true; }
+    stopImmediatePropagation() { const s = invoke(weakMapGet, eventState, [this]); s.stop = true; s.stopImmediate = true; }
   }
   class MutationObserver {
     constructor(callback) { this.__callback = callback; this.__entries = []; }
@@ -138,8 +155,8 @@
   // its listeners with it.
   const listenerStore = new WeakMap();
   function listenersOf(target) {
-    let map = listenerStore.get(target);
-    if (!map) { map = new Map(); listenerStore.set(target, map); }
+    let map = invoke(weakMapGet, listenerStore, [target]);
+    if (!map) { map = new MapOf(); invoke(weakMapSet, listenerStore, [target, map]); }
     return map;
   }
   // A registration is its own record, and identity is the record rather than
@@ -151,20 +168,24 @@
   // whatever the page passed, because an event's type is one too.
   function addListener(target, type, fn) {
     if (typeof fn !== "function") return;
-    const key = String(type);
+    const key = StringOf(type);
     const map = listenersOf(target);
-    if (!map.has(key)) map.set(key, []);
-    const list = map.get(key);
+    if (!invoke(mapHas, map, [key])) invoke(mapSet, map, [key, []]);
+    const list = invoke(mapGet, map, [key]);
     // The same target, type and function identity is registered once: a
     // repeat is a no-op, as the standard has it within this host's bounds.
-    for (const record of list) if (record.callback === fn) return;
-    list.push({ callback: fn, removed: false });
+    for (let i = 0; i < list.length; i += 1) if (list[i].callback === fn) return;
+    invoke(arrayPush, list, [{ callback: fn, removed: false }]);
   }
   function removeListener(target, type, fn) {
-    const list = listenersOf(target).get(String(type));
+    const list = invoke(mapGet, listenersOf(target), [StringOf(type)]);
     if (!list) return;
     for (let i = 0; i < list.length; i += 1) {
-      if (list[i].callback === fn) { list[i].removed = true; list.splice(i, 1); return; }
+      if (list[i].callback === fn) {
+        list[i].removed = true;
+        invoke(arraySplice, list, [i, 1]);
+        return;
+      }
     }
   }
   // The path is the node chain, and then — only for an event that bubbles —
@@ -172,7 +193,7 @@
   // parentNode: nothing is appended to the tree and document.parentNode
   // stays null.
   function dispatchOn(target, event) {
-    const state = eventState.get(event);
+    const state = invoke(weakMapGet, eventState, [event]);
     // Dispatching something that is not an event is refused: answering `true`
     // would report a dispatch that never happened.
     if (!state) throw new TypeError("the argument is not an event");
@@ -192,28 +213,35 @@
 
     const path = [];
     if (target && typeof target.nodeType === "number") {
-      for (let n = target; n; n = n.parentNode) path.push(n);
+      for (let n = target; n; n = n.parentNode) invoke(arrayPush, path, [n]);
       // Only a path that actually reached the document continues to the
       // window: a detached subtree bubbles through its own ancestors and
       // stops there, as the standard has it.
-      if (state.bubbles && path[path.length - 1] === document) path.push(g);
+      if (state.bubbles && path[path.length - 1] === document) invoke(arrayPush, path, [g]);
     } else {
-      path.push(target);
+      invoke(arrayPush, path, [target]);
     }
     try {
-      for (const node of path) {
+      // Indexed, because the iterator protocol is page-mutable and this is
+      // the host's own path (§20.3).
+      for (let hop = 0; hop < path.length; hop += 1) {
+        const node = path[hop];
         state.currentTarget = node;
         state.eventPhase = node === target ? AT_TARGET : BUBBLING_PHASE;
         if (state.stop || state.stopImmediate) break;
-        const list = listenersOf(node).get(state.type);
+        const list = invoke(mapGet, listenersOf(node), [state.type]);
         if (list) {
           // The list is copied so a listener added during this dispatch is
           // not called by it, and one removed during it stays silent even if
           // the same function is registered again.
-          for (const record of [...list]) {
+          // A copy taken with the captured slice, walked by index: the
+          // iterator protocol is page-mutable and this path does not use it.
+          const snapshot = invoke(arraySlice, list, []);
+          for (let i = 0; i < snapshot.length; i += 1) {
+            const record = snapshot[i];
             if (record.removed) continue;
             if (state.stopImmediate) break;
-            try { record.callback.call(node, event); } catch (error) {}
+            try { invoke(record.callback, node, [event]); } catch (error) {}
           }
         }
         if (state.stop || !state.bubbles) break;
@@ -421,18 +449,32 @@
   // than through `element.dispatchEvent`, and answers from the hidden state
   // rather than from a property lookup a page can shadow or redefine. Handed
   // to the host once, before any page script runs.
-  const dispatchFor = (element, type, cancelable, extras) => {
-    const event = new Event(String(type), { bubbles: true, cancelable: !!cancelable });
-    if (extras) {
-      // Page-visible extras only, never anything the hidden state owns.
-      for (const name of Object.keys(extras)) {
-        try { event[name] = extras[name]; } catch (error) {}
-      }
+  const dispatchFor = (element, type, cancelable, key) => {
+    const event = new Event(StringOf(type), { bubbles: true, cancelable: !!cancelable });
+    // One fixed extra, named: the keyboard paths need `key` and nothing else
+    // needs anything, so no key vocabulary is read off an object at all.
+    if (key !== undefined) {
+      try { event.key = StringOf(key); } catch (error) {}
     }
     // `dispatchOn` answers `!defaultPrevented` from the state it owns; the
     // host asks the opposite question — was the default prevented.
     return !dispatchOn(element, event);
   };
+  // The host converts every evaluation result through the realm's `String`.
+  // A page can replace the global one, so the captured intrinsic is left here
+  // where only the host looks, non-writable and non-enumerable: what the host
+  // reads out of a realm is not a page's to define (§20).
+  Object.defineProperty(g, "__mcsString", {
+    value: StringOf, writable: false, configurable: false, enumerable: false,
+  });
+  // The host's own scripts serialise their answers with this, for the same
+  // reason: a replaced `JSON` would let a page fabricate an answer the host
+  // would then believe.
+  const jsonStringify = JSON.stringify;
+  Object.defineProperty(g, "__mcsJson", {
+    value: (value) => invoke(jsonStringify, JSON, [value]),
+    writable: false, configurable: false, enumerable: false,
+  });
   Object.defineProperty(g, "__mcsArmDispatch", {
     value: (arm) => { delete g.__mcsArmDispatch; return arm(dispatchFor); },
     writable: false, configurable: true, enumerable: false,

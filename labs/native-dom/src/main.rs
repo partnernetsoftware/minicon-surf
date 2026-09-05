@@ -283,9 +283,9 @@ fn dispatch_arm_script(capability: &str) -> String {
   return arm((dispatchFor) => {{
     const capability = {capability};
     Object.defineProperty(window, "__mcsDispatch", {{
-      value: (offered, element, type, cancelable, extras) => {{
+      value: (offered, element, type, cancelable, key) => {{
         if (offered !== capability) throw new TypeError("refused");
-        return dispatchFor(element, type, cancelable, extras);
+        return dispatchFor(element, type, cancelable, key);
       }},
       writable: false, configurable: false, enumerable: false,
     }});
@@ -697,11 +697,11 @@ fn form_action_script(
     format!(
         r#"(() => {{
   const s = window.__mcs;
-  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
-  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
-  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  if (!s) return __mcsJson({{ error: "uninstrumented" }});
+  if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
   const el = s.nodes[{index}];
-  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
   const action = {action};
   // A successful action changes observable state, so the revision advances
   // once. Writing a value is not a DOM mutation, so the observer would not
@@ -711,9 +711,9 @@ fn form_action_script(
   const startRevision = s.revision;
   const settle = (outcome) => {{
     if (outcome.applied && s.revision === startRevision) s.revision = startRevision + 1;
-    return JSON.stringify(outcome);
+    return __mcsJson(outcome);
   }};
-  const refuse = (reason) => JSON.stringify({{ unsupported: true, reason }});
+  const refuse = (reason) => __mcsJson({{ unsupported: true, reason }});
   const t = el.tagName.toLowerCase();
   const type = (el.type || "").toLowerCase();
   const isCheck = t === "input" && /^(checkbox|radio)$/.test(type);
@@ -738,14 +738,14 @@ fn form_action_script(
   // own bridge: it mints the base's own Event, walks the closure-owned
   // dispatcher and answers from hidden state, so nothing a page can shadow,
   // redefine or replace stands between the handler and this decision.
-  const fire = (name, cancelable) => window.__mcsDispatch({capability}, el, name, !!cancelable, null);
+  const fire = (name, cancelable) => window.__mcsDispatch({capability}, el, name, !!cancelable, undefined);
   const submitForm = (form, submitter) => {{
     const decision = submitDecision(form, submitter);
     if (decision !== "allowed") return refuse(decision);
     // A canceled submit is not applied: no navigation begins. Whatever the
     // handler changed stays, and the revision it moved stays moved.
-    if (window.__mcsDispatch({capability}, form, "submit", true, null)) {{
-      return JSON.stringify({{ applied: false, default_prevented: true, role: "form" }});
+    if (window.__mcsDispatch({capability}, form, "submit", true, undefined)) {{
+      return __mcsJson({{ applied: false, default_prevented: true, role: "form" }});
     }}
     // The same navigation the preflight approved, built by the same code and
     // from the same submitter.
@@ -753,7 +753,7 @@ fn form_action_script(
     // A submit that navigates has exactly one observable consequence, the
     // document that replaces this one, and the navigation counts it. Settling
     // here as well would count the same event twice.
-    return JSON.stringify({{ navigate: navigation.href, applied: true, role: "form", current: !actionOf(form, submitter) }});
+    return __mcsJson({{ navigate: navigation.href, applied: true, role: "form", current: !actionOf(form, submitter) }});
   }};
   if (action.kind === "set_value") {{
     if (!isText) return refuse("role_mismatch");
@@ -773,7 +773,7 @@ fn form_action_script(
     el.checked = action.checked;
     if (fire("click", true)) {{
       if (el.__restoreGroup) el.__restoreGroup(before); else el.checked = before[0][1];
-      return JSON.stringify({{ applied: false, default_prevented: true, role: type }});
+      return __mcsJson({{ applied: false, default_prevented: true, role: type }});
     }}
     fire("change", false);
     return settle({{ applied: true, role: type }});
@@ -781,7 +781,7 @@ fn form_action_script(
   if (action.kind === "select_option") {{
     if (t !== "select") return refuse("role_mismatch");
     const options = el.options;
-    if (action.index >= options.length) return JSON.stringify({{ absent: true, reason: "option_out_of_range" }});
+    if (action.index >= options.length) return __mcsJson({{ absent: true, reason: "option_out_of_range" }});
     if (options[action.index].disabled) return refuse("option_disabled");
     el.selectedIndex = action.index;
     fire("change", false);
@@ -805,11 +805,11 @@ fn form_action_script(
     // The ruled sequence: a canceled keydown suppresses keypress, keyup is
     // dispatched in every case, and the activation waits for all of it.
     const phase = (name) =>
-      window.__mcsDispatch({capability}, el, name, true, {{ key: enter ? "Enter" : " " }});
+      window.__mcsDispatch({capability}, el, name, true, enter ? "Enter" : " ");
     let canceled = phase("keydown");
     if (!canceled) canceled = phase("keypress");
     if (phase("keyup")) canceled = true;
-    if (canceled) return JSON.stringify({{ applied: false, default_prevented: true, role: keyRole }});
+    if (canceled) return __mcsJson({{ applied: false, default_prevented: true, role: keyRole }});
     if (!enter && isCheck) {{
       // A radio is set, never toggled, and the whole group is captured so a
       // canceled default puts back the sibling this would clear.
@@ -818,7 +818,7 @@ fn form_action_script(
       el.checked = type === "radio" ? true : !was;
       if (fire("click", true)) {{
         if (el.__restoreGroup) el.__restoreGroup(before); else el.checked = was;
-        return JSON.stringify({{ applied: false, default_prevented: true, role: type }});
+        return __mcsJson({{ applied: false, default_prevented: true, role: type }});
       }}
       fire("change", false);
       return settle({{ applied: true, role: type }});
@@ -826,15 +826,15 @@ fn form_action_script(
     if (isButton) {{
       // Every subtype clicks first; only an uncanceled click reaches the
       // submit or the reset behind it.
-      if (fire("click", true)) return JSON.stringify({{ applied: false, default_prevented: true, role: "button" }});
+      if (fire("click", true)) return __mcsJson({{ applied: false, default_prevented: true, role: "button" }});
       if (isSubmitter && el.form) return submitForm(el.form, el);
       if (type === "reset" && el.form && !el.form.reset()) {{
-        return JSON.stringify({{ applied: false, default_prevented: true, role: "button" }});
+        return __mcsJson({{ applied: false, default_prevented: true, role: "button" }});
       }}
       return settle({{ applied: true, role: "button" }});
     }}
     if (enter && t === "a") {{
-      if (fire("click", true)) return JSON.stringify({{ applied: false, default_prevented: true, role: "link" }});
+      if (fire("click", true)) return __mcsJson({{ applied: false, default_prevented: true, role: "link" }});
       return settle({{ navigate: el.getAttribute("href"), applied: true, role: "link" }});
     }}
     return submitForm(el.form, null);
@@ -858,30 +858,30 @@ fn act_script(
     format!(
         r#"(() => {{
   const s = window.__mcs;
-  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
-  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
-  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  if (!s) return __mcsJson({{ error: "uninstrumented" }});
+  if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
   const el = s.nodes[{index}];
-  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
 {activation}
 {serializer}
   const t = el.tagName.toLowerCase();
   const decision = activationOf(el);
-  if (decision !== "allowed") return JSON.stringify({{ unsupported: true, reason: decision }});
+  if (decision !== "allowed") return __mcsJson({{ unsupported: true, reason: decision }});
   if (__mcsPreflight(el, {{ kind: "click" }}).signature !== {expected}) {{
-    return JSON.stringify({{ unsupported: true, reason: "preflight_mismatch" }});
+    return __mcsJson({{ unsupported: true, reason: "preflight_mismatch" }});
   }}
   if (t === "a" && el.hasAttribute("href")) {{
-    if (window.__mcsDispatch({capability}, el, "click", true, null)) {{
-      return JSON.stringify({{ applied: true }});
+    if (window.__mcsDispatch({capability}, el, "click", true, undefined)) {{
+      return __mcsJson({{ applied: true }});
     }}
-    return JSON.stringify({{ navigate: el.getAttribute("href") }});
+    return __mcsJson({{ navigate: el.getAttribute("href") }});
   }}
   if (!(t === "button" || (t === "input" && /^(button|submit|reset)$/.test(el.type)))) {{
-    return JSON.stringify({{ unsupported: true }});
+    return __mcsJson({{ unsupported: true }});
   }}
   el.click();
-  return JSON.stringify({{ applied: true }});
+  return __mcsJson({{ applied: true }});
 }})()"#
     )
 }
@@ -1969,9 +1969,12 @@ impl Realm {
                     if value.is_undefined() || value.is_null() {
                         Ok(String::new())
                     } else {
+                        // The captured intrinsic the shim left for the
+                        // host, not the global a page can replace.
                         let text: String = ctx
                             .globals()
-                            .get::<_, rquickjs::Function>("String")
+                            .get::<_, rquickjs::Function>("__mcsString")
+                            .or_else(|_| ctx.globals().get::<_, rquickjs::Function>("String"))
                             .and_then(|f| f.call((value,)))
                             .unwrap_or_default();
                         stage("after_string_crossing", self.arena_statistics());
