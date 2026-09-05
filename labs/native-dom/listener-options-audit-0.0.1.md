@@ -202,3 +202,40 @@ already aborted registers nothing.
    agent's two clicks running a `once` listener once, `window` and
    `EventTarget` honouring options like a node, and the M1/M2 floors measured
    on the same binary.
+
+
+## 9. Ruled — the first rung only
+
+L0, L1 and L2 are taken: forward the options at all three call sites, honour
+`once`, and accept an object with `handleEvent`. The two silent failures are
+what this rung is for.
+
+`once` removes the registration after the listener has run once, on an
+ordinary page dispatch and on the host's own, so an agent that clicks twice
+runs a `once` handler once.
+
+`handleEvent` is resolved **at registration**: the record keeps the object as
+the listener's identity and the method as the handler, so the host never reads
+a property off a page object while it is dispatching. That is deliberate and
+it is a divergence worth writing down — the standard re-reads `handleEvent` on
+every call, and this host will not, because reading it mid-walk would run page
+code inside the host's own snapshot. A page that swaps the method after
+registering keeps the handler it registered.
+
+Deferred, each for its own reason, and none of it implemented here:
+
+- **L4 `capture`** needs an ordering and authority design of its own: it would
+  let a page see and stop the host's synthesized event before the target does.
+- **L3 `passive`** waits with it, because today a passive listener can cancel
+  and the host reads that same flag — a fix that changes what a navigation
+  decision sees deserves its own ruling.
+- **L5 `signal`** waits for a closure-branded host signal. The naive version
+  measured in §5 is refused: no page object is to be read inside the dispatch
+  loop.
+
+The implementation court is frozen before the code and covers ordinary and
+host-driven dispatch, removal identity, re-adding after `once` has fired, a
+listener that throws, `window` and `EventTarget` honouring the options like a
+node, and owner cleanup. The M1 and M2 floors and the main-only slack are
+measured by the child-frame and shim-footprint courts on the same binary, and
+a failure there stops the rung.
