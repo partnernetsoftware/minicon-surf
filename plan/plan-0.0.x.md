@@ -1318,9 +1318,18 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   Nineteen receipts rerun on the binary. **One unreproduced test failure is on
   the record**: a single `cargo test` run reported 53 passed and 1 failed in
   0.42 s right after a rebuild, and its name was lost to the filter I ran it
-  through; twelve runs since, including the same build-then-test sequence, are
-  54 of 54. It is written down rather than swallowed, and it is not a claim
-  that the suite is clean. G1, G3, P6 and G6 stay open.
+  through; a stability review of **72 runs since, none failing** — 12 plain, 10 serial
+  under `--no-fail-fast -- --test-threads=1`, 5 build-then-test, 5 parallel,
+  20 of the single suspect and 20 of it four ways concurrent — did not
+  reproduce it. The suspect is named by timing, not by a reproduction: the
+  suite's entire 2.02 s lives in
+  `surface::tests::failed_shows_unmap_the_frame_and_reap_the_child`, every
+  other group being 0.40 s or less, so a run ending in 0.42 s is what an early
+  failure there looks like — its last arm, `/bin/sleep`, is the two seconds,
+  and its `/usr/bin/yes` arm is a genuine race between a child's first bytes
+  and the parent's read. Inference from a duration, not a diagnosis: the
+  failure stays on the record as unexplained, and this is not a claim that the
+  suite is clean. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 27 of 27: standard
   error classes for the base's own throws
   (`labs/native-dom/error-class-audit-0.0.1.md`), the deferred half of the
