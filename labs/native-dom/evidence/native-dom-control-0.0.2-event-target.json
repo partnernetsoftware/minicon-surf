@@ -1,0 +1,196 @@
+{
+ "checks": [
+  {
+   "check": "S1: the extension declares the class once and the base never names it",
+   "detail": {
+    "declared_in_main": 1,
+    "named_in_base": false
+   },
+   "passed": true
+  },
+  {
+   "check": "S2: the one-shot handle is not asked for anything new",
+   "detail": {
+    "handle_names_eventtarget": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E1: the name exists",
+   "detail": {
+    "said": "function"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E2: a node is an EventTarget, and the chain says where",
+   "detail": {
+    "chain": "Element>Element>Node>EventTarget>Object",
+    "instance": "true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E3: new EventTarget() is a bus that delivers and stops",
+   "detail": {
+    "said": "delivered 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E4: a subclass is an EventTarget and receives",
+   "detail": {
+    "said": "true|1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E5: the borrowed plain-object bus still works",
+   "detail": {
+    "said": "delivered 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C1: a forged parent does not reach the real element",
+   "detail": {
+    "said": "real listeners ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C2: the reserved focus type moves nothing from a page",
+   "detail": {
+    "said": "body->body"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C3a: the page could install its spy",
+   "detail": {
+    "said": "installed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C3b: a page's spy on the prototype does not take the host's dispatch",
+   "detail": {
+    "acted": true,
+    "delivered": true,
+    "spy_quiet": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E6: window stays outside the chain and keeps its own three",
+   "detail": {
+    "said": "false|1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E7: dispatch on a node behaves exactly as it did",
+   "detail": {
+    "said": "ran 1|returned false|prevented true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E1: the name exists",
+   "detail": {
+    "said": "function"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E2: a node is an EventTarget, and the chain says where",
+   "detail": {
+    "chain": "Element>Element>Node>EventTarget>Object",
+    "instance": "true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E3: new EventTarget() is a bus that delivers and stops",
+   "detail": {
+    "said": "delivered 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E4: a subclass is an EventTarget and receives",
+   "detail": {
+    "said": "true|1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E5: the borrowed plain-object bus still works",
+   "detail": {
+    "said": "delivered 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C1: a forged parent does not reach the real element",
+   "detail": {
+    "said": "real listeners ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C2: the reserved focus type moves nothing from a page",
+   "detail": {
+    "said": "body->body"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C3a: the page could install its spy",
+   "detail": {
+    "said": "installed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C3b: a page's spy on the prototype does not take the host's dispatch",
+   "detail": {
+    "acted": true,
+    "delivered": true,
+    "spy_quiet": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E6: window stays outside the chain and keeps its own three",
+   "detail": {
+    "said": "false|1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E7: dispatch on a node behaves exactly as it did",
+   "detail": {
+    "said": "ran 1|returned false|prevented true"
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 24,
+ "checks_total": 24,
+ "court": "native-dom EventTarget constructor (control 0.0.2)",
+ "expected": {
+  "chain": "Element>Element>Node>EventTarget>Object",
+  "window_instanceof": false
+ },
+ "host_sha256": "6177450e0cc0ff03e13557caa95b4c8334d72a0b4543ae03262b6b1d11d89c54",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the main extension declares the class",
+  "two criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary; a failure there stops the slice",
+  "listener options, handleEvent objects and AbortController are a separate candidate and are deliberately not pinned here",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

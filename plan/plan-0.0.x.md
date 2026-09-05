@@ -1282,8 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: an `EventTarget`
-  constructor (`labs/native-dom/event-target-audit-0.0.1.md`). Measured on the
+- [~] Implemented and qualified on the native route, court 24 of 24: an
+  `EventTarget` constructor (`labs/native-dom/event-target-audit-0.0.1.md`). Measured on the
   shipped build: `EventTarget` is **`undefined`** and an element's chain is
   `Element > Element > Node > Object`, but **the behaviour is already there** —
   the base keys listeners by object in a `WeakMap`, so borrowing
@@ -1306,7 +1306,19 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   lowest of the batch and so is the value, so rule on `EventTarget` and the
   listener options together, or take it knowing it is a name and not a
   capability. C2b stays scope-closed and the selector error names stay as
-  built. G1, G3, P6 and G6 stay open.
+  built. **Ruled and built**: the class, the chain, `new EventTarget()`, and
+  subclassing, all in the main extension, with the base untouched and the
+  handle not asked for anything new. The court was frozen one commit ahead and
+  reads **24 of 24** against **11 of 24** on the build before, where the name
+  was a `ReferenceError`. **M1 225,626 and M2 1,577,884 did not move**, so a
+  child pays nothing; the price is 2,352 bytes of main-only slack, 40,576 to
+  42,928. `window instanceof EventTarget` stays `false` by ruling. The three
+  authority containment properties were re-measured under the constructor and
+  hold. One implementation note worth keeping: the first attempt put the class
+  above the extension's `Node` binding and every document failed to build, a
+  temporal-dead-zone error that the court caught on its first run rather than a
+  reviewer catching later. Twenty receipts rerun on the binary. G1, G3, P6 and
+  G6 stay open.
 - [~] Implemented and qualified on the native route, court 34 of 34:
   attribute-name validation, re-measured
   (`labs/native-dom/attribute-name-validation-audit-0.0.2.md`, superseding

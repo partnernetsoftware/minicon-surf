@@ -15,6 +15,24 @@ __mcsInternals((internals) => {
   const Element = internals.Element;
   const eventStateOf = internals.eventStateOf;
   const Node = internals.Node;
+
+  // The name, the prototype and nothing else. Every realm already had this
+  // behaviour — the base keys listeners by object, not by node, so a plain
+  // object was always a working bus — so what a page gains here is the
+  // standard name, `instanceof`, and something to extend. The three helpers
+  // come from the one-shot handle, which is not asked for anything new, and
+  // the base does not grow: a child realm pays nothing for this.
+  class EventTarget {
+    addEventListener(type, fn) { addListener(this, type, fn); }
+    removeEventListener(type, fn) { removeListener(this, type, fn); }
+    dispatchEvent(event) { return dispatchOn(this, event); }
+  }
+  g.EventTarget = EventTarget;
+  // A node becomes an EventTarget here rather than in the base, so the chain
+  // is right in the realm that can see it. The window is not a node and is
+  // ruled to stay outside the chain, keeping the three methods it installs
+  // for itself below.
+  Object.setPrototypeOf(Node.prototype, EventTarget.prototype);
   // Ten members no child realm can call, so no child realm compiles them: a
   // member on a shared prototype costs every child 600 to 960 bytes of M1,
   // and these are reachable from page script alone. Each is the base's own
