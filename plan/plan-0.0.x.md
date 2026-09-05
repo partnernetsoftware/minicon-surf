@@ -1162,7 +1162,7 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
-- [ ] Proposed, design only, nothing implemented and nothing measured:
+- [~] Implemented and qualified on the native route, court 42 of 42:
   closing the pending-job deadline escape
   (`labs/native-dom/job-deadline-design-0.0.1.md`). The mechanism is
   established rather than guessed: `eval_staged` removes the interrupt
@@ -1184,7 +1184,19 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   queueMicrotask stay, ordering stays, no background thread and no virtual
   time. The frozen court supervises every host it starts, killing and reaping
   one that misses a wall-clock limit and recording that timeout as the
-  falsification rather than waiting. Three decisions wait on the root. G1, G3,
+  falsification rather than waiting. The root ruled all three and it is built:
+  an interrupted drain fails with a retryable `deadline_exceeded`, there is no
+  job-count cap, and a job that raises is page-owned. Four findings are
+  recorded in order, each before its fix: the handler-hang fixture used a
+  fragment link the frame-action rules refuse before dispatch, so the handler
+  never ran; an interrupted build reported `target_crashed` because
+  `build_target` re-types every script error; a job's exception is **not**
+  observable through this engine's drain, measured across a throwing `then`, a
+  throwing `queueMicrotask` and an unhandled rejection, so no counter claims
+  one; and the counters lived on the realm, which loses them wherever a realm
+  is replaced or never committed, so they moved to one host-owned sink every
+  realm shares. The court passes 42 of 42 and fails 12 of 42 against the
+  pushed build, killing and reaping eight hosts there by exact pid. G1, G3,
   P6 and G6 stay open.
 - [~] Implemented and fully qualified on the native route, court 68 of 68
   against every frozen group and criterion: a bounded timer slice
