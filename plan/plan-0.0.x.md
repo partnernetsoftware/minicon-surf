@@ -1282,6 +1282,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 17 of 17: the
+  `Element` member audit (`labs/native-dom/element-audit-design-0.0.1.md`).
+  Fifty-six members of `Node`, `Text` and `Element` were matched mechanically
+  against every host script, the extension and the base's own code: 24 are
+  reached by child-capable host scripts, 13 by the base itself, 2 only by the
+  extension, and 14 by nothing but page script. That also settled by
+  measurement what the shim split left open — `snapshot_script` uses selectors
+  in child realms, so the selector engine stays. Ten of the fourteen moved to
+  the main extension, each the base's own implementation rather than a
+  rewrite: M1 236,938 to **230,506** and M2 to 1,612,044 against unchanged
+  floors, leaving **15,254 bytes of M1 headroom**, with a main-only page 32,032
+  above the baseline inside its 65,536 slack. The other four stay in the base
+  by ruling, because they are written in terms of mutation recording, the
+  selector engine's internals and `__attrs`/`__detach`, and moving them would
+  widen the one-shot handle into a second coupling for about 2.6 KB;
+  `addEventListener` and `removeEventListener` stay with the dispatcher for
+  the same kind of reason. The court re-derives the call-site inventory from
+  the shipped sources so the audit cannot go stale in silence — and it caught
+  its own first version reading the Rust around a script and reporting a host
+  call to `.remove` that was `self.entries.remove(0)`. G1, G3, P6 and G6 stay
+  open.
   The `Event` slice left M1 with 2,630 bytes under its floor, so the next
   base change did not fit. A measured base-reduction round
   (`labs/native-dom/base-reduction-design-0.0.1.md`) priced the problem: a

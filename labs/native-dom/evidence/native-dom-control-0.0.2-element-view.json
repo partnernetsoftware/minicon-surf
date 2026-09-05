@@ -1,0 +1,164 @@
+{
+ "checks": [
+  {
+   "check": "the ten moved members are declared nowhere in the base",
+   "detail": {
+    "still_in_base": []
+   },
+   "passed": true
+  },
+  {
+   "check": "and every one of them is installed by the main extension",
+   "detail": {
+    "missing": []
+   },
+   "passed": true
+  },
+  {
+   "check": "no child-capable host script names a member that left the base",
+   "detail": {
+    "named_by_host": []
+   },
+   "passed": true
+  },
+  {
+   "check": "and every member those scripts do name is still in the base",
+   "detail": {
+    "missing_from_base": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a main realm calls all ten moved members and each answers as it did",
+   "detail": {
+    "said": "true,true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child realm still answers a snapshot, selectors and all",
+   "detail": {
+    "nodes": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a child's host action still applies through the bridge",
+   "detail": {
+    "acted": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the DOM's own reset still runs in a child realm",
+   "detail": {
+    "checked_after_reset": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a main realm calls all ten moved members and each answers as it did",
+   "detail": {
+    "said": "true,true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child realm still answers a snapshot, selectors and all",
+   "detail": {
+    "nodes": 4
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a child's host action still applies through the bridge",
+   "detail": {
+    "acted": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the DOM's own reset still runs in a child realm",
+   "detail": {
+    "checked_after_reset": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "the realm probe is refused without the private court file",
+   "detail": {
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "the main realm has the moved members and every child realm has none",
+   "detail": {
+    "probe": {
+     "children_class_list": 0,
+     "children_custom_event": 0,
+     "children_element_view": 0,
+     "children_enumerable": 0,
+     "children_event_view": 0,
+     "children_present": 0,
+     "main_class_list": true,
+     "main_custom_event": true,
+     "main_element_view": true,
+     "main_enumerable": false,
+     "main_event_view": true,
+     "main_present": false,
+     "realms_probed": 2
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "the probe seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 17,
+ "checks_total": 17,
+ "court": "native-dom page-only Element members (control 0.0.2)",
+ "host_sha256": "98fd6418e8efeb290d18f8a7ee22441499785f81d25b2f70bc601af054d5f6ed",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
+  "the inventory is re-derived from the shipped sources beside this court, so it is repo-local by design",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary",
+  "control-churn is not part of this evidence: it requires a surface binary and this slice runs no surface path",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "moved": [
+  "firstChild",
+  "lastChild",
+  "parentElement",
+  "appendChild",
+  "remove",
+  "innerText",
+  "defaultValue",
+  "focus",
+  "blur",
+  "submit"
+ ],
+ "passed": true
+}

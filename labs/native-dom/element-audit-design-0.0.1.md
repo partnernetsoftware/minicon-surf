@@ -222,3 +222,17 @@ no reason at all.
 
 The body is now the script's own literal and nothing after it, raw string or
 plain, and the criterion says what it meant to say.
+
+**10.2 Four of the criteria judge the tree, not the binary.** The
+source-inventory criteria read `dom_shim_base.js`, `dom_shim_main.js` and
+`main.rs` from the checkout beside the court, so they answer for the *sources
+as they stand* whichever binary is passed. Run against the build before C1 the
+court therefore scores 16 of 17 rather than 13 of 17: the three inventory
+criteria already see the moved sources, and what falsifies on the old binary is
+the runtime half — every child realm still carrying the ten members.
+
+That is the honest shape of a court that guards an audit rather than a
+behaviour, and the receipt says so rather than letting the number read as a
+weak falsification. Against the *sources* of the build before C1 the inventory
+criteria do fail; that state is not reachable from a receipt taken today, and
+it is not claimed as one.

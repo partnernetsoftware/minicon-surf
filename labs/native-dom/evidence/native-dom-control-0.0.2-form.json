@@ -1130,8 +1130,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 1033008,
-    "at_8": 1033008,
+    "at_128": 1027872,
+    "at_8": 1027872,
     "cap": 65536,
     "growth": 0
    },
@@ -1140,8 +1140,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 1033008,
-    "at_64": 1033008,
+    "at_128": 1027872,
+    "at_64": 1027872,
     "cap": 8192
    },
    "passed": true
@@ -1149,8 +1149,8 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 976656,
-    "fresh": 1011568
+    "after_submit": 971520,
+    "fresh": 1006432
    },
    "passed": true
   },
@@ -2265,7 +2265,14 @@
    "check": "[arena] an expired deadline refuses the submit without its address",
    "detail": {
     "code": "deadline_exceeded",
-    "message": "queued work did not finish before the deadline",
+    "details": {
+     "generation": 1,
+     "navigation": "failed",
+     "realm": "realm_41",
+     "reason": "navigation_failed",
+     "redacted": true
+    },
+    "message": "the form submission did not navigate",
     "retryable": true,
     "scope": {
      "id": "target_25",
@@ -2308,18 +2315,18 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 1008944,
-    "at_8": 1008976,
+    "at_128": 1006272,
+    "at_8": 1006320,
     "cap": 65536,
-    "growth": -32
+    "growth": -48
    },
    "passed": true
   },
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 1008944,
-    "at_64": 1008928,
+    "at_128": 1006272,
+    "at_64": 1006256,
     "cap": 8192
    },
    "passed": true
@@ -2327,8 +2334,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 951568,
-    "fresh": 986608
+    "after_submit": 949216,
+    "fresh": 984064
    },
    "passed": true
   },
@@ -2337,7 +2344,7 @@
    "detail": {
     "audit_bytes": 7830,
     "audit_capacity_bytes": 7168,
-    "audit_dropped_total": 160,
+    "audit_dropped_total": 161,
     "audit_entries": 64,
     "audit_entry_limit": 64,
     "object_limit": 8,
@@ -2412,7 +2419,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "7552dbfa52b5759da27a11cbb6365c83118955f684f6cd9cec35abcfaf4dbb38",
+ "host_sha256": "98fd6418e8efeb290d18f8a7ee22441499785f81d25b2f70bc601af054d5f6ed",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",
