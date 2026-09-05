@@ -27,6 +27,15 @@ __mcsInternals((internals) => {
     get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
     configurable: true });
   const containsHelper = internals.contains;
+  // The element's own attribute map is the state; `attributes` is a view over
+  // it that allocates an object per attribute. This reads the state, returns a
+  // new array every call as the standard has it, and claims to be nothing
+  // more — no NamedNodeMap, no Attr nodes, no identity to hold.
+  Element.prototype.getAttributeNames = function () {
+    const names = [];
+    this.__attrs.forEach((value, name) => { names.push(name); });
+    return names;
+  };
   // A compatibility fix, not a capability: a page could write this walk over
   // `matches` itself, and a real one instead calls `closest` and dies where a
   // browser would have answered. It refuses exactly what `matches` refuses.
