@@ -3,9 +3,9 @@
   {
    "check": "[system] the href setter commits the document it names",
    "detail": {
-    "tail": "assign-href.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] the href setter during the lifecycle adds no history entry",
@@ -22,9 +22,9 @@
   {
    "check": "[system] assign commits the document it names",
    "detail": {
-    "tail": "assign-call.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] assign during the lifecycle adds no history entry",
@@ -41,9 +41,9 @@
   {
    "check": "[system] replace commits the document it names",
    "detail": {
-    "tail": "replace-call.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] replace during the lifecycle adds no history entry",
@@ -60,7 +60,7 @@
   {
    "check": "[system] reload rebuilds the same URL and leaves history alone",
    "detail": {
-    "fetches": 1,
+    "fetches": 2,
     "history": {
      "can_go_back": false,
      "can_go_forward": false,
@@ -68,70 +68,70 @@
      "position": 0
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] the last write of three decides the destination",
    "detail": {
-    "tail": "last-write.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] and the two it replaced are never fetched",
    "detail": {
-    "requested": 1
+    "requested": 2
    },
    "passed": true
   },
   {
    "check": "[system] a script chain longer than 3 is refused and commits nothing",
    "detail": {
-    "error": null
+    "error": "resource_limit"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] no intermediate document of a refused chain exists",
    "detail": {
-    "targets": 1
+    "targets": 0
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] the href getter answers the committed URL until a commit",
    "detail": {
-    "tail": "getter.html",
+    "tail": "landed.html",
     "texts": 1
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] an intent from a timer commits at the boundary that ran it and adds an entry",
    "detail": {
     "history": {
-     "can_go_back": false,
+     "can_go_back": true,
      "can_go_forward": false,
-     "length": 1,
-     "position": 0
+     "length": 2,
+     "position": 1
     },
-    "tail": "late-intent.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] an intent from an action handler answers the navigation-shaped result",
    "detail": {
-    "navigated": null
+    "navigated": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] a failed intent answers the typed failure and keeps every identity",
    "detail": {
-    "error": null
+    "error": "not_found"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] the handler's mutation stands and no address is in the failure",
@@ -149,11 +149,33 @@
    "passed": true
   },
   {
-   "check": "[system] the host accepts the court-only held-intent seam",
+   "check": "[system] an explicit navigation discards the pending intent and wins",
    "detail": {
-    "reason": "host_exited"
+    "cause": "caller_override",
+    "discarded": 1
    },
-   "passed": false
+   "passed": true
+  },
+  {
+   "check": "[system] and the discarded address is nowhere in the counters",
+   "detail": {
+    "counters": [
+     "discarded_total",
+     "last_cause",
+     "pending"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the held intent was pending, and the seam is named nowhere",
+   "detail": {
+    "pending": [
+     1,
+     0
+    ]
+   },
+   "passed": true
   },
   {
    "check": "[system] the private court file is gone when the host is",
@@ -165,7 +187,7 @@
   {
    "check": "[system] an over-length address raised during a build is refused for one fixed reason",
    "detail": {
-    "error": null,
+    "error": "not_found",
     "reason": null
    },
    "passed": false
@@ -173,15 +195,15 @@
   {
    "check": "[system] and no part of it is in the failure, and none of it was fetched",
    "detail": {
-    "requested": 1
+    "requested": 2
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a non-ASCII address over the byte bound is refused on the live path",
    "detail": {
-    "error": null,
-    "reason": null
+    "error": "not_found",
+    "reason": "navigation_failed"
    },
    "passed": false
   },
@@ -194,9 +216,9 @@
      "length": 1,
      "position": 0
     },
-    "requested": 1
+    "requested": 2
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] the break seam is refused without the private court file",
@@ -252,9 +274,9 @@
   {
    "check": "[system] the slot is empty at the end of every operation",
    "detail": {
-    "pending": null
+    "pending": 0
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[system] 128 intent-driven navigations stay within the bound",
@@ -280,9 +302,9 @@
   {
    "check": "[arena] the href setter commits the document it names",
    "detail": {
-    "tail": "assign-href.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] the href setter during the lifecycle adds no history entry",
@@ -299,9 +321,9 @@
   {
    "check": "[arena] assign commits the document it names",
    "detail": {
-    "tail": "assign-call.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] assign during the lifecycle adds no history entry",
@@ -318,9 +340,9 @@
   {
    "check": "[arena] replace commits the document it names",
    "detail": {
-    "tail": "replace-call.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] replace during the lifecycle adds no history entry",
@@ -337,7 +359,7 @@
   {
    "check": "[arena] reload rebuilds the same URL and leaves history alone",
    "detail": {
-    "fetches": 1,
+    "fetches": 2,
     "history": {
      "can_go_back": false,
      "can_go_forward": false,
@@ -345,70 +367,70 @@
      "position": 0
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] the last write of three decides the destination",
    "detail": {
-    "tail": "last-write.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] and the two it replaced are never fetched",
    "detail": {
-    "requested": 1
+    "requested": 2
    },
    "passed": true
   },
   {
    "check": "[arena] a script chain longer than 3 is refused and commits nothing",
    "detail": {
-    "error": null
+    "error": "resource_limit"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] no intermediate document of a refused chain exists",
    "detail": {
-    "targets": 1
+    "targets": 0
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] the href getter answers the committed URL until a commit",
    "detail": {
-    "tail": "getter.html",
+    "tail": "landed.html",
     "texts": 1
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] an intent from a timer commits at the boundary that ran it and adds an entry",
    "detail": {
     "history": {
-     "can_go_back": false,
+     "can_go_back": true,
      "can_go_forward": false,
-     "length": 1,
-     "position": 0
+     "length": 2,
+     "position": 1
     },
-    "tail": "late-intent.html"
+    "tail": "landed.html"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] an intent from an action handler answers the navigation-shaped result",
    "detail": {
-    "navigated": null
+    "navigated": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] a failed intent answers the typed failure and keeps every identity",
    "detail": {
-    "error": null
+    "error": "not_found"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] the handler's mutation stands and no address is in the failure",
@@ -426,11 +448,33 @@
    "passed": true
   },
   {
-   "check": "[arena] the host accepts the court-only held-intent seam",
+   "check": "[arena] an explicit navigation discards the pending intent and wins",
    "detail": {
-    "reason": "host_exited"
+    "cause": "caller_override",
+    "discarded": 1
    },
-   "passed": false
+   "passed": true
+  },
+  {
+   "check": "[arena] and the discarded address is nowhere in the counters",
+   "detail": {
+    "counters": [
+     "discarded_total",
+     "last_cause",
+     "pending"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the held intent was pending, and the seam is named nowhere",
+   "detail": {
+    "pending": [
+     1,
+     0
+    ]
+   },
+   "passed": true
   },
   {
    "check": "[arena] the private court file is gone when the host is",
@@ -442,7 +486,7 @@
   {
    "check": "[arena] an over-length address raised during a build is refused for one fixed reason",
    "detail": {
-    "error": null,
+    "error": "not_found",
     "reason": null
    },
    "passed": false
@@ -450,15 +494,15 @@
   {
    "check": "[arena] and no part of it is in the failure, and none of it was fetched",
    "detail": {
-    "requested": 1
+    "requested": 2
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a non-ASCII address over the byte bound is refused on the live path",
    "detail": {
-    "error": null,
-    "reason": null
+    "error": "not_found",
+    "reason": "navigation_failed"
    },
    "passed": false
   },
@@ -471,9 +515,9 @@
      "length": 1,
      "position": 0
     },
-    "requested": 1
+    "requested": 2
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] the break seam is refused without the private court file",
@@ -529,9 +573,9 @@
   {
    "check": "[arena] the slot is empty at the end of every operation",
    "detail": {
-    "pending": null
+    "pending": 0
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "[arena] 128 intent-driven navigations stay within the bound",
@@ -555,8 +599,8 @@
    "passed": true
   }
  ],
- "checks_passed": 30,
- "checks_total": 68,
+ "checks_passed": 56,
+ "checks_total": 72,
  "court": "native-dom page-initiated navigation (control 0.0.2)",
  "criteria": {
   "audit_loop": 40,
@@ -564,7 +608,7 @@
   "navigations": 128,
   "owner_bytes": 65536
  },
- "host_sha256": "0fc0cf97f606ea7ed6b1f8abdac37a9be0df874509907398df7bdd5ae33a59b7",
+ "host_sha256": "24bb19416d9e8c9be827f987bc9e429c6b2354d9fb766acbedd2bca8369de038",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until page-initiated navigation exists",

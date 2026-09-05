@@ -185,6 +185,116 @@
    "passed": true
   },
   {
+   "check": "[system] an over-length address raised during a build is refused for one fixed reason",
+   "detail": {
+    "error": "invalid_request",
+    "reason": "navigation_url"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and no part of it is in the failure, and none of it was fetched",
+   "detail": {
+    "requested": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a non-ASCII address over the byte bound is refused on the live path",
+   "detail": {
+    "error": "invalid_request",
+    "reason": "navigation_url"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the refused document keeps its address, and nothing of the page's is anywhere",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    },
+    "requested": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the break seam is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a take that fails answers a typed failure instead of succeeding",
+   "detail": {
+    "error": "internal",
+    "reason": "intent_bridge_failed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the stale intent is discarded, never committed at a later boundary",
+   "detail": {
+    "cause": "bridge_failure",
+    "discarded": 1,
+    "tail": "late-intent.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the document the caller opened still works after it",
+   "detail": {
+    "snapshot": true,
+    "url": "late-intent.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the break seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a committed intent leaves one bounded page-navigation record",
+   "detail": {
+    "records": [
+     "page.navigate.assign"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and it names an origin, never a path, a query or page text",
+   "detail": {
+    "ledger_bytes": 272
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a refused intent leaves a record with an outcome and no origin",
+   "detail": {
+    "outcomes": [
+     "committed",
+     "invalid_request"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the ring still holds exactly what it may and drops the rest",
+   "detail": {
+    "count": 64,
+    "dropped": 19
+   },
+   "passed": true
+  },
+  {
    "check": "[system] the slot is empty at the end of every operation",
    "detail": {
     "pending": 0
@@ -208,7 +318,7 @@
   {
    "check": "[system] no intent URL, query or page text is in the ledger",
    "detail": {
-    "audit_bytes": 18522
+    "audit_bytes": 18719
    },
    "passed": true
   },
@@ -397,6 +507,116 @@
    "passed": true
   },
   {
+   "check": "[arena] an over-length address raised during a build is refused for one fixed reason",
+   "detail": {
+    "error": "invalid_request",
+    "reason": "navigation_url"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and no part of it is in the failure, and none of it was fetched",
+   "detail": {
+    "requested": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a non-ASCII address over the byte bound is refused on the live path",
+   "detail": {
+    "error": "invalid_request",
+    "reason": "navigation_url"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the refused document keeps its address, and nothing of the page's is anywhere",
+   "detail": {
+    "history": {
+     "can_go_back": false,
+     "can_go_forward": false,
+     "length": 1,
+     "position": 0
+    },
+    "requested": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the break seam is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a take that fails answers a typed failure instead of succeeding",
+   "detail": {
+    "error": "internal",
+    "reason": "intent_bridge_failed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the stale intent is discarded, never committed at a later boundary",
+   "detail": {
+    "cause": "bridge_failure",
+    "discarded": 1,
+    "tail": "late-intent.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the document the caller opened still works after it",
+   "detail": {
+    "snapshot": true,
+    "url": "late-intent.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the break seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a committed intent leaves one bounded page-navigation record",
+   "detail": {
+    "records": [
+     "page.navigate.assign"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and it names an origin, never a path, a query or page text",
+   "detail": {
+    "ledger_bytes": 272
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a refused intent leaves a record with an outcome and no origin",
+   "detail": {
+    "outcomes": [
+     "committed",
+     "invalid_request"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the ring still holds exactly what it may and drops the rest",
+   "detail": {
+    "count": 64,
+    "dropped": 19
+   },
+   "passed": true
+  },
+  {
    "check": "[arena] the slot is empty at the end of every operation",
    "detail": {
     "pending": 0
@@ -420,20 +640,21 @@
   {
    "check": "[arena] no intent URL, query or page text is in the ledger",
    "detail": {
-    "audit_bytes": 18522
+    "audit_bytes": 18719
    },
    "passed": true
   }
  ],
- "checks_passed": 50,
- "checks_total": 50,
+ "checks_passed": 76,
+ "checks_total": 76,
  "court": "native-dom page-initiated navigation (control 0.0.2)",
  "criteria": {
+  "audit_loop": 40,
   "chain_cap": 3,
   "navigations": 128,
   "owner_bytes": 65536
  },
- "host_sha256": "24bb19416d9e8c9be827f987bc9e429c6b2354d9fb766acbedd2bca8369de038",
+ "host_sha256": "ec7f9768f19bbe2c14ecfcf2ae86d44d4b356ff0408e40baed1a043c96e6da3a",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until page-initiated navigation exists",

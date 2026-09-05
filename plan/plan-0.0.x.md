@@ -1205,8 +1205,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   apart because a child runs no script — brought it to 261,354 and M2 to
   1,827,196. That recovery is **partial**: a child still costs about 6.1 KB
   more than before this slice, because the shim source every realm compiles
-  grew, and **M1 now has 790 bytes of headroom**. The court passes 50 of 50
-  and 20 of 46 against the build before it. G1, G3, P6 and G6 stay open.
+  grew. A root code audit then found three things the 50-check court could
+  not see, each recorded with its falsifier before the fix: a take that
+  failed at the deadline or answered malformed output was indistinguishable
+  from a page that raised nothing, so an operation reported success and the
+  intent could commit at a later, unrelated boundary; the page's address was
+  unbounded in the realm and crossed unbounded, skipping the byte, absolute
+  and scheme checks every caller address passes; and the design promised the
+  same audit every navigation gets while the code wrote no ledger record at
+  all. A take now returns a typed failure or an intent, a failed take
+  poisons the target so the stale slot is emptied and discarded before page
+  code runs again, both ends bound the address with one fixed redacted
+  reason, and every page-initiated navigation — live or during a build —
+  writes one bounded record naming a kind, an outcome and at most an origin.
+  The design also called the intent slot host-owned; it is realm-closure-owned
+  and host-taken, which is exactly why a failed take can leave it stale, and
+  the wording was corrected rather than the code. The court is now 76 of 76,
+  30 of 68 against the build before the slice and 56 of 72 against the build
+  the audit judged, where it fails every criterion the audit added and no
+  other. **M1 is left with 182 bytes of headroom**, 261,962 against an
+  unmoved 262,144: the next change that adds shim source breaks it.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the
   bounded document lifecycle (`labs/native-dom/lifecycle-design-0.0.1.md`).
   Four observable steps after the document's own scripts, each its own
