@@ -58,6 +58,7 @@
   // activation proceeds.
   const eventState = new WeakMap();
   const NONE = 0;
+  const CAPTURING_PHASE = 1;
   const AT_TARGET = 2;
   const BUBBLING_PHASE = 3;
   class Event {
@@ -169,22 +170,28 @@
       handler = fn.handleEvent;
     }
     const once = !!(options && typeof options === "object" && options.once);
+    const capture = options === true
+      || !!(options && typeof options === "object" && options.capture);
     const key = StringOf(type);
     const map = listenersOf(target);
     if (!invoke(mapHas, map, [key])) invoke(mapSet, map, [key, []]);
     const list = invoke(mapGet, map, [key]);
     // The same target, type and function identity is registered once: a
     // repeat is a no-op, as the standard has it within this host's bounds.
-    for (let i = 0; i < list.length; i += 1) if (list[i].callback === fn) return;
-    invoke(arrayPush, list, [{ callback: fn, handler, once, removed: false }]);
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i].callback === fn && list[i].capture === capture) return;
+    }
+    invoke(arrayPush, list, [{ callback: fn, handler, once, capture, removed: false }]);
   }
   // `options` is accepted and unread: `capture` is a deferred rung, and a
   // signature that refuses it would make the deferral a page-visible error.
   function removeListener(target, type, fn, options) {
+    const capture = options === true
+      || !!(options && typeof options === "object" && options.capture);
     const list = invoke(mapGet, listenersOf(target), [StringOf(type)]);
     if (!list) return;
     for (let i = 0; i < list.length; i += 1) {
-      if (list[i].callback === fn) {
+      if (list[i].callback === fn && list[i].capture === capture) {
         list[i].removed = true;
         invoke(arraySplice, list, [i, 1]);
         return;
@@ -220,17 +227,28 @@
       // Only a path that actually reached the document continues to the
       // window: a detached subtree bubbles through its own ancestors and
       // stops there, as the standard has it.
-      if (state.bubbles && path[path.length - 1] === document) invoke(arrayPush, path, [g]);
+      if (path[path.length - 1] === document) invoke(arrayPush, path, [g]);
     } else {
       invoke(arrayPush, path, [target]);
     }
     try {
       // Indexed, because the iterator protocol is page-mutable and this is
       // the host's own path (§20.3).
-      for (let hop = 0; hop < path.length; hop += 1) {
-        const node = path[hop];
+      const order = [];
+      for (let i = path.length - 1; i > 0; i -= 1) {
+        invoke(arrayPush, order, [{ node: path[i], phase: CAPTURING_PHASE }]);
+      }
+      invoke(arrayPush, order, [{ node: path[0], phase: AT_TARGET }]);
+      if (state.bubbles) {
+        for (let i = 1; i < path.length; i += 1) {
+          invoke(arrayPush, order, [{ node: path[i], phase: BUBBLING_PHASE }]);
+        }
+      }
+      for (let hop = 0; hop < order.length; hop += 1) {
+        const node = order[hop].node;
+        const phase = order[hop].phase;
         state.currentTarget = node;
-        state.eventPhase = node === target ? AT_TARGET : BUBBLING_PHASE;
+        state.eventPhase = phase;
         if (state.stop || state.stopImmediate) break;
         const list = invoke(mapGet, listenersOf(node), [state.type]);
         if (list) {
@@ -243,15 +261,17 @@
           for (let i = 0; i < snapshot.length; i += 1) {
             const record = snapshot[i];
             if (record.removed) continue;
+            if (phase === CAPTURING_PHASE && !record.capture) continue;
+            if (phase === BUBBLING_PHASE && record.capture) continue;
             if (state.stopImmediate) break;
             // The receiver is the object for an object listener and the
             // node for a function, as the standard has it. `once` is spent
             // whether or not the handler threw.
             try { invoke(record.handler, record.handler === record.callback ? node : record.callback, [event]); } catch (error) {}
-            if (record.once && !record.removed) removeListener(node, state.type, record.callback);
+            if (record.once && !record.removed) removeListener(node, state.type, record.callback, record.capture);
           }
         }
-        if (state.stop || !state.bubbles) break;
+        if (state.stop) break;
       }
     } finally {
       // Every path out leaves the event clean, and its target is the last one

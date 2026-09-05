@@ -1,0 +1,280 @@
+{
+ "checks": [
+  {
+   "check": "[system] C1: capture runs down, then the target, then bubbling",
+   "detail": {
+    "said": "doc-cap>box-cap>target>box-bub>win-bub"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C2: the window is the outermost capture target",
+   "detail": {
+    "said": "win-cap>doc-cap>target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C3: eventPhase reads 1, 2, 3",
+   "detail": {
+    "said": "1,2,3"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C4: a non-bubbling event still captures down and does not bubble",
+   "detail": {
+    "said": "win-cap>box-cap>target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C5: a removal with the wrong flag removes nothing",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C6: and one with the right flag still removes",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C7: the two flags are two registrations",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C8: at the target both kinds run, in registration order",
+   "detail": {
+    "said": "cap-reg>bub-reg"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C9: stopPropagation in capture ends the dispatch there",
+   "detail": {
+    "said": "box-cap"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C10: stopImmediatePropagation stops the rest of that hop too",
+   "detail": {
+    "said": "cap1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C11: stopPropagation at the target still leaves capture done",
+   "detail": {
+    "said": "box-cap>target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C12: once and capture compose",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C13: a spent once capture record leaves its bubble twin alone",
+   "detail": {
+    "said": "capture 1|bubble 2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C14: handleEvent and capture compose, and remove by the object",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A1a: the page could arm both listeners",
+   "detail": {
+    "said": "armed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A1b: a capture listener stops the page's own target listener",
+   "detail": {
+    "doc": true,
+    "target_quiet": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A2a: stopping propagation does not stop the host's navigation",
+   "detail": {
+    "ok": true,
+    "url_tail": "29/next.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] A2b: preventing the default does, from the capture phase too",
+   "detail": {
+    "ok": true,
+    "url_tail": "/preventing.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C1: capture runs down, then the target, then bubbling",
+   "detail": {
+    "said": "doc-cap>box-cap>target>box-bub>win-bub"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C2: the window is the outermost capture target",
+   "detail": {
+    "said": "win-cap>doc-cap>target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C3: eventPhase reads 1, 2, 3",
+   "detail": {
+    "said": "1,2,3"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C4: a non-bubbling event still captures down and does not bubble",
+   "detail": {
+    "said": "win-cap>box-cap>target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C5: a removal with the wrong flag removes nothing",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C6: and one with the right flag still removes",
+   "detail": {
+    "said": "ran 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C7: the two flags are two registrations",
+   "detail": {
+    "said": "ran 2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C8: at the target both kinds run, in registration order",
+   "detail": {
+    "said": "cap-reg>bub-reg"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C9: stopPropagation in capture ends the dispatch there",
+   "detail": {
+    "said": "box-cap"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C10: stopImmediatePropagation stops the rest of that hop too",
+   "detail": {
+    "said": "cap1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C11: stopPropagation at the target still leaves capture done",
+   "detail": {
+    "said": "box-cap>target"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C12: once and capture compose",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C13: a spent once capture record leaves its bubble twin alone",
+   "detail": {
+    "said": "capture 1|bubble 2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C14: handleEvent and capture compose, and remove by the object",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A1a: the page could arm both listeners",
+   "detail": {
+    "said": "armed"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A1b: a capture listener stops the page's own target listener",
+   "detail": {
+    "doc": true,
+    "target_quiet": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A2a: stopping propagation does not stop the host's navigation",
+   "detail": {
+    "ok": true,
+    "url_tail": "29/next.html"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] A2b: preventing the default does, from the capture phase too",
+   "detail": {
+    "ok": true,
+    "url_tail": "/preventing.html"
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 36,
+ "checks_total": 36,
+ "court": "native-dom capture phase (control 0.0.2)",
+ "expected": {
+  "non_bubbling": "win-cap>box-cap>target",
+  "order": "doc-cap>box-cap>target>box-bub>win-bub",
+  "phases": "1,2,3"
+ },
+ "host_sha256": "112b303b5edd4ce48fe912096caeffa27e988e6be3508f85517a6136b4f846c8",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the walk has three phases",
+  "passive and signal are deferred rungs and are deliberately not pinned here",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary; a failure there stops the rung",
+  "composedPath and shadow retargeting are not modelled by this host and are not tested",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

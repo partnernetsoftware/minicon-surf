@@ -99,7 +99,7 @@
  "checks_passed": 11,
  "checks_total": 11,
  "court": "native-dom page-facing Event view (control 0.0.2)",
- "host_sha256": "799895aab74000810fb7c82b0273be16b0bd9dd673122b44b635ce2fba794e36",
+ "host_sha256": "112b303b5edd4ce48fe912096caeffa27e988e6be3508f85517a6136b4f846c8",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the divergence criterion fails until the accessors move",

@@ -3,9 +3,9 @@
   {
    "check": "[system] a child node costs at most 1600 bytes at the margin",
    "detail": {
-    "large": 671442,
-    "per_node": 1252.6145833333333,
-    "small": 551191
+    "large": 678818,
+    "per_node": 1295.28125,
+    "small": 554471
    },
    "passed": true
   },
@@ -48,9 +48,9 @@
   {
    "check": "[arena] a child node costs at most 1600 bytes at the margin",
    "detail": {
-    "large": 650146,
-    "per_node": 1203.78125,
-    "small": 534583
+    "large": 658018,
+    "per_node": 1248.1145833333333,
+    "small": 538199
    },
    "passed": true
   },
@@ -136,7 +136,7 @@
   "per_node_bytes": 1600,
   "small_nodes": 16
  },
- "host_sha256": "799895aab74000810fb7c82b0273be16b0bd9dd673122b44b635ce2fba794e36",
+ "host_sha256": "112b303b5edd4ce48fe912096caeffa27e988e6be3508f85517a6136b4f846c8",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the per-element gate and the divergence fail until dataset is lazy",
@@ -146,14 +146,14 @@
  ],
  "measured": {
   "arena": {
-   "large": 650146,
-   "per_node": 1203.78125,
-   "small": 534583
+   "large": 658018,
+   "per_node": 1248.1145833333333,
+   "small": 538199
   },
   "system": {
-   "large": 671442,
-   "per_node": 1252.6145833333333,
-   "small": 551191
+   "large": 678818,
+   "per_node": 1295.28125,
+   "small": 554471
   }
  },
  "passed": true

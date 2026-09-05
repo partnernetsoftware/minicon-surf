@@ -1282,7 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: the capture phase
+- [~] Implemented and qualified on the native route, court 36 of 36: the
+  capture phase
   (`labs/native-dom/capture-phase-audit-0.0.1.md`), deepening the deferred L4
   row. Measured on the shipped build against a candidate: today the order is
   `target > box-cap > box-bub > doc-cap > win-bub` and would become
@@ -1304,7 +1305,19 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   headroom against unchanged floors, slack 46,464. Every court that could feel
   an ordering change passes on the candidate, `lifecycle` and `page-navigation`
   included. It is base-only, so every child pays and no child can use it. L3
-  `passive` and L5 `signal` stay deferred. G1, G3, P6 and G6 stay open.
+  `passive` and L5 `signal` stay deferred. **Ruled and built**: capture, target,
+  bubble; a non-bubbling event captures down without bubbling; capture is
+  listener identity so the wrong-flag removal is gone; the stop flags, `once`
+  and `handleEvent` compose as audited. The court was frozen one commit ahead
+  and reads **36 of 36** against **16 of 36**, and its authority pair is
+  measured through a real `target.act`. M1 228,922, M2 1,600,956, headroom
+  16,838, slack 46,464 — **the ruled +1,664 per child exactly**, which took a
+  correction: the first build carried four base comments and cost +2,944, so I
+  measured the split (code +1,664, prose +1,280), found trimming gives back
+  bytes in **quantized steps rather than linearly** — four blocks cut to one
+  line each returned only 256 — and moved those invariants into the audit and
+  the court, where a page pays nothing for them. Twenty-two receipts rerun on
+  the binary. G1, G3, P6 and G6 stay open.
 - [~] First rung implemented and qualified on the native route, court 30 of
   30: listener options, `handleEvent` and `AbortController`
   (`labs/native-dom/listener-options-audit-0.0.1.md`). Two of the gaps are
