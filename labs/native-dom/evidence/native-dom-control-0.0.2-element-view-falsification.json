@@ -46,6 +46,17 @@
    "passed": true
   },
   {
+   "check": "[system] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "detail": {
+    "revisions": [
+     0,
+     0,
+     0
+    ]
+   },
+   "passed": false
+  },
+  {
    "check": "[system] a child realm still answers a snapshot, selectors and all",
    "detail": {
     "nodes": 4
@@ -90,6 +101,17 @@
     ]
    },
    "passed": true
+  },
+  {
+   "check": "[arena] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "detail": {
+    "revisions": [
+     0,
+     0,
+     0
+    ]
+   },
+   "passed": false
   },
   {
    "check": "[arena] a child realm still answers a snapshot, selectors and all",
@@ -159,9 +181,9 @@
   }
  ],
  "checks_passed": 17,
- "checks_total": 19,
+ "checks_total": 21,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "8546428d23d91cec1b3252692d1fb0866392652ddc25f78440c5b0ef462442b2",
+ "host_sha256": "1e472770aa50d0f97879e813be0560d1f672be67e314869c5189512fb2c7144c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -183,7 +205,8 @@
   "submit",
   "contains",
   "closest",
-  "getAttributeNames"
+  "getAttributeNames",
+  "toggleAttribute"
  ],
  "passed": false
 }

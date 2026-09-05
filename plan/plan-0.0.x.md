@@ -1282,6 +1282,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 21 of 21:
+  `toggleAttribute` (`labs/native-dom/toggle-attribute-audit-0.0.1.md`), the
+  thinnest compatibility case of the series at **848 bytes of main and nothing
+  per child**. Its audit found the sharper thing underneath: **this host
+  validates no attribute name at all** — `setAttribute("a b", …)` and
+  `setAttribute("", …)` are accepted where every browser throws
+  `InvalidCharacterError`, next to a `classList` that does validate its tokens
+  and throws with the standard's names. Ruled boundary B: the new method
+  validates nothing either, because a method disagreeing with its neighbours
+  about what a name is would be worse than both, and the divergence is
+  recorded as its own base candidate beside the selector engine's error name.
+  The revision follows the members it calls — once for a change, not at all
+  for a no-op — and the court reads it from **outside** through
+  `target.inspect`, because `window.__mcs` is installed after a document's
+  inline scripts and a page cannot see the counter at parse time. The court is
+  21 of 21 and 17 of 21 with `passed: false` against the build before it.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 19 of 19:
   `getAttributeNames` (`labs/native-dom/get-attribute-names-audit-0.0.1.md`),
   a compatibility fix at **784 bytes of main and nothing per child**. The

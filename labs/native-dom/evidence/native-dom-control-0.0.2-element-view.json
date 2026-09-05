@@ -31,7 +31,7 @@
   {
    "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
    },
    "passed": true
   },
@@ -40,6 +40,17 @@
    "detail": {
     "revision": [
      0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "detail": {
+    "revisions": [
+     0,
+     1,
      1
     ]
    },
@@ -77,7 +88,7 @@
   {
    "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
    },
    "passed": true
   },
@@ -86,6 +97,17 @@
    "detail": {
     "revision": [
      0,
+     1
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a toggle that changes the attribute moves the revision once, and one that changes nothing moves it not at all",
+   "detail": {
+    "revisions": [
+     0,
+     1,
      1
     ]
    },
@@ -158,10 +180,10 @@
    "passed": true
   }
  ],
- "checks_passed": 19,
- "checks_total": 19,
+ "checks_passed": 21,
+ "checks_total": 21,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "1e472770aa50d0f97879e813be0560d1f672be67e314869c5189512fb2c7144c",
+ "host_sha256": "744153d182945694ae949d743f4ac86bd9ca44aa347835de6ab2d22b940af0a2",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -183,7 +205,8 @@
   "submit",
   "contains",
   "closest",
-  "getAttributeNames"
+  "getAttributeNames",
+  "toggleAttribute"
  ],
  "passed": true
 }

@@ -249,7 +249,7 @@
  "checks_passed": 28,
  "checks_total": 28,
  "court": "native-dom classList and CustomEvent (control 0.0.2)",
- "host_sha256": "1e472770aa50d0f97879e813be0560d1f672be67e314869c5189512fb2c7144c",
+ "host_sha256": "744153d182945694ae949d743f4ac86bd9ca44aa347835de6ab2d22b940af0a2",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until classList and CustomEvent exist",
