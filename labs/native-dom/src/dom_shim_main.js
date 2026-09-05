@@ -27,6 +27,36 @@ __mcsInternals((internals) => {
     get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
     configurable: true });
   const containsHelper = internals.contains;
+  // A copy carries element names, attributes and text data. It carries no
+  // listeners, because those live keyed by node where a copy cannot reach
+  // them; no IDL state, because this host keeps the typed value and the
+  // checked property apart from the attributes; and no focus, because that is
+  // the host's. The kinds it models are a closed set — text and element, the
+  // only two these trees hold — and a kind it does not model FAILS the whole
+  // call rather than being skipped, so a copy is faithful or it is an error.
+  const TEXT_NODE = 3;
+  const ELEMENT_NODE = 1;
+  const cloneOf = (node, deep) => {
+    let copy;
+    if (node.nodeType === TEXT_NODE) {
+      copy = document.createTextNode(node.data);
+    } else if (node.nodeType === ELEMENT_NODE) {
+      copy = document.createElement(node.localName);
+      const names = node.getAttributeNames();
+      for (let i = 0; i < names.length; i += 1) {
+        copy.setAttribute(names[i], node.getAttribute(names[i]));
+      }
+    } else {
+      throw new TypeError("cloneNode: this host does not model node type " + node.nodeType);
+    }
+    if (deep && node.childNodes) {
+      for (let i = 0; i < node.childNodes.length; i += 1) {
+        copy.append(cloneOf(node.childNodes[i], true));
+      }
+    }
+    return copy;
+  };
+  Node.prototype.cloneNode = function (deep) { return cloneOf(this, !!deep); };
   // Validates no name, because setAttribute and removeAttribute beside it do
   // not, and a method that disagreed with its neighbours about what a name is
   // would be worse than either. The revision follows the members it calls: a

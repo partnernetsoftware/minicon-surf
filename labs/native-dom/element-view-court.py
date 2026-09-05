@@ -33,6 +33,10 @@ import check_contract  # noqa: E402,F401
 VISIBLE_ENV = "MINICON_SURF_ALLOW_VISIBLE_COURT"
 HERE = Path(__file__).resolve().parent
 # Exactly the ten the ruling moves. Nothing else, and no more.
+# How many assertions the main-realm page fixture makes. It is a criterion in
+# its own right: a fixture that loses an assertion fails rather than passes.
+PAGE_CHECKS = 47
+
 MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
          "innerText", "defaultValue", "focus", "blur", "submit",
          # C2a: the method moves and calls the base's own helper through the
@@ -352,11 +356,10 @@ def main():
                     said = texts[0] if texts else None
                     host.ok("target.close", {"target": opened["result"]["target"]})
                 expect(tag + "a main realm calls every moved member and each answers as it did",
-                       said == ("true,true,true,true,true,true,true,true,true,true"
-                                ",true,true,true,true"
-                                ",true,true,true,true,true,true,true,true,true,true"
-                                ",true,true,true,true,true"
-                                ",true,true,true,true,true,true,true,true,true,true"),
+                       # Every check the page made answered true, and it made
+                       # exactly this many: a count, so a fixture that quietly
+                       # stops asserting cannot pass by shrinking.
+                       said == ",".join(["true"] * PAGE_CHECKS),
                        {"said": said})
 
                 opened = host.call("target.open",
