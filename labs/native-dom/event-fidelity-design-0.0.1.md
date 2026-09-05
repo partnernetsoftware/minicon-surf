@@ -383,3 +383,20 @@ falsifiers, each predicted to fail on `2b6d985fe682…`:
 The unchanged M1 and M2 floors are measured by the child-frame and
 shim-footprint courts on the same binary, not restated here (§9.1 of the shim
 record is why).
+
+
+## 13. One defect the court found that the inventory had missed
+
+§2 measured re-dispatch of a *completed* event and found it correct. It never
+measured re-dispatch of an event **while that event is dispatching**. The
+frozen court does, and on `2b6d985fe682…` the answer is not "unrefused" — it
+is `RangeError`, after the listener re-entered its own dispatch about eighty
+times and exhausted the stack.
+
+So the guard §10.4 rules is not only a fidelity item: today a page handler
+that dispatches the event it was handed drives unbounded recursion inside a
+host operation, and what stops it is the engine running out of stack rather
+than anything this host decided. The criterion stands as written — the refusal
+must be an `InvalidStateError` raised **before** the outer dispatch is
+touched, with the outer dispatch then reaching its remaining listener and its
+ancestor — and it is now also the fix for a page-triggerable stack exhaustion.
