@@ -289,3 +289,48 @@ then the no-listener arm is opened, sampled and closed; then the listener arm
 is opened and sampled, and that sample is what M1 and M2 use. **Any sample
 labelled a quiet total is taken with only the quiet target live.** It stays a
 diagnostic and changes no gate.
+
+## 11. The lifecycle bridge must not be forgeable
+
+The first implementation exposed `__mcsLifecycle` as an ordinary writable
+global. A page's own scripts run before the lifecycle, so a page could call
+the steps itself, call them out of order, call them repeatedly, or replace the
+function outright — and with it the guarantees that the lifecycle runs **after
+the scripts**, that each event fires **exactly once**, and that the host, not
+the page, decides when a step happens. It also stored listeners on
+`target.__listeners`, a property a page can overwrite, which would break the
+lifecycle from a different direction. Neither is acceptable and both are fixed
+before this slice is qualified.
+
+### 11.1 A capability, not a name
+
+A `__` prefix is not a boundary. The bridge becomes:
+
+- a **non-enumerable, non-writable, non-configurable** property, so a page can
+  neither replace nor shadow it;
+- guarded by a **realm-private capability** the host mints per realm from a
+  cryptographic random source, installed **before any page script runs** into
+  a closure the page cannot reach, and passed by the host with every step
+  call. A call without it, or with a wrong one, dispatches nothing;
+- **phase-ordered inside that closure**: the only step it will run is the next
+  one, `1 → 2 → 3 → 4`. Anything out of order, repeated, or after the fourth
+  dispatches nothing and answers the same way a wrong capability does.
+
+The capability never appears in a snapshot, an audit record, an error, a
+receipt or any page-readable state. It exists in the host's memory for the
+realm's life and in one closure inside that realm.
+
+### 11.2 Listeners live in a closure, not on a property
+
+`__listeners` moves off the targets and into a **closure-owned `WeakMap`**
+keyed by the target. A page can no longer replace, read or corrupt the
+listener store by assigning a property, and a target that dies takes its
+listeners with it.
+
+### 11.3 Court
+
+A malicious page is added: it tries to overwrite `__mcsLifecycle`, calls it
+with no capability and with a wrong one, calls the steps out of order and
+repeatedly, and assigns `window.__listeners`. After all of that the normal
+four steps must still be observed **exactly once each, in order**, and the
+capability must appear in no snapshot, no audit record and no receipt.
