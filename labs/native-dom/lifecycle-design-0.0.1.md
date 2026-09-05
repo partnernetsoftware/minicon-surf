@@ -137,3 +137,73 @@ frozen before the code and run against the current build first.
 Every group that could meet a host which hangs keeps the watchdog the
 job-deadline court established: an exact-pid kill, a reap, and the timeout
 recorded as the falsification.
+
+## 9. Correction before any code: bubbling, cost, and what the shim is not
+
+Three corrections, recorded in order. Where this section differs from §2, §3
+or §7, this section governs. The four boundaries of §3 and every criterion
+except the ones named here are unchanged.
+
+### 9.1 `DOMContentLoaded` bubbles, and it bubbles to the window
+
+§3 said `DOMContentLoaded` does not bubble and argued the difference was
+unobservable because the document is the root of this tree. That was wrong on
+both counts. In the standard the event is `bubbles: true` and its propagation
+path continues **past** the document to the window, so a listener registered
+on the window does see it — which is exactly how a great many pages register
+one. Freezing it as a loss because of my own misreading would have moved this
+host away from the standard rather than toward it.
+
+Corrected:
+
+- **`DOMContentLoaded`**: dispatched at the document, `target` is the
+  document, `bubbles` is true, and it continues to the window, where a
+  listener sees `target` = document and `currentTarget` = window.
+- **`load`**: dispatched at the window, `target` and `currentTarget` are the
+  window, and it does **not** bubble. A listener on the document never sees
+  it.
+- **`readystatechange`**: dispatched at the document and does not bubble.
+
+**How the path is built, and what it must not do.** The window becomes the
+document's parent **event target**, not its parent node. Nothing appends the
+window to the DOM tree, `document.parentNode` stays `null`, and no traversal,
+selector or serialisation sees a new node. The dispatch walks an event path
+that is the node chain and then, when it reaches the document and the event
+bubbles, the window — one explicit step, not a faked link.
+
+### 9.2 The cost is small and bounded, not zero
+
+§7 said "no resident cost", which is not true and should not be claimed. The
+global carries a listener map and an `onload` slot for the life of the realm,
+and every registered listener is a function the realm holds. It is **small
+and fixed**, it lives inside the existing 16 MiB realm limit and the request
+deadline like everything else in the realm, and **M1 measures it** rather than
+assuming it: the same page with its listeners kept against the same page with
+them removed.
+
+### 9.3 What the window's EventTarget is, and is not
+
+It is a **bounded shim**, not a standard `EventTarget`, and the differences
+are recorded rather than left to be discovered:
+
+- **Duplicate listeners are not de-duplicated.** The standard drops a second
+  `addEventListener` with the same type, callback and capture flag; this shim
+  appends it, so such a listener runs twice. It is the node model's existing
+  behaviour, unchanged here, and it is a divergence.
+- **No listener options at all**: no `capture`, no `once`, no `passive`, no
+  `signal`. A listener is a function in a list.
+- **No `handleEvent` objects**: a listener must be a function; an object with
+  a `handleEvent` method is ignored.
+- **No capture phase and no `stopImmediatePropagation`**, as §6 already
+  records.
+- `EventTarget` is not exposed as a constructor, and nothing else in the realm
+  becomes an event target by this change.
+
+### 9.4 Court, adjusted
+
+The order group additionally asserts that a **window** listener for
+`DOMContentLoaded` fires, with `target` the document and `currentTarget` the
+window; that a **document** listener for `load` never fires; and that the
+window listener runs after the document's own, in path order. The duplicate
+listener divergence is asserted as the divergence it is, so the record cannot
+drift back into claiming standard behaviour.
