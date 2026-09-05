@@ -90,13 +90,44 @@ def main():
                     '<p id="m">start</p><p id="t">target</p>'),
                 # 3: contains and length read the attribute the page wrote,
                 # ragged whitespace and all.
+                # The token reads are parsed; `value` and `toString` are the
+                # attribute's own string, raggedness and all (§9.3).
                 "/read.html": page(
                     "var t=document.getElementById('t');"
                     "t.setAttribute('class','  one   two  ');"
                     "say(function(){return t.classList.contains('two')+'|'"
                     "+t.classList.contains('three')+'|'+t.classList.length"
-                    "+'|'+t.classList.value;});",
+                    "+'|['+t.classList.value+']|['+t.classList.toString()+']';});",
                     '<p id="m">start</p><p id="t">target</p>'),
+                # 9.1 and 9.2: a held list is the same object and a live view.
+                "/live.html": page(
+                    "var t=document.getElementById('t');"
+                    "var u=document.getElementById('u');"
+                    "var list=t.classList;"
+                    "var same=(t.classList===t.classList)+','+(list===t.classList)"
+                    "+','+(list!==u.classList);"
+                    "t.className='x y';"
+                    "var afterClassName=list.contains('x')+','+list.length+','+list.value;"
+                    "t.setAttribute('class','p q');"
+                    "var afterAttribute=list.contains('q')+','+list.toString();"
+                    "list.add('r');"
+                    "var afterAdd=t.getAttribute('class');"
+                    "var identityKept=(list===t.classList);"
+                    "write([same,afterClassName,afterAttribute,afterAdd,identityKept].join('|'));",
+                    '<p id="m">start</p><p id="t">target</p><p id="u">other</p>'),
+                # 9.3: the setter writes the attribute it is given, verbatim,
+                # and the token reads over it stay parsed.
+                "/value.html": page(
+                    "var t=document.getElementById('t');"
+                    "t.className='a';"
+                    "t.classList.value='  b   c ';"
+                    "write('['+t.getAttribute('class')+']|'+t.classList.length"
+                    "+'|'+t.classList.contains('c')+'|['+t.classList.value+']');",
+                    '<p id="m">start</p><p id="t">target</p>'),
+                # 9.4: an explicit null dictionary is not a crash.
+                "/null-init.html": page(
+                    "say(function(){var e=new CustomEvent('court:none',null);"
+                    "return e.type+'|'+String(e.detail)+'|'+e.bubbles;});"),
                 # 4: a turn that changes nothing must not advance the
                 # revision; the same page changes something on demand.
                 # The no-op turn must touch nothing at all, so what it
@@ -208,8 +239,34 @@ def main():
                     host.ok("target.close", {"target": target})
 
                 target, said = read("/read.html")
-                expect(tag + "contains and length read the attribute the page wrote, whitespace and all",
-                       said == "true|false|2|one two", {"said": said})
+                expect(tag + "token reads are parsed while value and toString are the attribute itself",
+                       said == "true|false|2|[  one   two  ]|[  one   two  ]", {"said": said})
+                if target:
+                    host.ok("target.close", {"target": target})
+
+                target, said = read("/live.html")
+                expect(tag + "the list is the same object each time, and never shared between elements",
+                       said is not None and said.split("|")[0] == "true,true,true"
+                       and said.split("|")[-1] == "true",
+                       {"said": said})
+                expect(tag + "and a held list answers about the attribute as it is now, not as it was",
+                       said is not None and said.split("|")[1] == "true,2,x y"
+                       and said.split("|")[2] == "true,p q",
+                       {"said": said})
+                expect(tag + "and adding through a held list keeps what was written directly",
+                       said is not None and said.split("|")[3] == "p q r", {"said": said})
+                if target:
+                    host.ok("target.close", {"target": target})
+
+                target, said = read("/value.html")
+                expect(tag + "the value setter writes what it is given and the token reads stay parsed",
+                       said == "[  b   c ]|2|true|[  b   c ]", {"said": said})
+                if target:
+                    host.ok("target.close", {"target": target})
+
+                target, said = read("/null-init.html")
+                expect(tag + "an explicit null dictionary is an empty one, not a crash",
+                       said == "court:none|null|false", {"said": said})
                 if target:
                     host.ok("target.close", {"target": target})
 
