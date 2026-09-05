@@ -161,7 +161,7 @@
  "checks_passed": 17,
  "checks_total": 19,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "64e77ee292d7786c65922971ac24247ea9776fb84fb818b3c893e633766faa6c",
+ "host_sha256": "8546428d23d91cec1b3252692d1fb0866392652ddc25f78440c5b0ef462442b2",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -182,7 +182,8 @@
   "blur",
   "submit",
   "contains",
-  "closest"
+  "closest",
+  "getAttributeNames"
  ],
  "passed": false
 }

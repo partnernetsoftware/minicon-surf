@@ -31,7 +31,7 @@
   {
    "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
    },
    "passed": true
   },
@@ -77,7 +77,7 @@
   {
    "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
    },
    "passed": true
   },
@@ -161,7 +161,7 @@
  "checks_passed": 19,
  "checks_total": 19,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "8546428d23d91cec1b3252692d1fb0866392652ddc25f78440c5b0ef462442b2",
+ "host_sha256": "1e472770aa50d0f97879e813be0560d1f672be67e314869c5189512fb2c7144c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -182,7 +182,8 @@
   "blur",
   "submit",
   "contains",
-  "closest"
+  "closest",
+  "getAttributeNames"
  ],
  "passed": true
 }

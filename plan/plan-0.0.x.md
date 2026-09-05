@@ -1282,6 +1282,21 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 19 of 19:
+  `getAttributeNames` (`labs/native-dom/get-attribute-names-audit-0.0.1.md`),
+  a compatibility fix at **784 bytes of main and nothing per child**. The
+  audit's larger finding was underneath it: `element.attributes` here is a
+  fresh plain array of plain objects, not a live `NamedNodeMap` of `Attr`
+  nodes — no `item`, no `getNamedItem`, no identity across reads, and a page
+  holding one sees a list that never updates — and the trap in that shape is
+  that `attributes.map(…)` works here and throws in a browser while
+  `Array.from` works in both. That divergence is now in the README's losses on
+  its own account, the second of its kind found by probing rather than
+  reading. The method reads the element's own attribute map rather than the
+  view, so it allocates nothing per attribute, and it returns a new array each
+  call while claiming to be nothing more. Its criteria joined
+  `element-view-court`, which is 19 of 19 and 17 of 19 with `passed: false`
+  against the build before it. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 16 of 16:
   host-driven focus (`labs/native-dom/active-element-audit-0.0.1.md`). The
   audit found focus absent everywhere — no `activeElement`, no events from
