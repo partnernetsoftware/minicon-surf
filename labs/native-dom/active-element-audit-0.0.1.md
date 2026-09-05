@@ -181,3 +181,69 @@ flowchart TD
 4. Whether `getAttributeNames`, `toggleAttribute` and `cloneNode` should be
    audited next in the same shape, or whether focus's answer settles enough to
    take them together.
+
+
+## 10. The rulings, and how they change what I measured
+
+**10.1 The model is narrow: only the host moves focus.** A host-driven action
+— a click, and whatever later actions are explicitly ruled in — moves focus. A
+page's own `focus()` and `blur()` **may not forge it**: they do not move
+`activeElement` and they raise nothing on their own. That is stricter than the
+scratch I measured, where `focus()` moved the state, and it is the right way
+round: in this host the agent is who clicks, and a page saying "I am focused"
+is not evidence that it is.
+
+*The loss that comes with it, recorded rather than implied:* a page that calls
+`element.focus()` and then reads `document.activeElement` still sees the
+element the **agent** last activated, not the one it asked for. That is a
+divergence from a browser, and it is chosen deliberately over a value the host
+would be inventing.
+
+**10.2 The state is hidden, not an own property.** `document.__focused` is
+rejected: host-written state a page can rewrite is exactly the shape this
+project has spent four rounds removing. The focused element lives in the
+**base's closure**, moved only by the host's dispatch bridge, and the main
+extension reads it through **one handle identifier** — a getter, never a
+setter, so the extension cannot move focus either. That identifier is counted
+and its cost measured before the code lands.
+
+**10.3 One source for focusability.** The set of focusable elements is defined
+once, in the base beside the bridge that uses it. Nothing in the extension or
+in a host script repeats it, because two lists drift.
+
+**10.4 Everything else stands as the audit recorded it**: `activeElement`
+defaults to `document.body`; `focus`, `focusin`, `blur` and `focusout` go
+through the existing trusted dispatcher with the standard's bubbling; and the
+losses stay losses — no snapshot field, no Tab or sequential navigation, no
+`hasFocus`, no cross-frame focus, no `:focus`, no `tabindex`,
+no `contenteditable`, no `autofocus`, no `relatedTarget`.
+
+**10.5 The line from §4 becomes a standing constraint**, not an aside: nothing
+the host decides may read focus. The moment an action is routed *by* focus,
+focus stops being page-visible state and becomes authority, and this design
+must be revisited before that lands rather than after.
+
+
+## 11. The court, frozen before the code
+
+`active-element-court.py`, headless, both allocators. Criteria:
+
+1. **A host click focuses what it clicked**, and `activeElement` names it.
+2. **The default is `body`** before anything has been activated, and again
+   after a navigation replaces the document.
+3. **The page cannot forge it**: assigning `document.activeElement`, writing
+   `document.__focused`, and calling `element.focus()` on another element all
+   leave the value the host set, and a later host click still moves it.
+4. **`focus()` does not overreach**: it moves nothing and raises nothing.
+5. **Event order and bubbling**: moving focus from A to B raises `blur` at A,
+   `focusout` at A, `focus` at B, `focusin` at B, in that order, with
+   `focusin`/`focusout` reaching an ancestor listener and `focus`/`blur` not.
+6. **Cleanup**: after `target.navigate` and after close-and-reopen, the focused
+   element is gone and `activeElement` is `body` again — no element outlives
+   the document that held it.
+7. **Owner release**: closing every target returns the owners to the empty
+   figure exactly.
+8. **The floors and the slack**: M1 ≤ 245,760 and M2 ≤ 1,720,320 in the
+   child-frame court on the same binary, and main-only slack ≤ 65,536 in the
+   shim-footprint court, with the handle identifier's cost included in what
+   that slack measures.
