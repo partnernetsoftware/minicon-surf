@@ -1223,7 +1223,15 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the wording was corrected rather than the code. The court is now 76 of 76,
   30 of 68 against the build before the slice and 56 of 72 against the build
   the audit judged, where it fails every criterion the audit added and no
-  other. **M1 is left with 182 bytes of headroom**, 261,962 against an
+  other. A further audit found the ledger calling abandoned chain candidates
+  committed: the link a page asks for was recorded as soon as its build
+  returned, before the candidate was checked for another intent, so a
+  three-link chain left three commits where exactly one document was ever
+  observable. A link is now judged after its candidate is — abandoned is
+  `superseded`, only the visible document is `committed`, a build failure
+  keeps its typed outcome and a chain refused at its cap records no commit at
+  all. The court is 80 of 80, and 76 of 80 against the build that ruling was
+  found in. **M1 is left with 182 bytes of headroom**, 261,962 against an
   unmoved 262,144: the next change that adds shim source breaks it.
   G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the

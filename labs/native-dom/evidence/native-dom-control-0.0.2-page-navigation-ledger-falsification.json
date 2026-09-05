@@ -280,24 +280,24 @@
    "check": "[system] a chain that ends records one commit, at the end, and no false ones",
    "detail": {
     "outcomes": [
-     "superseded",
-     "superseded",
+     "committed",
+     "committed",
      "committed"
     ]
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] and a refused chain records no commit at all",
    "detail": {
     "added": [
-     "superseded",
-     "superseded",
-     "superseded",
+     "committed",
+     "committed",
+     "committed",
      "resource_limit"
     ]
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] a refused intent leaves a record with an outcome and no origin",
@@ -305,8 +305,7 @@
     "outcomes": [
      "committed",
      "invalid_request",
-     "resource_limit",
-     "superseded"
+     "resource_limit"
     ]
    },
    "passed": true
@@ -627,24 +626,24 @@
    "check": "[arena] a chain that ends records one commit, at the end, and no false ones",
    "detail": {
     "outcomes": [
-     "superseded",
-     "superseded",
+     "committed",
+     "committed",
      "committed"
     ]
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] and a refused chain records no commit at all",
    "detail": {
     "added": [
-     "superseded",
-     "superseded",
-     "superseded",
+     "committed",
+     "committed",
+     "committed",
      "resource_limit"
     ]
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] a refused intent leaves a record with an outcome and no origin",
@@ -652,8 +651,7 @@
     "outcomes": [
      "committed",
      "invalid_request",
-     "resource_limit",
-     "superseded"
+     "resource_limit"
     ]
    },
    "passed": true
@@ -695,7 +693,7 @@
    "passed": true
   }
  ],
- "checks_passed": 80,
+ "checks_passed": 76,
  "checks_total": 80,
  "court": "native-dom page-initiated navigation (control 0.0.2)",
  "criteria": {
@@ -704,7 +702,7 @@
   "navigations": 128,
   "owner_bytes": 65536
  },
- "host_sha256": "5a8afd0d9737ea3433ea8a4fa5b70ce6de0f56b17cfb03138c437b2ff954e182",
+ "host_sha256": "ec7f9768f19bbe2c14ecfcf2ae86d44d4b356ff0408e40baed1a043c96e6da3a",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until page-initiated navigation exists",
@@ -714,5 +712,5 @@
   "a host that does not answer inside its wall-clock bound is killed by pid and reaped; that timeout is the falsification",
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
  ],
- "passed": true
+ "passed": false
 }

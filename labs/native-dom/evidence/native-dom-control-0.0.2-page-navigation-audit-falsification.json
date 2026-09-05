@@ -257,6 +257,20 @@
    "passed": true
   },
   {
+   "check": "[system] a chain that ends records one commit, at the end, and no false ones",
+   "detail": {
+    "outcomes": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] and a refused chain records no commit at all",
+   "detail": {
+    "added": []
+   },
+   "passed": false
+  },
+  {
    "check": "[system] a refused intent leaves a record with an outcome and no origin",
    "detail": {
     "outcomes": []
@@ -556,6 +570,20 @@
    "passed": true
   },
   {
+   "check": "[arena] a chain that ends records one commit, at the end, and no false ones",
+   "detail": {
+    "outcomes": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] and a refused chain records no commit at all",
+   "detail": {
+    "added": []
+   },
+   "passed": false
+  },
+  {
    "check": "[arena] a refused intent leaves a record with an outcome and no origin",
    "detail": {
     "outcomes": []
@@ -600,7 +628,7 @@
   }
  ],
  "checks_passed": 56,
- "checks_total": 72,
+ "checks_total": 76,
  "court": "native-dom page-initiated navigation (control 0.0.2)",
  "criteria": {
   "audit_loop": 40,
