@@ -339,21 +339,34 @@ parameter; removing it is what the accessor form being *the extension's* form
 means. Nothing about the previous slice's semantics changed — the court is
 80 of 80 again.
 
-**11.2 Measured, candidate against the exact baseline, in one court run.**
+**11.2 The first comparison used the wrong baseline.** The binary I passed as
+the baseline was an earlier round's build, not `origin/main`'s. The numbers
+were close but they were not the comparison the ruling asked for. The
+baseline below is built from `origin/main` (`1bbdf00`) in a throwaway
+worktree, hash `7f2429d96df8…`; note it is not byte-identical to the build of
+the same commit made in the main tree, because the build directory is part of
+what a Rust binary embeds. Every number here is from one court run over those
+two binaries.
+
+**11.3 Measured, candidate against the exact baseline, in one court run.**
 
 | | baseline | split | change |
 | --- | ---: | ---: | ---: |
-| M1, one child (system) | 262,969 | **221,657** | −41,312 |
-| M2, seven children (system) | 1,838,507 | **1,549,323** | −289,184 |
-| M1 / M2 (arena) | 255,273 / 1,785,051 | 214,809 / 1,503,307 | −40,464 / −281,744 |
-| main-only page (system) | 272,264 | 273,224 | **+960** |
-| main-only page (arena) | 264,568 | 265,288 | **+720** |
-| 28 child realms, footprint (system) | 9,814,016 min | 8,863,744 max | −950,272 |
-| 28 child realms, footprint (arena) | 13,730,560 min | 11,207,424 max | −2,523,136 |
+| M1, one child (system) | 261,961 | **221,657** | −40,304 |
+| M2, seven children (system) | 1,831,451 | **1,549,323** | −282,128 |
+| M1 / M2 (arena) | 254,041 / 1,776,427 | 214,809 / 1,503,307 | −39,232 / −273,120 |
+| main-only page (system) | 273,512 | 273,224 | **−288** |
+| main-only page (arena) | 265,720 | 265,288 | **−432** |
+| 28 child realms, footprint (system) | 9,895,936 min | 8,880,128 max | −1,015,808 |
+| 28 child realms, footprint (arena) | 13,812,480 min | 11,223,808 max | −2,588,672 |
 | shim source per child | 29,930 | 19,936 | −9,994 |
 | shim source total | 29,930 | 31,638 | +1,708 |
-| binary | 5,754,560 | 5,773,040 | +18,480 |
-| incremental build | 4.79 s | 6.12 s | +1.33 s |
+| binary | 5,771,568 | 5,773,040 | +1,472 |
+| incremental build | 5.46 s | 6.12 s | +0.66 s |
+
+The main realm did not pay for the split at all: it costs a few hundred bytes
+*less* on both allocators, inside the run-to-run variation, against a slack of
+65,536 it never approached.
 
 On the child-frame court's own fixtures and order, M1 is **221,658** against
 the unmoved cap of 262,144 — **40,486 bytes of headroom**, where there were

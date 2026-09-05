@@ -1238,6 +1238,36 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   headroom**, 261,962 against an unmoved 262,144, so further growth of the
   shared shim is blocked until a separate architecture slice reduces what
   every realm compiles. G1, G3, P6 and G6 stay open.
+- [~] Implemented and qualified on the native route, court 18 of 18 against
+  the exact `origin/main` baseline: the per-realm shim split
+  (`labs/native-dom/shim-split-design-0.0.1.md`). Every realm compiled the
+  whole 29,930-byte shim, and 11,239 bytes of it was page surface a
+  script-free child can never reach, which is why M1 had 182 bytes of
+  headroom and the browser-API work was blocked. The base every realm
+  compiles is now the tree, its events, the selector engine and the seed; the
+  page surface a script needs — fetch, cookies and `localStorage`, the
+  location accessors and the intent slot, the window as an event target with
+  the lifecycle bridge, `queueMicrotask`, timers, `console` and `navigator` —
+  is a main-only extension that reaches the base through a one-shot
+  non-enumerable handle deleted as it hands its internals over. A child realm
+  gets no extension and is sealed by the host, which refuses the realm if the
+  handle survives; a court-only probe, refused before the host serves without
+  the private court file, proves it is present and enumerable nowhere. Two
+  candidates were rejected on measurement rather than taste: a shared runtime
+  would dissolve the per-realm allocator accounting these caps are written in,
+  and precompiled bytecode would not move M1 at all because bytecode still
+  deserializes per runtime. Writing the court found two faults in the court —
+  it restated caps proven on another court's fixtures, and its first
+  footprint criterion reported a 131,072-byte recovery when run against the
+  same binary twice — and the implementation's first build failed
+  page-navigation at 38 of 80 because the moved location block still carried
+  a parameter the host no longer passes. Measured against the `origin/main`
+  binary in one run: M1 261,961 to 221,657, M2 1,831,451 to 1,549,323, a
+  main-only page 288 bytes cheaper, 28 child realms about 1.0 MB (system) and
+  2.6 MB (arena) smaller in process footprint, binary +1,472 bytes,
+  incremental build 5.46 s to 6.12 s. **M1 has 40,486 bytes of headroom**,
+  which is a floor to hold rather than a budget to spend. G1, G3, P6 and G6
+  stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the
   bounded document lifecycle (`labs/native-dom/lifecycle-design-0.0.1.md`).
   Four observable steps after the document's own scripts, each its own

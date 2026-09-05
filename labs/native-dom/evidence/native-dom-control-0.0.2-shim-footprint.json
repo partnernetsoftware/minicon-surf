@@ -1,0 +1,298 @@
+{
+ "attribution": {
+  "binary_bytes": {
+   "baseline": 5771568,
+   "candidate": 5773040
+  },
+  "build_seconds": {
+   "baseline": 5.46,
+   "candidate": 6.12
+  },
+  "measured": {
+   "arena": {
+    "baseline": {
+     "base_footprint": 2670952,
+     "base_owners": 255441,
+     "child_frames": 2,
+     "closed_owners": 0,
+     "empty_owners": 0,
+     "footprints": [
+      13828864,
+      13812480,
+      13828864
+     ],
+     "frames_skipped": [],
+     "m1": 254041,
+     "m1_footprint": 524312,
+     "m2": 1776427,
+     "main_live": 265720,
+     "script_count": null,
+     "scripts_skipped": []
+    },
+    "candidate": {
+     "base_footprint": 2654592,
+     "base_owners": 255153,
+     "child_frames": 2,
+     "closed_owners": 0,
+     "empty_owners": 0,
+     "footprints": [
+      11207424,
+      11207424,
+      11223808
+     ],
+     "frames_skipped": [],
+     "m1": 214809,
+     "m1_footprint": 393240,
+     "m2": 1503307,
+     "main_live": 265288,
+     "script_count": null,
+     "scripts_skipped": []
+    }
+   },
+   "system": {
+    "baseline": {
+     "base_footprint": 3293520,
+     "base_owners": 263217,
+     "child_frames": 2,
+     "closed_owners": 0,
+     "empty_owners": 0,
+     "footprints": [
+      10256384,
+      9895936,
+      10043392
+     ],
+     "frames_skipped": [],
+     "m1": 261961,
+     "m1_footprint": 671744,
+     "m2": 1831451,
+     "main_live": 273512,
+     "script_count": null,
+     "scripts_skipped": []
+    },
+    "candidate": {
+     "base_footprint": 3293520,
+     "base_owners": 262929,
+     "child_frames": 2,
+     "closed_owners": 0,
+     "empty_owners": 0,
+     "footprints": [
+      8798208,
+      8847360,
+      8880128
+     ],
+     "frames_skipped": [],
+     "m1": 221657,
+     "m1_footprint": 442368,
+     "m2": 1549323,
+     "main_live": 273224,
+     "script_count": null,
+     "scripts_skipped": []
+    }
+   }
+  },
+  "source_bytes": {
+   "dom_shim.js": null,
+   "dom_shim_base.js": 19936,
+   "dom_shim_main.js": 11702
+  }
+ },
+ "baseline_sha256": "7f2429d96df8ad1839f52b163e3672e229458d531ae324c1610068a03e7bc0e6",
+ "checks": [
+  {
+   "check": "[system] one child leaves at least 16 KiB of M1 headroom (<= 245760)",
+   "detail": {
+    "baseline": 261961,
+    "m1": 221657
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] seven children leave seven times it (<= 1720320)",
+   "detail": {
+    "baseline": 1831451,
+    "m2": 1549323
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the recovery is a real difference from the baseline build",
+   "detail": {
+    "m1_delta": 40304,
+    "m2_delta": 282128
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] 28 child realms cost at least 16384 fewer bytes of process footprint, every host below every baseline host",
+   "detail": {
+    "baseline": [
+     10256384,
+     9895936,
+     10043392
+    ],
+    "candidate": [
+     8798208,
+     8847360,
+     8880128
+    ],
+    "recovered": 1015808
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a main-only page costs no more than 65536 bytes above the baseline",
+   "detail": {
+    "baseline": 273512,
+    "candidate": 273224,
+    "slack": -288
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a script-bearing child is built exactly as before and still runs nothing",
+   "detail": {
+    "frames": 2,
+    "script_count": null,
+    "scripts_skipped": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] one child leaves at least 16 KiB of M1 headroom (<= 245760)",
+   "detail": {
+    "baseline": 254041,
+    "m1": 214809
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] seven children leave seven times it (<= 1720320)",
+   "detail": {
+    "baseline": 1776427,
+    "m2": 1503307
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the recovery is a real difference from the baseline build",
+   "detail": {
+    "m1_delta": 39232,
+    "m2_delta": 273120
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] 28 child realms cost at least 16384 fewer bytes of process footprint, every host below every baseline host",
+   "detail": {
+    "baseline": [
+     13828864,
+     13812480,
+     13828864
+    ],
+    "candidate": [
+     11207424,
+     11207424,
+     11223808
+    ],
+    "recovered": 2588672
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a main-only page costs no more than 65536 bytes above the baseline",
+   "detail": {
+    "baseline": 265720,
+    "candidate": 265288,
+    "slack": -432
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] closing every target returns the owners exactly",
+   "detail": {
+    "closed": 0,
+    "empty": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a script-bearing child is built exactly as before and still runs nothing",
+   "detail": {
+    "frames": 2,
+    "script_count": null,
+    "scripts_skipped": []
+   },
+   "passed": true
+  },
+  {
+   "check": "the realm probe is refused without the private court file",
+   "detail": {
+    "answered": 0,
+    "code": 64
+   },
+   "passed": true
+  },
+  {
+   "check": "the internals handle is gone from the main realm, and not enumerable",
+   "detail": {
+    "probe": {
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 8
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "and it is gone from every child realm, which runs no script to consume it",
+   "detail": {
+    "probe": {
+     "children_enumerable": 0,
+     "children_present": 0,
+     "main_enumerable": false,
+     "main_present": false,
+     "realms_probed": 8
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "the probe seam's court file is gone when the host is",
+   "detail": {
+    "court_file": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 18,
+ "checks_total": 18,
+ "court": "native-dom per-realm shim split (control 0.0.2)",
+ "host_sha256": "878a86a847d3cccd08f2da6ea1c705b97d17729f2894495098e8ced62f13c538",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the shim is split",
+  "the recovered margin is a floor to hold, not a budget to spend",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
+  "a host that does not answer inside its wall-clock bound is killed by pid and reaped",
+  "footprint is a process figure and is page-granular; the criterion asks for one page"
+ ],
+ "passed": true,
+ "thresholds": {
+  "cap_m1": 262144,
+  "cap_m2": 1835008,
+  "floor_m1": 245760,
+  "floor_m2": 1720320,
+  "footprint_recovery": 16384,
+  "main_slack": 65536
+ }
+}
