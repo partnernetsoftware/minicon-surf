@@ -1282,6 +1282,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [~] Implemented and qualified on the native route, court 19 of 19:
+  `Element.closest` (`labs/native-dom/closest-audit-0.0.1.md`), taken as a
+  **compatibility fix rather than a capability** and recorded on that ground.
+  The audit measured what the door already answers: `matches` is present and
+  handles tag, id, class, attribute and descendant selectors while throwing on
+  child combinators, commas and pseudo-classes, and the four-line walk a page
+  could write over it works today — the probe wrote it. What was missing is
+  that a real page calls `closest` and its own script died there, leaving an
+  agent reading a DOM no browser would have produced. It lives in the main
+  extension, built from members the base keeps, refusing exactly what `matches`
+  refuses, at **608 bytes of main and nothing per child**: M1 is unchanged at
+  221,514. Its criteria joined `element-view-court` rather than earning a
+  second file, and that court is 19 of 19 and 17 of 19 with `passed: false`
+  against the build before it, where the fixture's own script dies on both
+  allocators. The selector engine's error name — a plain `Error`, not a
+  `SyntaxError` `DOMException` — is deferred as its own base candidate.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 15 of 15: `dataset`
   built when a page reads it (`labs/native-dom/gap-triage-0.0.2.md`). A
   read-only triage of forty capabilities through the existing control door

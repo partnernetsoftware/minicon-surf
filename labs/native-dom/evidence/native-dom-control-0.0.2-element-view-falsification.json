@@ -31,9 +31,9 @@
   {
    "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": null
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[system] and the base's helper still gives the observer its subtree scope",
@@ -77,9 +77,9 @@
   {
    "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true,true"
+    "said": null
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "[arena] and the base's helper still gives the observer its subtree scope",
@@ -158,10 +158,10 @@
    "passed": true
   }
  ],
- "checks_passed": 19,
+ "checks_passed": 17,
  "checks_total": 19,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "0ac5a9a7dbbf245d89febbccfb52b302add669ceaf29cea6c9f67fb84e89bef2",
+ "host_sha256": "64e77ee292d7786c65922971ac24247ea9776fb84fb818b3c893e633766faa6c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -184,5 +184,5 @@
   "contains",
   "closest"
  ],
- "passed": true
+ "passed": false
 }

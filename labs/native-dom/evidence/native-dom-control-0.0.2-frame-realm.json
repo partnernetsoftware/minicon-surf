@@ -125,7 +125,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:54770/about.html"
+        "url": "http://127.0.0.1:62213/about.html"
       },
       "passed": true
     },
@@ -193,7 +193,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:54770/notfound"
+          "url": "http://127.0.0.1:62213/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -373,7 +373,7 @@
         "retired_realm": "realm_4",
         "revision": 1,
         "target": "target_3",
-        "url": "http://127.0.0.1:54770/about.html"
+        "url": "http://127.0.0.1:62213/about.html"
       },
       "passed": true
     },
@@ -441,7 +441,7 @@
           "navigation": "failed",
           "realm": "realm_6",
           "status": 404,
-          "url": "http://127.0.0.1:54770/notfound"
+          "url": "http://127.0.0.1:62213/notfound"
         },
         "message": "document request was not successful",
         "retryable": false,
@@ -501,17 +501,17 @@
   "checks_total": 62,
   "footprint_bytes": {
     "arena": {
-      "empty": 1966416,
-      "post_close": 2982224,
-      "two_fixture_targets_live": 3228056
+      "empty": 1950032,
+      "post_close": 2933072,
+      "two_fixture_targets_live": 3162496
     },
     "system": {
       "empty": 1966416,
-      "post_close": 4948304,
+      "post_close": 4850000,
       "two_fixture_targets_live": 3719504
     }
   },
-  "host_sha256": "64e77ee292d7786c65922971ac24247ea9776fb84fb818b3c893e633766faa6c",
+  "host_sha256": "0ac5a9a7dbbf245d89febbccfb52b302add669ceaf29cea6c9f67fb84e89bef2",
   "losses": [
     "child frames are bounded, same-origin, depth one and script-free: this court's fixtures embed none, so every target here is one main frame; the child-frame court owns those criteria",
     "no capability attenuation on this host: a request carrying the field is refused invalid_request (fail-closed, no downgrade)",
