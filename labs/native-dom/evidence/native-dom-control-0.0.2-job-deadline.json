@@ -4,7 +4,7 @@
    "check": "[system] J1: an infinite job's open answers inside its deadline and margin",
    "detail": {
     "code": "deadline_exceeded",
-    "elapsed_ms": 2001.6
+    "elapsed_ms": 2001.2
    },
    "passed": true
   },
@@ -18,7 +18,7 @@
   {
    "check": "[system] J3 and atomicity: the host answers next and committed no target",
    "detail": {
-    "elapsed_ms": 1.5,
+    "elapsed_ms": 1.4,
     "targets": 0
    },
    "passed": true
@@ -73,7 +73,7 @@
   {
    "check": "[system] J2: a chain of 1000 jobs finishes and the document commits",
    "detail": {
-    "elapsed_ms": 8.0,
+    "elapsed_ms": 9.0,
     "ok": true
    },
    "passed": true
@@ -130,7 +130,7 @@
    "check": "[system] an infinite job from a timer callback is interrupted, not endless",
    "detail": {
     "code": "deadline_exceeded",
-    "elapsed_ms": 1501.6
+    "elapsed_ms": 1501.5
    },
    "passed": true
   },
@@ -185,7 +185,7 @@
   {
    "check": "[arena] J3 and atomicity: the host answers next and committed no target",
    "detail": {
-    "elapsed_ms": 1.5,
+    "elapsed_ms": 1.4,
     "targets": 0
    },
    "passed": true
@@ -240,7 +240,7 @@
   {
    "check": "[arena] J2: a chain of 1000 jobs finishes and the document commits",
    "detail": {
-    "elapsed_ms": 6.7,
+    "elapsed_ms": 7.4,
     "ok": true
    },
    "passed": true
@@ -345,7 +345,7 @@
   "next_request_ms": 1000,
   "owner_return_bytes": 65536
  },
- "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
+ "host_sha256": "536ad23ed12ac840089bf3b3c058f739bf4af60b819d761b4d796b3d3c382c2c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the pending-job deadline is enforced",

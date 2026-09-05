@@ -29,13 +29,36 @@ __mcsInternals((internals) => {
   }
   g.EventTarget = EventTarget;
   const signals = internals.signals;
-  class AbortSignal {
-    constructor() { signals.mint(this); }
+  const signalReason = new WeakMap();
+  const signalHandler = new WeakMap();
+  class AbortSignal extends EventTarget {
+    constructor() { super(); signals.mint(this); }
     get aborted() { return signals.aborted(this); }
+    get reason() { return signalReason.get(this); }
+    throwIfAborted() { if (signals.aborted(this)) throw signalReason.get(this); }
+    get onabort() { return signalHandler.get(this) || null; }
+    set onabort(fn) {
+      const previous = signalHandler.get(this);
+      if (previous) removeListener(this, "abort", previous);
+      if (typeof fn === "function") { signalHandler.set(this, fn); addListener(this, "abort", fn); }
+      else signalHandler.delete(this);
+    }
+    static abort(reason) {
+      const controller = new AbortController();
+      controller.abort(reason);
+      return controller.signal;
+    }
   }
   class AbortController {
     constructor() { this.signal = new AbortSignal(); }
-    abort() { signals.abort(this.signal); }
+    abort(reason) {
+      if (signals.aborted(this.signal)) return;
+      signalReason.set(this.signal, reason === undefined
+        ? new DOMException("signal is aborted without reason", "AbortError")
+        : reason);
+      signals.abort(this.signal);
+      dispatchOn(this.signal, new Event("abort"));
+    }
   }
   g.AbortController = AbortController;
   g.AbortSignal = AbortSignal;

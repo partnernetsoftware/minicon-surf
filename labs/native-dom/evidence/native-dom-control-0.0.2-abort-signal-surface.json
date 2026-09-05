@@ -1,0 +1,283 @@
+{
+ "checks": [
+  {
+   "check": "H1: the handle's key set does not grow for this slice",
+   "detail": {
+    "missing": [],
+    "unexpected": []
+   },
+   "passed": true
+  },
+  {
+   "check": "H2: the slice is main-only, so no child pays for it",
+   "detail": {
+    "in_base": false,
+    "in_main": true
+   },
+   "passed": true
+  },
+  {
+   "check": "H3: the state stays in closure-owned maps, not on the signal",
+   "detail": {
+    "handler_map": true,
+    "reason_map": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] F1: abort(reason) keeps the reason it was given",
+   "detail": {
+    "said": "reason because"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] F2: onabort is called, and reads back as a function",
+   "detail": {
+    "said": "fired 1|held function"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R1a: the signal is an EventTarget",
+   "detail": {
+    "said": "function|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R1b: abort fires once, and a second abort is inert",
+   "detail": {
+    "said": "fired 1|aborted true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R1c: the page's own abort dispatches where it was called",
+   "detail": {
+    "said": "first>abort listener>back>third"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R1d: an abort listener's exception stays local",
+   "detail": {
+    "said": "abort returned|aborted true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R2a: the default reason is an AbortError DOMException",
+   "detail": {
+    "said": "undefined|AbortError|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R2b: and a page cannot write it",
+   "detail": {
+    "said": "read-only:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R3: throwIfAborted is quiet until it is not",
+   "detail": {
+    "said": "did not throw|why"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R4: the static mints an already-aborted signal",
+   "detail": {
+    "said": "true|static reason|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R5a: setting onabort twice keeps only the second",
+   "detail": {
+    "said": "first 0|second 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R5b: and clearing it removes the handler",
+   "detail": {
+    "said": "fired 0|held null"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] D1: timeout stays absent, as the deferred candidate",
+   "detail": {
+    "said": "undefined"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L5a: a page object is still not a signal",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L5b: nor one with a getter, which still never runs",
+   "detail": {
+    "said": "threw:TypeError|getter did not run"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L5c: abort still removes the listener",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L5d: and aborted is still not writable by a page",
+   "detail": {
+    "said": "read-only:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] F1: abort(reason) keeps the reason it was given",
+   "detail": {
+    "said": "reason because"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] F2: onabort is called, and reads back as a function",
+   "detail": {
+    "said": "fired 1|held function"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1a: the signal is an EventTarget",
+   "detail": {
+    "said": "function|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1b: abort fires once, and a second abort is inert",
+   "detail": {
+    "said": "fired 1|aborted true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1c: the page's own abort dispatches where it was called",
+   "detail": {
+    "said": "first>abort listener>back>third"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1d: an abort listener's exception stays local",
+   "detail": {
+    "said": "abort returned|aborted true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R2a: the default reason is an AbortError DOMException",
+   "detail": {
+    "said": "undefined|AbortError|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R2b: and a page cannot write it",
+   "detail": {
+    "said": "read-only:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R3: throwIfAborted is quiet until it is not",
+   "detail": {
+    "said": "did not throw|why"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R4: the static mints an already-aborted signal",
+   "detail": {
+    "said": "true|static reason|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R5a: setting onabort twice keeps only the second",
+   "detail": {
+    "said": "first 0|second 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R5b: and clearing it removes the handler",
+   "detail": {
+    "said": "fired 0|held null"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] D1: timeout stays absent, as the deferred candidate",
+   "detail": {
+    "said": "undefined"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L5a: a page object is still not a signal",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L5b: nor one with a getter, which still never runs",
+   "detail": {
+    "said": "threw:TypeError|getter did not run"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L5c: abort still removes the listener",
+   "detail": {
+    "said": "ran 1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L5d: and aborted is still not writable by a page",
+   "detail": {
+    "said": "read-only:TypeError"
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 37,
+ "checks_total": 37,
+ "court": "native-dom AbortSignal surface, R1-R5 (control 0.0.2)",
+ "deferred": [
+  "AbortSignal.timeout",
+  "AbortSignal.any"
+ ],
+ "host_sha256": "536ad23ed12ac840089bf3b3c058f739bf4af60b819d761b4d796b3d3c382c2c",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until R1 through R5 exist",
+  "timeout() is pinned absent by ruling, so taking it later amends this court rather than slipping past it",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the main-only slack and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary; H2 is what keeps this slice out of the base, which is what protects the child floors",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

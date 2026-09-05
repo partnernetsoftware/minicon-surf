@@ -96,7 +96,7 @@
    "check": "[system] A1: a passive listener cannot refuse the agent's navigation",
    "detail": {
     "ok": true,
-    "url_tail": "3523/next.html"
+    "url_tail": "2890/next.html"
    },
    "passed": true
   },
@@ -104,7 +104,7 @@
    "check": "[system] A2: a plain listener still can, so exactly one route closed",
    "detail": {
     "ok": true,
-    "url_tail": "523/plain.html"
+    "url_tail": "890/plain.html"
    },
    "passed": true
   },
@@ -204,7 +204,7 @@
    "check": "[arena] A1: a passive listener cannot refuse the agent's navigation",
    "detail": {
     "ok": true,
-    "url_tail": "3523/next.html"
+    "url_tail": "2890/next.html"
    },
    "passed": true
   },
@@ -212,7 +212,7 @@
    "check": "[arena] A2: a plain listener still can, so exactly one route closed",
    "detail": {
     "ok": true,
-    "url_tail": "523/plain.html"
+    "url_tail": "890/plain.html"
    },
    "passed": true
   }
@@ -220,7 +220,7 @@
  "checks_passed": 30,
  "checks_total": 30,
  "court": "native-dom passive listeners (control 0.0.2)",
- "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
+ "host_sha256": "536ad23ed12ac840089bf3b3c058f739bf4af60b819d761b4d796b3d3c382c2c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until a passive listener stops being able to cancel",

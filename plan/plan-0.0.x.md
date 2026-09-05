@@ -1282,8 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only triage, nothing implemented and no court frozen: the rest of
-  `AbortSignal` (`labs/native-dom/abort-signal-surface-audit-0.0.1.md`), split
+- [~] R1-R5 implemented and qualified on the native route, court 37 of 37:
+  the rest of `AbortSignal` (`labs/native-dom/abort-signal-surface-audit-0.0.1.md`), split
   into R1 the signal as an `EventTarget` with an `abort` event, R2 `reason`,
   R3 `throwIfAborted`, R4 the `abort` static, R5 `onabort`, R6 `timeout`.
   **Two of the gaps fail silently today**, the same shape as the `handleEvent`
@@ -1301,8 +1301,16 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   path may abort a page's signal** until that is ruled again. Cost: R1-R5 cost
   **no per-child bytes** and 5,472 of main-only slack; R6 adds 1,472 more and
   owns a timer from the page's existing budget. **The binding constraint is now
-  the slack, not the child floor**: 61,504 of 65,536 with everything taken,
-  leaving 4,032. G1, G3, P6 and G6 stay open.
+  the slack, not the child floor**. **Ruled and built**: R1-R5 taken, R6
+  `timeout()` deferred and **pinned absent** by the court so taking it later
+  amends a criterion. The court was frozen one commit ahead and reads **37 of
+  37** against **13 of 37**, pinning the two silent failures by value, the
+  ruled reentrancy shape, the closure-owned state and the unchanged handle key
+  set, and re-running four L5 guarantees. **The child delta is 0** — M1 stays
+  232,298 — and the whole price is main-only slack, 54,560 to 60,032, leaving
+  5,504 of 65,536 against an M1 headroom of 13,462. The standing constraint
+  goes with it: no host path may abort a page's signal. Twenty-five receipts
+  rerun on the binary. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 27 of 27: `signal`
   and `AbortController` (`labs/native-dom/abort-signal-audit-0.0.1.md`), the last
   rung of the listener ladder and the only one whose obvious implementation is

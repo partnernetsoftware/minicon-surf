@@ -221,7 +221,7 @@
  "checks_passed": 30,
  "checks_total": 30,
  "court": "native-dom listener options, first rung (control 0.0.2)",
- "host_sha256": "9975bb65941482f0eabc619ad8b07cf52eb112e5d3e973d42cbcc7944de45a65",
+ "host_sha256": "536ad23ed12ac840089bf3b3c058f739bf4af60b819d761b4d796b3d3c382c2c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the options are forwarded and once and handleEvent are honoured",
