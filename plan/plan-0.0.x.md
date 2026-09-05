@@ -1162,6 +1162,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Proposed, design only, nothing implemented and nothing measured:
+  page-initiated navigation
+  (`labs/native-dom/page-navigation-design-0.0.1.md`). It closes a silent lie
+  rather than an absence: today `location.href = "…"` succeeds, the page reads
+  back the new value and believes it navigated, and the host commits nothing.
+  The design covers the `href` setter, `assign` and `replace`, main frame
+  only, and invents no history, `pushState` or hash semantics. Its core rule
+  is that a realm evaluation never re-enters fetch, build or swap: the page
+  records a **navigation intent** into a host-owned sink and the host consumes
+  it at a boundary, never between an activation's two preflight phases and
+  never inside a lifecycle step. One slot per realm, last write wins, with the
+  browser-compatible reasoning and the deliberate divergence recorded — a
+  browser may have begun a fetch this host never makes. A consumed intent
+  reuses the existing typed preflight, policy, TLS, budget and atomic
+  build-then-swap and adds no authority; `assign` adds a metadata-only history
+  entry and `replace` replaces one without changing the ring's length. An
+  intent raised while a document is still being built becomes a finite
+  redirect-like chain, capped at 3 by analogy to `MAX_REDIRECTS`, under one
+  deadline and one budget, with no intermediate document ever observable; from
+  a live realm, a failed navigation keeps the handler's mutations and leaves
+  every identity unchanged. Eleven criteria are pre-registered and three
+  blockers go to the root: the cap itself, whether a host navigation should
+  discard a pending intent, and whether `location.reload` belongs in scope.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the
   bounded document lifecycle (`labs/native-dom/lifecycle-design-0.0.1.md`).
   Four observable steps after the document's own scripts, each its own
