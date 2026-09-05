@@ -1,0 +1,231 @@
+{
+ "checks": [
+  {
+   "check": "[system] the phase is NONE, AT_TARGET, BUBBLING, then NONE again",
+   "detail": {
+    "said": "0,2,3,0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] stopPropagation spares the rest of the target's listeners; stopImmediatePropagation does not",
+   "detail": {
+    "said": "onetwo/one"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a listener added during a dispatch does not run in it, and one removed during it does not run",
+   "detail": {
+    "said": "first"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a re-entrant dispatch is refused without corrupting the one in flight",
+   "detail": {
+    "said": "InvalidStateError/onetwoup/true/again=2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] nothing about an event is page-writable",
+   "detail": {
+    "said": "all-read-only"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] preventDefault is ignored unless the event is cancelable, and the return value follows",
+   "detail": {
+    "said": "false,true/true,false"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a listener that throws leaves the dispatch clean and does not stop it",
+   "detail": {
+    "said": "onetwoup/null/0/true/false/true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] isTrusted is false and timeStamp is a clock that does not go back",
+   "detail": {
+    "said": "false/number/true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] composed is false by default and follows the dictionary",
+   "detail": {
+    "said": "false,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] CustomEvent keeps its detail, its identity and its null dictionary",
+   "detail": {
+    "said": "alpha,true,true,true/null/false"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] the window is the last hop, and only for a path that reached the document",
+   "detail": {
+    "said": "true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] a page that writes defaultPrevented cancels nothing the host does",
+   "detail": {
+    "outcomes": {
+     "forge": "navigated",
+     "plain": "navigated",
+     "prevent": "not_navigated"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and preventDefault still cancels the host's activation",
+   "detail": {
+    "outcomes": {
+     "forge": "navigated",
+     "plain": "navigated",
+     "prevent": "not_navigated"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] an event the host raises is not trusted, and reaches its target at phase 2",
+   "detail": {
+    "heard": "isTrusted=false,phase=2,cancelable=true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the phase is NONE, AT_TARGET, BUBBLING, then NONE again",
+   "detail": {
+    "said": "0,2,3,0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] stopPropagation spares the rest of the target's listeners; stopImmediatePropagation does not",
+   "detail": {
+    "said": "onetwo/one"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a listener added during a dispatch does not run in it, and one removed during it does not run",
+   "detail": {
+    "said": "first"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a re-entrant dispatch is refused without corrupting the one in flight",
+   "detail": {
+    "said": "InvalidStateError/onetwoup/true/again=2"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] nothing about an event is page-writable",
+   "detail": {
+    "said": "all-read-only"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] preventDefault is ignored unless the event is cancelable, and the return value follows",
+   "detail": {
+    "said": "false,true/true,false"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a listener that throws leaves the dispatch clean and does not stop it",
+   "detail": {
+    "said": "onetwoup/null/0/true/false/true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] isTrusted is false and timeStamp is a clock that does not go back",
+   "detail": {
+    "said": "false/number/true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] composed is false by default and follows the dictionary",
+   "detail": {
+    "said": "false,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] CustomEvent keeps its detail, its identity and its null dictionary",
+   "detail": {
+    "said": "alpha,true,true,true/null/false"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] the window is the last hop, and only for a path that reached the document",
+   "detail": {
+    "said": "true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] a page that writes defaultPrevented cancels nothing the host does",
+   "detail": {
+    "outcomes": {
+     "forge": "navigated",
+     "plain": "navigated",
+     "prevent": "not_navigated"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and preventDefault still cancels the host's activation",
+   "detail": {
+    "outcomes": {
+     "forge": "navigated",
+     "plain": "navigated",
+     "prevent": "not_navigated"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] an event the host raises is not trusted, and reaches its target at phase 2",
+   "detail": {
+    "heard": "isTrusted=false,phase=2,cancelable=true"
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 28,
+ "checks_total": 28,
+ "court": "native-dom bounded Event fidelity (control 0.0.2)",
+ "host_sha256": "abd1ed74472181a2dc02275a72911ee19f6adae99347eec104cd412b44a93f82",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the base Event and dispatcher are faithful",
+  "no listener options (capture, once, passive, signal), no handleEvent objects, no capture phase and so no eventPhase 1",
+  "no composedPath, no interface constants, no relatedTarget, no typed event interfaces beyond Event and CustomEvent",
+  "an exception a listener throws is swallowed: nothing is reported to the page or the host",
+  "timeStamp reads the clock this realm already inherited; this court asserts monotonicity between two constructions and nothing more",
+  "the unchanged M1 and M2 floors are measured by the child-frame and shim-footprint courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

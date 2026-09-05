@@ -4,7 +4,7 @@
    "check": "[system] J1: an infinite job's open answers inside its deadline and margin",
    "detail": {
     "code": "deadline_exceeded",
-    "elapsed_ms": 2001.5
+    "elapsed_ms": 2001.6
    },
    "passed": true
   },
@@ -18,7 +18,7 @@
   {
    "check": "[system] J3 and atomicity: the host answers next and committed no target",
    "detail": {
-    "elapsed_ms": 1.1,
+    "elapsed_ms": 1.0,
     "targets": 0
    },
    "passed": true
@@ -49,7 +49,7 @@
    "check": "[system] an action whose handler queues an infinite job fails deadline_exceeded",
    "detail": {
     "code": "deadline_exceeded",
-    "elapsed_ms": 1501.3
+    "elapsed_ms": 1501.2
    },
    "passed": true
   },
@@ -137,7 +137,7 @@
   {
    "check": "[system] J3: the target still answers after that interruption",
    "detail": {
-    "elapsed_ms": 1.3
+    "elapsed_ms": 1.1
    },
    "passed": true
   },
@@ -171,7 +171,7 @@
    "check": "[arena] J1: an infinite job's open answers inside its deadline and margin",
    "detail": {
     "code": "deadline_exceeded",
-    "elapsed_ms": 2001.9
+    "elapsed_ms": 2001.5
    },
    "passed": true
   },
@@ -185,7 +185,7 @@
   {
    "check": "[arena] J3 and atomicity: the host answers next and committed no target",
    "detail": {
-    "elapsed_ms": 0.9,
+    "elapsed_ms": 1.1,
     "targets": 0
    },
    "passed": true
@@ -216,7 +216,7 @@
    "check": "[arena] an action whose handler queues an infinite job fails deadline_exceeded",
    "detail": {
     "code": "deadline_exceeded",
-    "elapsed_ms": 1501.2
+    "elapsed_ms": 1501.3
    },
    "passed": true
   },
@@ -240,7 +240,7 @@
   {
    "check": "[arena] J2: a chain of 1000 jobs finishes and the document commits",
    "detail": {
-    "elapsed_ms": 6.9,
+    "elapsed_ms": 6.7,
     "ok": true
    },
    "passed": true
@@ -345,7 +345,7 @@
   "next_request_ms": 1000,
   "owner_return_bytes": 65536
  },
- "host_sha256": "2b6d985fe6820d4573d22231846ffb5018a820f1a08d16454acf88c537ae62c4",
+ "host_sha256": "abd1ed74472181a2dc02275a72911ee19f6adae99347eec104cd412b44a93f82",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the pending-job deadline is enforced",

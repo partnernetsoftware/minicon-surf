@@ -1130,8 +1130,8 @@
   {
    "check": "[system] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 963840,
-    "at_8": 963840,
+    "at_128": 997344,
+    "at_8": 997344,
     "cap": 65536,
     "growth": 0
    },
@@ -1140,8 +1140,8 @@
   {
    "check": "[system] the last cycles add almost nothing",
    "detail": {
-    "at_128": 963840,
-    "at_64": 963840,
+    "at_128": 997344,
+    "at_64": 997344,
     "cap": 8192
    },
    "passed": true
@@ -1149,8 +1149,8 @@
   {
    "check": "[system] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 911248,
-    "fresh": 946272
+    "after_submit": 944864,
+    "fresh": 979776
    },
    "passed": true
   },
@@ -2315,8 +2315,8 @@
   {
    "check": "[arena] the realm's live bytes plateau rather than grow with the cycles",
    "detail": {
-    "at_128": 941152,
-    "at_8": 941152,
+    "at_128": 972624,
+    "at_8": 972624,
     "cap": 65536,
     "growth": 0
    },
@@ -2325,8 +2325,8 @@
   {
    "check": "[arena] the last cycles add almost nothing",
    "detail": {
-    "at_128": 941152,
-    "at_64": 941152,
+    "at_128": 972624,
+    "at_64": 972624,
     "cap": 8192
    },
    "passed": true
@@ -2334,8 +2334,8 @@
   {
    "check": "[arena] the realm after a submit is close to a freshly opened one",
    "detail": {
-    "after_submit": 887920,
-    "fresh": 922912
+    "after_submit": 919568,
+    "fresh": 954416
    },
    "passed": true
   },
@@ -2419,7 +2419,7 @@
  "checks_total": 179,
  "control_version": "0.0.2",
  "design": "labs/native-dom/form-interaction-design-0.0.1.md",
- "host_sha256": "2b6d985fe6820d4573d22231846ffb5018a820f1a08d16454acf88c537ae62c4",
+ "host_sha256": "abd1ed74472181a2dc02275a72911ee19f6adae99347eec104cd412b44a93f82",
  "limitations": [
   "every fixture value is fake and the court asserts none of them reaches the ledger, the court log or this receipt",
   "one hermetic origin on loopback, one form page, macOS only; no surface, no window, no AppKit",
