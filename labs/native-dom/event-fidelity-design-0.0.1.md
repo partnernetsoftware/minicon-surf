@@ -400,3 +400,67 @@ than anything this host decided. The criterion stands as written — the refusal
 must be an `InvalidStateError` raised **before** the outer dispatch is
 touched, with the outer dispatch then reaching its remaining listener and its
 ancestor — and it is now also the fix for a page-triggerable stack exhaustion.
+
+
+## 14. Second root audit: four findings, each measured before it is fixed
+
+Probed through the control door on `abd1ed744721…`, the build the first round
+produced.
+
+**14.1 Remove-then-re-add during a dispatch still calls the listener.**
+Measured: `first,second` where the standard says `first`. The recheck added
+last round asks `list.indexOf(fn) >= 0` against the *live* list, so a first
+listener that removes the second and re-adds the same function puts that
+function back in the list, and the snapshot entry then passes the recheck. The
+standard treats each registration as its own **record**: removal marks that
+record removed, and re-adding creates a new one, which this dispatch's
+snapshot does not contain.
+
+Ruled: the store holds records, not bare functions, each with a removed bit,
+and the dispatch skips a record whose bit is set. Identity is the record, not
+the function.
+
+*Falsifier:* the first listener removes the second and re-adds the same
+function; the second must not run in that dispatch, and must run in the next.
+
+**14.2 The stop flags are cleared at the wrong end.** Measured:
+`first=ran,redispatch=ran,ran`. Both halves are wrong. A stop flag set
+**before** dispatch is effective for that dispatch — no listener is invoked —
+and the flags are unset when the dispatch **completes**, not when the next one
+starts. Clearing at the start makes a pre-set flag vanish, which is what the
+measurement shows.
+
+Ruled: nothing is reset at the start; `stop` and `stopImmediate` are cleared
+in the same `finally` that clears `currentTarget`, `eventPhase` and
+`dispatching`.
+
+*Falsifier:* `e.stopPropagation()` before `dispatchEvent(e)` invokes no
+listener, and a second dispatch of that same completed event does invoke it,
+because the cleanup cleared the flag: `first=none,redispatch=ran`.
+
+**14.3 Dispatching a non-event reports a dispatch that never happened.**
+Measured: `returned=true,ran=no`. `dispatchOn` returns `true` when the object
+has no hidden state, so a caller is told the dispatch completed and was not
+canceled, when nothing was dispatched at all.
+
+Ruled: `dispatchEvent` of anything that is not one of this realm's events
+throws a `TypeError`, before any listener is reached.
+
+*Falsifier:* `t.dispatchEvent({type: "d"})` throws `TypeError` and no listener
+ran.
+
+**14.4 A listener type is not converted to a string.** Measured: `string`,
+where both halves should have matched. `addEventListener(1, fn)` keys the map
+on the number `1`, while `new Event("1")` stores the string `"1"`, and a `Map`
+compares keys by identity — so the listener never runs. The reverse works only
+because `Event` already stringifies its own type. This is not among the
+recorded losses; it is a defect.
+
+Ruled: `addEventListener` and `removeEventListener` key on `String(type)`.
+
+*Falsifier:* a listener added as `1` runs for `new Event("1")`, and one added
+as `"2"` runs for `new Event(2)`: `numeric,string`.
+
+All four stay inside the one base dispatcher and the hidden event state. No
+listener options, no capture phase and no `handleEvent` object comes with
+them.
