@@ -176,10 +176,19 @@ def main():
                 # A job that never returns, queued by the document's own script.
                 "/infinite.html": page("Infinite",
                                        "Promise.resolve().then(function(){for(;;){}});"),
-                # The same, after a mutation that must survive the interruption.
+                # A build interrupted after a mutation: this proves the build
+                # commits nothing, not that a handler's effect survives.
                 "/mutate-then-hang.html": page("Mutate then hang",
                                                "write('mutated');"
                                                "Promise.resolve().then(function(){for(;;){}});"),
+                # A live target whose handler mutates and then queues a job
+                # that never returns: the action must fail and the mutation
+                # must stand.
+                "/handler-hang.html": page("Handler hang",
+                                           "document.getElementById('go').addEventListener('click',"
+                                           "function(){write('handler ran');"
+                                           "Promise.resolve().then(function(){for(;;){}});});",
+                                           '<a id="go" href="#stay">go</a>'),
                 # A finite chain that must be allowed to finish.
                 "/chain.html": page("Chain",
                                     "var n=0;var step=function(){n=n+1;write('n '+n);"
@@ -294,6 +303,9 @@ def main():
                                        deadline_ms=2000, wall_ms=2000 + DEADLINE_MARGIN_MS)
                     # The build is interrupted, so no target exists to observe;
                     # what must be true is that the failure says so honestly.
+                    # This group is failed-build atomicity, and nothing more:
+                    # an interrupted build leaves no target to observe, so it
+                    # is not evidence about handler effects (design §10).
                     expect(tag + "an interrupted build reports the deadline and commits nothing",
                            (not opened.get("ok"))
                            and (opened.get("error") or {}).get("code") == "deadline_exceeded",
@@ -301,6 +313,56 @@ def main():
                 finally:
                     if host.timeouts:
                         killed_hosts.append({"group": "mutate-then-hang", "allocator": allocator,
+                                             "timeouts": host.timeouts})
+                    host.finish()
+
+            # 6c: a handler's effect before an infinite job stands, on a live
+            # target, and the target keeps answering (design §10).
+            with tempfile.TemporaryDirectory(prefix="minicon-surf-job-") as directory:
+                host = fresh(directory)
+                try:
+                    profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                    session = host.ok("session.open", {"profile": profile})["session"]
+                    target = host.ok("target.open",
+                                     {"session": session, "url": f"{origin}/handler-hang.html"},
+                                     deadline_ms=2000, wall_ms=6000)["target"]
+                    before = host.ok("target.inspect", {"target": target})
+                    snap = host.call("target.snapshot",
+                                     {"target": target, "format": "semantic",
+                                      "max_bytes": 65536, "max_nodes": 32})
+                    link = next((n["reference"] for n in snap["result"]["nodes"]
+                                 if n.get("role") == "link"), None) if snap.get("ok") else None
+                    acted = host.call("target.act",
+                                      {"target": target, "reference": link,
+                                       "action": {"kind": "click"}},
+                                      deadline_ms=1500,
+                                      wall_ms=1500 + DEADLINE_MARGIN_MS) if link else {}
+                    expect(tag + "an action whose handler queues an infinite job fails deadline_exceeded",
+                           link is not None and not timed_out(acted)
+                           and (not acted.get("ok"))
+                           and (acted.get("error") or {}).get("code") == "deadline_exceeded",
+                           {"code": (acted.get("error") or {}).get("code"),
+                            "elapsed_ms": round(acted.get("elapsed_ms", 0), 1)})
+                    after_snap = host.call("target.snapshot",
+                                           {"target": target, "format": "semantic",
+                                            "max_bytes": 65536, "max_nodes": 32},
+                                           deadline_ms=1000, wall_ms=NEXT_REQUEST_MS + 1000)
+                    marks = [n.get("name") for n in after_snap["result"]["nodes"]
+                             if n.get("role") == "text"] if after_snap.get("ok") else []
+                    after = host.call("target.inspect", {"target": target},
+                                      deadline_ms=1000, wall_ms=NEXT_REQUEST_MS + 1000)
+                    expect(tag + "the handler's mutation stands and the next observation shows it",
+                           after_snap.get("ok")
+                           and any("handler ran" == (m or "") for m in marks),
+                           {"marks": len(marks)})
+                    expect(tag + "the revision includes it and the target keeps answering",
+                           after.get("ok")
+                           and after["result"]["revision"] > before["revision"],
+                           {"revision": [before.get("revision"),
+                                         (after.get("result") or {}).get("revision")]})
+                finally:
+                    if host.timeouts:
+                        killed_hosts.append({"group": "handler-hang", "allocator": allocator,
                                              "timeouts": host.timeouts})
                     host.finish()
 

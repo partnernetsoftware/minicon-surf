@@ -265,3 +265,30 @@ honestly, it is a small addition, and it is genuinely separate from
 `jobs_threw_total`. I have **not** taken it: it widens the realm's host
 surface for a diagnostic no criterion needs, and D3 already says a rejection
 is page-owned. If the root wants the counter, it is one hook and one integer.
+
+## 10. A criterion that proved nothing, corrected before the code
+
+§8.6 said the court would prove that mutations made **before** an infinite job
+stand and show on the next observation. The group written for it uses
+`/mutate-then-hang` at `target.open`, and an interrupted build commits no
+target — so there is nothing left to observe and the check only re-proves
+`deadline_exceeded`, which the group above it already proves. The criterion
+was written and not met.
+
+Corrected, and the two claims separated:
+
+- **The `target.open` group keeps its real meaning: failed-build atomicity.**
+  An interrupted build commits no target, no realm and no history entry. It is
+  not evidence about handler effects and is no longer described as such.
+- **A new group proves the handler effect on a live target.** A target is
+  opened successfully; then one `target.act` runs a handler that **first**
+  mutates the observable document and **then** queues a promise job that never
+  returns. That action must answer `deadline_exceeded`. The next
+  `target.snapshot` and `target.inspect` must then show the handler's mutation
+  and a revision that includes it, and the target must keep answering.
+
+That is the shape the form slice already established for a failed submit —
+what a handler completed stands, and the revision reflects it — carried into
+the case where the interruption is a job rather than a network failure. The
+group uses its own fresh supervised host, and against a host that hangs the
+watchdog kills it by exact pid and reaps it, as everywhere else here.
