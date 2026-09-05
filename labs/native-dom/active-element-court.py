@@ -49,7 +49,8 @@ JOBS = load_module("job_deadline_court", Path(__file__).with_name("job-deadline-
 # what is measured is what happened and not whether the page can still look.
 PAGE = (
     "<!doctype html><html><body><main><p id=\"m\">start</p>"
-    "<div id=\"host\"><input id=\"a\" value=\"a\"><input id=\"b\" value=\"b\"></div>"
+    "<div id=\"host\"><button id=\"a\">a</button><button id=\"b\">b</button>"
+    "<input id=\"c\" value=\"c\"></div>"
     "<p id=\"log\"></p><p id=\"who\"></p><p id=\"forge\"></p></main><script>"
     "var mark=document.getElementById('m');"
     "var log=document.getElementById('log');"
@@ -70,6 +71,10 @@ PAGE = (
     "report();"
     "a.addEventListener('click', report);"
     "b.addEventListener('click', report);"
+    # The text field reports on input too: a set_value raises no click, so a
+    # fixture that only listened for clicks would read a stale value and blame
+    # the host for it.
+    "document.getElementById('c').addEventListener('input', report);"
     "mark.textContent='page ran';"
     "</script></body></html>"
 )
@@ -77,7 +82,7 @@ PAGE = (
 # A second page that attacks the state before the host acts on it.
 FORGE_PAGE = (
     "<!doctype html><html><body><main><p id=\"m\">start</p>"
-    "<input id=\"a\" value=\"a\"><input id=\"b\" value=\"b\">"
+    "<button id=\"a\">a</button><input id=\"b\" value=\"b\">"
     "<p id=\"who\"></p></main><script>"
     "var who=document.getElementById('who');"
     "var a=document.getElementById('a');var b=document.getElementById('b');"
@@ -161,6 +166,14 @@ def main():
                             return text[len(key) + 1:]
                     return None
 
+                def buttons(target):
+                    answer = host.call("target.snapshot",
+                                       {"target": target, "format": "semantic",
+                                        "max_bytes": 65536, "max_nodes": 64})
+                    if not answer.get("ok"):
+                        return []
+                    return [n for n in answer["result"]["nodes"] if n.get("role") == "button"]
+
                 def boxes(target):
                     answer = host.call("target.snapshot",
                                        {"target": target, "format": "semantic",
@@ -186,13 +199,13 @@ def main():
                        field(target, "active") == "body" if target else False,
                        {"active": field(target, "active") if target else None})
 
-                fields = boxes(target) if target else []
+                fields = buttons(target) if target else []
                 first = click(target, fields[0]) if len(fields) > 0 else None
                 expect(tag + "a host click focuses what it clicked",
                        field(target, "active") == "a" if first and first.get("ok") else False,
                        {"active": field(target, "active") if target else None})
 
-                fields = boxes(target) if target else []
+                fields = buttons(target) if target else []
                 second = click(target, fields[1]) if len(fields) > 1 else None
                 expect(tag + "and a second click moves it",
                        field(target, "active") == "b" if second and second.get("ok") else False,
@@ -206,6 +219,19 @@ def main():
                        field(target, "events")
                        == "focus:a,focusin:a,blur:a,focusout:a,focus:b,focusin:b",
                        {"events": field(target, "events")})
+                # The action that does apply to a text field focuses it too:
+                # a click on one is refused by this host (§12.1).
+                fields = boxes(target) if target else []
+                typed = None
+                if fields:
+                    typed = host.call("target.act",
+                                      {"target": target, "reference": fields[0]["reference"],
+                                       "action": {"kind": "set_value", "value": "court"}},
+                                      deadline_ms=8000)
+                expect(tag + "and the action that applies to a text field focuses it",
+                       typed is not None and typed.get("ok") is True
+                       and field(target, "active") == "c",
+                       {"active": field(target, "active") if target else None})
                 if target:
                     host.ok("target.close", {"target": target})
 
@@ -214,7 +240,7 @@ def main():
                                    {"session": session, "url": f"{origin}/forge.html"},
                                    deadline_ms=8000)
                 target = opened["result"]["target"] if opened.get("ok") else None
-                fields = boxes(target) if target else []
+                fields = buttons(target) if target else []
                 if fields:
                     click(target, fields[0])
                 after = field(target, "after") if target else None
@@ -230,7 +256,7 @@ def main():
                                    {"session": session, "url": f"{origin}/page.html"},
                                    deadline_ms=8000)
                 target = opened["result"]["target"] if opened.get("ok") else None
-                fields = boxes(target) if target else []
+                fields = buttons(target) if target else []
                 if fields:
                     click(target, fields[0])
                 navigated = host.call("target.navigate",

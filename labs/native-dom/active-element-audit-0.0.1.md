@@ -247,3 +247,39 @@ must be revisited before that lands rather than after.
    child-frame court on the same binary, and main-only slack ≤ 65,536 in the
    shim-footprint court, with the handle identifier's cost included in what
    that slack measures.
+
+
+## 12. Two things the first implementation attempt found
+
+**12.1 My court clicked what the host refuses to click.** The fixture focused
+two text inputs with `target.act` `click`, and the host answers
+`unsupported_capability` / `action_unsupported` — "click requires a button or
+link node". So those criteria could never have passed, on any build. The
+fixture now clicks **buttons** for the movement and ordering criteria, and
+asserts separately that the action which *does* apply to a text field —
+`set_value` — focuses it, which is the "explicit later action" half of the
+ruling.
+
+**12.2 Not every host activation goes through the bridge.** The `fire` helper
+does, and so the hook in `dispatchFor` catches clicks on links and check
+controls — but the button path ends in the base's own `Element.click()`, which
+dispatches directly. A hook that only watches `dispatchFor` therefore misses
+exactly the activation a page is most likely to notice.
+
+Putting the hook in `dispatchOn` instead would catch it, and would also catch
+a **page's** own `el.click()`, which in a browser moves no focus. That is the
+forgery the ruling forbids, arrived at from the other side.
+
+So the host asks for focus **explicitly**, through the capability bridge it
+already holds: a reserved type the base understands as "move focus, dispatch
+nothing". The act and form-action scripts call it once, before applying the
+action; the base decides focusability, so the single source stays single; and
+page script cannot call it at all, because it has no capability.
+
+**12.3 And the fixture read a stale value.** With the focus request in place,
+the `set_value` criterion still failed, reporting the previously clicked
+button. The page reported what it saw only from its **click** listeners, and a
+`set_value` raises `input` and `change`, never a click — so the fixture was
+reading a value from the click before it and blaming the host. It listens for
+`input` too now. Two of the three faults this slice found were mine, in the
+court, and both are recorded here rather than quietly fixed.
