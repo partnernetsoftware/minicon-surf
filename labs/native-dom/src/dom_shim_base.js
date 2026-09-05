@@ -112,7 +112,6 @@
       const text = new Text(String(value)); text.parentNode = this; this.childNodes.push(text);
       record("childList", this, { addedNodes: [text], removedNodes });
     }
-    contains(other) { return contains(this, other); }
     __detach(node) { const i = this.childNodes.indexOf(node); if (i >= 0) this.childNodes.splice(i, 1); node.parentNode = null; }
     append(...nodes) {
       const addedNodes = [];
@@ -476,6 +475,9 @@
     value: (take) => {
       delete g.__mcsInternals;
       return take({ g, document, Document, Element, Node, Event, addListener, removeListener, dispatchOn,
+        // The base keeps this helper for `MutationObserver` subtree scope; the
+        // extension's `contains` calls the same one, so the walk exists once.
+        contains,
         eventStateOf: (event) => invoke(weakMapGet, eventState, [event]) });
     },
     writable: false, configurable: true, enumerable: false,

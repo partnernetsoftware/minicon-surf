@@ -34,7 +34,10 @@ VISIBLE_ENV = "MINICON_SURF_ALLOW_VISIBLE_COURT"
 HERE = Path(__file__).resolve().parent
 # Exactly the ten the ruling moves. Nothing else, and no more.
 MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
-         "innerText", "defaultValue", "focus", "blur", "submit")
+         "innerText", "defaultValue", "focus", "blur", "submit",
+         # C2a: the method moves and calls the base's own helper through the
+         # handle, so the walk exists once and cannot drift.
+         "contains")
 # The scripts that run in a child realm as well as a main one.
 CHILD_SCRIPTS = ("snapshot_script", "preflight_script", "act_script", "form_action_script",
                  "SERIALIZE_JS", "ACTIVATION_JS", "INSTALL_JS", "REVISION_JS",
@@ -121,7 +124,7 @@ def main():
 
     declared, named, installed = source_inventory()
     still_in_base = sorted(m for m in MOVED if m in declared)
-    expect("the ten moved members are declared nowhere in the base",
+    expect("every moved member is declared nowhere in the base",
            not still_in_base, {"still_in_base": still_in_base})
     expect("and every one of them is installed by the main extension",
            all(m in installed for m in MOVED),
@@ -163,7 +166,23 @@ def main():
                     "  submitted=true; ev.preventDefault(); });"
                     "document.getElementById('f').submit();"
                     "out.push(submitted);"
+                    "out.push(host.contains(a));"
+                    "out.push(host.contains(host));"
+                    "out.push(!a.contains(host));"
+                    "out.push(!host.contains(document.createElement('p')));"
                     "document.getElementById('m').textContent=out.join(',');"
+                    "</script></body></html>").encode())
+            # A mutation deep in the tree: the revision only moves if the
+            # observer's subtree scope still works, which is the base helper
+            # doing the job it kept (§12.1).
+            if path == "/deep.html":
+                return self.reply(200, (
+                    "<!doctype html><html><body><main><p id=\"m\">start</p>"
+                    "<div><div><div id=\"deep\"><p id=\"leaf\">leaf</p></div></div></div>"
+                    "</main><script>"
+                    "setTimeout(function(){"
+                    "document.getElementById('leaf').setAttribute('data-court','moved');"
+                    "document.getElementById('m').textContent='mutated';},0);"
                     "</script></body></html>").encode())
             if path == "/parent.html":
                 return self.reply(200, (
@@ -214,8 +233,23 @@ def main():
                              if n.get("role") == "text"]
                     said = texts[0] if texts else None
                     host.ok("target.close", {"target": opened["result"]["target"]})
-                expect(tag + "a main realm calls all ten moved members and each answers as it did",
-                       said == "true,true,true,true,true,true,true,true", {"said": said})
+                expect(tag + "a main realm calls every moved member and each answers as it did",
+                       said == "true,true,true,true,true,true,true,true,true,true,true,true",
+                       {"said": said})
+
+                opened = host.call("target.open",
+                                   {"session": session, "url": f"{origin}/deep.html"},
+                                   deadline_ms=8000)
+                before = opened["result"]["revision"] if opened.get("ok") else None
+                deep = opened["result"]["target"] if opened.get("ok") else None
+                after = None
+                if deep:
+                    answer = host.call("target.inspect", {"target": deep})
+                    after = (answer.get("result") or {}).get("revision")
+                    host.ok("target.close", {"target": deep})
+                expect(tag + "and the base's helper still gives the observer its subtree scope",
+                       before is not None and after is not None and after > before,
+                       {"revision": [before, after]})
 
                 opened = host.call("target.open",
                                    {"session": session, "url": f"{origin}/parent.html"},

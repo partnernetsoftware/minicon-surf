@@ -26,6 +26,8 @@ __mcsInternals((internals) => {
   Object.defineProperty(Node.prototype, "parentElement", {
     get() { return this.parentNode && this.parentNode.nodeType === 1 ? this.parentNode : null; },
     configurable: true });
+  const containsHelper = internals.contains;
+  Node.prototype.contains = function (other) { return containsHelper(this, other); };
   Node.prototype.appendChild = function (node) { this.append(node); return node; };
   Node.prototype.remove = function () { if (this.parentNode) this.parentNode.removeChild(this); };
   Object.defineProperty(Element.prototype, "innerText", {
