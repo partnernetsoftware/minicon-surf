@@ -292,3 +292,45 @@ what a handler completed stands, and the revision reflects it — carried into
 the case where the interruption is a job rather than a network failure. The
 group uses its own fresh supervised host, and against a host that hangs the
 watchdog kills it by exact pid and reaps it, as everywhere else here.
+
+## 11. Three findings from the first run against the fix
+
+### 11.1 The handler-hang fixture could never run its handler
+
+§10's new group uses a fragment-only link, and the frame-action rules refuse
+a fragment activation **before any event is dispatched**, with
+`fragment_unsupported`. So the handler never ran and the group could not test
+what it was written for. The first run confirms it: the action answered
+`unsupported_capability`, not `deadline_exceeded`.
+
+The fixture becomes a `<button type="button">`, which activates without
+navigating and without meeting any of the fail-closed rules, and the group
+clicks it by its reference. The criterion is unchanged: the handler mutates
+the document **first**, then queues the job that never returns.
+
+### 11.2 The deadline was being reported as a crash
+
+With the drain enforced, an interrupted build did fail — as
+`target_crashed`, not `deadline_exceeded`. `build_target` maps **any** error
+from a page script to "a script threw", which is right for a script that
+threw and wrong for one the deadline cut off. The mapping now passes a
+`deadline_exceeded` through as itself, and keeps `target_crashed` for a real
+throw. The same applies wherever a script error is re-typed.
+
+### 11.3 A job's exception is not observable through the drain, so no counter claims it
+
+Measured, not assumed. Three pages — a `Promise.then` that throws, a
+`queueMicrotask` that throws, and an unhandled `Promise.reject` — were run
+against the fixed host, and in every case the drain reported **no error at
+all**: `execute_pending_job` returned `Ok`, the operation succeeded, the later
+job still ran, and the `threw_total` delta was **zero**. In this engine and
+this binding, a job's exception becomes an unhandled rejection held by the
+runtime rather than an `Err` the host can see.
+
+So the counter is **removed**, not left reading zero and implying something.
+`run_total` and `drains_interrupted_total` stay, because both are provable
+from what the drain actually returns. Counting a job that raised needs
+`set_host_promise_rejection_tracker`, which is §9's open question and is not
+smuggled in here; until it is ruled, this host does not claim to observe a
+job's exception at all, and the court asserts the outcome that **is**
+observable — such a page's operation succeeds and its later jobs still run.
