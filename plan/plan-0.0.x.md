@@ -1301,8 +1301,20 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the same kind of reason. The court re-derives the call-site inventory from
   the shipped sources so the audit cannot go stale in silence — and it caught
   its own first version reading the Rust around a script and reporting a host
-  call to `.remove` that was `self.entries.remove(0)`. G1, G3, P6 and G6 stay
-  open.
+  call to `.remove` that was `self.entries.remove(0)`. A follow-up dependency
+  audit then priced the four remaining page-only members: `contains` is 400
+  bytes and needs nothing, because what the base uses is the free helper for
+  observer scope while the method is one `parentNode` walk — a correction to
+  what that record first claimed — and the other three would cost four handle
+  identifiers for about 3,952 bytes, one of them `record`, which is how a
+  mutation moves the revision that gates every action. Ruled and built:
+  `contains` moves and calls the base's own helper through the handle, so the
+  walk exists once; the other three stay in the base, scope-closed, and the
+  handle does not widen. M1 is **230,106** with **15,654 bytes of headroom**
+  under an unchanged floor. That court is 19 of 19, and against the build
+  before it reads 19 of 19 as well, which is **not** a falsification: the
+  record says why rather than letting the number imply one. G1, G3, P6 and G6
+  stay open.
   The `Event` slice left M1 with 2,630 bytes under its floor, so the next
   base change did not fit. A measured base-reduction round
   (`labs/native-dom/base-reduction-design-0.0.1.md`) priced the problem: a
