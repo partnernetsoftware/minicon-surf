@@ -262,8 +262,54 @@ probe('window_hop', function(){
                     "delete_bridge": "",
                     "prevent": "ev.preventDefault();",
                     "plain": "",
+                    # Reach the hidden state through a patched WeakMap while
+                    # the host's dispatch is in flight, and rewrite it.
+                    "patch_weakmap":
+                        "var realGet = WeakMap.prototype.get;"
+                        "WeakMap.prototype.get = function(key){"
+                        "  var value = realGet.call(this, key);"
+                        "  if (value && typeof value === 'object'"
+                        "      && 'defaultPrevented' in value) {"
+                        "    value.defaultPrevented = true;"
+                        "  }"
+                        "  return value; };"
+                        "var seen = ev.type;"
+                        "WeakMap.prototype.get = realGet;",
+                    # Hide the ancestor's listeners from the walk in flight.
+                    "patch_collections":
+                        "var realMapGet = Map.prototype.get;"
+                        "Map.prototype.get = function(){ return undefined; };"
+                        "setTimeout(function(){ Map.prototype.get = realMapGet; }, 0);",
+                    # Replace the iterator the host's path walk would use.
+                    "patch_iterator":
+                        "var realIterator = Array.prototype[Symbol.iterator];"
+                        "Array.prototype[Symbol.iterator] = function(){"
+                        "  return { next: function(){ return { done: true }; } }; };"
+                        "setTimeout(function(){"
+                        "  Array.prototype[Symbol.iterator] = realIterator; }, 0);",
+                    # Fabricate the answer the host is about to serialise.
+                    "replace_globals":
+                        "var realStringify = JSON.stringify;"
+                        "JSON.stringify = function(){"
+                        "  return '{\"applied\":true,\"role\":\"fabricated\"}'; };"
+                        "setTimeout(function(){ JSON.stringify = realStringify; }, 0);",
                 }[how]
                 setup = {
+                    "unused_patch_weakmap":
+                        "var realGet = WeakMap.prototype.get;"
+                        "var realSet = WeakMap.prototype.set;"
+                        "WeakMap.prototype.get = function(key){"
+                        "  var value = realGet.call(this, key);"
+                        "  if (value && typeof value === 'object' && 'defaultPrevented' in value) {"
+                        "    value.defaultPrevented = true; value.cancelable = true;"
+                        "  }"
+                        "  return value; };"
+                        "WeakMap.prototype.set = function(key, value){"
+                        "  if (value && typeof value === 'object' && 'defaultPrevented' in value) {"
+                        "    value.defaultPrevented = true;"
+                        "  }"
+                        "  return realSet.call(this, key, value); };",
+                    "unused_patch_collections": "",
                     "proto": "Object.defineProperty(Event.prototype, 'defaultPrevented',"
                              " { get: function(){ return true; }, configurable: true });",
                     "fake_event": "window.Event = function(type, init){ this.type=type;"
@@ -279,8 +325,15 @@ probe('window_hop', function(){
                 return self.reply(200, (
                     "<!doctype html><html><body><main><p id=\"m\">start</p>"
                     "<input id=\"c\" type=\"checkbox\"></main><script>"
-                    "document.getElementById('c').addEventListener('click', function(ev){"
-                    "document.getElementById('m').textContent='handler ran';"
+                    # Both handlers use references captured before the attack,
+                    # so the court reads whether the handler RAN, not whether
+                    # the page's own lookups still work.
+                    "var mark=document.getElementById('m');"
+                    "var box=document.getElementById('c');"
+                    "document.body.addEventListener('click', function(){"
+                    "mark.textContent = mark.textContent + '+ancestor';});"
+                    "box.addEventListener('click', function(ev){"
+                    "mark.textContent='handler ran';"
                     + attack +
                     "});" + setup +
                     "</script></body></html>").encode())
@@ -437,6 +490,7 @@ probe('window_hop', function(){
                                         deadline_ms=8000)
                         result = act.get("result") or {}
                         out["applied"] = result.get("applied")
+                        out["role"] = result.get("role")
                         out["default_prevented"] = result.get("default_prevented")
                         shot = snapshot(target, nodes=40)
                         texts = [n.get("name") for n in (shot or {}).get("nodes", [])
@@ -447,24 +501,53 @@ probe('window_hop', function(){
 
                 plain = act_checkbox("plain")
                 expect(tag + "the page's handler runs and an uncancelled action applies",
-                       plain.get("applied") is True and plain.get("marker") == "handler ran",
+                       plain.get("applied") is True and plain.get("marker") == "handler ran+ancestor",
                        {"plain": plain})
                 prevented = act_checkbox("prevent")
                 expect(tag + "and a real preventDefault still cancels it",
                        prevented.get("applied") is False
                        and prevented.get("default_prevented") is True
-                       and prevented.get("marker") == "handler ran",
+                       and prevented.get("marker") == "handler ran+ancestor",
                        {"prevent": prevented})
                 for how, why in (("shadow", "an own property shadowing defaultPrevented"),
                                  ("proto", "a forged prototype getter"),
                                  ("fake_event", "a replaced global Event"),
-                                 ("fake_dispatch", "a replaced dispatchEvent"),
-                                 ("delete_bridge", "an attempt to remove the bridge")):
+                                 ("fake_dispatch", "a replaced dispatchEvent")):
                     seen = act_checkbox(how)
                     expect(tag + f"{why} cannot cancel what the host decides, and the handler still runs",
                            seen.get("applied") is True
                            and seen.get("default_prevented") is None
-                           and seen.get("marker") == "handler ran",
+                           and seen.get("marker") == "handler ran+ancestor",
+                           {how: seen})
+                # A page that takes the intrinsics apart may break its own
+                # document, and a typed refusal is an honest outcome. What is
+                # never acceptable is a result the host reports for an action
+                # whose handler never ran (§20.2).
+                # These three leave the page able to observe itself, so they
+                # are held to the whole standard: both handlers ran and the
+                # decision is the host's.
+                for how, why in (("delete_bridge", "an attempt to remove the bridge"),
+                                 ("patch_iterator", "a replaced array iterator"),
+                                 ("patch_weakmap", "a patched WeakMap that rewrites the hidden state")):
+                    seen = act_checkbox(how)
+                    expect(tag + f"{why} leaves both handlers running and the decision the host's",
+                           seen.get("applied") is True
+                           and seen.get("default_prevented") is None
+                           and seen.get("role") != "fabricated"
+                           and seen.get("marker") == "handler ran+ancestor",
+                           {how: seen})
+                # These two also break the page's own snapshot, which is not
+                # this slice's business (§20.5): what is asserted is that the
+                # ACTION's answer is the host's, never the page's.
+                for how, why in (("patch_collections", "a patched Map"),
+                                 ("replace_globals", "a replaced JSON serialiser")):
+                    seen = act_checkbox(how)
+                    readable = seen.get("marker") is not None
+                    expect(tag + f"{why} cannot fabricate the action's answer",
+                           seen.get("role") != "fabricated"
+                           and seen.get("default_prevented") is None
+                           and (seen.get("applied") is True or seen.get("open") == "failed")
+                           and (not readable or seen.get("marker") == "handler ran+ancestor"),
                            {how: seen})
 
                 # isTrusted and the phase of an event the host itself raises.

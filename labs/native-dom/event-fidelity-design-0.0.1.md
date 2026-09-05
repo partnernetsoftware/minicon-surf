@@ -811,3 +811,57 @@ per-pattern:
 
 The form court's GET-submission criteria are the check on the typo, and they
 are rerun on the fixed build.
+
+**20.2 My three criteria demanded more than the ruling.** They asserted
+`applied: true` under each monkeypatch. With the hardening scoped back to the
+privileged path, two of the three no longer get that far: a page that breaks
+`Map.prototype.get` or the array iterator breaks the **extension's own**
+machinery — the lifecycle, storage and timers it is built from — and the
+target fails to build at all. That is a typed, fail-closed refusal, which the
+ruling names as an acceptable outcome; what it forbids is a fabricated
+`applied` or `default_prevented`.
+
+The criteria are corrected to the ruling's own shape: each monkeypatch must
+end in **one of two** states — the action applied with the page's real handler
+having run, or a typed failure with no result reported at all. What fails the
+criterion is the third state: an `applied` or a `default_prevented` the host
+reports without the handler having run.
+
+**20.3 One intrinsic leak survived the pass: the path walk.** After moving the
+listener walk off the iterator protocol I left `dispatchOn`'s outer loop as
+`for (const node of path)`, which is the same page-mutable
+`Array.prototype[Symbol.iterator]` one line up the function — inside the exact
+privileged path, and named in the audit. A page that replaces the iterator can
+shorten or fabricate the host's dispatch path while the action still returns a
+result. Changed to indexed iteration over `path.length`, and the privileged
+functions — `dispatchOn`, `dispatchFor`, `addListener`, `removeListener`,
+`listenersOf` — now contain no `for…of` and no spread at all.
+
+*Falsifier:* a handler replaces `Array.prototype[Symbol.iterator]` while the
+host's dispatch is in flight; the target's remaining listener and the
+ancestor's must still run, and the hidden cancellation must still be the
+host's.
+
+**20.4 The attacks had to move inside the handler to prove anything.** Run at
+load time, all three broke the page's own build — `Map.prototype.get` and the
+array iterator are what the extension's lifecycle, storage and timers are made
+of — so the fixtures never reached a host action and the criteria could not
+tell the two builds apart. Run **inside the click handler**, during the host's
+own dispatch, they are exact, and against `44ad1aa47263…` they show three
+different failures: a patched `WeakMap` reaching the hidden state and forcing
+`applied: false`, a patched `Map` hiding the ancestor's listener from the walk
+in flight, and a replaced `JSON.stringify` returning
+`{"applied":true,"role":"fabricated"}` — the host reporting an action result
+the page wrote.
+
+**20.5 Two attacks also wreck the page's own observation, which is not this
+slice's business.** A handler that patches `Map.prototype.get` or
+`JSON.stringify` breaks the *snapshot* the court reads its marker from — the
+snapshot serialises with the ordinary `JSON.stringify` by design, since
+snapshots are not the action path and a typed or empty answer there is the
+acceptable outcome the ruling names. So for those two the court asserts what
+this slice is responsible for: the **action's** answer is the host's own —
+`applied` true with the host's own `role`, never the page's fabricated one —
+and the handler marker is asserted only where the page left it readable. The
+iterator and `WeakMap` attacks leave the marker readable and are held to the
+full standard: target handler, ancestor handler, and the host's decision.
