@@ -1162,6 +1162,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   at hide, expected to bring the post-hide excess near the cap and remove
   the two-copy variance but not the small-block slope. The surface court
   stays 106 of 110, narrow; G1, G3, P6 and G6 stay open.
+- [ ] Triage only, read-only, nothing implemented and nothing measured
+  beyond one probe: standard-browser gap triage
+  (`labs/native-dom/browser-gap-triage-0.0.1.md`). Three candidates, each
+  measured against the current build rather than inferred: the document
+  lifecycle, where `DOMContentLoaded` reaches no listener and
+  `window.addEventListener` does not exist, so a page that builds itself on
+  load stays as the server sent it; page-initiated navigation, where
+  `location.href = "…"` succeeds silently and the page believes it navigated
+  while the host committed nothing, which is a silent approximation rather
+  than an honest absence; and `classList`, absent while the snapshot's
+  selector engine already matches `.x`, so this host can query a class a page
+  cannot idiomatically change. The lifecycle is recommended first: most
+  real-web behaviour per line, no authority, no resident memory, no protocol
+  change, and it composes with the timer and job bounds already landed rather
+  than needing its own. Page-initiated navigation is second and needs a
+  re-entrancy ruling first, because a page may assign during its own build.
+  G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 42 of 42:
   closing the pending-job deadline escape
   (`labs/native-dom/job-deadline-design-0.0.1.md`). The mechanism is
