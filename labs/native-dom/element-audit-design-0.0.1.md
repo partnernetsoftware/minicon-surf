@@ -350,3 +350,23 @@ base helper still doing its other job, which is `MutationObserver` subtree
 scope. The court after this amendment covers C1 and C2a and nothing of C2b,
 which is what was asked for; the amendment is recorded here chronologically
 rather than replacing what the file said before.
+
+**12.4 C2a has no runtime falsifier against an older binary, and the record
+says so rather than implying one.** Run against the build before it, the
+amended court scores 19 of 19. Three things make that unavoidable rather than
+lax:
+
+- the inventory criteria read the shipped sources, which already have the
+  member moved (§10.2);
+- `contains` behaves identically whichever realm installs it, so no page-level
+  observation can separate the builds;
+- the divergence is observable only through the court-only realm probe, and
+  **the probe is part of the binary under test**. I extended it to name
+  `contains`, and the older binary still answers with its own older probe,
+  which does not — so the criterion cannot be put to that build at all.
+
+What the extended probe does buy is the next round: any future build that
+fails to move a member it claims to have moved will fail its own criterion.
+For this round the claim rests on the inventory criteria over the sources and
+on the fourteen suites passing on the new binary, and that is stated here
+instead of a falsification number that would not mean what it looks like.

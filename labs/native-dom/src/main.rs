@@ -223,7 +223,8 @@ const REALM_PROBE_JS: &str = r#"(() => [
   String(typeof window.document.body?.classList !== "undefined"),
   String(typeof window.CustomEvent !== "undefined"),
   String("isTrusted" in window.Event.prototype && "timeStamp" in window.Event.prototype),
-  String("appendChild" in window.Element.prototype && "submit" in window.Element.prototype),
+  String("appendChild" in window.Element.prototype && "submit" in window.Element.prototype
+    && "contains" in window.Element.prototype),
 ].join(":"))()"#;
 const OPERATIONS: &[&str] = &[
     "profile.create",

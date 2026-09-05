@@ -1,7 +1,7 @@
 {
  "checks": [
   {
-   "check": "the ten moved members are declared nowhere in the base",
+   "check": "every moved member is declared nowhere in the base",
    "detail": {
     "still_in_base": []
    },
@@ -29,9 +29,19 @@
    "passed": true
   },
   {
-   "check": "[system] a main realm calls all ten moved members and each answers as it did",
+   "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the base's helper still gives the observer its subtree scope",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
    },
    "passed": true
   },
@@ -65,9 +75,19 @@
    "passed": true
   },
   {
-   "check": "[arena] a main realm calls all ten moved members and each answers as it did",
+   "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the base's helper still gives the observer its subtree scope",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
    },
    "passed": true
   },
@@ -136,10 +156,10 @@
    "passed": true
   }
  ],
- "checks_passed": 17,
- "checks_total": 17,
+ "checks_passed": 19,
+ "checks_total": 19,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "98fd6418e8efeb290d18f8a7ee22441499785f81d25b2f70bc601af054d5f6ed",
+ "host_sha256": "e9d7273c310e7891430ebe2e65d7958fe5019db7a0780dc56eea32d2dae1592c",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -158,7 +178,8 @@
   "defaultValue",
   "focus",
   "blur",
-  "submit"
+  "submit",
+  "contains"
  ],
  "passed": true
 }

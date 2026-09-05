@@ -1,7 +1,7 @@
 {
  "checks": [
   {
-   "check": "the ten moved members are declared nowhere in the base",
+   "check": "every moved member is declared nowhere in the base",
    "detail": {
     "still_in_base": []
    },
@@ -29,9 +29,19 @@
    "passed": true
   },
   {
-   "check": "[system] a main realm calls all ten moved members and each answers as it did",
+   "check": "[system] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] and the base's helper still gives the observer its subtree scope",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
    },
    "passed": true
   },
@@ -65,9 +75,19 @@
    "passed": true
   },
   {
-   "check": "[arena] a main realm calls all ten moved members and each answers as it did",
+   "check": "[arena] a main realm calls every moved member and each answers as it did",
    "detail": {
-    "said": "true,true,true,true,true,true,true,true"
+    "said": "true,true,true,true,true,true,true,true,true,true,true,true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] and the base's helper still gives the observer its subtree scope",
+   "detail": {
+    "revision": [
+     0,
+     1
+    ]
    },
    "passed": true
   },
@@ -113,18 +133,20 @@
     "probe": {
      "children_class_list": 0,
      "children_custom_event": 0,
+     "children_element_view": 0,
      "children_enumerable": 0,
      "children_event_view": 0,
      "children_present": 0,
      "main_class_list": true,
      "main_custom_event": true,
+     "main_element_view": true,
      "main_enumerable": false,
      "main_event_view": true,
      "main_present": false,
      "realms_probed": 2
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "the probe seam's court file is gone when the host is",
@@ -134,10 +156,10 @@
    "passed": true
   }
  ],
- "checks_passed": 16,
- "checks_total": 17,
+ "checks_passed": 19,
+ "checks_total": 19,
  "court": "native-dom page-only Element members (control 0.0.2)",
- "host_sha256": "7552dbfa52b5759da27a11cbb6365c83118955f684f6cd9cec35abcfaf4dbb38",
+ "host_sha256": "98fd6418e8efeb290d18f8a7ee22441499785f81d25b2f70bc601af054d5f6ed",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: the source-inventory and divergence criteria fail until the ten members move",
@@ -156,7 +178,8 @@
   "defaultValue",
   "focus",
   "blur",
-  "submit"
+  "submit",
+  "contains"
  ],
- "passed": false
+ "passed": true
 }

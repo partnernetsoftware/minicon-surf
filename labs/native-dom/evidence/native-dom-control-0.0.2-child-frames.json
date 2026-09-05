@@ -240,22 +240,22 @@
   {
    "check": "[system] M1: one child costs at most 262144 live owner bytes",
    "detail": {
-    "owner_bytes": 230506
+    "owner_bytes": 230106
    },
    "passed": true
   },
   {
    "check": "[system] M2: seven children cost at most 1835008 live owner bytes",
    "detail": {
-    "owner_bytes": 1612044
+    "owner_bytes": 1609244
    },
    "passed": true
   },
   {
    "check": "[system] M3: repeated parent navigation returns to the one-child level",
    "detail": {
-    "one_child": 230506,
-    "owner_bytes": 230506
+    "one_child": 230106,
+    "owner_bytes": 230106
    },
    "passed": true
   },
@@ -270,7 +270,7 @@
    "check": "[system] M4: the footprint's growth does not accelerate over the cycles",
    "detail": {
     "first_half": 32768,
-    "second_half": 32768
+    "second_half": 16384
    },
    "passed": true
   },
@@ -286,9 +286,9 @@
    "check": "[system] M5: the children's arm retains at most 1048576 more than the identical childless arm",
    "detail": {
     "allocator": "system",
-    "children_bytes": 81920,
+    "children_bytes": 65536,
     "control_bytes": 0,
-    "excess_bytes": 81920
+    "excess_bytes": 65536
    },
    "passed": true
   },
@@ -531,22 +531,22 @@
   {
    "check": "[arena] M1: one child costs at most 262144 live owner bytes",
    "detail": {
-    "owner_bytes": 224298
+    "owner_bytes": 223642
    },
    "passed": true
   },
   {
    "check": "[arena] M2: seven children cost at most 1835008 live owner bytes",
    "detail": {
-    "owner_bytes": 1568172
+    "owner_bytes": 1565116
    },
    "passed": true
   },
   {
    "check": "[arena] M3: repeated parent navigation returns to the one-child level",
    "detail": {
-    "one_child": 224298,
-    "owner_bytes": 224298
+    "one_child": 223642,
+    "owner_bytes": 223658
    },
    "passed": true
   },
@@ -560,8 +560,8 @@
   {
    "check": "[arena] M4: the footprint's growth does not accelerate over the cycles",
    "detail": {
-    "first_half": 32768,
-    "second_half": 16384
+    "first_half": 0,
+    "second_half": 0
    },
    "passed": true
   },
@@ -577,9 +577,9 @@
    "check": "[arena] M5: the children's arm retains at most 1048576 more than the identical childless arm",
    "detail": {
     "allocator": "arena",
-    "children_bytes": 32768,
-    "control_bytes": 32768,
-    "excess_bytes": 0
+    "children_bytes": 81920,
+    "control_bytes": 49152,
+    "excess_bytes": 32768
    },
    "passed": true
   },
@@ -630,7 +630,7 @@
   "child-nested"
  ],
  "court": "native-dom child frames (control 0.0.2)",
- "host_sha256": "98fd6418e8efeb290d18f8a7ee22441499785f81d25b2f70bc601af054d5f6ed",
+ "host_sha256": "e9d7273c310e7891430ebe2e65d7958fe5019db7a0780dc56eea32d2dae1592c",
  "limitations": [
   "design-frozen court: it fails until bounded child frames exist on the native route",
   "observation only: acting inside a child needs a node reference that can name a frame, which is unruled",
