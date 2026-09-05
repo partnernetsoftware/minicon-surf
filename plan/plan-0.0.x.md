@@ -1231,7 +1231,12 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   `superseded`, only the visible document is `committed`, a build failure
   keeps its typed outcome and a chain refused at its cap records no commit at
   all. The court is 80 of 80, and 76 of 80 against the build that ruling was
-  found in. **M1 is left with 182 bytes of headroom**, 261,962 against an
+  found in. The receipts committed on that binary are the page-navigation and
+  child-frame ones; the rest of the same-binary regression suite was run
+  against it as scratch results that were not retained, and their committed
+  receipts still name the earlier build. M1 is left with **182 bytes of
+  headroom**, so further shim growth is blocked until a separate architecture
+  slice reduces what every realm compiles. **M1 is left with 182 bytes of headroom**, 261,962 against an
   unmoved 262,144: the next change that adds shim source breaks it.
   G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 53 of 53: the
