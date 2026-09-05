@@ -169,3 +169,31 @@ flowchart TD
    names errors correctly where it validates, and does not validate where the
    base never did. Recording it costs nothing now and stops it being
    rediscovered by the next audit.
+
+
+## 10. The rulings
+
+**10.1 `toggleAttribute` is accepted** as a compatibility fix: 848 bytes of
+main, nothing per child, no base growth, no handle widening.
+
+**10.2 The revision follows the members it calls.** A toggle that changes the
+attribute moves it once, through `setAttribute` or `removeAttribute`; a toggle
+whose `force` matches the current state writes nothing and moves nothing.
+
+**10.3 Error boundary B.** This slice validates no attribute name, because
+`setAttribute` and `removeAttribute` beside it do not, and a method that
+disagreed with its neighbours about what a name is would be worse than either.
+The divergence — `setAttribute("a b", …)` and `setAttribute("", …)` accepted
+where a browser throws `InvalidCharacterError` — is recorded as its **own base
+candidate**, beside the selector engine's error name.
+
+**10.4 The court reads the revision from outside.** `window.__mcs` is
+installed after a document's inline scripts, so a page cannot read the counter
+at parse time; the criteria compare `target.inspect`'s revision across
+boundaries instead, which measures the same thing without the timing trap.
+
+**10.5 The criteria join `element-view-court.py`**: `force` true and false,
+the attribute present and absent, the return value in each case, the revision
+moving once and not at all, the child divergence, and owner release.
+`cloneNode`, the selector engine's error name, C2b and `EventTarget` stand as
+ruled.

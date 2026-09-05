@@ -43,7 +43,10 @@ MOVED = ("firstChild", "lastChild", "parentElement", "appendChild", "remove",
          "closest",
          # Reads the element's own attribute map, and claims to be nothing
          # more than a new array of names.
-         "getAttributeNames")
+         "getAttributeNames",
+         # Validates no name, because its neighbours do not (§10.3 of the
+         # toggle audit); the revision follows the members it calls.
+         "toggleAttribute")
 # The scripts that run in a child realm as well as a main one.
 CHILD_SCRIPTS = ("snapshot_script", "preflight_script", "act_script", "form_action_script",
                  "SERIALIZE_JS", "ACTIVATION_JS", "INSTALL_JS", "REVISION_JS",
@@ -154,7 +157,7 @@ def main():
                     "<!doctype html><html><body><main><p id=\"m\">start</p>"
                     "<div id=\"host\"><p id=\"a\">alpha</p><p id=\"b\">beta</p></div>"
                     "<form id=\"f\"><input id=\"v\" value=\"kept\"></form>"
-                    "<p id=\"attrs\">attrs</p></main><script>"
+                    "<p id=\"attrs\">attrs</p><p id=\"toggle\">toggle</p></main><script>"
                     "var host=document.getElementById('host');"
                     "var a=document.getElementById('a');"
                     "var out=[];"
@@ -173,6 +176,19 @@ def main():
                     "  submitted=true; ev.preventDefault(); });"
                     "document.getElementById('f').submit();"
                     "out.push(submitted);"
+                    # toggleAttribute: both forms, both directions, and what
+                    # each call answers.
+                    "var tg=document.getElementById('toggle');"
+                    "out.push(tg.toggleAttribute('data-flag')===true);"
+                    "out.push(tg.getAttribute('data-flag')==='');"
+                    "out.push(tg.toggleAttribute('data-flag')===false);"
+                    "out.push(tg.hasAttribute('data-flag')===false);"
+                    "out.push(tg.toggleAttribute('data-flag',true)===true);"
+                    "out.push(tg.toggleAttribute('data-flag',true)===true);"
+                    "out.push(tg.hasAttribute('data-flag')===true);"
+                    "out.push(tg.toggleAttribute('data-flag',false)===false);"
+                    "out.push(tg.toggleAttribute('data-flag',false)===false);"
+                    "out.push(tg.hasAttribute('data-flag')===false);"
                     # getAttributeNames: empty, repeated, mixed case, order
                     # after a removal, and a new array every call.
                     "var bare=document.createElement('p');"
@@ -218,6 +234,20 @@ def main():
                     "setTimeout(function(){"
                     "document.getElementById('leaf').setAttribute('data-court','moved');"
                     "document.getElementById('m').textContent='mutated';},0);"
+                    "</script></body></html>").encode())
+            # The revision a toggle moves is read from outside, because
+            # window.__mcs is installed after a document's inline scripts and a
+            # page cannot see the counter at parse time (§10.4).
+            if path == "/toggle-revision.html":
+                return self.reply(200, (
+                    "<!doctype html><html><body><main><p id=\"t\">t</p></main><script>"
+                    "var t=document.getElementById('t');"
+                    "setTimeout(function(){"
+                    "  t.toggleAttribute('data-flag');"          # changes it
+                    "  setTimeout(function(){"
+                    "    t.toggleAttribute('data-flag', true);"  # already true: no change
+                    "  }, 0);"
+                    "}, 0);"
                     "</script></body></html>").encode())
             if path == "/parent.html":
                 return self.reply(200, (
@@ -270,6 +300,7 @@ def main():
                     host.ok("target.close", {"target": opened["result"]["target"]})
                 expect(tag + "a main realm calls every moved member and each answers as it did",
                        said == ("true,true,true,true,true,true,true,true"
+                                ",true,true,true,true,true,true,true,true,true,true"
                                 ",true,true,true,true,true"
                                 ",true,true,true,true,true,true,true,true,true,true"),
                        {"said": said})
@@ -287,6 +318,23 @@ def main():
                 expect(tag + "and the base's helper still gives the observer its subtree scope",
                        before is not None and after is not None and after > before,
                        {"revision": [before, after]})
+
+                opened = host.call("target.open",
+                                   {"session": session, "url": f"{origin}/toggle-revision.html"},
+                                   deadline_ms=8000)
+                revision = opened["result"]["revision"] if opened.get("ok") else None
+                toggler = opened["result"]["target"] if opened.get("ok") else None
+                changed = host.call("target.inspect", {"target": toggler}) if toggler else {}
+                after_change = (changed.get("result") or {}).get("revision")
+                quiet = host.call("target.inspect", {"target": toggler}) if toggler else {}
+                after_quiet = (quiet.get("result") or {}).get("revision")
+                expect(tag + "a toggle that changes the attribute moves the revision once, "
+                       "and one that changes nothing moves it not at all",
+                       revision is not None and after_change == revision + 1
+                       and after_quiet == after_change,
+                       {"revisions": [revision, after_change, after_quiet]})
+                if toggler:
+                    host.ok("target.close", {"target": toggler})
 
                 opened = host.call("target.open",
                                    {"session": session, "url": f"{origin}/parent.html"},
