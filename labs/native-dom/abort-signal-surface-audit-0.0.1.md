@@ -148,3 +148,32 @@ what runs out.
    number before it starts, not after.
 5. **`AbortSignal.any()`** is out of scope here and should stay a separate
    candidate if it is ever wanted.
+
+
+## 8. Ruled
+
+**R1 through R5 are accepted** — the signal is an `EventTarget` and `abort`
+fires on it, `reason` exists and `abort(reason)` is respected,
+`throwIfAborted()` throws it, `AbortSignal.abort(reason)` mints an
+already-aborted signal, and `onabort` is a real handler. R2 and R5 are the
+reason: they close the two failures a page cannot currently see.
+
+**The reentrancy constraint is frozen with it.** `abort()` becoming a dispatch
+is acceptable *because it is the page calling it*: a page can already dispatch
+inside its own listener. **No host path may abort a page's signal.** If a
+future slice wants one — a navigation cancelling in-flight page work, say —
+that is a new ruling, not an extension of this one. An abort listener's
+exception stays swallowed locally, as everywhere else in this host.
+
+`reason`, the `onabort` handler and the brand stay in closure-owned `WeakMap`s
+and `WeakSet`s. **The handle's exact key set does not grow**, and the frozen
+criterion that pins it stays as it is.
+
+**R6 `timeout()` is deferred**, recorded as its own candidate. It introduces a
+held timer with budget and deadline semantics, and the main-only slack is down
+to roughly 4,032 bytes; both deserve their own measurement rather than riding
+in on this one. `AbortSignal.any()` was never in scope and stays out.
+
+**The slack is now the gate.** Whatever comes next through the main extension
+states its expected slack before it starts, because 65,536 minus what this
+slice takes is what is left for everything after it.
