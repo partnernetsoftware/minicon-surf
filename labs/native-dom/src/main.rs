@@ -66,6 +66,10 @@ const MAX_SAFE_COUNTER: u64 = (1u64 << 53) - 1;
 /// Pending timers a realm may hold. The realm enforces it too, so a page's
 /// own `setTimeout` throws rather than the host discovering it later.
 const MAX_PENDING_TIMERS: usize = 64;
+/// How many documents one operation may follow when a page's own script asks
+/// for the next before this one is committed. Its own budget: it neither
+/// shares nor consumes `net::MAX_REDIRECTS`.
+const MAX_SCRIPT_CHAIN: usize = 3;
 /// Callbacks run at one operation boundary, however many are due. A chain of
 /// zero-delay timers therefore advances one boundary at a time.
 const MAX_TIMER_CALLBACKS_PER_BOUNDARY: usize = 32;
@@ -254,9 +258,17 @@ fn lifecycle_arm_script(capability: &str) -> String {
         r#"(() => {{
   const arm = window.__mcsArmLifecycle;
   if (typeof arm !== "function") return "unarmed";
-  return arm((runStep) => {{
+  return arm((runStep, takeIntent) => {{
     const capability = {capability};
     let phase = 0;
+    Object.defineProperty(window, "__mcsIntent", {{
+      value: (offered) => {{
+        if (offered !== capability) return "refused";
+        const taken = takeIntent();
+        return taken === null || taken === undefined ? "" : JSON.stringify(taken);
+      }},
+      writable: false, configurable: false, enumerable: false,
+    }});
     Object.defineProperty(window, "__mcsLifecycle", {{
       value: (offered, step) => {{
         if (offered !== capability) return "refused";
@@ -278,11 +290,48 @@ fn lifecycle_step_script(capability: &str, step: u8) -> String {
     format!(r#"(() => window.__mcsLifecycle({capability}, {step}))()"#)
 }
 
+/// Empties the realm's navigation-intent slot. The realm clears it as it
+/// answers, so an intent is consumed once and a refusal cannot retry itself.
+fn take_intent_script(capability: &str) -> String {
+    format!(r#"(() => window.__mcsIntent({capability}))()"#)
+}
+
+/// What a page asked for. `url` is page data: it reaches the navigation path
+/// and nothing else — no log, no record, no error, no receipt.
+#[derive(Clone)]
+struct NavigationIntent {
+    /// `assign`, `replace` or `reload`.
+    kind: String,
+    url: Option<String>,
+}
+
+/// Bounded, host-owned attribution for intents. No URL, ever.
+#[derive(Default, Clone, Copy)]
+struct IntentCounters {
+    /// Intents thrown away because the caller navigated explicitly.
+    discarded: u64,
+    /// Whether the last discard had that cause. One fixed word or none.
+    caller_override: bool,
+}
+
+impl IntentCounters {
+    fn to_json(self, pending: usize) -> Value {
+        json!({
+            "pending": pending,
+            "discarded_total": self.discarded,
+            "last_cause": if self.caller_override { "caller_override" } else { "none" },
+        })
+    }
+}
+
 /// The realm-side location seed for a document, used by the main frame and by
-/// every child frame so an embedded document reports its own address.
-fn location_script(url: &Url) -> String {
+/// every child frame so an embedded document reports its own address. `live`
+/// is true only where page script runs: a script-free child realm is seeded
+/// with the plain object, which no code in that realm can tell apart from the
+/// accessor form and which costs the owners far less (§15).
+fn location_script(url: &Url, live: bool) -> String {
     format!(
-        "__mcsLocation({})",
+        "__mcsLocation({}, {live})",
         json!({
             "href": url.as_str(),
             "origin": url.origin().ascii_serialization(),
@@ -1144,6 +1193,17 @@ impl History {
 
     /// A navigation commits the final URL: the forward entries are dropped and
     /// the oldest entry is evicted once the window is full.
+    /// Replace the entry at the current position: the ring's length and the
+    /// position do not move, which is what `location.replace` means.
+    fn replace(&mut self, url: &str) {
+        if self.entries.is_empty() {
+            self.entries.push(url.to_owned());
+            self.position = 0;
+            return;
+        }
+        self.entries[self.position] = url.to_owned();
+    }
+
     fn commit(&mut self, url: &str) {
         self.entries.truncate(self.position + 1);
         self.entries.push(url.to_owned());
@@ -2011,6 +2071,22 @@ struct TargetIo {
     tls: Option<std::sync::Arc<net::TlsClient>>,
 }
 
+impl TargetIo {
+    /// The working copy an abandoned candidate hands to the next link of a
+    /// script chain: what its fetches changed carries forward, because the
+    /// spend and the cookies it took are facts, and nothing else does.
+    fn clone_for_chain(&self) -> TargetIo {
+        TargetIo {
+            jar: self.jar.clone(),
+            storage: self.storage.clone(),
+            origin: self.origin.clone(),
+            document_host: self.document_host.clone(),
+            cookie_rejections: self.cookie_rejections,
+            tls: self.tls.clone(),
+        }
+    }
+}
+
 struct JarHooks<'a> {
     jar: &'a mut profile::Jar,
     document_host: Option<&'a str>,
@@ -2113,6 +2189,9 @@ struct Target {
     /// The main frame's pending timers. A child runs no scripts and therefore
     /// has none. They die with this document, because they live on it.
     timers: Timers,
+    /// The one navigation intent this document's own scripts raised, taken at
+    /// a boundary and never acted on inside an evaluation.
+    pending_intent: Option<NavigationIntent>,
     /// The main frame's id: minted with the target and kept for its life.
     frame_id: String,
     /// Document generation of the main frame: 1 for the first document,
@@ -2138,6 +2217,7 @@ struct Target {
 
 /// Where a document comes from: a court fixture file or a URL fetched under
 /// the network policy.
+#[derive(Clone)]
 enum Source {
     Fixture(String),
     Url(String),
@@ -2518,6 +2598,16 @@ struct Host {
     next_realm: u64,
     /// Saturating attribution for every timer outcome, across the host.
     timer_counters: TimerCounters,
+    /// Bounded attribution for navigation intents the host discarded.
+    intent_counters: IntentCounters,
+    /// Court-only: the one intent a suppressed consumption left pending, so
+    /// the discard an explicit navigation performs is reachable at all. In
+    /// ordinary operation this is always `None`, because every intent is
+    /// consumed at a boundary inside the operation that raised it.
+    held_intent: Option<NavigationIntent>,
+    /// Court-only (`--court-hold-intent 1`, and only with a court file):
+    /// suppress exactly one consumption.
+    court_hold_intent: bool,
     /// The one sink every realm this host builds shares. Because a drain adds
     /// to it where the work happens, a failed build, a replaced main or child
     /// document and a closed target all keep what they did.
@@ -3739,8 +3829,95 @@ impl Host {
             // a zero-delay one waits for the next boundary because this
             // boundary's due instant was taken before it existed.
             self.collect_timers(id, deadline);
+            // And it may have asked for another document. This is the
+            // boundary, so the navigation happens here and not inside the
+            // evaluation that asked for it.
+            if let Some(outcome) = self.consume_intent(id, deadline) {
+                outcome?;
+                return Ok(());
+            }
         }
         Ok(())
+    }
+
+    /// Read and clear the realm's intent slot. Called only at a boundary:
+    /// after an evaluation and its job drain, never between an activation's
+    /// two phases and never inside a lifecycle step.
+    fn take_intent(
+        realm: &Realm,
+        capability: &str,
+        deadline: Instant,
+        id: &str,
+    ) -> Option<NavigationIntent> {
+        let text = realm
+            .eval(&take_intent_script(capability), deadline, id)
+            .ok()?;
+        if text.is_empty() {
+            return None;
+        }
+        let value: Value = serde_json::from_str(&text).ok()?;
+        let kind = value.get("kind").and_then(Value::as_str)?.to_owned();
+        Some(NavigationIntent {
+            kind,
+            url: value.get("url").and_then(Value::as_str).map(str::to_owned),
+        })
+    }
+
+    /// Consume the intent a live document raised, at a boundary. Returns
+    /// `None` when there is none. The navigation itself goes through the same
+    /// path an activation's does, in sensitive mode, because a page's address
+    /// can carry page data.
+    fn consume_intent(
+        &mut self,
+        id: &str,
+        deadline: Instant,
+    ) -> Option<Result<Value, ControlError>> {
+        let capability = self.targets.get(id)?.realm.lifecycle.borrow().clone();
+        let intent = {
+            let target = self.targets.get(id)?;
+            Self::take_intent(&target.realm, &capability, deadline, id)?
+        };
+        if self.court_hold_intent && self.held_intent.is_none() {
+            // Court-only: exactly one consumption is suppressed, so an intent
+            // is pending when the next explicit navigation arrives.
+            self.held_intent = Some(intent);
+            return None;
+        }
+        let current = self.targets.get(id)?.url.clone();
+        let href = match intent.kind.as_str() {
+            "reload" => current.clone().map(|url| url.to_string()),
+            _ => match (&current, intent.url.as_deref()) {
+                (Some(url), Some(raw)) => url.join(raw).ok().map(|next| next.to_string()),
+                _ => None,
+            },
+        };
+        let Some(href) = href else {
+            return Some(Err(ControlError::new(
+                "invalid_request",
+                "the page asked for an address this host cannot resolve",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({"reason": "malformed_intent"}))));
+        };
+        let replace = intent.kind != "assign";
+        let outcome = self.navigate_with(id, &href, deadline, true);
+        if outcome.is_ok() {
+            // History follows the kind: assign adds an entry, replace and
+            // reload leave the ring's length where it was.
+            let committed = self.current_url(id).ok();
+            if let Some(committed) = committed {
+                match self.histories.get_mut(id) {
+                    Some(history) if replace => history.replace(&committed),
+                    Some(history) => history.commit(&committed),
+                    None => {
+                        self.histories
+                            .insert(id.to_owned(), History::new(&committed));
+                    }
+                }
+            }
+        }
+        Some(outcome)
     }
 
     /// The target-global revision: the base plus every live frame's counter.
@@ -4363,7 +4540,7 @@ impl Host {
         let id = format!("target_{}", self.next_target);
         let frame_id = format!("frame_{}", self.next_frame);
         let io = self.io_for(session, None)?;
-        let mut target = self.build_target(
+        let mut target = self.build_chain(
             &id,
             session,
             source,
@@ -4403,6 +4580,75 @@ impl Host {
         // failure with the target id, and its storage is read-only.
         self.commit_target_io(&id, deadline)?;
         Ok(summary)
+    }
+
+    /// A page's own script may ask for another document before this one is
+    /// committed. That is a finite chain inside one operation: at most
+    /// `MAX_SCRIPT_CHAIN` links, one deadline, one budget carried across them,
+    /// and only the last link ever becomes observable. It is not an HTTP
+    /// redirect and does not share that budget.
+    #[allow(clippy::too_many_arguments)]
+    fn build_chain(
+        &mut self,
+        id: &str,
+        session: &str,
+        source: Source,
+        budget: net::Budget,
+        frame_id: String,
+        generation: u64,
+        revision_base: u64,
+        deadline: Instant,
+        io: TargetIo,
+    ) -> Result<Target, ControlError> {
+        let mut source = source;
+        let mut budget = budget;
+        let mut io = io;
+        for _ in 0..=MAX_SCRIPT_CHAIN {
+            let target = self.build_target(
+                id,
+                session,
+                source.clone(),
+                budget,
+                frame_id.clone(),
+                generation,
+                revision_base,
+                deadline,
+                io,
+            )?;
+            let Some(intent) = target.pending_intent.clone() else {
+                return Ok(target);
+            };
+            // The abandoned candidate never becomes observable: its spend and
+            // its working copy carry forward, everything else is dropped here.
+            budget = target.budget.clone();
+            io = target.io.clone_for_chain();
+            let base = target.url.clone();
+            drop(target);
+            let next = match intent.kind.as_str() {
+                "reload" => base.clone().map(|url| url.to_string()),
+                _ => match (&base, intent.url.as_deref()) {
+                    (Some(url), Some(raw)) => url.join(raw).ok().map(|next| next.to_string()),
+                    _ => None,
+                },
+            };
+            let Some(next) = next else {
+                return Err(ControlError::new(
+                    "invalid_request",
+                    "the page asked for an address this host cannot resolve",
+                    false,
+                )
+                .scoped("target", id)
+                .details(json!({"reason":"malformed_intent"})));
+            };
+            source = Source::Url(next);
+        }
+        Err(ControlError::new(
+            "resource_limit",
+            "the page asked for too many documents in one operation",
+            false,
+        )
+        .scoped("target", id)
+        .details(json!({"reason":"navigation_chain_limit"})))
     }
 
     /// Build a complete target for one document: fetch or read it, parse
@@ -4594,7 +4840,7 @@ impl Host {
         );
         realm.eval(&seed, deadline, id)?;
         if let Some(base_url) = &base {
-            realm.eval(&location_script(base_url), deadline, id)?;
+            realm.eval(&location_script(base_url, true), deadline, id)?;
             io.origin = base_url.origin().ascii_serialization();
             io.document_host = base_url.host_str().map(|h| h.to_ascii_lowercase());
         } else {
@@ -4736,7 +4982,7 @@ impl Host {
                     deadline,
                     id,
                 )?;
-                realm.eval(&location_script(&response.url), deadline, id)?;
+                realm.eval(&location_script(&response.url, false), deadline, id)?;
                 realm.eval("__mcsComplete()", deadline, id)?;
                 realm.eval(INSTALL_JS, deadline, id)?;
                 Ok(realm)
@@ -4786,6 +5032,7 @@ impl Host {
             frames_skipped,
             base_target,
             timers: Timers::default(),
+            pending_intent: None,
         };
         let read_only = self
             .sessions
@@ -4862,6 +5109,16 @@ impl Host {
                 deadline,
                 &policy,
             )?;
+            // A step is a boundary. An intent raised in one abandons the
+            // remaining steps of this candidate: the document that replaces it
+            // runs its own lifecycle from the first phase.
+            if let Some(raised) = Self::take_intent(&target.realm, &capability, deadline, id) {
+                target.pending_intent = Some(raised);
+                break;
+            }
+        }
+        if target.pending_intent.is_none() {
+            target.pending_intent = Self::take_intent(&target.realm, &capability, deadline, id);
         }
 
         // Court-only seams: they do nothing unless the knobs are given.
@@ -5166,11 +5423,22 @@ impl Host {
     /// `target.navigate`: the document is replaced atomically and the final
     /// committed URL becomes the newest history entry, dropping any forward
     /// entries and evicting the oldest once the window is full.
+    /// An explicit instruction from the caller outranks anything the page
+    /// asked for: a pending intent is discarded before the operation begins,
+    /// counted, and its address is never recorded.
+    fn discard_pending_intent(&mut self) {
+        if self.held_intent.take().is_some() {
+            self.intent_counters.discarded = self.intent_counters.discarded.saturating_add(1);
+            self.intent_counters.caller_override = true;
+        }
+    }
+
     fn target_navigate(
         &mut self,
         arguments: &Value,
         deadline: Instant,
     ) -> Result<Value, ControlError> {
+        self.discard_pending_intent();
         let object = exact_object(arguments, &["target", "url"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let requested = object
@@ -5206,6 +5474,7 @@ impl Host {
         arguments: &Value,
         deadline: Instant,
     ) -> Result<Value, ControlError> {
+        self.discard_pending_intent();
         let object = exact_object(arguments, &["target"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let url = self.current_url(&id)?;
@@ -5227,6 +5496,7 @@ impl Host {
         arguments: &Value,
         deadline: Instant,
     ) -> Result<Value, ControlError> {
+        self.discard_pending_intent();
         let object = exact_object(arguments, &["target", "delta"])?;
         let id = typed_field(object, "target", "target")?.to_owned();
         let delta = object
@@ -5413,7 +5683,7 @@ impl Host {
                 deadline,
                 id,
             )?;
-            realm.eval(&location_script(&response.url), deadline, id)?;
+            realm.eval(&location_script(&response.url, false), deadline, id)?;
             realm.eval("__mcsComplete()", deadline, id)?;
             realm.eval(INSTALL_JS, deadline, id)?;
             Ok(realm)
@@ -5510,7 +5780,7 @@ impl Host {
         let built = match prepared {
             Ok((session, source, frame_id, generation, base_revision)) => {
                 match self.io_for(&session, None) {
-                    Ok(io) => self.build_target(
+                    Ok(io) => self.build_chain(
                         id,
                         &session,
                         source,
@@ -6278,6 +6548,19 @@ impl Host {
                     .scoped("target", &id),
             );
         }
+        // The handler may have asked for another document. The intent is
+        // consumed here, at this operation's boundary, so the answer below is
+        // never written before its outcome is known.
+        if let Some(navigated) = self.consume_intent(&id, deadline) {
+            let mut navigated = navigated?;
+            self.audit_action(&id, frame, &kind, "committed", value_bytes);
+            if form_action {
+                navigated["action"] = json!(kind);
+                navigated["role"] = outcome.get("role").cloned().unwrap_or(json!("form"));
+            }
+            return Ok(navigated);
+        }
+        let target = self.target_mut(&id)?;
         let after = Self::revision(target, deadline, &policy)?;
         self.audit_action(&id, frame, &kind, "applied", value_bytes);
         let mut result = json!({"kind":"action","target":id,"revision":after,"applied":true});
@@ -6412,6 +6695,7 @@ impl Host {
                         json!({"target":target.id,"network":lifetime.to_json(&target.budget)})
                     }).collect::<Vec<_>>()},
                 "jobs":self.jobs.get().to_json(),
+                "navigation_intents":self.intent_counters.to_json(usize::from(self.held_intent.is_some())),
                 "timers":self.timer_counters.to_json(
                     self.targets.values().map(|t| t.timers.len()).sum(),
                     self.targets.len()),
@@ -6525,6 +6809,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut court_frame_counter = 0u64;
     let mut court_timer_handle = 0u64;
     let mut court_lifecycle_abuse = false;
+    let mut court_hold_intent = false;
     let mut surface_snapshot_arm: Option<String> = None;
     let mut surface_court_gc = false;
     let mut visual_flag = false;
@@ -6575,6 +6860,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 court_timer_handle = pair[1].parse::<u64>().unwrap_or_else(|_| usage())
             }
             "--court-lifecycle-abuse" => court_lifecycle_abuse = pair[1] == "1",
+            "--court-hold-intent" => court_hold_intent = pair[1] == "1",
             "--surface-court-snapshot-arm" => {
                 if !matches!(
                     pair[1].as_str(),
@@ -6602,16 +6888,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
         None => None,
     };
-    let surface_court = match surface_court_path {
-        Some(path) => match surface::CourtLog::create(path) {
-            Ok(log) => Some(log),
-            Err(error) => {
-                eprintln!("--surface-court-file: {}", error.kind());
-                std::process::exit(64);
-            }
-        },
-        None => None,
-    };
+    // The held-intent seam exists only inside the private court mechanism:
+    // without a court file this host refuses to serve at all, so no ordinary
+    // operation can reach or reveal it.
+    if court_hold_intent && surface_court_path.is_none() {
+        eprintln!("--court-hold-intent: refused without --surface-court-file");
+        std::process::exit(64);
+    }
     // The https slice exists only with explicitly pinned public roots; the
     // ring provider is selected inside `load_pinned_roots` and nowhere else.
     let tls_roots = if pinned_roots.is_empty() {
@@ -6654,6 +6937,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     let surface_visual = visual_flag && visual_env;
 
+    // The private court log is created last, after every configuration error
+    // has already exited: an exit that skips `Drop` can then never leave the
+    // file behind. Its removal is the destructor's, so a normal return, an
+    // end of input and an unwinding panic all take it with them.
+    let surface_court = match surface_court_path {
+        Some(path) => match surface::CourtLog::create(path) {
+            Ok(log) => Some(log),
+            Err(error) => {
+                eprintln!("--surface-court-file: {}", error.kind());
+                std::process::exit(64);
+            }
+        },
+        None => None,
+    };
+
     let mut host = Host {
         fixture_root,
         policy,
@@ -6667,6 +6965,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         next_frame: 0,
         next_realm: 0,
         timer_counters: TimerCounters::default(),
+        intent_counters: IntentCounters::default(),
+        held_intent: None,
+        court_hold_intent,
         jobs: std::rc::Rc::new(std::cell::Cell::new(JobCounters::default())),
         ended_frames: Vec::new(),
         realms_retired_total: 0,
@@ -7299,6 +7600,7 @@ mod revision_tests {
             children: Vec::new(),
             frames_skipped: [0; FRAME_SKIP_REASONS.len()],
             timers: Timers::default(),
+            pending_intent: None,
         };
         for (index, counter) in counters.iter().enumerate() {
             target.children.push(ChildFrame {

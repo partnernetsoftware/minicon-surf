@@ -375,7 +375,46 @@
   g.__mcsStorageSeed = (json, readonly) => { store.entries = new Map(Object.entries(JSON.parse(json))); store.ops = []; store.readonly = !!readonly; };
   g.__mcsStorageTake = () => { const q = store.ops; store.ops = []; return JSON.stringify(q); };
   // The realm has no URL global; the host passes the parsed parts of the document URL.
-  g.__mcsLocation = (parts) => { g.location = { href: parts.href, origin: parts.origin, protocol: parts.protocol, host: parts.host, hostname: parts.hostname, port: parts.port, pathname: parts.pathname, search: parts.search, hash: parts.hash, toString() { return parts.href; } }; };
+  // The document's committed URL, and the one slot a page's navigation
+  // intent goes into. The slot is closure-owned: a page can write it only
+  // through the location members below, and only the host can read it.
+  let committed = null;
+  let intent = null;
+  const recordIntent = (kind, raw) => {
+    // Last write wins: one slot, overwritten, never a queue.
+    intent = { kind, url: raw === undefined ? null : String(raw) };
+  };
+  // `live` is true only for a realm that runs page script. A child frame is
+  // built script-free, so nothing there can read an accessor or raise an
+  // intent, and it keeps the plain immutable object it had before intents
+  // existed — the two forms are indistinguishable to every observer that can
+  // exist in that realm, and the accessor form is not free.
+  g.__mcsLocation = (parts, live) => {
+    committed = parts;
+    if (!live) {
+      g.location = { href: parts.href, origin: parts.origin, protocol: parts.protocol, host: parts.host, hostname: parts.hostname, port: parts.port, pathname: parts.pathname, search: parts.search, hash: parts.hash, toString() { return parts.href; } };
+      return;
+    }
+    const location = {
+      get href() { return committed.href; },
+      set href(value) { recordIntent("assign", value); },
+      assign(value) { recordIntent("assign", value); },
+      replace(value) { recordIntent("replace", value); },
+      reload() { recordIntent("reload", undefined); },
+      get origin() { return committed.origin; },
+      get protocol() { return committed.protocol; },
+      get host() { return committed.host; },
+      get hostname() { return committed.hostname; },
+      get port() { return committed.port; },
+      get pathname() { return committed.pathname; },
+      get search() { return committed.search; },
+      get hash() { return committed.hash; },
+      toString() { return committed.href; },
+    };
+    Object.defineProperty(g, "location", {
+      value: location, writable: false, configurable: false, enumerable: true,
+    });
+  };
   g.window = g; g.self = g; g.document = document;
   g.addEventListener = (type, fn) => addListener(g, type, fn);
   g.removeEventListener = (type, fn) => removeListener(g, type, fn);
@@ -412,7 +451,13 @@
   // been consumed, so only the first caller — the host, before page scripts —
   // can ever arm the bridge.
   Object.defineProperty(g, "__mcsArmLifecycle", {
-    value: (arm) => { delete g.__mcsArmLifecycle; return arm(runLifecycleStep, dispatchOn); },
+    value: (arm) => {
+      delete g.__mcsArmLifecycle;
+      // The taker empties the slot as it reads it, so an intent is consumed
+      // once and a refusal cannot retry itself.
+      const takeIntent = () => { const taken = intent; intent = null; return taken; };
+      return arm(runLifecycleStep, takeIntent);
+    },
     writable: false, configurable: true, enumerable: false,
   });
   g.Node = Node; g.Element = Element; g.Text = Text; g.Document = Document; g.Event = Event; g.MutationObserver = MutationObserver;
