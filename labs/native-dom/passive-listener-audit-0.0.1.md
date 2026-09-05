@@ -178,3 +178,30 @@ reason and passes only when the rung exists:
    needs it — proposed as a written position rather than an omission.
 4. **What the implementation court must falsify**: §6 entire, plus the §1
    table and the M1/M2 floors on the same binary.
+
+
+## 9. Ruled
+
+L3 is accepted at +400 bytes per child, headroom 16,438, floors and caps
+unmoved. The flag lives on the listener's record and the window is saved and
+restored around each invocation: a passive listener's `preventDefault()` is
+inert for its own event, a nested event stays cancellable in its own right,
+and nothing a nested dispatch does touches the outer event's passivity.
+`capture`, `once`, `handleEvent` and `window` must all compose, and a
+non-cancelable event is unchanged.
+
+**No type-based default passivity**, now or later: no event type is passive
+unless the page says so. That is a written position, not an omission.
+
+The **late `preventDefault`** — after the dispatch has returned — still writes
+the flag, and that is ruled acceptable: the host has already read its answer,
+so the page only misleads itself. It is page-self-deception, not authority,
+and the event is given no long-term memory of its passivity to close it.
+
+The implementation court is frozen before the code and covers the six
+authority falsifiers of §6, the §1 table, the compositions, the non-cancelable
+case, the ruled late-`preventDefault` behaviour and the absence of default
+passivity. The existing listener, capture, event, form, frame-action and
+navigation suites, and the redaction court, are rerun on the same binary; the
+M1 and M2 floors and the slack are measured there, and a failure stops the
+rung.
