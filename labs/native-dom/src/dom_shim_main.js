@@ -13,6 +13,29 @@ __mcsInternals((internals) => {
   const removeListener = internals.removeListener;
   const dispatchOn = internals.dispatchOn;
   const Element = internals.Element;
+  const eventStateOf = internals.eventStateOf;
+  // The page-facing view of an event, installed where a page can read it and
+  // nowhere else. Every one is read-only, exactly as it was in the base.
+  const eventView = {
+    isTrusted: () => false,
+    type: (state) => state.type,
+    bubbles: (state) => state.bubbles,
+    cancelable: (state) => state.cancelable,
+    composed: (state) => state.composed,
+    target: (state) => state.target,
+    currentTarget: (state) => state.currentTarget,
+    eventPhase: (state) => state.eventPhase,
+    dispatching: (state) => state.dispatching,
+    timeStamp: (state) => state.timeStamp,
+  };
+  for (const name of Object.keys(eventView)) {
+    const read = eventView[name];
+    Object.defineProperty(Event.prototype, name, {
+      get() { return read(eventStateOf(this)); },
+      configurable: true,
+      enumerable: false,
+    });
+  }
   // `classList` holds no tokens: the `class` attribute is the state and every
   // call reads and writes it, so a list can never disagree with the attribute
   // it describes. A call that changes nothing writes nothing, so it produces

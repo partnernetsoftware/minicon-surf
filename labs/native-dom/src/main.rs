@@ -222,6 +222,7 @@ const REALM_PROBE_JS: &str = r#"(() => [
   String(Object.keys(window).indexOf("__mcsInternals") >= 0),
   String(typeof window.document.body?.classList !== "undefined"),
   String(typeof window.CustomEvent !== "undefined"),
+  String("isTrusted" in window.Event.prototype && "timeStamp" in window.Event.prototype),
 ].join(":"))()"#;
 const OPERATIONS: &[&str] = &[
     "profile.create",
@@ -3939,6 +3940,8 @@ impl Host {
         let mut main_custom_event = false;
         let mut children_class_list = 0usize;
         let mut children_custom_event = 0usize;
+        let mut main_event_view = false;
+        let mut children_event_view = 0usize;
         for id in ids {
             let Some(target) = self.targets.get(&id) else {
                 continue;
@@ -3956,16 +3959,19 @@ impl Host {
                 let enumerable = fields.next().unwrap_or(true);
                 let class_list = fields.next().unwrap_or(false);
                 let custom_event = fields.next().unwrap_or(false);
+                let event_view = fields.next().unwrap_or(false);
                 if index == 0 {
                     main_present |= present;
                     main_enumerable |= enumerable;
                     main_class_list |= class_list;
                     main_custom_event |= custom_event;
+                    main_event_view |= event_view;
                 } else {
                     children_present += usize::from(present);
                     children_enumerable += usize::from(enumerable);
                     children_class_list += usize::from(class_list);
                     children_custom_event += usize::from(custom_event);
+                    children_event_view += usize::from(event_view);
                 }
             }
         }
@@ -3979,6 +3985,8 @@ impl Host {
             "main_custom_event": main_custom_event,
             "children_class_list": children_class_list,
             "children_custom_event": children_custom_event,
+            "main_event_view": main_event_view,
+            "children_event_view": children_event_view,
         }))
     }
 

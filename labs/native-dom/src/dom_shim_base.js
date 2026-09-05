@@ -82,19 +82,15 @@
         timeStamp: g.performance && g.performance.now ? g.performance.now() : 0,
       }]);
     }
-    // Synthesized by an agent, never by a person: `isTrusted` would be a
-    // claim that is not true.
-    get isTrusted() { return false; }
-    get type() { return invoke(weakMapGet, eventState, [this]).type; }
-    get bubbles() { return invoke(weakMapGet, eventState, [this]).bubbles; }
-    get cancelable() { return invoke(weakMapGet, eventState, [this]).cancelable; }
-    get composed() { return invoke(weakMapGet, eventState, [this]).composed; }
+    // The page-facing view of an event — `isTrusted`, `type`, `bubbles`,
+    // `cancelable`, `composed`, `target`, `currentTarget`, `eventPhase`,
+    // `dispatching` and `timeStamp` — is installed by the main extension, in
+    // the only realm that can read it. A child compiles none of it, and a
+    // member on this prototype costs every child 600 to 960 bytes.
+    // `defaultPrevented` stays because `Element.reset` reads it here; nothing
+    // else in this base may grow a dependency on an event's properties, and
+    // the host answers from hidden state through its own dispatcher.
     get defaultPrevented() { return invoke(weakMapGet, eventState, [this]).defaultPrevented; }
-    get target() { return invoke(weakMapGet, eventState, [this]).target; }
-    get currentTarget() { return invoke(weakMapGet, eventState, [this]).currentTarget; }
-    get eventPhase() { return invoke(weakMapGet, eventState, [this]).eventPhase; }
-    get dispatching() { return invoke(weakMapGet, eventState, [this]).dispatching; }
-    get timeStamp() { return invoke(weakMapGet, eventState, [this]).timeStamp; }
     preventDefault() { const s = invoke(weakMapGet, eventState, [this]); if (s.cancelable) s.defaultPrevented = true; }
     stopPropagation() { invoke(weakMapGet, eventState, [this]).stop = true; }
     stopImmediatePropagation() { const s = invoke(weakMapGet, eventState, [this]); s.stop = true; s.stopImmediate = true; }
@@ -488,7 +484,8 @@
   Object.defineProperty(g, "__mcsInternals", {
     value: (take) => {
       delete g.__mcsInternals;
-      return take({ g, document, Document, Element, Event, addListener, removeListener, dispatchOn });
+      return take({ g, document, Document, Element, Event, addListener, removeListener, dispatchOn,
+        eventStateOf: (event) => invoke(weakMapGet, eventState, [event]) });
     },
     writable: false, configurable: true, enumerable: false,
   });
