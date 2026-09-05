@@ -122,7 +122,7 @@
       }
       record("childList", this, { addedNodes, removedNodes: [] });
     }
-    removeChild(node) { if (node.parentNode !== this) throw new Error("NotFoundError"); this.__detach(node); record("childList", this, { addedNodes: [], removedNodes: [node] }); return node; }
+    removeChild(node) { if (node.parentNode !== this) throw new DOMExceptionCtor("the node is not a child of this node", "NotFoundError"); this.__detach(node); record("childList", this, { addedNodes: [], removedNodes: [node] }); return node; }
     replaceChildren(...nodes) {
       const removedNodes = this.childNodes.splice(0); for (const c of removedNodes) c.parentNode = null;
       const addedNodes = [];
@@ -358,25 +358,29 @@
     createTextNode(data) { return new Text(data); }
     getElementById(id) { id = String(id); for (const el of this.__descendants()) if (el.getAttribute("id") === id) return el; return null; }
   }
+  // Captured once, at base load, like every other intrinsic the base relies
+  // on: a page can replace globalThis.DOMException, and what this host
+  // throws must not be a constructor the page chose.
+  const DOMExceptionCtor = DOMException;
   const selectorCache = new Map();
   function parseSelector(selector) {
     selector = String(selector).trim();
     if (selectorCache.has(selector)) return selectorCache.get(selector);
     if (!selector || selector.includes(",") || selector.includes(">") || selector.includes("+") || selector.includes("~") || selector.includes(":")) {
-      throw new Error("SyntaxError: selector not supported by the native DOM slice: " + selector);
+      throw new DOMExceptionCtor("selector not supported by the native DOM slice: " + selector, "SyntaxError");
     }
     const chain = selector.split(/\s+/).map((compound) => {
       const parts = []; const re = /(\*|[a-zA-Z][\w-]*)|#([\w-]+)|\.([\w-]+)|\[([\w-]+)(?:=("[^"]*"|'[^']*'|[^\]]+))?\]/g;
       let m; let consumed = 0;
       while ((m = re.exec(compound))) {
-        if (m.index !== consumed) throw new Error("SyntaxError: selector not supported by the native DOM slice: " + selector);
+        if (m.index !== consumed) throw new DOMExceptionCtor("selector not supported by the native DOM slice: " + selector, "SyntaxError");
         consumed = re.lastIndex;
         if (m[1]) parts.push({ kind: "tag", value: m[1].toLowerCase() });
         else if (m[2]) parts.push({ kind: "id", value: m[2] });
         else if (m[3]) parts.push({ kind: "class", value: m[3] });
         else parts.push({ kind: "attr", name: m[4].toLowerCase(), value: m[5] === undefined ? null : m[5].replace(/^["']|["']$/g, "") });
       }
-      if (consumed !== compound.length || !parts.length) throw new Error("SyntaxError: selector not supported by the native DOM slice: " + selector);
+      if (consumed !== compound.length || !parts.length) throw new DOMExceptionCtor("selector not supported by the native DOM slice: " + selector, "SyntaxError");
       return parts;
     });
     selectorCache.set(selector, chain);

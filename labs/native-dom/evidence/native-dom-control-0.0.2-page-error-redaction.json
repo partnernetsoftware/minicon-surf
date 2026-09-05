@@ -177,7 +177,7 @@
  "checks_passed": 23,
  "checks_total": 23,
  "court": "native-dom page-authored text in a host error (control 0.0.2)",
- "host_sha256": "30004da4d05069e6defbf0d3d0c209a391ff9b0a6e294ef8b9423e5847bc9479",
+ "host_sha256": "7545d393b69cfba620c38cafd8f0a9eac90e6aa11c5947f6f275a4b6f987d39e",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until the host redacts page-authored text",

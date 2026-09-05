@@ -1,0 +1,225 @@
+{
+ "checks": [
+  {
+   "check": "S1: the base captures the constructor exactly once, at load",
+   "detail": {
+    "captures": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "S2: no throw site in the base still spells a name inside a message",
+   "detail": {
+    "stale_sites": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "S3: the slice is base-only, so the main extension captures nothing",
+   "detail": {
+    "named_in_main": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E1/E2: selector_query throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E1/E2: selector_all throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E1/E2: selector_closest throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E1/E2: selector_matches throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E3: removeChild throws NotFoundError with its legacy code",
+   "detail": {
+    "said": "NotFoundError|8|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E4: a page that replaces DOMException does not change the throw",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|isFake:false"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E5: nor does a page that replaces Error",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E6: classList keeps the vocabulary it has",
+   "detail": {
+    "empty": "SyntaxError|undefined|[object Error]|true",
+    "space": "InvalidCharacterError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E7: an unmodelled node kind and a string timer stay TypeErrors",
+   "detail": {
+    "clone": "TypeError|undefined|[object Error]|true",
+    "timer": "TypeError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E8: the message no longer carries the name as a prefix",
+   "detail": {
+    "said": "-1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E9: a child still runs no scripts, so it cannot observe the class",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E10: an uncaught refusal still says the host's fixed word only",
+   "detail": {
+    "code": "target_crashed",
+    "engine_error": "a script threw",
+    "token_present": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E1/E2: selector_query throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E1/E2: selector_all throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E1/E2: selector_closest throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E1/E2: selector_matches throws the standard selector refusal",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E3: removeChild throws NotFoundError with its legacy code",
+   "detail": {
+    "said": "NotFoundError|8|[object DOMException]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E4: a page that replaces DOMException does not change the throw",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]|isFake:false"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E5: nor does a page that replaces Error",
+   "detail": {
+    "said": "SyntaxError|12|[object DOMException]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E6: classList keeps the vocabulary it has",
+   "detail": {
+    "empty": "SyntaxError|undefined|[object Error]|true",
+    "space": "InvalidCharacterError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E7: an unmodelled node kind and a string timer stay TypeErrors",
+   "detail": {
+    "clone": "TypeError|undefined|[object Error]|true",
+    "timer": "TypeError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E8: the message no longer carries the name as a prefix",
+   "detail": {
+    "said": "-1"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E9: a child still runs no scripts, so it cannot observe the class",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E10: an uncaught refusal still says the host's fixed word only",
+   "detail": {
+    "code": "target_crashed",
+    "engine_error": "a script threw",
+    "token_present": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 27,
+ "checks_total": 27,
+ "court": "native-dom base error classes (control 0.0.2)",
+ "expected": {
+  "remove_child": "NotFoundError/8",
+  "selector": "SyntaxError/12",
+  "unchanged": [
+   "classList",
+   "dispatch",
+   "localStorage",
+   "cloneNode",
+   "setTimeout"
+  ]
+ },
+ "host_sha256": "7545d393b69cfba620c38cafd8f0a9eac90e6aa11c5947f6f275a4b6f987d39e",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the base captures the constructor and throws it",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary",
+  "the child-divergence criterion shows a child cannot observe the class; the bytes it pays are measured elsewhere",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true
+}

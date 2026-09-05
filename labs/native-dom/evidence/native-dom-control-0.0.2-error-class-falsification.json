@@ -1,0 +1,225 @@
+{
+ "checks": [
+  {
+   "check": "S1: the base captures the constructor exactly once, at load",
+   "detail": {
+    "captures": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "S2: no throw site in the base still spells a name inside a message",
+   "detail": {
+    "stale_sites": 4
+   },
+   "passed": false
+  },
+  {
+   "check": "S3: the slice is base-only, so the main extension captures nothing",
+   "detail": {
+    "named_in_main": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E1/E2: selector_query throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E1/E2: selector_all throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E1/E2: selector_closest throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E1/E2: selector_matches throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E3: removeChild throws NotFoundError with its legacy code",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E4: a page that replaces DOMException does not change the throw",
+   "detail": {
+    "said": "Error|undefined|[object Error]|isFake:false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E5: nor does a page that replaces Error",
+   "detail": {
+    "said": "undefined|undefined|[object Object]"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E6: classList keeps the vocabulary it has",
+   "detail": {
+    "empty": "SyntaxError|undefined|[object Error]|true",
+    "space": "InvalidCharacterError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E7: an unmodelled node kind and a string timer stay TypeErrors",
+   "detail": {
+    "clone": "TypeError|undefined|[object Error]|true",
+    "timer": "TypeError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E8: the message no longer carries the name as a prefix",
+   "detail": {
+    "said": "0"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] E9: a child still runs no scripts, so it cannot observe the class",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] E10: an uncaught refusal still says the host's fixed word only",
+   "detail": {
+    "code": "target_crashed",
+    "engine_error": "a script threw",
+    "token_present": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E1/E2: selector_query throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E1/E2: selector_all throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E1/E2: selector_closest throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E1/E2: selector_matches throws the standard selector refusal",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E3: removeChild throws NotFoundError with its legacy code",
+   "detail": {
+    "said": "Error|undefined|[object Error]|true"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E4: a page that replaces DOMException does not change the throw",
+   "detail": {
+    "said": "Error|undefined|[object Error]|isFake:false"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E5: nor does a page that replaces Error",
+   "detail": {
+    "said": "undefined|undefined|[object Object]"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E6: classList keeps the vocabulary it has",
+   "detail": {
+    "empty": "SyntaxError|undefined|[object Error]|true",
+    "space": "InvalidCharacterError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E7: an unmodelled node kind and a string timer stay TypeErrors",
+   "detail": {
+    "clone": "TypeError|undefined|[object Error]|true",
+    "timer": "TypeError|undefined|[object Error]|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E8: the message no longer carries the name as a prefix",
+   "detail": {
+    "said": "0"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] E9: a child still runs no scripts, so it cannot observe the class",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] E10: an uncaught refusal still says the host's fixed word only",
+   "detail": {
+    "code": "target_crashed",
+    "engine_error": "a script threw",
+    "token_present": false
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 9,
+ "checks_total": 27,
+ "court": "native-dom base error classes (control 0.0.2)",
+ "expected": {
+  "remove_child": "NotFoundError/8",
+  "selector": "SyntaxError/12",
+  "unchanged": [
+   "classList",
+   "dispatch",
+   "localStorage",
+   "cloneNode",
+   "setTimeout"
+  ]
+ },
+ "host_sha256": "30004da4d05069e6defbf0d3d0c209a391ff9b0a6e294ef8b9423e5847bc9479",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the base captures the constructor and throws it",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the M1 and M2 floors and the main-only slack are measured by the child-frame and shim-footprint courts on the same binary",
+  "the child-divergence criterion shows a child cannot observe the class; the bytes it pays are measured elsewhere",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

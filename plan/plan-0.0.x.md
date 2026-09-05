@@ -1282,8 +1282,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
-- [ ] Design-only, nothing implemented and no court frozen: standard error
-  classes for the base's own throws
+- [~] Implemented and qualified on the native route, court 27 of 27: standard
+  error classes for the base's own throws
   (`labs/native-dom/error-class-audit-0.0.1.md`), the deferred half of the
   error-name slice. Candidate A measured on top of `d46ee3c`: the selector
   engine and `removeChild` throw the engine's own `DOMException` with the
@@ -1307,7 +1307,22 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   `e.name` remains the portable thing. Existing courts on the candidate:
   redaction 23/23, element-view 23/23, element-api 28/28, event-fidelity 62/62,
   dataset 15/15, child-frames 82/82. The class still never reaches `details`,
-  by ruling. G1, G3, P6 and G6 stay open.
+  by ruling. **Ruled and built**: the four selector entry points throw the
+  captured `DOMException` named `SyntaxError` with `code` 12, `removeChild`
+  one named `NotFoundError` with `code` 8, and the scope stops there —
+  `classList`, the dispatch guard, storage, `cloneNode` and the timers keep
+  what they had, so this host carries two error vocabularies and not three.
+  The court was frozen one commit ahead of the code and reads **27 of 27**
+  against **9 of 27** on the build before. Two of those failures are the ones
+  worth having frozen: E5 answered `undefined|undefined|[object Object]`,
+  because with `Error` replaced by the page the base's own `new Error` built
+  the page's constructor, and E8 answered 0, the index of the name inside the
+  message. M1 224,762, M2 1,571,836, main-only slack 38,800 — the 304 bytes
+  per child the audit priced on two earlier baselines, against unchanged
+  floors, with 20,998 bytes of M1 headroom. The redaction still holds over the
+  new class: its own court is 23/23 here and E10 re-checks it inside the error
+  court, so a class change cannot pass itself off as a leak repair. Eighteen
+  receipts rerun on the binary. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 23 of 23:
   page-authored text in a host error
   (`labs/native-dom/page-error-redaction-design-0.0.1.md`). The defect is one
