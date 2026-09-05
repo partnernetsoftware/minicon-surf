@@ -44,7 +44,7 @@ JOBS = load_module("job_deadline_court", Path(__file__).with_name("job-deadline-
 
 # Each probe writes into its own slot, because one long string is truncated by
 # the snapshot's byte bound and a truncated answer is not an answer.
-SLOTS = 28
+SLOTS = 30
 
 
 def page(script, extra=""):
@@ -100,8 +100,12 @@ probe('add_remove_during', function(){
   t.dispatchEvent(new Event('d',{})); return hit.join(',');
 });
 probe('readd_during', function(){
-  var hit=[]; var second=function(){ hit.push('second'); };
+  // The re-add happens once: a listener registered during a dispatch is not
+  // called by that dispatch, so a fixture that re-registers on every dispatch
+  // would never call it at all and would prove nothing (§14.5).
+  var hit=[]; var done=false; var second=function(){ hit.push('second'); };
   t.addEventListener('r1', function(){ hit.push('first');
+    if (done) return; done = true;
     t.removeEventListener('r1', second); t.addEventListener('r1', second); });
   t.addEventListener('r1', second);
   t.dispatchEvent(new Event('r1',{}));
@@ -109,6 +113,29 @@ probe('readd_during', function(){
   hit = [];
   t.dispatchEvent(new Event('r1',{}));
   return inThisOne + '/' + hit.join(',');
+});
+probe('same_callback_two_targets', function(){
+  // Identity is the registration: removing this callback from the target
+  // must not silence the ancestor's own registration of it (§15).
+  var hit=[]; var shared=function(ev){ hit.push(ev.currentTarget===t?'target':'ancestor'); };
+  t.addEventListener('r5', function(){ t.removeEventListener('r5', shared); });
+  t.addEventListener('r5', shared);
+  inner.addEventListener('r5', shared);
+  t.dispatchEvent(new Event('r5',{bubbles:true}));
+  return hit.join(',') || 'none';
+});
+probe('same_callback_two_types', function(){
+  // The removal happens inside a NESTED dispatch, while the outer one is
+  // still walking its own snapshot: it must reach the nested type's
+  // registration and nothing else. A removal broadcast to every dispatch in
+  // flight would silence the outer registration too (§15).
+  var hit=[]; var shared=function(ev){ hit.push(ev.type); };
+  t.addEventListener('r6', function(){ t.dispatchEvent(new Event('r7',{})); });
+  t.addEventListener('r6', shared);
+  t.addEventListener('r7', shared);
+  t.addEventListener('r7', function(){ t.removeEventListener('r7', shared); });
+  t.dispatchEvent(new Event('r6',{}));
+  return hit.join(',') || 'none';
 });
 probe('preset_stop', function(){
   var hit=[]; t.addEventListener('r2', function(){ hit.push('ran'); });
@@ -287,6 +314,12 @@ probe('window_hop', function(){
                 expect(tag + "a listener removed and re-added during a dispatch waits for the next one",
                        said.get("readd_during") == "first/first,second",
                        {"said": said.get("readd_during")})
+                expect(tag + "removing a callback from one target leaves the ancestor's own registration alone",
+                       said.get("same_callback_two_targets") == "ancestor",
+                       {"said": said.get("same_callback_two_targets")})
+                expect(tag + "and removing it under one type does not reach a nested dispatch of another",
+                       said.get("same_callback_two_types") == "r7,r6",
+                       {"said": said.get("same_callback_two_types")})
                 expect(tag + "a stop flag set before a dispatch holds for it, and is cleared by its end",
                        said.get("preset_stop") == "none/ran", {"said": said.get("preset_stop")})
                 expect(tag + "dispatching something that is not an event is refused, not reported",

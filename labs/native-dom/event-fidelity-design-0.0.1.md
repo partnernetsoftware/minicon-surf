@@ -513,3 +513,35 @@ implementations apart:
 - the same callback registered under two types, with a nested dispatch of the
   second type inside a listener for the first: removing the first type's
   registration must not suppress the second's.
+
+
+## 16. A frozen cap this slice is failing, reported rather than moved
+
+The navigation court's differential soak is failing on this build and I am
+stopping on it rather than continuing.
+
+Measured, three runs per build, same machine, same session:
+
+| build | navigation court | excess (cap 1,048,576) | tail slope (cap 65,536) |
+| --- | --- | --- | --- |
+| `2b6d985fe682…`, before the Event slice | 90/90, 90/90 | — | — |
+| `abd1ed744721…`, Event round one | 90/90, 90/90 | 1,032,192 measured once | 65,536 measured once |
+| this build, Event round two | 88/90, 90/90, 89/90 | 1,064,960 and 1,097,728 | 81,920 |
+
+Round one already sat **at** both lines — 98.4% of the excess cap and exactly
+100% of the slope cap — so the margin was gone before round two added
+anything. Round two's growth is what tips it over, intermittently.
+
+I attempted exactly one narrowing, replacing the per-registration records with
+a per-dispatch set of removed callbacks. It was **wrong** (§15) and is
+reverted; the criteria that catch it are in the court. I have not attempted a
+second, I have moved no cap, and I am not presenting this slice as qualified.
+
+What is true regardless of the ruling: the M1 and M2 floors hold (234,042 and
+1,636,012 against 245,760 and 1,720,320), the event court is 40 of 40, and
+every other court on this binary passes. What is failing is a retention
+criterion the README already describes as **cross-batch narrow on the default
+allocator** — but this is the first time it has failed repeatedly on one
+binary while passing repeatedly on the two before it, which is a different
+thing from the flake that route has shown before, and I am not going to call
+it one.

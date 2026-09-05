@@ -142,21 +142,30 @@
     if (!map) { map = new Map(); listenerStore.set(target, map); }
     return map;
   }
+  // A registration is its own record, and identity is the record rather than
+  // the callback: the same function registered on two targets, or under two
+  // types, is two registrations, and removing one says nothing about the
+  // other. A dispatch snapshots records, so removal during it is seen by
+  // exactly the dispatches whose snapshot holds that record, and a re-add
+  // makes a new record no snapshot in flight contains. The type is a string,
+  // whatever the page passed, because an event's type is one too.
   function addListener(target, type, fn) {
     if (typeof fn !== "function") return;
+    const key = String(type);
     const map = listenersOf(target);
-    if (!map.has(type)) map.set(type, []);
-    const list = map.get(type);
+    if (!map.has(key)) map.set(key, []);
+    const list = map.get(key);
     // The same target, type and function identity is registered once: a
     // repeat is a no-op, as the standard has it within this host's bounds.
-    if (list.indexOf(fn) >= 0) return;
-    list.push(fn);
+    for (const record of list) if (record.callback === fn) return;
+    list.push({ callback: fn, removed: false });
   }
   function removeListener(target, type, fn) {
-    const list = listenersOf(target).get(type);
+    const list = listenersOf(target).get(String(type));
     if (!list) return;
-    const at = list.indexOf(fn);
-    if (at >= 0) list.splice(at, 1);
+    for (let i = 0; i < list.length; i += 1) {
+      if (list[i].callback === fn) { list[i].removed = true; list.splice(i, 1); return; }
+    }
   }
   // The path is the node chain, and then — only for an event that bubbles —
   // the window, which is the document's parent *event target* and never a
@@ -164,7 +173,13 @@
   // stays null.
   function dispatchOn(target, event) {
     const state = eventState.get(event);
-    if (!state) return true;
+    // Dispatching something that is not an event is refused: answering `true`
+    // would report a dispatch that never happened.
+    if (!state) {
+      const error = new Error("the argument is not an event");
+      error.name = "TypeError";
+      throw error;
+    }
     // An event already in flight is refused before anything is written, so
     // the dispatch in progress is not corrupted — and a handler that
     // dispatches the event it was handed no longer recurses until the stack
@@ -174,10 +189,11 @@
       error.name = "InvalidStateError";
       throw error;
     }
+    // Nothing is reset here: a stop flag set before a dispatch is effective
+    // for that dispatch, and the flags are cleared when this one completes.
     state.dispatching = true;
-    state.stop = false;
-    state.stopImmediate = false;
     state.target = target;
+
     const path = [];
     if (target && typeof target.nodeType === "number") {
       for (let n = target; n; n = n.parentNode) path.push(n);
@@ -192,15 +208,16 @@
       for (const node of path) {
         state.currentTarget = node;
         state.eventPhase = node === target ? AT_TARGET : BUBBLING_PHASE;
+        if (state.stop || state.stopImmediate) break;
         const list = listenersOf(node).get(state.type);
         if (list) {
           // The list is copied so a listener added during this dispatch is
-          // not called by it, and membership is rechecked so one removed
-          // during it is not called either.
-          for (const fn of [...list]) {
-            if (list.indexOf(fn) < 0) continue;
-            try { fn.call(node, event); } catch (error) {}
+          // not called by it, and one removed during it stays silent even if
+          // the same function is registered again.
+          for (const record of [...list]) {
+            if (record.removed) continue;
             if (state.stopImmediate) break;
+            try { record.callback.call(node, event); } catch (error) {}
           }
         }
         if (state.stop || !state.bubbles) break;
@@ -211,6 +228,8 @@
       state.currentTarget = null;
       state.eventPhase = NONE;
       state.dispatching = false;
+      state.stop = false;
+      state.stopImmediate = false;
     }
     return !state.defaultPrevented;
   }
