@@ -185,3 +185,26 @@ touches it, and nothing in C1 is reachable from a child at all.
 One court run per variant, one machine, scratch builds removed. `control-churn`
 is not part of the evidence because it needs a surface binary. The navigation
 soak was not run at all, by standing ruling.
+
+
+## 9. The rulings
+
+**9.1 C1 is accepted**: exactly ten members — `firstChild`, `lastChild`,
+`parentElement`, `appendChild`, `remove`, `innerText`, `defaultValue`,
+`focus`, `blur`, `submit` — move to the main extension. A second
+`Element.prototype` divergence between a main realm and a child one is
+accepted on the same ground as `Event`'s: invisible in a script-free child.
+Host scripts and child-capable scripts must not depend on any moved member,
+and the child snapshot, action and reset invariants are unchanged.
+
+**9.2 C2 is closed by scope, not by measurement.** `contains`, `matches`,
+`removeAttribute` and `replaceChildren` stay in the base. Their dependencies —
+mutation recording, the selector engine's internals, `__detach` and `__attrs`
+— would widen the one-shot handle into a second coupling for about 2.6 KB,
+and that is not worth it in this increment. Recorded as a candidate awaiting
+its own dependency audit, not as a saving forgone by accident.
+
+**9.3 `addEventListener` and `removeEventListener` stay in the base**, with
+`dispatchOn`. Moving only the registration half would split one listener model
+across two files for about 1.3 KB, and that is not authorized. My §7.3
+recommendation stands as ruled.
