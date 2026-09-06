@@ -1302,6 +1302,35 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: readonly profiles
+  (`labs/native-dom/readonly-profile-audit-0.0.1.md`). **The field that made
+  this look cheap is already taken and means something else**: `read_only` is a
+  **fail-closed latch**, set when a write fails to commit to the sealed store,
+  after which writes are refused `commit_failed: "storage is read-only after an
+  earlier failed commit"` — and it is **court-pinned** at
+  `profile-court.py:326`. A client reading it today learns *this profile
+  broke*, not *you asked for a profile that does not write*. So the report
+  exists but is spoken for, and the triage's "cheapest capability" framing was
+  too quick. Measured protocol surface: `profile.create` accepts exactly
+  `{persistence, name}` and `profile.policy.set` exactly
+  `{session, network, permissions}`, both enforced by the host rather than by
+  `check_contract.py`, which pins the operation enum and envelope — so a mode
+  is a host argument change plus contract examples, not a schema-enum change.
+  Recommended shape: a `mode` argument on `profile.create` reported as **its
+  own field**, leaving `read_only` alone so the frozen criterion keeps passing;
+  policy.set is the wrong scope (session, not profile) and a new operation
+  grows the closed enum for no gain. Four further recommendations, each a
+  ruling: the mode belongs to **the open and is not persisted**, so one
+  mistaken call cannot make a profile permanently unwritable; `ephemeral` plus
+  `readonly` is refused as `invalid_request`; the **writer lock is still
+  taken**, because letting a readonly attach skip it would quietly add
+  multiple-reader concurrency with its own consistency questions; and the two
+  refusals — asked-for versus latched — must be **typed differently**, which is
+  the constraint that makes this more than a flag. Memory, retention and
+  redaction are all nil: profiles measure about 16 KB and the mode is a
+  two-word closed vocabulary. A nine-criterion court draft is in §6, whose
+  fifth criterion is the important one: the latch still behaves, so the old
+  meaning was not eaten. G1, G3, P6 and G6 stay open.
 - [ ] Design-only host-side triage of P6's six remaining capabilities
   (`labs/native-dom/p6-host-triage-0.0.1.md`), each measured black-box rather
   than read off the plan. **Permissions**: the host already reports
