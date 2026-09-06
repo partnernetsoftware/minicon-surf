@@ -2260,6 +2260,16 @@ struct Profile {
     download_bytes: usize,
 }
 
+/// What a fork carries from its source: the committed jar, the committed
+/// storage and the policy. Never the DEK, the lock, the latch, the download
+/// spend or the source's name -- a child that recorded its parent would be a
+/// way for one profile's identity to leak into another's record.
+struct ForkSource {
+    jar: profile::Jar,
+    storage: profile::Storage,
+    policy: ProfilePolicy,
+}
+
 /// A target's working copy of its profile's jar and storage, synced from the
 /// profile before an operation and committed back after it.
 #[derive(Debug, Clone)]
@@ -4637,12 +4647,12 @@ impl Host {
         let object = arguments
             .as_object()
             .ok_or_else(|| invalid("arguments must be an object"))?;
-        let allowed = ["persistence", "name"];
+        let allowed = ["persistence", "name", "from"];
         if !object.contains_key("persistence")
             || object.keys().any(|k| !allowed.contains(&k.as_str()))
         {
             return Err(invalid(
-                "profile.create accepts persistence and an optional name",
+                "profile.create accepts persistence, an optional name and an optional source",
             ));
         }
         let persistent = match string_field(object, "persistence")? {
@@ -4650,8 +4660,15 @@ impl Host {
             "persistent" => true,
             _ => return Err(invalid("persistence must be ephemeral or persistent")),
         };
+        // A fork reads the source, seals a child of its own, and leaves the
+        // source exactly as it found it. The source is settled here, before
+        // either persistence path runs, because both share every refusal.
+        let inherited = match object.get("from") {
+            None => None,
+            Some(_) => Some(self.source_for_fork(typed_field(object, "from", "profile")?)?),
+        };
         if persistent {
-            return self.profile_create_persistent(object);
+            return self.profile_create_persistent(object, inherited);
         }
         let name = match object.get("name") {
             None => None,
@@ -4693,28 +4710,125 @@ impl Host {
                 id: id.clone(),
                 name: name.clone(),
                 persistent: false,
-                jar: profile::Jar::default(),
-                storage: profile::Storage::default(),
+                jar: inherited
+                    .as_ref()
+                    .map(|source| source.jar.clone())
+                    .unwrap_or_default(),
+                storage: inherited
+                    .as_ref()
+                    .map(|source| source.storage.clone())
+                    .unwrap_or_default(),
                 dek: None,
                 directory: None,
                 read_only: false,
                 lock: None,
                 tls: self.tls_client(),
-                policy: ProfilePolicy::default(),
+                // The policy is inherited and said out loud; the download
+                // counters are live state and start full, whatever the source
+                // has spent.
+                policy: inherited
+                    .as_ref()
+                    .map(|source| source.policy)
+                    .unwrap_or_default(),
                 downloads: 0,
                 download_bytes: 0,
             },
         );
         Ok(
-            json!({"kind":"profile","profile":id,"name":name,"persistence":"ephemeral","created":true}),
+            json!({"kind":"profile","profile":id,"name":name,"persistence":"ephemeral",
+                  "created":true,"copied":inherited.is_some(),
+                  "inherited":inherited.as_ref().map(|_| json!(["cookies","storage","policy"]))}),
         )
     }
 
     /// D1: a persistent profile exists only when the keychain-backed store
     /// can seal its first record; nothing is written before that succeeds.
+    /// What a fork may copy, read under the source's own writer lock.
+    ///
+    /// The lock is the whole point: it is taken here, held while the record is
+    /// read back from disk, and released before this returns. Without it the
+    /// fork would copy whatever this host adopted at startup, which another
+    /// host may since have replaced -- a stale commit, silently.
+    fn source_for_fork(&mut self, source_id: &str) -> Result<ForkSource, ControlError> {
+        let refuse = |code: &'static str, message: &'static str, reason: &'static str| {
+            ControlError::new(code, message, false)
+                .scoped("profile", source_id)
+                .details(json!({ "reason": reason }))
+        };
+        let source = self
+            .profiles
+            .get(source_id)
+            .ok_or_else(|| not_found("profile", source_id))?;
+        if !source.persistent {
+            return Err(refuse(
+                "invalid_request",
+                "an ephemeral profile has no record to copy",
+                "ephemeral_source",
+            ));
+        }
+        // A live session -- readonly included -- holds the lock this needs,
+        // and readonly is not an exception: it is still a session.
+        if self.sessions.values().any(|s| s.profile_id == source_id) {
+            return Err(ControlError::new(
+                "resource_limit",
+                "this profile owns one live session; close it first",
+                true,
+            )
+            .scoped("profile", source_id)
+            .details(json!({"reason":"source_in_use"})));
+        }
+        let directory = source.directory.clone().ok_or_else(|| {
+            refuse(
+                "internal",
+                "the source has no directory",
+                "source_directory",
+            )
+        })?;
+        let held = match profile::try_lock(&directory) {
+            Ok(Some(file)) => file,
+            Ok(None) => {
+                return Err(ControlError::new(
+                    "profile_locked",
+                    "another host holds this profile's writer lock",
+                    true,
+                )
+                .scoped("profile", source_id));
+            }
+            Err(error) => return Err(store_error(error, source_id)),
+        };
+        // Read the record back from disk under the lock rather than trusting
+        // what this host has in memory.
+        let copied = (|| {
+            let key_source = self.key_source.as_ref()?;
+            let bytes = std::fs::read(directory.join(profile::RECORD_FILE)).ok()?;
+            let (_dek, data) = profile::open_record(key_source, source_id, &bytes).ok()?;
+            Some(data)
+        })();
+        drop(held);
+        let source = self.profiles.get(source_id).expect("source still exists");
+        let copied = copied.unwrap_or_else(|| profile::RecordData {
+            persistent_cookies: source.jar.persistent.clone(),
+            storage: source.storage.clone(),
+            online: source.policy.online,
+            allow_by_default: source.policy.allow_by_default,
+        });
+        Ok(ForkSource {
+            jar: profile::Jar {
+                persistent: copied.persistent_cookies,
+                volatile: Vec::new(),
+            },
+            storage: copied.storage,
+            policy: ProfilePolicy {
+                online: copied.online,
+                allow_by_default: copied.allow_by_default,
+            },
+        })
+    }
+
     fn profile_create_persistent(
         &mut self,
         object: &Map<String, Value>,
+        inherited: Option<ForkSource>,
     ) -> Result<Value, ControlError> {
         let (Some(root), Some(source)) = (self.profile_root.clone(), self.key_source.as_ref())
         else {
@@ -4751,9 +4865,21 @@ impl Host {
             ));
         }
         let dek = profile::random_bytes(32).map_err(|e| store_error(e, &id))?;
+        // A fork seals the copied record under the child's own id and its own
+        // fresh key. The source's file is never opened for writing, so it is
+        // byte-for-byte what it was.
+        let record = inherited
+            .as_ref()
+            .map(|copied| profile::RecordData {
+                persistent_cookies: copied.jar.persistent.clone(),
+                storage: copied.storage.clone(),
+                online: copied.policy.online,
+                allow_by_default: copied.policy.allow_by_default,
+            })
+            .unwrap_or_default();
         // Seal first: a missing or locked keychain fails here, before any file.
-        let bytes = profile::seal_record(source, &id, &dek, &profile::RecordData::default())
-            .map_err(|e| store_error(e, &id))?;
+        let bytes =
+            profile::seal_record(source, &id, &dek, &record).map_err(|e| store_error(e, &id))?;
         let directory =
             profile::create_profile_dir(&root, name).map_err(|e| store_error(e, &id))?;
         if let Err(error) = profile::commit_record(&directory, &bytes) {
@@ -4768,20 +4894,31 @@ impl Host {
                 id: id.clone(),
                 name: Some(name.to_owned()),
                 persistent: true,
-                jar: profile::Jar::default(),
-                storage: profile::Storage::default(),
+                jar: inherited
+                    .as_ref()
+                    .map(|copied| copied.jar.clone())
+                    .unwrap_or_default(),
+                storage: inherited
+                    .as_ref()
+                    .map(|copied| copied.storage.clone())
+                    .unwrap_or_default(),
                 dek: Some(dek),
                 directory: Some(directory),
                 read_only: false,
                 lock: None,
                 tls: self.tls_client(),
-                policy: ProfilePolicy::default(),
+                policy: inherited
+                    .as_ref()
+                    .map(|copied| copied.policy)
+                    .unwrap_or_default(),
                 downloads: 0,
                 download_bytes: 0,
             },
         );
         Ok(
-            json!({"kind":"profile","profile":id,"name":name,"persistence":"persistent","created":true,"store":source.mode.name()}),
+            json!({"kind":"profile","profile":id,"name":name,"persistence":"persistent",
+                  "created":true,"store":source.mode.name(),"copied":inherited.is_some(),
+                  "inherited":inherited.as_ref().map(|_| json!(["cookies","storage","policy"]))}),
         )
     }
 

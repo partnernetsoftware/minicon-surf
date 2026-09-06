@@ -163,9 +163,15 @@ def validate_request(document):
         # is adopted at startup and never passes through create again, so the
         # mode belongs to the open — see session.open below.
         arguments = document["arguments"]
-        allowed = {"persistence", "name"}
+        # `from` names the profile a fork copies. The contract sees an opaque
+        # id: whether it exists, is persistent, or is in use is the host's
+        # answer, not this one's.
+        allowed = {"persistence", "name", "from"}
         require("persistence" in arguments and set(arguments) <= allowed,
                 "profile.create arguments differ")
+        if "from" in arguments:
+            require(OBJECT_ID["profile"].fullmatch(str(arguments["from"])),
+                    "the source is not a profile id")
         require(arguments["persistence"] in ("ephemeral", "persistent"),
                 "profile persistence differs")
         if "name" in arguments:
@@ -733,6 +739,25 @@ def main():
     oversized_name = json.loads(json.dumps(download_success))
     oversized_name["result"]["reported_name"] = "x" * (MAX_DOWNLOAD_NAME_BYTES + 1)
     expect_invalid(oversized_name, validate_download_answer)
+
+    # The fork: one argument, an opaque source id, and an answer that says
+    # what it inherited rather than leaving a client to assume.
+    fork_request = load_bounded(examples / "profile-create-from.request.json", MAX_REQUEST_BYTES)
+    fork_success = load_bounded(examples / "profile-create-from.success.json", MAX_RESPONSE_BYTES)
+    validate_request(fork_request)
+    validate_response(fork_success)
+    require(fork_request["request_id"] == fork_success["request_id"],
+            "fork success does not echo request ID")
+    require(fork_success["result"]["copied"] is True, "the answer says it copied")
+    require(fork_success["result"]["inherited"] == ["cookies", "storage", "policy"],
+            "the answer names what it inherited")
+    require(fork_success["result"]["name"] != fork_request["arguments"]["from"],
+            "the child is not its source")
+    # The source is a typed id, never a path or a name.
+    for bad in ("alpha", "/tmp/alpha", "profile_alpha/../beta", ""):
+        asked = json.loads(json.dumps(fork_request))
+        asked["arguments"]["from"] = bad
+        expect_invalid(asked, validate_request)
 
     # And the profile's own field set, which the mode does not join.
     create_request = {

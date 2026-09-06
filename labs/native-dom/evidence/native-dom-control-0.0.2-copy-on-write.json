@@ -3,38 +3,47 @@
   {
    "check": "F1: the contract takes {persistence, name, from} and the enum is still 26",
    "detail": {
-    "example": false,
+    "example": true,
     "operations": 26
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F7: a source with a live session is refused, and nothing is created",
    "detail": {
     "child_on_disk": false,
-    "code": "invalid_request"
+    "code": "resource_limit"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F3: the parent's record is byte-for-byte unchanged by the fork",
    "detail": {
-    "forked": false,
+    "forked": true,
     "unchanged": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F3b: the child is sealed under its own identity",
    "detail": {
-    "child": null
+    "child": "profile_beta"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F2: the child reproduces the cookies and storage it was copied from",
    "detail": {
-    "child": {},
+    "child": {
+     "cookie_bytes": 49,
+     "cookies": 1,
+     "policy": {
+      "network": "online",
+      "permissions": "allow_by_default",
+      "permissions_effect": "recorded_only"
+     },
+     "storage": 2
+    },
     "parent": {
      "cookie_bytes": 49,
      "cookies": 1,
@@ -46,19 +55,23 @@
      "storage": 2
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F11: the policy is inherited",
    "detail": {
-    "child_policy": null,
+    "child_policy": {
+     "network": "online",
+     "permissions": "allow_by_default",
+     "permissions_effect": "recorded_only"
+    },
     "parent_policy": {
      "network": "online",
      "permissions": "allow_by_default",
      "permissions_effect": "recorded_only"
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F4: writing in the child changes nothing in the parent",
@@ -74,97 +87,143 @@
      "storage": 2
     }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F5: writing in the parent changes nothing in the child",
    "detail": {
-    "child_now": null
+    "child_now": {
+     "cookie_bytes": 49,
+     "cookies": 1,
+     "policy": {
+      "network": "online",
+      "permissions": "allow_by_default",
+      "permissions_effect": "recorded_only"
+     },
+     "storage": 3
+    }
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F6: parent and child hold their own locks at the same time",
    "detail": {
-    "child": null,
+    "child": true,
     "parent": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F13: an ephemeral source is refused, typed, and creates nothing",
    "detail": {
     "code": "invalid_request",
-    "reason": null
+    "reason": "ephemeral_source"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F14: neither the child's record nor the answer names the parent",
    "detail": {
-    "record_bytes": 0
+    "record_bytes": 969
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F17: the child seals under its own DEK",
    "detail": {
-    "distinct": false
+    "distinct": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F10: a failed fork leaves no child and does not latch the parent",
    "detail": {
-    "code": "invalid_request",
+    "code": "conflict",
     "parent_still_writes": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F9: at the profile ceiling the fork is refused and creates nothing",
    "detail": {
-    "code": "invalid_request"
+    "code": "resource_limit"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F15: no value, key or cookie reaches an answer or the ledger",
    "detail": {
     "answer_bytes": 40
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F16: deleting the parent leaves the child intact and readable",
    "detail": {
-    "child_readable": false,
+    "child_readable": true,
     "deleted": true,
     "listed": [
-     "alpha"
+     "alpha",
+     "beta"
     ]
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "F8: a source locked by another host is refused, and creates nothing",
    "detail": {
-    "code": "invalid_request"
+    "code": "profile_locked"
    },
-   "passed": false
+   "passed": true
+  },
+  {
+   "check": "F18: a persistent source forks into an ephemeral child that leaves no disk",
+   "detail": {
+    "child": "profile_1",
+    "child_counts": {
+     "cookie_bytes": 49,
+     "cookies": 1,
+     "policy": {
+      "network": "online",
+      "permissions": "allow_by_default",
+      "permissions_effect": "recorded_only"
+     },
+     "storage": 2
+    },
+    "disk_unchanged": true,
+    "source": {
+     "cookie_bytes": 49,
+     "cookies": 1,
+     "policy": {
+      "network": "online",
+      "permissions": "allow_by_default",
+      "permissions_effect": "recorded_only"
+     },
+     "storage": 2
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "F19: an ephemeral source is refused with its own reason, either persistence",
+   "detail": {
+    "source": "profile_1"
+   },
+   "passed": true
   },
   {
    "check": "F12: the child's download allowance is full even when the parent's is spent",
    "detail": {
-    "pending": "driven once profile.create accepts from"
+    "child_served": true,
+    "parent_spent": 32
    },
-   "passed": false
+   "passed": true
   }
  ],
- "checks_passed": 0,
- "checks_total": 18,
+ "checks_passed": 20,
+ "checks_total": 20,
  "court": "native-dom copy-on-write profiles (profile.create from)",
- "host_sha256": "8d5da2a706aed986134f2061480c29f347c4a06180e9b8e67ecb0bbb294b0fdf",
+ "host_sha256": "4e8f753817b95826abfd68184ba96b643dc64ff58b5f2c5bdc939635a9ba004b",
  "limitations": [
   "design-frozen court: it fails until profile.create accepts from",
   "F3 and F10 are the criteria that matter: a fork that damaged the profile it copied from would pass every other one",
@@ -173,7 +232,7 @@
   "the keychain-backed store is the default mode, as the profile court runs it",
   "no profile outside a temporary root is touched, and nothing is fetched from outside this file"
  ],
- "passed": false,
+ "passed": true,
  "ruled": {
   "forbidden_source": "ephemeral",
   "inherits": "cookies, storage and the policy",

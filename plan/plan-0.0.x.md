@@ -1381,6 +1381,25 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Implemented behind the frozen court: copy-on-write profiles
+  (`labs/native-dom/src/main.rs`, `protocol/check_contract.py`,
+  `copy-on-write-court.py`, landing record in `copy-on-write-audit-0.0.1.md`
+  §13). **The court reads 20/20** on `4e8f7538…`. `profile.create` gains a
+  `from` argument and the operation enum stays at **26**; the fork takes the
+  source's writer lock and **re-reads the sealed record from disk under it**,
+  rather than copying whatever this host adopted at startup, so the copy is a
+  committed one and not a race. The parent is only read and stays
+  byte-for-byte identical; cookies, storage and the policy are inherited and
+  the answer names what it carried; the download counters reset; an ephemeral
+  source is refused with its own `ephemeral_source` reason for either
+  persistence asked for; a persistent source may fork an **ephemeral** child
+  that inherits in memory and leaves the disk untouched; and the child's record
+  never names its parent. **F12 is no longer a stub**: the parent spends its
+  whole download allowance until the count refuses, is forked, and the child
+  downloads on its first try — the ruling's consequence made falsifiable.
+  Regressions on the same binary: downloads 21/21, readonly 28/28, profile
+  92/94 with only its two known D6 checks failing, which fail on the pre-fork
+  binary too. G1, G3, P6 and G6 stay open; D6 untouched.
 - [ ] Ruled and frozen before the host changes: the copy-on-write court
   (`labs/native-dom/copy-on-write-court.py`, receipt
   `evidence/native-dom-control-0.0.2-copy-on-write.json`, ruling and freeze in

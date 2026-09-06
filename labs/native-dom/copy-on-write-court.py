@@ -135,6 +135,17 @@ def tree(root):
     return {str(p.relative_to(root)) for p in root.rglob("*")} if root.exists() else set()
 
 
+def node_of(host, target, selector_id):
+    """The node reference for an element, through the snapshot an agent has."""
+    snapshot = host.ok("target.snapshot", {"target": target, "format": "semantic",
+                                           "max_bytes": 65536, "max_nodes": 128})
+    for entry in snapshot["nodes"]:
+        if entry.get("dom_id") == selector_id:
+            reference = entry.get("reference") or {}
+            return reference.get("node"), reference.get("revision", snapshot["revision"])
+    return None, snapshot["revision"]
+
+
 def fill(host, session):
     host.ok("profile.storage.put", {"session": session, "kind": "local_storage",
                                     "key": "k1", "value": FAKE_VALUE})
@@ -364,10 +375,49 @@ def main():
         finally:
             owner.finish()
 
-    # F12 needs the download capability against a live source and child, which
-    # is a network arm; it is stated here and driven once the fork exists.
-    expect("F12: the child's download allowance is full even when the parent's is spent",
-           False, {"pending": "driven once profile.create accepts from"})
+    # F18, added 2026-09-06 by the supplementary ruling: a persistent source
+    # may be forked into an ephemeral child, which inherits in memory and
+    # leaves nothing behind. Added rather than assumed, because §11.6 had left
+    # it open and the court tested it in neither direction.
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-cow-mem-") as directory:
+        root = Path(directory) / "profiles"
+        root.mkdir(mode=0o700)
+        host = Host(args.binary, directory, root)
+        try:
+            parent = host.ok("profile.create", {"persistence": "persistent",
+                                                "name": "alpha"})["profile"]
+            session = host.ok("session.open", {"profile": parent})["session"]
+            fill(host, session)
+            source_counts = counts(host, parent)
+            host.ok("session.close", {"session": session})
+            before_disk = tree(root)
+            memory_child = host.fork("in-memory", parent, persistence="ephemeral")
+            child = (memory_child.get("result") or {}).get("profile")
+            child_counts = counts(host, child) if child else {}
+            expect("F18: a persistent source forks into an ephemeral child that leaves no disk",
+                   bool(child)
+                   and child_counts.get("cookies") == source_counts["cookies"]
+                   and child_counts.get("storage") == source_counts["storage"]
+                   and child_counts.get("policy") == source_counts["policy"]
+                   and tree(root) == before_disk,
+                   {"child": child, "disk_unchanged": tree(root) == before_disk,
+                    "source": source_counts, "child_counts": child_counts})
+            expect("F19: an ephemeral source is refused with its own reason, either persistence",
+                   all(((host.fork(f"x{index}", child or "profile_missing",
+                                   persistence=persistence).get("error") or {}).get("details")
+                        or {}).get("reason") == "ephemeral_source"
+                       for index, persistence in enumerate(("persistent", "ephemeral")))
+                   if child else False,
+                   {"source": child})
+        finally:
+            host.finish()
+
+    # F12, driven now that the fork exists. The download counters are live
+    # state that is never persisted, so a child starts full however much its
+    # source has spent -- which is exactly why the ruling had to say so out
+    # loud: a fork is a way to buy another allowance, at the price of one of
+    # the eight profile slots.
+    drive_download_budget(args.binary, RETENTION.load_network_module(), expect)
 
     receipt = {
         "court": "native-dom copy-on-write profiles (profile.create from)",
@@ -399,6 +449,76 @@ def main():
         if not check["passed"]:
             print("FAIL", json.dumps(check)[:170])
     return 0 if receipt["passed"] else 1
+
+
+def drive_download_budget(binary, network, expect):
+    """Spend the source's whole download allowance, then fork and download."""
+    body = b"court-fixture-payload" * 8
+
+    class Handler(network.Handler):
+        def do_GET(self):
+            path, _, _query = self.path.partition("?")
+            network.Handler.hits.append(path)
+            if path == "/f.bin":
+                return self.reply(200, body, "application/octet-stream",
+                                  [("Content-Disposition", 'attachment; filename="f.bin"')])
+            return self.reply(200, b"<!doctype html><html><body><main>"
+                                   b"<a id=\"dl\" href=\"/f.bin\" download=\"f.bin\">f</a>"
+                                   b"</main></body></html>", "text/html")
+
+    server = network.Server(("127.0.0.1", 0), Handler)
+    origin = f"http://127.0.0.1:{server.server_address[1]}"
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    try:
+        with tempfile.TemporaryDirectory(prefix="minicon-surf-cow-budget-") as directory:
+            root = Path(directory) / "profiles"
+            root.mkdir(mode=0o700)
+            host = Host(binary, directory, root, origin)
+            try:
+                parent = host.ok("profile.create", {"persistence": "persistent",
+                                                    "name": "alpha"})["profile"]
+                session = host.ok("session.open", {"profile": parent})["session"]
+                target = host.ok("target.open", {"session": session,
+                                                 "url": origin + "/a.html"})["target"]
+                node, revision = node_of(host, target, "dl")
+                spent = 0
+                while True:
+                    answer = host.raw("target.act", {
+                        "target": target,
+                        "reference": {"target": target, "revision": revision,
+                                      "node": node or "node_1"},
+                        "action": {"kind": "download"}}, validate=False)
+                    if not answer.get("ok"):
+                        break
+                    spent += 1
+                host.ok("target.close", {"target": target})
+                host.ok("session.close", {"session": session})
+
+                forked = host.fork("beta", parent)
+                child = (forked.get("result") or {}).get("profile")
+                served = None
+                if child:
+                    child_session = host.ok("session.open", {"profile": child})["session"]
+                    child_target = host.ok("target.open", {"session": child_session,
+                                                           "url": origin + "/a.html"})["target"]
+                    child_node, child_revision = node_of(host, child_target, "dl")
+                    answer = host.raw("target.act", {
+                        "target": child_target,
+                        "reference": {"target": child_target, "revision": child_revision,
+                                      "node": child_node or "node_1"},
+                        "action": {"kind": "download"}}, validate=False)
+                    served = bool(answer.get("ok"))
+                expect("F12: the child's download allowance is full even when the parent's is spent",
+                       spent > 0 and served is True,
+                       {"parent_spent": spent, "child_served": served})
+            finally:
+                host.finish()
+    finally:
+        server.shutdown()
+
+
+def node_of_download(host, target, selector_id):
+    return node_of(host, target, selector_id)
 
 
 def contract_takes_from():

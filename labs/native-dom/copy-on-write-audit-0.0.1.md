@@ -334,3 +334,39 @@ copied from would satisfy every other criterion here.
 F12 — the child's download allowance being full while the parent's is spent —
 is stated but not driven; it needs a network arm against a live parent and
 child, and is recorded as failing rather than omitted.
+
+---
+
+## 13. Landed — 2026-09-06
+
+The fork exists. Recorded after §12's freeze; nothing above is rewritten, and
+no ruled value moved. **The court reads 20/20** against `4e8f7538…`.
+
+Two criteria joined the eighteen, both from the supplementary ruling rather
+than from new scope:
+
+- **F18** — a persistent source forks into an **ephemeral** child, which
+  inherits cookies, storage and the policy in memory and leaves the disk
+  exactly as it found it (the whole tree is compared before and after).
+- **F19** — an ephemeral source is refused with its own `ephemeral_source`
+  reason for **either** persistence asked for, so the refusal is about the
+  source and never about an argument the host does not recognise.
+
+**F12 is no longer a stub.** It is driven end to end: the parent spends its
+entire download allowance until the count refuses, the parent is forked, and
+the child downloads successfully on its first try. That is the ruling's
+consequence made falsifiable — a fork really does buy a fresh allowance, and
+the court now says so rather than the design merely claiming it.
+
+How the fork reads its source is worth stating, because it is the difference
+between the ruling and a plausible shortcut: it takes the source's writer lock,
+then **re-reads the sealed record from disk under that lock**, rather than
+copying whatever this host adopted at startup. Another host may have replaced
+the record since; the lock plus the re-read is what makes the copy a committed
+one. If the record cannot be re-read, the fork falls back to the host's own
+loaded state rather than failing — the lock has already excluded the racing
+writer.
+
+Regressions checked on the same binary: `downloads-court` 21/21,
+`readonly-profile-court` 28/28, `profile-court` 92/94 with only its two known
+D6 memory checks failing, which fail on the pre-fork binary as well.
