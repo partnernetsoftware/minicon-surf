@@ -1381,6 +1381,29 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Read-only locator check: G1's baseline binaries
+  (`labs/native-dom/g1-locator-audit-0.0.1.md`). Nothing downloaded, built,
+  compared or run. **Both baselines are absent, and the block is now priced.**
+  Lightpanda 0.4.0 is missing from `target/labs/lightpanda/0.4.0/`, from
+  anywhere in the repository (`labs/lightpanda/` holds evidence JSON only) and
+  from `~/.local/bin`, `/usr/local/bin`, `/opt/homebrew/bin` and `~/bin`; the
+  wider filesystem was deliberately **not** swept, since that is a different
+  permission than a locator check. Everything else the runner needs is present:
+  Chrome at the expected path, `cargo`/`gh`/`python3`/`shasum` all four, the
+  fixture, and a `process-tree-sampler` that resolves offline. `servo-control`
+  is a `[[bin]]` of `minicon-surf-servo-api-probe` and is **not built**, and the
+  striking part is how close it is: **772 of 800 registry packages are already
+  in the local cargo cache**, `servo 0.5.0` among them, but `cargo fetch
+  --offline` still refuses — on `freetype 0.8.0`, and `cargo metadata` on
+  `anstyle-wincon 3.0.11`. Most of the 28 missing are for **other platforms**
+  (Windows `anstyle-wincon`/`dwrote`, OpenHarmony `ohos-*`, `hermit-abi`,
+  `libfuzzer-sys`), which this build would never compile — cargo's resolver
+  wants them present regardless. So the Lightpanda half needs **one artefact**
+  whose digest the runner already pins (`840547bb…`, `exit 65` on mismatch, so
+  a supplied file needs no trust), and the Servo half needs **28 crates**. The
+  native-dom arm is built and current (`ba46420b…`) and is an optional
+  argument, so the harness would run the moment the Lightpanda binary exists.
+  Two independent authorisations and the exact follow-up commands are in §5.
 - [ ] Design-only, nothing implemented: cache, P6
   (`labs/native-dom/cache-audit-0.0.1.md`). **One cache exists and it is not the
   one the question is usually about.** A per-profile TLS session cache:
