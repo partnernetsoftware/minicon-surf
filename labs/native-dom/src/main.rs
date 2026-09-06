@@ -510,7 +510,7 @@ const SERIALIZE_JS: &str = r##"
     for (const c of form.elements.slice(0, 64)) {
       const name = c.getAttribute("name");
       if (!name || c.disabled) continue;
-      const ct = c.tagName.toLowerCase();
+      const ct = __mcsTag(c);
       const ctype = (c.type || "").toLowerCase();
       if (ct === "input" && /^(password|file)$/.test(ctype)) continue;
       if (ct === "input" && /^(checkbox|radio)$/.test(ctype)) {
@@ -530,7 +530,7 @@ const SERIALIZE_JS: &str = r##"
   // carries it between the phases and the activation phase re-derives it, so a
   // job that ran in between cannot change what was approved.
   const __mcsNavigation = (el, action) => {
-    const tag = el.tagName.toLowerCase();
+    const tag = __mcsTag(el);
     const kind = (el.type || "").toLowerCase();
     const submits = (tag === "button" && (kind === "submit" || kind === "")) || (tag === "input" && kind === "submit");
     if (tag === "a" && el.hasAttribute("href")) {
@@ -648,7 +648,7 @@ const ACTIVATION_JS: &str = r##"
     return targetOf(el, "target");
   };
   const activationOf = (el) => {
-    const tag = el.tagName.toLowerCase();
+    const tag = __mcsTag(el);
     const kind = (el.type || "").toLowerCase();
     if (el.disabled) return "control_disabled";
     if (tag === "a" && el.hasAttribute("href")) return linkDecision(el);
@@ -676,7 +676,7 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
   if (!s) return "{{\"error\":\"uninstrumented\"}}";
 {activation}
   const role = (el) => {{
-    const t = el.tagName.toLowerCase();
+    const t = __mcsTag(el);
     const type = (el.type || "").toLowerCase();
     if (/^h[1-6]$/.test(t)) return "heading";
     if (t === "button" || (t === "input" && /^(button|submit|reset)$/.test(type))) return "button";
@@ -804,7 +804,7 @@ fn download_probe_script(revision: u64, index: usize) -> String {
     return __mcsJson({{ unusable: true }});
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
-  if (el.tagName.toLowerCase() !== "a" || !el.hasAttribute("href")) return __mcsJson({{}});
+  if (__mcsTag(el) !== "a" || !el.hasAttribute("href")) return __mcsJson({{}});
   const out = {{ href: el.getAttribute("href") }};
   if (el.hasAttribute("download")) out.declared = el.getAttribute("download");
   return __mcsJson(out);
@@ -962,7 +962,7 @@ fn form_action_script(
     return __mcsJson(outcome);
   }};
   const refuse = (reason) => __mcsJson({{ unsupported: true, reason }});
-  const t = el.tagName.toLowerCase();
+  const t = __mcsTag(el);
   const type = (el.type || "").toLowerCase();
   const isCheck = t === "input" && /^(checkbox|radio)$/.test(type);
   const isLine = t === "input" && /^(text|search|url|tel|email|number)$/.test(type);
@@ -1121,7 +1121,7 @@ fn act_script(
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
 {activation}
 {serializer}
-  const t = el.tagName.toLowerCase();
+  const t = __mcsTag(el);
   const decision = activationOf(el);
   if (decision !== "allowed") return __mcsJson({{ unsupported: true, reason: decision }});
   if (__mcsPreflight(el, {{ kind: "click" }}).signature !== {expected}) {{

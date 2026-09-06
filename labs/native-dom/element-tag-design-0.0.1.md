@@ -124,6 +124,44 @@ Every source criterion first asserts that the region it inspects was found and
 non-empty, and every refusal criterion is paired with an arm where the honest
 element must still work.
 
+## 4b. What the round actually cost, and one pin the ruling did not name
+
+Measured on `e9e07111`, the built binary, against the ceilings frozen in §4:
+
+| | before | after | delta | ceiling |
+| --- | ---: | ---: | ---: | ---: |
+| `dom_shim_base.js` | 32,898 | 33,290 | **+392** | +400 |
+| `dom_shim_main.js` | 26,485 | 26,485 | 0 | must not move |
+| child-frame M1, system | 233,962 | 235,658 | **+1,696** | +2,048 |
+| child-frame M2, system | 1,636,236 | 1,648,172 | **+11,936** | +14,336 |
+| child-frame M1, arena | 225,898 | 227,850 | **+1,952** | +2,048 |
+| child-frame M2, arena | 1,579,500 | 1,592,540 | **+13,040** | +14,336 |
+
+Every ceiling holds, and the base-byte one held only after the comments were
+cut twice: the first draft was +920 and the second +445. **The ceiling counts
+source bytes, and comments cost source bytes while costing nothing per realm**
+— the per-construct table measured a comment at 0. That is worth recording for
+round D rather than acted on here: the cap was frozen and the code was made to
+fit it, not the other way round.
+
+The two ruled re-freezes landed exactly as predicted. `window` moved from
+`112:156a0f8b` to `113:5899bf6e`, one property more, and **`Element.prototype`
+did not move at all** — `40:26312e4` before and after, on both allocator arms,
+which is the check that round C added no prototype member.
+
+**A third pin was not named in the ruling and is left failing rather than
+amended.** `registry-brand-court.py`'s N3 — *"the shims are untouched by this
+work"* — pins the SHA-256 of both shims from that round, and round C is the
+first slice since to change `dom_shim_base.js`. It reads **14/15**. It is the
+same class as the two authorised re-freezes: a pin whose purpose was to prove
+*that* slice was host-side only, now correctly reporting that a *later* slice
+was not. The recommended amendment is the same shape as the others — move the
+base-shim hash to `3561e774…`, keep the old one beside it with the date and the
+reason, and leave the main-shim hash at `d319246e…` untouched, since round C
+does not touch the main shim. **It is not applied here**, because the ruling
+authorised two re-freezes and naming a third is the coordinator's call, not
+this round's.
+
 ## 5. Safe failures
 
 - A tag missing from the store reads `""`, which is no tag the classifier

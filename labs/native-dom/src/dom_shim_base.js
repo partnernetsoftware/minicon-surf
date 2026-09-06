@@ -30,6 +30,8 @@
   const arrayIndexOf = Array.prototype.indexOf;
   const arraySplice = Array.prototype.splice;
   const invoke = (fn, self, args) => reflectApply(fn, self, args);
+  // The tag the host decides with (F5); `tagName` stays the page's.
+  const tags = new WeakMap();
   const observers = [];
   let flushScheduled = false;
   function contains(a, b) { for (let n = b; n; n = n.parentNode) if (n === a) return true; return false; }
@@ -315,6 +317,7 @@
     constructor(tag) {
       super(); this.nodeType = 1; this.localName = String(tag).toLowerCase(); this.tagName = this.localName.toUpperCase(); this.nodeName = this.tagName;
       this.__attrs = new Map(); this.__value = null;
+      invoke(weakMapSet, tags, [this, this.localName]);
     }
     getAttribute(name) { const v = this.__attrs.get(String(name).toLowerCase()); return v === undefined ? null : v; }
     hasAttribute(name) { return this.__attrs.has(String(name).toLowerCase()); }
@@ -556,6 +559,11 @@
   const jsonStringify = JSON.stringify;
   Object.defineProperty(g, "__mcsJson", {
     value: (value) => invoke(jsonStringify, JSON, [value]),
+    writable: false, configurable: false, enumerable: false,
+  });
+  // An element the store never saw answers "": no role, no activation.
+  Object.defineProperty(g, "__mcsTag", {
+    value: (el) => invoke(weakMapGet, tags, [el]) ?? "",
     writable: false, configurable: false, enumerable: false,
   });
   Object.defineProperty(g, "__mcsArmDispatch", {

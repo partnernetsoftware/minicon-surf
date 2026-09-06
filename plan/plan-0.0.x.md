@@ -1404,6 +1404,53 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Frozen, then implemented: round C, an element's tag is the host's
+  (`labs/native-dom/element-tag-design-0.0.1.md`, court
+  `labs/native-dom/element-tag-court.py`, receipts
+  `evidence/native-dom-control-0.0.2-element-tag{,-falsification}.json`).
+  **Court frozen first at 38/52 on `0da1c6b1`**, every control and every
+  anti-vacuity criterion passing and the fourteen failures exactly the defect
+  and the technique checks; then **52/52 on `e9e07111`**. The base shim keeps a
+  closure-owned `WeakMap` from element to tag, written through the
+  already-captured `weakMapSet`, read through a non-writable, non-configurable
+  `__mcsTag`; all seven host-script tag reads ask it, `role()` included, so a
+  `<div>` a page renames is **not offered as a node at all** rather than merely
+  refused at the download. **Nothing is taken away from the page**: `tagName`
+  and `localName` stay writable data properties, so `el.tagName = "A"` still
+  succeeds and the page still reads `"A"` back — the court checks that by having
+  the page echo the value into a paragraph the snapshot carries — and no
+  ignoring setter is needed, unlike round D. A `cloneNode` of an anchor is still
+  a link and still downloads, which guards the construction path the store must
+  not miss. **Costs, measured on both allocators against ceilings frozen before
+  the code**: base shim 32,898 → 33,290 (**+392**, ceiling +400) with the main
+  shim untouched at 26,485; child-frame M1 +1,696 system and +1,952 arena
+  (ceiling +2,048); M2 +11,936 and +13,040 (ceiling +14,336). The base ceiling
+  held only after the comments were cut twice, from +920 to +445 to +392 —
+  **the cap counts source bytes and a comment costs source bytes while costing
+  nothing per realm**, which is recorded for round D rather than acted on here:
+  the cap was frozen, so the code was made to fit it. **The two ruled re-freezes
+  landed exactly as predicted**: `property-shape`'s `window` moved
+  `112:156a0f8b` → `113:5899bf6e`, and **`Element.prototype` did not move**,
+  which is the check that round C added no prototype member;
+  `signature-integrity`'s base-byte pin moved 32,898 → 33,290. Both amendments
+  keep the old values beside them with the date and the reason. **A third pin
+  the ruling did not name is left failing rather than amended**:
+  `registry-brand-court.py`'s N3 pins both shims' SHA-256 from that round and
+  reads **14/15**, because round C is the first slice since to change the base
+  shim. The recommended amendment is in §4b; naming a third re-freeze is the
+  coordinator's call. **F1 and F2 stay open**, are not folded in, and are named
+  in the court's own receipt: a declared POST is still submitted as a GET and a
+  named-target link is still activated. Regressions on `e9e07111`: element-tag
+  52/52, property-shape 22/22, signature-integrity 34/34, probe-truthfulness
+  25/25, capture-declaration 8/8 (no sixteenth capture), host-answer 9/9,
+  downloads 21/21, copy-on-write 23/23, snapshot-schema 13/13, readonly-profile
+  28/28, secure-cookie 78/78, https 74/74, form 179/179, frame-action 182/182,
+  page-navigation 80/80, lifecycle 53/53, job-deadline 42/42, element-api 28/28,
+  dataset 15/15, event-fidelity 62/62, timer 68/68, frame-realm 62/62,
+  cdp-frame-tree 64/64, child-frame 82/82, and registry-brand 14/15 for the pin
+  above. Navigation soak not rerun by standing rule. fmt, 58 tests, clippy
+  `-D warnings`, contract 28 examples and 50 negatives, `diff --check`,
+  redaction scan. Not pushed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: host-owned element facts, with the
   ruling recorded (`labs/native-dom/element-fact-design-0.0.1.md`, receipt
   `evidence/native-dom-control-0.0.2-element-fact-candidates.json`).

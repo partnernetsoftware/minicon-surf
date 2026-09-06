@@ -53,8 +53,17 @@ HANDLE_KEYS = ["addListener", "contains", "dispatchOn", "document", "Document", 
 # Captured from the shipped binary before the refactor. A change here is a
 # change to what a page can see, and must be ruled, not absorbed.
 EXPECTED = {
-    "window": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011",
+    # Amendment, 2026-09-06, ruled in `element-tag-design-0.0.1.md` §1 and
+    # recorded rather than absorbed. Round C installs `__mcsTag`, and **any**
+    # new global moves this row -- the same was true of `__mcsJson` when H1
+    # added it. The count goes 112 -> 113 and the checksum
+    # `156a0f8b` -> `5899bf6e`; nothing else about the window changed, and the
+    # old value is kept here so the movement can be read off the file.
+    "window": "113:5899bf6e:Object:v:011|Function:v:011|Error:v:011",
     "Node.prototype": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010",
+    # Deliberately NOT amended: round C adds no prototype member, so this row
+    # must stay exactly as it was. If it ever moves in a tag-only round, that
+    # round did something it did not intend.
     "Element.prototype": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011",
     "Document.prototype": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010",
     "Event.prototype": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011",

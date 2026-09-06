@@ -52,7 +52,14 @@ SHIM_MAIN = ROOT / "labs" / "native-dom" / "src" / "dom_shim_main.js"
 
 # Frozen at the moment of freezing, on `ba46420b`. The slice may not pay for
 # itself with base bytes, and may not be confused with slimming.
-BASE_BYTES = 32898
+# Amendment, 2026-09-06, ruled in `element-tag-design-0.0.1.md` §1. This pin
+# was frozen at 32,898 so the signature-integrity slice could not pay for
+# itself with base bytes, and it did its job: it is what caught round C
+# changing the base at all. Round C is authorised to change it, and moves it to
+# 33,290 (+392, inside that round's own frozen ceiling of +400). The main shim
+# is untouched at 26,485. The old value is kept here so the movement can be
+# read off the file.
+BASE_BYTES = 33290
 MAIN_BYTES = 26485
 
 # The fifteen captures the base declares today. A sixteenth is a different
