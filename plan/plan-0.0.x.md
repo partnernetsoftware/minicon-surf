@@ -1302,6 +1302,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only triage of the four open goals
+  (`labs/native-dom/open-goal-triage-0.0.1.md`). **None of G1, G3, P6 or G6 is
+  limited by main-extension slack**, so the 2,944 bytes left there buy nothing
+  for any of them and the brief's filter yields **no candidate to take**. The
+  host's memory was decomposed live on the shipped binary: empty host 196,680,
+  **first profile +1,769,736**, session +0, **first realm +1,409,024**, second
+  target +327,680, and closing returns nothing — so two fixed costs dominate
+  while a marginal target is only 0.33 MB. That localises both G1's efficiency
+  question and P6's **D6**, which wants live footprint under 4,178,196 and
+  measures 6,619,592. G3's open item is read from its receipts rather than
+  rerun: `-surface` is 106 of 110, failing only the retention pair, post-hide
+  footprint per round `278,528 · 425,984 · 458,752` with a slope of 180,224 —
+  and every G3 candidate is deferred because measuring further needs a visual
+  run the standing rule forbids. P6's remaining capabilities — cache, history,
+  downloads, permissions, readonly, copy-on-write — each need a new protocol
+  operation against a closed enum. **G6 is not a work item**: it is the
+  conjunction that closes when the others do, with G2 already green. Suggested
+  order if one is wanted: the first-profile step, then the first-realm step,
+  then the comparison campaign the G1 gate actually asks for, then P6's
+  capabilities behind protocol rulings, and G3 last with explicit visual
+  authorisation. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented and **HOLD is the answer**:
   architecture-level main-slack recovery
   (`labs/native-dom/main-slack-recovery-audit-0.0.1.md`). The target was 1,408
