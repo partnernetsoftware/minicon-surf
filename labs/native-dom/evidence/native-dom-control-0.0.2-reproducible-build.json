@@ -1,0 +1,86 @@
+{
+  "probe": "reproducible builds: why two builds of one commit differ",
+  "receipt_kind": "measurement",
+  "note": "Read-only. Two scratch worktrees at paths differing by eight characters, built offline with the pinned toolchain and then removed; the main worktree was never modified and its binary is still 2d57ce864002406e. No build config, cargo setting or product code was changed: every option below was tested through the environment for the length of one build and left nowhere.",
+  "toolchain": {
+    "rustc": "1.97.0 (2d8144b78 2026-07-07)",
+    "cargo": "1.97.0 (c980f4866 2026-06-30)",
+    "command": "cargo build --release --offline"
+  },
+  "commit_under_test": "99187a1",
+  "two_paths": {
+    "short_path_build": {
+      "sha256_prefix": "7d31698c9d839c97",
+      "bytes": 5856848
+    },
+    "long_path_build": {
+      "sha256_prefix": "3e11814c36b06157",
+      "bytes": 5856960
+    },
+    "path_length_difference_chars": 8,
+    "size_difference_bytes": 112,
+    "first_differing_byte": 697
+  },
+  "not_embedded_paths": {
+    "__TEXT.__cstring_size_identical": true,
+    "cstring_size": "0x11715",
+    "occurrences_of_own_build_path_in_each_binary": 0,
+    "only_absolute_paths_present": "the toolchain's own /rust/deps/... , already remapped"
+  },
+  "the_actual_cause": {
+    "mechanism": "cargo derives each package's -C metadata from its identity including its absolute path; rustc hashes that into the Cs<disambiguator>_ field of every v0-mangled symbol; the resulting name-length differences move unwind info, exception frames and constant layout",
+    "differing_symbol_names": 3718,
+    "example_symbol": {
+      "short_path": "__RINvCsjoNTN0wbErc_18native_dom_control17read_bounded_line...",
+      "long_path": "__RINvCs8HYukM8TxBZ_18native_dom_control17read_bounded_line..."
+    },
+    "section_deltas": {
+      "__TEXT.__unwind_info": "+16",
+      "__TEXT.__eh_frame": "+8",
+      "__DATA_CONST.__const": "+32",
+      "__TEXT.__cstring": "0",
+      "__TEXT.__text": "0"
+    },
+    "LC_UUID": {
+      "short_path": "6728914F-FCF5-35E1-B448-CF5486129471",
+      "long_path": "600CAC1F-7CA6-3EDE-B867-591281875EFD",
+      "note": "content-derived by the linker: a consequence, not a cause"
+    },
+    "build_timestamp": "none; the image carries LC_BUILD_VERSION, which is SDK and platform, not a clock"
+  },
+  "options_tested": {
+    "fixed_build_path": {
+      "works": true,
+      "evidence": "a clean rebuild of the same worktree returned 7d31698c9d839c97, byte-identical"
+    },
+    "remap_path_prefix": {
+      "works": false,
+      "short_path": "2e5033490ad56d36",
+      "long_path": "f62fe3d48bca3d14",
+      "note": "still differ, and both changed from their un-remapped values, so it is not a no-op"
+    },
+    "rustflags_c_metadata": {
+      "works": false,
+      "short_path": "ee449d4739e1d4ec",
+      "long_path": "7cacef2029f34a35",
+      "disambiguators_still_differ": [
+        "Cs4um302DgVBa_",
+        "Cs9cSlRj5XVV3_"
+      ],
+      "differing_symbol_names": 3678,
+      "note": "cargo passes its own -C metadata after RUSTFLAGS, so cargo's wins"
+    },
+    "container_at_a_fixed_path": {
+      "works": null,
+      "note": "NOT MEASURED; no container was built"
+    }
+  },
+  "what_this_means_for_the_register": "Every committed hash was produced at one path, ~/repos/minicon-surf/labs/native-dom, so the register is internally consistent and its hashes are re-derivable by anyone building the same commit at that same path. Measured earlier in this line of work, before the question was asked: ba46420b was rebuilt in the main worktree from a stashed source state and returned ba46420bb1e6d986, exactly the hash its receipt names. A register hash is a provenance token re-derivable at the same path, not a portable digest of the source.",
+  "not_measured": [
+    "containers",
+    "SOURCE_DATE_EPOCH",
+    "unstable -Z reproducibility flags",
+    "whether the servo or synthetic-control labs behave the same",
+    "any platform or toolchain other than this one"
+  ]
+}

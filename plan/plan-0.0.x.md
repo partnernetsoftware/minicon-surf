@@ -1404,6 +1404,38 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing changed: why two builds of one commit differ
+  (`labs/native-dom/reproducible-build-audit-0.0.1.md`, receipt
+  `evidence/native-dom-control-0.0.2-reproducible-build.json`). No build script,
+  cargo setting, product code, court or bound touched; every option was tested
+  through the environment for one build and left nowhere; two scratch worktrees
+  were made and removed and the main worktree never modified. Commit `99187a1`
+  built at two paths **eight characters apart** gives `7d31698c9d839c97` and
+  `3e11814c36b06157`, **112 bytes apart**. **The obvious explanation is wrong**:
+  `__TEXT.__cstring` is byte-identical in size, neither binary contains its own
+  build path, and the only absolute paths are the toolchain's own already-remapped
+  `/rust/deps/…`. **The cause is the crate disambiguator**: cargo derives
+  `-C metadata` from the package's absolute path, rustc hashes it into the
+  `Cs…_` field of every v0-mangled symbol, and **3,718 symbol names differ**,
+  moving `__unwind_info` +16, `__eh_frame` +8 and `__DATA_CONST.__const` +32
+  while `__text` is unchanged — the code is the same size, its names are not.
+  `LC_UUID` differs as a consequence, and there is no build timestamp.
+  **Only one option works and it works exactly**: a fixed build path — a clean
+  rebuild of the same worktree is byte-identical. `--remap-path-prefix` **does
+  not** fix it and is not a no-op either (it changes both outputs while leaving
+  them unequal), and `RUSTFLAGS="-Cmetadata=…"` **does not** fix it because
+  cargo passes its own after `RUSTFLAGS`; disambiguators still differ and 3,678
+  names still differ. **The register comes out better than it looked**: every
+  committed hash was produced at one path, so the ledger is internally
+  consistent and its hashes *are* re-derivable there — corroborated by a
+  measurement taken earlier in this line before the question was asked, when
+  `ba46420b` was rebuilt in the main worktree and returned exactly the hash its
+  receipt names. A register hash is a **provenance token re-derivable at the
+  same path, not a portable digest of the source**, and §5 says so where a
+  reader will find it. Recommendation: **change nothing about the build**, and
+  write down the canonical path and the meaning — both fully measured and free.
+  A container at a fixed path is named and **not measured**. Not pushed.
+  G1, G3, P6 and G6 stay open.
 - [x] Scoped provenance recovery, and the ruling it confirmed
   (`evidence/native-dom-control-0.0.2-provenance-recovery.json`, register note in
   `labs/native-dom/README.md`). Both receiptless commits were checked out into
