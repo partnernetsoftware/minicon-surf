@@ -1302,7 +1302,7 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
-- [ ] Design-only, nothing implemented and no court frozen:
+- [~] Implemented and qualified on the native route, court 25 of 25:
   `AbortSignal.timeout()` under the slack guard
   (`labs/native-dom/abort-signal-timeout-audit-0.0.1.md`). **The short answer
   is that the remaining slack fits the version that misbehaves and not the
@@ -1322,7 +1322,18 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   baseline**. No guard was touched: `timeout` stays absent in the tree, the
   handle's key set is unchanged, and no host path aborts a page's signal;
   moving the slack bound is listed as a trade the ruling can see, not as a
-  proposal. G1, G3, P6 and G6 stay open.
+  proposal. **Ruled and built as T3b**: the threshold reads the page's own
+  timer table and refuses at 16, so the page keeps **48 slots for
+  `setTimeout`**, the refusal is a `RangeError`, and the quota carries no state
+  of its own — the shape that made it fit at **62,016 of 65,536**, 3,520 to
+  spare, with M1 and M2 unmoved. **The standing guard was amended by ruling**:
+  the only host path that may abort a page's signal is the timer `timeout()`
+  minted for that signal, and it reaches nothing else. The surface court's
+  `timeout`-absent pin was amended to require it, which is what the pin was
+  for. Court **25 of 25** against **6 of 25**; two of its criteria were amended
+  after their first run because they measured the fixture rather than the rule,
+  recorded in §7.3. Twenty-six receipts rerun on the binary. G1, G3, P6 and G6
+  stay open.
 - [~] R1-R5 implemented and qualified on the native route, court 37 of 37:
   the rest of `AbortSignal` (`labs/native-dom/abort-signal-surface-audit-0.0.1.md`), split
   into R1 the signal as an `EventTarget` with an `abort` event, R2 `reason`,

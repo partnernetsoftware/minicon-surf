@@ -189,3 +189,22 @@ dropped, the reserve of 48 coexisting with 16 signals, the refusal type,
 target close and owner release, the amended no-arbitrary-abort guard,
 `AbortSignal.any` still absent, the unchanged handle key set, and the main
 slack bound measured on the same binary.
+
+### 7.3 Court amendments, recorded chronologically
+
+Two criteria were amended after their first run against the implementation,
+and both were mine to fix rather than the code's:
+
+- **T4** counted how many timeout signals the cap probe could add and expected
+  16. The fixture already holds two of its own before that probe runs, so the
+  count measured the fixture rather than the rule: it read `signals 14 |
+  setTimeout 48`, which is the ruled behaviour exactly — sixteen signals in
+  total, forty-eight slots left to the page. T4 now pins the guarantee that
+  was ruled, that the page keeps its 48, and a new **T4b** pins the cap by
+  asking for one signal past it and requiring a `RangeError`.
+- **The isolation probe** ran after the cap probe had filled the table, so it
+  could not mint the signal it was meant to hold and reported a `RangeError`.
+  It now runs before the table is filled.
+
+Neither amendment changed a mechanism, a cap or a floor. The implementation
+was right in both cases, and the court is the thing that moved.

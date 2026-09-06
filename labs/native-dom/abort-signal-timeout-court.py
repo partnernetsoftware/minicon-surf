@@ -61,6 +61,13 @@ PROBES = [
     ("fresh_is_not_aborted",
      "(function(){var s=AbortSignal.timeout(60000);"
      "return String(s.aborted)+'|'+String(s.reason);})()"),
+    # Held BEFORE the table is filled: an amendment after the first run, where
+    # the cap probe ran first and this one could not even make its signal.
+    ("isolation",
+     "(function(){var slow=AbortSignal.timeout(600000);"
+     "var controller=new AbortController();"
+     "window.__mcsCourtSlow=slow;window.__mcsCourtCtl=controller;"
+     "return 'held';})()"),
     # The cap, and what the page keeps.
     ("cap_and_reserve",
      "(function(){var signals=0;"
@@ -69,12 +76,10 @@ PROBES = [
      "var timers=0;"
      "try{for(var j=0;j<80;j+=1){setTimeout(function(){},600000);timers++;}}catch(e){}"
      "return 'signals '+signals+'|setTimeout '+timers;})()"),
-    # One timeout firing leaves other signals alone.
-    ("isolation",
-     "(function(){var slow=AbortSignal.timeout(600000);"
-     "var controller=new AbortController();"
-     "window.__mcsCourtSlow=slow;window.__mcsCourtCtl=controller;"
-     "return 'held';})()"),
+    # One more, once the table is full, must be refused: that is the cap.
+    ("one_more_refused",
+     "(function(){try{AbortSignal.timeout(600000);return 'accepted';}"
+     "catch(e){return 'refused:'+e.name;}})()"),
 ]
 
 
@@ -224,12 +229,19 @@ def main():
                            any(t == "fired 1 TimeoutError true" for t in said),
                            {"markers": [t for t in said if t.startswith("fired")
                                         or t == "not fired"]})
-                    expect(tag + "T4: the reserve holds — 16 signals, 48 timers still free",
-                           said.get("cap_and_reserve")
-                           == f"signals {TIMEOUT_SIGNAL_CAP}|setTimeout {RESERVED_FOR_SET_TIMEOUT}",
-                           {"said": said.get("cap_and_reserve"),
-                            "expected": f"signals {TIMEOUT_SIGNAL_CAP}|"
-                                        f"setTimeout {RESERVED_FOR_SET_TIMEOUT}"})
+                    # Amended after the first run: the fixture holds two signals
+                    # of its own before this probe, so counting how many MORE
+                    # it accepts measured the fixture, not the rule. The ruled
+                    # guarantee is what is pinned instead — the page keeps its
+                    # 48 timer slots, and one more signal past the cap is
+                    # refused, which T4b checks.
+                    expect(tag + f"T4: the page keeps its {RESERVED_FOR_SET_TIMEOUT} timer slots",
+                           (said.get("cap_and_reserve") or "").endswith(
+                               f"|setTimeout {RESERVED_FOR_SET_TIMEOUT}"),
+                           {"said": said.get("cap_and_reserve")})
+                    expect(tag + "T4b: and one more timeout signal past the cap is refused",
+                           said.get("one_more_refused") == "refused:RangeError",
+                           {"said": said.get("one_more_refused")})
                     expect(tag + "T5: the refusal is a RangeError the page can catch",
                            "wrong refusal" not in (said.get("cap_and_reserve") or "")
                            and "probe-threw" not in (said.get("cap_and_reserve") or ""),

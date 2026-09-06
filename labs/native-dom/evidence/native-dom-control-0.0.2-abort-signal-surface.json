@@ -109,9 +109,9 @@
    "passed": true
   },
   {
-   "check": "[system] D1: timeout stays absent, as the deferred candidate",
+   "check": "[system] D1: timeout is present, by the ruling that amended this",
    "detail": {
-    "said": "undefined"
+    "said": "function"
    },
    "passed": true
   },
@@ -228,9 +228,9 @@
    "passed": true
   },
   {
-   "check": "[arena] D1: timeout stays absent, as the deferred candidate",
+   "check": "[arena] D1: timeout is present, by the ruling that amended this",
    "detail": {
-    "said": "undefined"
+    "said": "function"
    },
    "passed": true
   },
@@ -270,11 +270,11 @@
   "AbortSignal.timeout",
   "AbortSignal.any"
  ],
- "host_sha256": "536ad23ed12ac840089bf3b3c058f739bf4af60b819d761b4d796b3d3c382c2c",
+ "host_sha256": "e8f85cf593542c3e5c8f6fa004352494ccba0e4102e1c5949c1318ad4bc27c27",
  "hosts_killed": [],
  "limitations": [
   "design-frozen court: it fails until R1 through R5 exist",
-  "timeout() is pinned absent by ruling, so taking it later amends this court rather than slipping past it",
+  "timeout() was pinned absent when this court was frozen; the ruling that took it amended D1 to require it, which is what the pin was for",
   "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
   "the main-only slack and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary; H2 is what keeps this slice out of the base, which is what protects the child floors",
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"

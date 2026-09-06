@@ -1,0 +1,218 @@
+{
+ "checks": [
+  {
+   "check": "H1: the handle's key set is unchanged by this slice",
+   "detail": {
+    "missing": [],
+    "unexpected": []
+   },
+   "passed": true
+  },
+  {
+   "check": "H2: timeout lives in the extension and never in the base",
+   "detail": {
+    "in_base": false,
+    "in_main": false
+   },
+   "passed": false
+  },
+  {
+   "check": "H3: the quota reads the existing table and adds no state of its own",
+   "detail": {
+    "new_state": false,
+    "threshold": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T1: timeout exists and any stays out of scope",
+   "detail": {
+    "any": "undefined",
+    "timeout": "undefined"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T2: a fresh timeout signal is not yet aborted",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T3: it fires once, with a TimeoutError DOMException",
+   "detail": {
+    "markers": [
+     "not fired"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T4: the page keeps its 48 timer slots",
+   "detail": {
+    "said": "wrong refusal TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T4b: and one more timeout signal past the cap is refused",
+   "detail": {
+    "said": "refused:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T5: the refusal is a RangeError the page can catch",
+   "detail": {
+    "said": "wrong refusal TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T6: a listener bound to a fired timeout stops running",
+   "detail": {
+    "markers": [
+     "bound 0"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T7: nothing else was aborted \u2014 the page still holds them",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T8: the host's own drain aborts no page signal it did not time",
+   "detail": {
+    "isolation": "probe-threw:TypeError",
+    "wait_ok": false
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T9: a second page gets its own 16 and no more",
+   "detail": {
+    "said": [
+     "held 0"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T10: pending timeout signals do not outlive their target",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T1: timeout exists and any stays out of scope",
+   "detail": {
+    "any": "undefined",
+    "timeout": "undefined"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T2: a fresh timeout signal is not yet aborted",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T3: it fires once, with a TimeoutError DOMException",
+   "detail": {
+    "markers": [
+     "not fired"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T4: the page keeps its 48 timer slots",
+   "detail": {
+    "said": "wrong refusal TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T4b: and one more timeout signal past the cap is refused",
+   "detail": {
+    "said": "refused:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T5: the refusal is a RangeError the page can catch",
+   "detail": {
+    "said": "wrong refusal TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T6: a listener bound to a fired timeout stops running",
+   "detail": {
+    "markers": [
+     "bound 0"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T7: nothing else was aborted \u2014 the page still holds them",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T8: the host's own drain aborts no page signal it did not time",
+   "detail": {
+    "isolation": "probe-threw:TypeError",
+    "wait_ok": false
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T9: a second page gets its own 16 and no more",
+   "detail": {
+    "said": [
+     "held 0"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T10: pending timeout signals do not outlive their target",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 6,
+ "checks_total": 25,
+ "court": "native-dom AbortSignal.timeout (control 0.0.2)",
+ "host_sha256": "536ad23ed12ac840089bf3b3c058f739bf4af60b819d761b4d796b3d3c382c2c",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the threshold quota exists",
+  "AbortSignal.any is pinned absent and stays out of scope",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the main-only slack bound and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "ruled": {
+  "host_abort_exception": "only the timer timeout() made, only its own signal",
+  "reserved_for_set_timeout": 48,
+  "timeout_signal_cap": 16
+ }
+}

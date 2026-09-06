@@ -43,6 +43,14 @@ __mcsInternals((internals) => {
       if (typeof fn === "function") { signalHandler.set(this, fn); addListener(this, "abort", fn); }
       else signalHandler.delete(this);
     }
+    static timeout(ms) {
+      if (timers.pending.size >= 16) throw new RangeError("too many timeout signals");
+      const controller = new AbortController();
+      g.setTimeout(() => {
+        controller.abort(new DOMException("signal timed out", "TimeoutError"));
+      }, ms);
+      return controller.signal;
+    }
     static abort(reason) {
       const controller = new AbortController();
       controller.abort(reason);
