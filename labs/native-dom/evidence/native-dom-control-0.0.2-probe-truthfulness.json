@@ -1,0 +1,301 @@
+{
+ "checks": [
+  {
+   "check": "T: with the page that nothing, `present` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": false
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that nothing, `enumerable` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": false
+   },
+   "passed": true
+  },
+  {
+   "check": "C: with the page that nothing, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     false,
+     false
+    ],
+    "true": [
+     false,
+     false
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds the name plainly, `present` is true to the realm",
+   "detail": {
+    "reported": true,
+    "true": true
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds the name plainly, `enumerable` is true to the realm",
+   "detail": {
+    "reported": true,
+    "true": true
+   },
+   "passed": true
+  },
+  {
+   "check": "C: with the page that re-adds the name plainly, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     true,
+     true
+    ],
+    "true": [
+     true,
+     true
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds it non-enumerable, `present` is true to the realm",
+   "detail": {
+    "reported": true,
+    "true": true
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds it non-enumerable, `enumerable` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": false
+   },
+   "passed": true
+  },
+  {
+   "check": "C: with the page that re-adds it non-enumerable, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     true,
+     false
+    ],
+    "true": [
+     true,
+     false
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds it and blinds Object.keys, `present` is true to the realm",
+   "detail": {
+    "reported": true,
+    "true": true
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds it and blinds Object.keys, `enumerable` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": true
+   },
+   "passed": false
+  },
+  {
+   "check": "C: with the page that re-adds it and blinds Object.keys, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     true,
+     false
+    ],
+    "true": [
+     true,
+     true
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds it and blinds indexOf, `present` is true to the realm",
+   "detail": {
+    "reported": true,
+    "true": true
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that re-adds it and blinds indexOf, `enumerable` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": true
+   },
+   "passed": false
+  },
+  {
+   "check": "C: with the page that re-adds it and blinds indexOf, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     true,
+     false
+    ],
+    "true": [
+     true,
+     true
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that blinds indexOf into always finding, `present` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": false
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that blinds indexOf into always finding, `enumerable` is true to the realm",
+   "detail": {
+    "reported": true,
+    "true": false
+   },
+   "passed": false
+  },
+  {
+   "check": "C: with the page that blinds indexOf into always finding, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     false,
+     true
+    ],
+    "true": [
+     false,
+     false
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that blinds Object.keys with nothing there, `present` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": false
+   },
+   "passed": true
+  },
+  {
+   "check": "T: with the page that blinds Object.keys with nothing there, `enumerable` is true to the realm",
+   "detail": {
+    "reported": false,
+    "true": false
+   },
+   "passed": true
+  },
+  {
+   "check": "C: with the page that blinds Object.keys with nothing there, a present handle cannot read as absent",
+   "detail": {
+    "reported": [
+     false,
+     false
+    ],
+    "true": [
+     false,
+     false
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "S1: the probe asks its two handle questions without a replaceable call",
+   "detail": {
+    "index_of": true,
+    "object_keys": true
+   },
+   "passed": false
+  },
+  {
+   "check": "S2: the probe still answers its other five questions",
+   "detail": {
+    "answers": 7
+   },
+   "passed": true
+  },
+  {
+   "check": "S3: the seal is untouched and still contains no method call",
+   "detail": {
+    "seal_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "S4: the probe stays double-gated behind the court file",
+   "passed": true
+  }
+ ],
+ "checks_passed": 21,
+ "checks_total": 25,
+ "court": "native-dom court realm probe truthfulness",
+ "host_sha256": "05aa12f7cf6d1d2561cc1fa74a03dbdb69943b337d0f3ba58aa123055ae80a64",
+ "limitations": [
+  "design-frozen court: the tampering scenarios fail until the probe stops asking through Object.keys and indexOf",
+  "each scenario states the truth about a property of that name, and the probe is judged against it, not against another run",
+  "the containment criterion carries the audit's finding that this channel can only fail a court, never clear one",
+  "the probe needs both court flags, so this court passes them and writes the court file into a temporary directory",
+  "two criteria read the host's source rather than the binary, so they are repo-local by design",
+  "nothing here touches SEAL_JS, and nothing here can reach a host answer: the probe feeds only memory.report's court section"
+ ],
+ "observed": {
+  "blinds Object.keys with nothing there": {
+   "enumerable": false,
+   "present": false,
+   "true_enumerable": false,
+   "true_present": false
+  },
+  "blinds indexOf into always finding": {
+   "enumerable": true,
+   "present": false,
+   "true_enumerable": false,
+   "true_present": false
+  },
+  "nothing": {
+   "enumerable": false,
+   "present": false,
+   "true_enumerable": false,
+   "true_present": false
+  },
+  "re-adds it and blinds Object.keys": {
+   "enumerable": false,
+   "present": true,
+   "true_enumerable": true,
+   "true_present": true
+  },
+  "re-adds it and blinds indexOf": {
+   "enumerable": false,
+   "present": true,
+   "true_enumerable": true,
+   "true_present": true
+  },
+  "re-adds it non-enumerable": {
+   "enumerable": false,
+   "present": true,
+   "true_enumerable": false,
+   "true_present": true
+  },
+  "re-adds the name plainly": {
+   "enumerable": true,
+   "present": true,
+   "true_enumerable": true,
+   "true_present": true
+  }
+ },
+ "passed": false,
+ "ruled": {
+  "repair": "the two handle questions are asked with syntax, not with Object.keys(...).indexOf(...)",
+  "untouched": "SEAL_JS, host answers, permissions, budgets, navigation, downloads"
+ }
+}

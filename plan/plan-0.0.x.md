@@ -1381,6 +1381,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Frozen before any repair: the probe-truthfulness court
+  (`labs/native-dom/probe-truthfulness-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-probe-truthfulness.json`, record in
+  `realm-probe-audit-0.0.1.md` §8). For each of seven pages it states **what is
+  actually true** about a `__mcsInternals` property and requires the probe to
+  say it, rather than comparing runs. **21/25 on the shipped binary**, and the
+  four failures are exactly the repair's targets: two masking scenarios where
+  the probe calls an enumerable property hidden, one false alarm where it calls
+  a gone handle enumerable, and the source rule. Two groups pass today and are
+  worth keeping: **every `present` criterion** (a `typeof`, truthful in all
+  seven scenarios) and **every containment criterion** — in no scenario did the
+  pair read `false, false` while a property of that name existed, so the audit's
+  fail-safe finding now stands as a criterion. **Repair priced by direct
+  measurement, not extrapolation**: both forms evaluated 2,000 times in a
+  shim-installed realm across six runs — `Object.keys(...).indexOf(...)`
+  18,136–18,790 ns per evaluation against the syntax-only `for…in` at
+  21,999–22,965, so **+3.8 µs, about +21%**, with retention indistinguishable.
+  It is not zero, unlike H1's substitution, because this trades a native call
+  for an interpreted walk over `window`; the cost is the walk, not the compile.
+  The probe runs once per realm per `memory.report` and only under two court
+  flags. No implementation, no source change, `SEAL_JS` untouched.
 - [ ] Design-only, nothing implemented: the court realm probe
   (`labs/native-dom/realm-probe-audit-0.0.1.md`). **The diagnostic can be made
   to lie, but only in the fail-safe direction, and no host answer or security

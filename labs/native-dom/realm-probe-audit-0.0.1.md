@@ -146,3 +146,59 @@ which is its whole purpose).
 3. Whether §3's conclusion — that this channel is fail-safe and reaches no host
    answer — is enough to leave it alone entirely. That is a defensible ruling,
    and the audit does not argue against it.
+
+---
+
+## 8. Court frozen, and the repair priced — 2026-09-06
+
+`probe-truthfulness-court.py` is frozen from §6, receipt
+`evidence/native-dom-control-0.0.2-probe-truthfulness.json`. It states, for each
+of seven pages, **what is actually true** about a property named
+`__mcsInternals` on `window`, and requires the probe to say it — rather than
+comparing one run against another.
+
+It reads **21/25** on the shipped binary. The four failures are exactly the
+repair's targets:
+
+| failing criterion | what the probe says | what is true |
+| --- | --- | --- |
+| the page re-adds the name and blinds `Object.keys` | not enumerable | **enumerable** |
+| the page re-adds the name and blinds `indexOf` | not enumerable | **enumerable** |
+| the page blinds `indexOf` into always finding | enumerable | **not enumerable** |
+| the probe's source still asks through a replaceable call | — | — |
+
+Everything else passes today, and two groups of that are worth naming. **Every
+`present` criterion passes** — `typeof` was truthful in all seven scenarios,
+including the two where a page re-added the name and tried to hide it. And
+**every containment criterion passes**: in no scenario did the pair read
+`false, false` while a property of that name existed. That is the audit's
+fail-safe finding, now standing as a criterion rather than a claim.
+
+### What the repair costs, measured directly
+
+The probe is compiled per call, so the cost is per evaluation, not per realm.
+Both forms were evaluated 2,000 times in a realm with the shims installed, six
+runs:
+
+| | source bytes | ns per evaluation | retained after 2,000 |
+| --- | ---: | ---: | ---: |
+| `Object.keys(window).indexOf(…) >= 0` | 579 | **18,136 – 18,790** | ~82 KB |
+| syntax-only `for…in` | 625 (+46) | **21,999 – 22,965** | ~66–82 KB |
+
+**About +3.8 µs per evaluation, roughly +21%.** Retention is indistinguishable:
+both leave the same order of pending garbage, and the spread between runs of one
+form exceeds the difference between the forms.
+
+This number is measured, **not** extrapolated from H1. The reason it is not
+zero, unlike H1's substitution, is that the two are not the same kind of change:
+H1 swapped one native call for another, while this replaces a native
+`Object.keys` with an interpreted walk over `window`'s properties. The cost is
+the walk, not the compile.
+
+In context: the probe runs once per realm per `memory.report`, and only when
+both court flags are set. Four microseconds against a court-only diagnostic is
+not a reason to keep a lie in the evidence chain — but it is a real number and
+it is stated rather than rounded to nothing.
+
+**Not done**: no implementation, no source change, no handle, base or bound
+change, `SEAL_JS` untouched.
