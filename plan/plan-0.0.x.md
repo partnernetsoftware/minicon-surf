@@ -1302,13 +1302,39 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the host's fixed first-request cost
+  (`labs/native-dom/first-request-cost-audit-0.0.1.md`), which was meant to be
+  the first-profile audit and **dissolved its own premise**. Creating a profile
+  costs **nothing measurable**: the ~1.77 MB step belongs to the host serving
+  its **first line of any kind**, and the strongest form of that measurement is
+  that a **malformed, unparseable line answered `invalid_request` pays it in
+  full** — before any dispatch. It is allocator-independent (system +1,736,968,
+  arena +1,769,736), it corresponds to **no host-tracked owner** (every owner
+  class reports zero bytes across the jump; the only non-zero figure is a 16
+  MiB *limit*), it is working set rather than heap (footprint 196,680 to
+  2,097,488 while resident goes 4.8 MB to 7.5 MB), and it does not come back:
+  `memory.trim` releases 0 and costs 65,536 of its own. **This corrects the
+  attribution in the open-goal triage**, which put the step next to
+  `profile.create` only because that was the first request it sent. The
+  consequence for **P6's D6** is sharp: of the 6,619,592 it measures against a
+  4,178,196 target, roughly 1.9 MB is this process constant and 1.41 MB is the
+  first realm, while profile machinery is about 16 KB — so **D6 cannot be met
+  by working on profiles**, and either the baseline shrinks, the realm shrinks,
+  or the criterion is re-derived by ruling. For **G1** the correction helps:
+  profiles are free and the marginal target is 0.33 MB, which is the shape an
+  efficiency argument wants, with the fixed cost measured as a one-time
+  constant rather than folded into per-target figures. The triage's ordering is
+  amended accordingly: the first-realm audit becomes the next candidate. G1,
+  G3, P6 and G6 stay open.
 - [ ] Design-only triage of the four open goals
   (`labs/native-dom/open-goal-triage-0.0.1.md`). **None of G1, G3, P6 or G6 is
   limited by main-extension slack**, so the 2,944 bytes left there buy nothing
   for any of them and the brief's filter yields **no candidate to take**. The
   host's memory was decomposed live on the shipped binary: empty host 196,680,
-  **first profile +1,769,736**, session +0, **first realm +1,409,024**, second
-  target +327,680, and closing returns nothing — so two fixed costs dominate
+  **first profile +1,769,736** — *later corrected: that step is the first
+  served line of any kind, not the profile; see
+  `first-request-cost-audit-0.0.1.md`* — session +0, **first realm
+  +1,409,024**, second target +327,680, and closing returns nothing — so two fixed costs dominate
   while a marginal target is only 0.33 MB. That localises both G1's efficiency
   question and P6's **D6**, which wants live footprint under 4,178,196 and
   measures 6,619,592. G3's open item is read from its receipts rather than
