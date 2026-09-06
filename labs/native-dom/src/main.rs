@@ -236,7 +236,7 @@ const SEAL_JS: &str =
 /// nothing a page owns.
 const REALM_PROBE_JS: &str = r#"(() => [
   String(typeof window.__mcsInternals !== "undefined"),
-  String(Object.keys(window).indexOf("__mcsInternals") >= 0),
+  String((() => { for (const k in window) { if (k === "__mcsInternals") return true; } return false; })()),
   String(typeof window.document.body?.classList !== "undefined"),
   String(typeof window.CustomEvent !== "undefined"),
   String("isTrusted" in window.Event.prototype && "timeStamp" in window.Event.prototype),

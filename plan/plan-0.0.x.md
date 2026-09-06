@@ -1381,6 +1381,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Implemented behind the frozen court: the probe's evidence chain
+  (`labs/native-dom/src/main.rs`, record in `realm-probe-audit-0.0.1.md` §9).
+  `REALM_PROBE_JS`'s enumerability question is now a syntax-only `for…in`, and
+  `Object.keys` and `.indexOf` are gone from it; the `present` question was
+  already `typeof` and truthful in all seven scenarios, so it is unchanged —
+  the repair is exactly the two replaceable calls. **The frozen court reads
+  25/25** on `aa30da2b…`, up from 21/25, the four movers being the two masking
+  scenarios, the false alarm and the source rule. **Per-realm cost: none** —
+  system 327,424 and arena 317,360, identical before and after, since the probe
+  is compiled per call and never retained; the price is the +3.8 µs per
+  evaluation measured beforehand, paid once per realm per `memory.report` under
+  two court flags. Regressions: host-answer 9/9, property-shape 22/22,
+  capture-declaration 8/8, downloads 21/21, copy-on-write 23/23, readonly 28/28,
+  frame-action 182/182, child-frame 82/82, contract 28/50, 56 tests, fmt and
+  clippy clean. **`shim-footprint-court` gets a note, not a tick**: it asks
+  whether a candidate *recovers* 16 KiB against a `--baseline`, reads 15/18
+  here, and its three failures are structural — the baseline binary compared
+  with itself reads 14/18 on the same criteria. Its one criterion that bears on
+  this work, *the handle is gone and not enumerable*, **passes**, now backed by
+  a probe a page cannot blind. `SEAL_JS`, host answers, the protocol, the handle
+  key set, both shims and every bound are untouched.
 - [ ] Frozen before any repair: the probe-truthfulness court
   (`labs/native-dom/probe-truthfulness-court.py`, receipt
   `evidence/native-dom-control-0.0.2-probe-truthfulness.json`, record in

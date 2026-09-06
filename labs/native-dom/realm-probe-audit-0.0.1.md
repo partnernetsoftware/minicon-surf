@@ -202,3 +202,45 @@ it is stated rather than rounded to nothing.
 
 **Not done**: no implementation, no source change, no handle, base or bound
 change, `SEAL_JS` untouched.
+
+---
+
+## 9. Repaired — 2026-09-06
+
+The probe's enumerability question is now syntax:
+
+```js
+String((() => { for (const k in window) { if (k === "__mcsInternals") return true; } return false; })()),
+```
+
+`Object.keys` and `.indexOf` are gone from `REALM_PROBE_JS`. The `present`
+question was **already** syntax — `typeof` — and was truthful in all seven
+scenarios, so it is unchanged; the repair is exactly the two replaceable calls
+and nothing else.
+
+**`probe-truthfulness-court.py` reads 25/25** on `aa30da2b…`, up from 21/25.
+The four criteria that moved are the two masking scenarios, the false-alarm
+scenario, and the source rule.
+
+**Per-realm cost: none.** system 327,424 and arena 317,360, identical before and
+after — as expected, since the probe is a host-side script compiled per call and
+never retained in a realm. The +3.8 µs per evaluation measured in §8 stands as
+the price, paid once per realm per `memory.report` under two court flags.
+
+Regressions on the same binary: host-answer 9/9, property-shape 22/22,
+capture-declaration 8/8, downloads 21/21, copy-on-write 23/23, readonly 28/28,
+frame-action 182/182, child-frame 82/82, contract 28 examples and 50 negative
+cases, `cargo test` 56 passed, fmt and clippy clean.
+
+**`shim-footprint-court` needs a note rather than a green tick.** It takes a
+`--baseline` binary and asks whether the candidate *recovers* at least 16 KiB;
+run candidate-against-baseline it reads 15/18. The three failures are the
+recovery comparison, and they are structural: **the baseline binary compared
+with itself reads 14/18, failing the same criteria.** That court answers "did
+this build save footprint", which this change never claimed. The criterion in it
+that does bear on this work — *the internals handle is gone from the main realm,
+and not enumerable* — **passes**, and it is now backed by a probe a page cannot
+blind.
+
+**Untouched**: `SEAL_JS`, every host answer to an agent, the protocol, the
+handle key set, the base and main shims, and every bound.
