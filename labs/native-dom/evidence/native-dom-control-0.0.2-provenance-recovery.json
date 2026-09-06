@@ -1,0 +1,62 @@
+{
+  "receipt_kind": "rebuilt-old-tree",
+  "what_this_is": "A provenance recovery attempt for the two rounds that changed the host and committed no receipt. Each commit was checked out into an isolated scratch worktree, built offline with the pinned toolchain, and exercised with the harness as it existed at that commit. **This is NOT shipped-round evidence.** A rebuild reproduces the source, not the artefact: see `reproducibility_control` below, which measures that the same commit built at a different path yields a different binary. The hashes here are the rebuilds' own and are not the hashes those rounds produced.",
+  "authorised_by": "the scoped recovery ruling of 2026-09-06",
+  "toolchain": {
+    "rustc": "1.97.0 (2d8144b78 2026-07-07)",
+    "cargo": "1.97.0 (c980f4866 2026-06-30)",
+    "build": "cargo build --release --offline, no network"
+  },
+  "reproducibility_control": {
+    "question": "does rebuilding a commit reproduce that round's binary?",
+    "method": "commit 2c87f29, whose shipped binary is in the main worktree, was rebuilt in a scratch worktree with the same toolchain and the same offline dependency set",
+    "shipped_binary_sha256_prefix": "2d57ce864002406e",
+    "rebuilt_binary_sha256_prefix": "6ce4567220e5e348",
+    "identical": false,
+    "size_delta_bytes": 144,
+    "first_differing_byte": 697,
+    "finding": "The same source at the same toolchain produces a different binary when built at a different path. A rebuild therefore cannot establish a historical binary's hash, and the 'unrecoverable' ruling for b00dd3a and a229c13 stands -- now for a measured reason rather than for want of trying."
+  },
+  "rounds": {
+    "b00dd3a": {
+      "subject": "Stress the download transport",
+      "why_no_receipt": "the round produced an audit and a stress harness, and wrote no receipt",
+      "rebuilt_binary_sha256_prefix": "a9bb6b51521a5f27",
+      "rebuilt_binary_is_not_the_round_s": true,
+      "evidence_actually_rerun": {
+        "harness": "transport-line-stress.py, as it existed at b00dd3a",
+        "verdict": "transport stress: passed",
+        "line_written_bytes": 1398624,
+        "line_read_bytes": 1398625,
+        "payload_intact": true,
+        "byte_count_matches": true,
+        "sha256_matches": true,
+        "under_4MiB_bound": true,
+        "largest_protocol_line_bytes": 46514,
+        "largest_as_share_of_response_bound": "1.1090%",
+        "over_cap_body": {
+          "refused": true,
+          "code": "resource_limit",
+          "message": "network policy: response-bytes",
+          "generic_internal": false
+        }
+      },
+      "not_rerun": "nothing else; the round had no court"
+    },
+    "a229c13": {
+      "subject": "Ask the realm probe a question the page cannot answer (the repair)",
+      "why_no_receipt": "the round changed one line of src/main.rs and wrote no receipt",
+      "rebuilt_binary_sha256_prefix": "714b9bc2031624fc",
+      "rebuilt_binary_is_not_the_round_s": true,
+      "evidence_actually_rerun": {
+        "court": "probe-truthfulness-court.py, as it existed at a229c13",
+        "score": "25/25",
+        "passed": true,
+        "meaning": "the repair round's own court, at its own version, passes on its own source. This is the first record anywhere of that court passing at that commit: the committed -probe-truthfulness receipt is the 21/25 arm frozen BEFORE the repair, and -probe-truthfulness-repaired is 25/25 on today's binary."
+      },
+      "not_rerun": "no other court was run at this commit"
+    }
+  },
+  "ruling_unchanged": "b00dd3a's and a229c13's binary hashes remain unrecoverable and no register row is written for either. What is recovered is behaviour, not provenance.",
+  "cleanup": "the scratch worktrees were removed; the main worktree was never modified"
+}

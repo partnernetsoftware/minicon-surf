@@ -2238,11 +2238,24 @@ differ across receipts by design:
 Three things this register does **not** carry, recorded here rather than
 guessed at:
 
-- **Two rounds changed the host and produced no receipt.** The download
-  transport stress (`b00dd3a`) left an audit and a stress script but no receipt,
-  and the realm-probe repair (`a229c13`) changed one line of `main.rs` and left
-  none either. Neither binary's hash is written anywhere in the tree, so neither
-  has a row above: a register row invents nothing.
+- **Two rounds changed the host and produced no receipt, and their hashes are
+  unrecoverable — measured, not assumed.** The download transport stress
+  (`b00dd3a`) left an audit and a stress harness but no receipt, and the
+  realm-probe repair (`a229c13`) changed one line of `main.rs` and left none
+  either. A scoped recovery round checked both commits out into scratch
+  worktrees and rebuilt them offline with the pinned toolchain, and the control
+  it ran first settles the question: **commit `2c87f29`, whose shipped binary is
+  `2d57ce864002…`, rebuilds at a different path to `6ce4567220e5…`** — 144 bytes
+  different, first differing byte 697. The same source at the same toolchain
+  does not reproduce the same artefact across paths, so **a rebuild cannot
+  establish a historical hash** and neither round gets a row: a register row
+  invents nothing. What the rebuilds did recover is **behaviour**, in
+  `-provenance-recovery`: the transport stress passes at `b00dd3a` with its
+  largest protocol line at 46,514 bytes, 1.109% of the response bound, and an
+  over-cap body refused `resource_limit` rather than a generic `internal`; and
+  **`probe-truthfulness` reads 25 of 25 at `a229c13`, run with the court as it
+  existed at that commit** — the first record anywhere of that court passing on
+  the source that repaired it.
 - **The realm-probe repair still has no receipt of its own, and now the court
   has a passing one.** `-probe-truthfulness` is committed at **21 of 25**, the
   arm frozen *before* the repair, on `05aa12f7cf6d…`; it is **not** overwritten

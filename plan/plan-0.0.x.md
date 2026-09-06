@@ -1404,6 +1404,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Scoped provenance recovery, and the ruling it confirmed
+  (`evidence/native-dom-control-0.0.2-provenance-recovery.json`, register note in
+  `labs/native-dom/README.md`). Both receiptless commits were checked out into
+  **isolated scratch worktrees**, built **offline** with the pinned toolchain
+  (rustc 1.97.0, cargo 1.97.0), exercised with the harness as it existed at each
+  commit, and the worktrees removed; the main worktree was never modified.
+  **The control run first, and it decides the round**: commit `2c87f29`, whose
+  shipped binary is `2d57ce864002…`, rebuilds at a different path to
+  `6ce4567220e5…` — 144 bytes different, first differing byte 697. **The same
+  source at the same toolchain does not reproduce the same artefact across
+  paths**, so a rebuild cannot establish a historical hash. The rebuilds' own
+  hashes (`a9bb6b51…` for `b00dd3a`, `714b9bc2…` for `a229c13`) are recorded as
+  what they are and **are not** those rounds' hashes; **no register row is
+  written for either** and the *unrecoverable* ruling stands, now for a measured
+  reason rather than for want of trying. **What was recovered is behaviour, not
+  provenance**, and only what was actually rerun is recorded: at `b00dd3a` the
+  transport stress passes, with its largest protocol line at **46,514 bytes,
+  1.109% of the response bound**, and an over-cap body refused `resource_limit`
+  rather than a generic `internal`; at `a229c13` **`probe-truthfulness` reads
+  25 of 25 with the court as it existed at that commit** — the first record
+  anywhere of that court passing on the source that repaired it, which is
+  exactly the gap the integration audit named. Nothing is inferred for anything
+  not rerun, and no old receipt is fabricated. No product code, no court, no
+  criterion, no bound, handle or base byte, no protocol change, nothing
+  downloaded. Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Documentation-only cleanup: the last orphan is cited and the absent
   governance is ruled (`labs/native-dom/job-deadline-design-0.0.1.md` §12,
   `integration-consistency-audit-0.0.1.md` §1b). **The orphan is closed by
