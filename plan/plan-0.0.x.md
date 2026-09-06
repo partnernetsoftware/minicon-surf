@@ -1363,6 +1363,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   pre-implementation binary**, so the two failures beyond the known D6 pair are
   machine drift in the store's `resident_delta` rather than this slice. G1, G3,
   P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: permissions enforcement
+  (`labs/native-dom/permissions-enforcement-audit-0.0.1.md`). **The gap is real
+  and it is not a lie.** Measured: `network` **is** a capability — `offline`
+  makes `target.open` answer `permission_denied` with `network policy:
+  network_offline` — while `permissions` is a record: under `deny_by_default` a
+  page's own `fetch` still succeeds and `profile.storage.put` still succeeds,
+  and the value round-trips, persists on the **profile** (the session is only
+  the handle) and is counted in `memory.report`. The host labels it
+  `permissions_effect: "recorded_only"` in **both** `profile.inspect` and the
+  memory report, so a client discovers the truth without reading the plan —
+  unlike the silent failures this batch found elsewhere. **What is missing is
+  not enforcement machinery but anything to enforce**: network already has its
+  own enforced field, downloads are refused wholesale, and geolocation, camera,
+  microphone, notifications and clipboard have no APIs at all, so the set of
+  permission-bearing capabilities is **empty**. Per-session and profile-level
+  enforcement are therefore the same work in two scopes and both are
+  **unfalsifiable today** — a court could only pass vacuously, which this
+  host's discipline forbids. Recommendation: **keep `recorded_only`, change no
+  host code**, and bind permissions to **downloads** whenever downloads are
+  ruled in, taking the seven-criterion court draft with that slice. Its fourth
+  criterion is the one that keeps the label honest: `permissions_effect` stops
+  saying `recorded_only` only when it stops being true. Recorded dependency:
+  a readonly session already refuses `profile.policy.set` with
+  `session_read_only`, and the two refusals must stay distinct from
+  `permission_denied`. G1, G3, P6 and G6 stay open.
 - [ ] Design-only host-side triage of P6's six remaining capabilities
   (`labs/native-dom/p6-host-triage-0.0.1.md`), each measured black-box rather
   than read off the plan. **Permissions**: the host already reports
