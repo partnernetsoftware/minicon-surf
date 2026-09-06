@@ -1,12 +1,11 @@
 {
   "protocol": "minicon-surf.control",
   "version": "0.0.2",
-  "request_id": "req_profile_readonly_1",
+  "request_id": "req_session_readonly_1",
   "deadline_ms": 5000,
-  "operation": "profile.create",
+  "operation": "session.open",
   "arguments": {
-    "persistence": "persistent",
-    "name": "alpha",
+    "profile": "profile_court_1",
     "mode": "readonly"
   }
 }

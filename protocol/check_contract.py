@@ -153,26 +153,32 @@ def validate_request(document):
             object_id("target", target)
     if document["operation"] == "profile.create":
         # The profile's own field set, mirrored here so a client can be wrong
-        # before it reaches a host. `mode` belongs to the open and is not
-        # persisted; an ephemeral profile has nothing to read, so the pair is
-        # refused rather than silently accepted.
+        # before it reaches a host. The mode is NOT here: a persistent profile
+        # is adopted at startup and never passes through create again, so the
+        # mode belongs to the open — see session.open below.
         arguments = document["arguments"]
-        allowed = {"persistence", "name", "mode"}
+        allowed = {"persistence", "name"}
         require("persistence" in arguments and set(arguments) <= allowed,
                 "profile.create arguments differ")
         require(arguments["persistence"] in ("ephemeral", "persistent"),
                 "profile persistence differs")
-        if "mode" in arguments:
-            require(arguments["mode"] in ("readwrite", "readonly"),
-                    "profile mode differs")
-            require(not (arguments["mode"] == "readonly"
-                         and arguments["persistence"] == "ephemeral"),
-                    "an ephemeral profile cannot be opened readonly")
         if "name" in arguments:
             name = arguments["name"]
             require(type(name) is str and 1 <= len(name) <= 64
                     and all(c.isalnum() or c in "-_" for c in name),
                     "profile name differs")
+    if document["operation"] == "session.open":
+        # The open is where the mode lives, because every use of a profile —
+        # created now or adopted at startup — goes through a session. It is
+        # per session and is not persisted; whether the profile behind it can
+        # be opened this way is the host's answer, not the contract's.
+        arguments = document["arguments"]
+        require({"profile"} <= set(arguments) <= {"profile", "mode"},
+                "session.open arguments differ")
+        object_id("profile", arguments["profile"])
+        if "mode" in arguments:
+            require(arguments["mode"] in ("readwrite", "readonly"),
+                    "session mode differs")
     if document["operation"] == "target.snapshot":
         arguments = document["arguments"]
         fields = {"target", "format", "max_bytes", "max_nodes"}
@@ -433,11 +439,11 @@ def main():
     validate_response(failure)
     require(request["request_id"] == success["request_id"], "response does not echo request ID")
     require(stale_request["request_id"] == failure["request_id"], "failure does not echo request ID")
-    # The profile mode is an open-only argument: the request carries it, the
-    # answer reports it, and `read_only` stays what it has always been — the
-    # fail-closed latch, not the mode.
-    readonly_request = load_bounded(examples / "profile-create-readonly.request.json", MAX_REQUEST_BYTES)
-    readonly_success = load_bounded(examples / "profile-create-readonly.success.json", MAX_RESPONSE_BYTES)
+    # The mode is an open-only argument on the session: the request carries
+    # it, the answer reports it, and `read_only` stays what it has always been
+    # — the fail-closed latch on the profile, not the session's mode.
+    readonly_request = load_bounded(examples / "session-open-readonly.request.json", MAX_REQUEST_BYTES)
+    readonly_success = load_bounded(examples / "session-open-readonly.success.json", MAX_RESPONSE_BYTES)
     validate_request(readonly_request)
     validate_response(readonly_success)
     require(readonly_request["request_id"] == readonly_success["request_id"],
@@ -655,19 +661,35 @@ def main():
 
     # The profile mode's own negatives: an unknown mode, the pair that has
     # nothing to read, an unknown field, and a missing persistence.
+    # The session mode's negatives. The ephemeral-plus-readonly pair is NOT
+    # here: the contract sees an opaque profile id and cannot know a profile's
+    # persistence, so that refusal is the host's and the court pins it there.
     unknown_mode = json.loads(json.dumps(readonly_request))
     unknown_mode["arguments"]["mode"] = "sometimes"
     expect_invalid(unknown_mode, validate_request)
 
-    ephemeral_readonly = json.loads(json.dumps(readonly_request))
-    ephemeral_readonly["arguments"]["persistence"] = "ephemeral"
-    expect_invalid(ephemeral_readonly, validate_request)
+    unknown_session_field = json.loads(json.dumps(readonly_request))
+    unknown_session_field["arguments"]["persistence"] = "persistent"
+    expect_invalid(unknown_session_field, validate_request)
 
-    unknown_profile_field = json.loads(json.dumps(readonly_request))
+    # And the profile's own field set, which the mode does not join.
+    create_request = {
+        "protocol": "minicon-surf.control", "version": "0.0.2",
+        "request_id": "req_profile_negative_1", "deadline_ms": 5000,
+        "operation": "profile.create",
+        "arguments": {"persistence": "persistent", "name": "alpha"},
+    }
+    validate_request(create_request)
+
+    create_with_mode = json.loads(json.dumps(create_request))
+    create_with_mode["arguments"]["mode"] = "readonly"
+    expect_invalid(create_with_mode, validate_request)
+
+    unknown_profile_field = json.loads(json.dumps(create_request))
     unknown_profile_field["arguments"]["downloads"] = "allow"
     expect_invalid(unknown_profile_field, validate_request)
 
-    missing_persistence = json.loads(json.dumps(readonly_request))
+    missing_persistence = json.loads(json.dumps(create_request))
     del missing_persistence["arguments"]["persistence"]
     expect_invalid(missing_persistence, validate_request)
     # Counted rather than quoted: the line used to carry fixed numbers, and

@@ -214,3 +214,32 @@ Both were frozen against A and would need amending **by ruling, not by edit**:
 Nothing has been implemented, and neither artefact has been amended. The court
 stands frozen at 2 of 4 against a shape that, as measured, cannot reach adopted
 profiles.
+
+
+## 9. Ruled: A′, the mode belongs to the session
+
+The mode moves to **`session.open {profile, mode}`**, per session, not
+persisted. `profile.create` does **not** take it — a rule now pinned by a
+contract negative, so adding it later would fail a check rather than pass
+unnoticed. B′ (a host startup flag) is refused for being whole-host and
+invisible to a second client; C′ (a new operation) is refused for growing the
+closed enum.
+
+What moved, and what did not:
+
+- **The court**: R1, R2 and R7 now open an **adopted** profile — the case A
+  could not reach — and a new **R0** pins that adoption happens at startup at
+  all. **R6** became the better test the shape allows: two sessions on one
+  profile in one host, the plain one writing and the readonly one still
+  refusing (**R6b**), which proves the mode is the session's rather than the
+  profile's far better than a restart did.
+- **The contract**: the rule and the example pair moved to `session.open`;
+  `profile.create` keeps its field-set validation and gains a negative for a
+  `mode` it must not accept.
+- **The ephemeral refusal moved to the host.** The contract sees an opaque
+  profile id and cannot know a profile's persistence, so it cannot express
+  "ephemeral cannot be readonly". That refusal is the host's, and R7 pins it
+  there instead. This is recorded rather than quietly dropped: the ruling asked
+  for the negative to be kept, and the honest place for it is the court.
+- **Unchanged**: the `read_only` fail-closed latch and its own criterion, the
+  writer lock, and every typed error already in the contract.

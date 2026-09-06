@@ -151,16 +151,17 @@ def main():
 
     # C1/C2: the contract carries the mode, its example and its refusals.
     contract_source = (ROOT / "protocol" / "check_contract.py").read_text()
-    expect("C1: the contract validates profile.create's field set including the mode",
-           '"profile.create"' in contract_source and "profile mode differs" in contract_source
-           and "an ephemeral profile cannot be opened readonly" in contract_source,
-           {"has_rule": "profile mode differs" in contract_source})
-    expect("C2: an example pair carries the mode and leaves read_only alone",
-           (EXAMPLES / "profile-create-readonly.request.json").exists()
-           and (EXAMPLES / "profile-create-readonly.success.json").exists()
-           and json.loads((EXAMPLES / "profile-create-readonly.success.json").read_text())
+    expect("C1: the contract puts the mode on session.open and keeps it off profile.create",
+           "session mode differs" in contract_source
+           and "profile mode differs" not in contract_source,
+           {"session_rule": "session mode differs" in contract_source,
+            "create_rule_gone": "profile mode differs" not in contract_source})
+    expect("C2: an example pair carries the mode on the session and leaves read_only alone",
+           (EXAMPLES / "session-open-readonly.request.json").exists()
+           and (EXAMPLES / "session-open-readonly.success.json").exists()
+           and json.loads((EXAMPLES / "session-open-readonly.success.json").read_text())
            ["result"]["read_only"] is False,
-           {"request": (EXAMPLES / "profile-create-readonly.request.json").exists()})
+           {"request": (EXAMPLES / "session-open-readonly.request.json").exists()})
 
     try:
         for allocator in ("system", "arena"):
@@ -189,18 +190,26 @@ def main():
                 # Round two: the same identity, opened readonly.
                 host = Host(args.binary, directory, allocator, origin, root)
                 try:
-                    opened = host.call("profile.create",
-                                       {"persistence": "persistent", "name": "alpha",
-                                        "mode": "readonly"})
-                    expect(tag + "R1: a profile opens readonly and says so, without the latch",
+                    # The profile was adopted at startup: it is already listed,
+                    # and create would answer conflict. The open is the session.
+                    listed = host.ok("profile.list", {})["profiles"]
+                    adopted = next((p["profile"] for p in listed
+                                    if p.get("name") == "alpha"), None)
+                    expect(tag + "R0: the profile is adopted at startup, not created again",
+                           adopted is not None, {"listed": listed})
+                    if adopted is None:
+                        continue
+                    opened = host.call("session.open",
+                                       {"profile": adopted, "mode": "readonly"})
+                    expect(tag + "R1: an adopted profile opens readonly and says so, without the latch",
                            opened.get("ok")
                            and opened["result"].get("mode") == "readonly"
                            and opened["result"].get("read_only") is False,
                            {"answer": opened.get("result") or opened.get("error")})
                     if not opened.get("ok"):
                         continue
-                    ro = opened["result"]["profile"]
-                    ro_session = host.ok("session.open", {"profile": ro})["session"]
+                    ro = adopted
+                    ro_session = opened["result"]["session"]
 
                     read = host.call("profile.storage.get",
                                      {"session": ro_session, "kind": "local_storage",
@@ -230,21 +239,35 @@ def main():
                     if target.get("ok"):
                         host.call("target.close", {"target": target["result"]["target"]})
 
-                    # R7: the pair with nothing to read. The contract refuses it too,
-                    # so this one is sent raw to reach the host's own answer.
-                    ephemeral = host.raw("profile.create",
-                                         {"persistence": "ephemeral", "mode": "readonly"},
-                                         validate=False)
-                    expect(tag + "R7: ephemeral and readonly is refused as an invalid request",
-                           refused(ephemeral, "invalid_request"),
-                           {"answer": ephemeral.get("error")})
+                    # R7: an ephemeral profile has nothing to read, and the
+                    # contract cannot see a profile's persistence through an
+                    # opaque id, so this refusal is the host's and is pinned here.
+                    scratch = host.call("profile.create", {"persistence": "ephemeral"})
+                    if scratch.get("ok"):
+                        ephemeral = host.call("session.open",
+                                              {"profile": scratch["result"]["profile"],
+                                               "mode": "readonly"})
+                        expect(tag + "R7: an ephemeral profile cannot be opened readonly",
+                               refused(ephemeral, "invalid_request"),
+                               {"answer": ephemeral.get("error")})
+                    else:
+                        expect(tag + "R7: an ephemeral profile cannot be opened readonly",
+                               False, {"answer": scratch.get("error")})
 
-                    unknown = host.raw("profile.create",
-                                       {"persistence": "persistent", "name": "beta",
-                                        "mode": "sometimes"}, validate=False)
+                    unknown = host.raw("session.open",
+                                       {"profile": adopted, "mode": "sometimes"},
+                                       validate=False)
                     expect(tag + "R9: an unknown mode is refused",
                            refused(unknown, "invalid_request"),
                            {"answer": unknown.get("error")})
+
+                    # And the mode does not join profile.create, by ruling.
+                    on_create = host.raw("profile.create",
+                                         {"persistence": "persistent", "name": "gamma",
+                                          "mode": "readonly"}, validate=False)
+                    expect(tag + "R9b: profile.create does not take a mode",
+                           refused(on_create, "invalid_request"),
+                           {"answer": on_create.get("error")})
 
                     # R4: a writable sibling in the same host still writes.
                     beta = host.call("profile.create",
@@ -302,23 +325,39 @@ def main():
                 finally:
                     host.finish()
 
-                # R6: reopening without the flag is writable again — the mode
-                # belonged to the open, not to the record.
+                # R6: a SECOND session on the same profile, without the mode,
+                # still writes — the mode belongs to the session, not to the
+                # profile and not to the record.
                 host = Host(args.binary, directory, allocator, origin, root)
                 try:
-                    again = host.call("profile.create",
-                                      {"persistence": "persistent", "name": "alpha"})
+                    listed = host.ok("profile.list", {})["profiles"]
+                    adopted = next((p["profile"] for p in listed
+                                    if p.get("name") == "alpha"), None)
                     writable = False
-                    if again.get("ok"):
-                        session = host.ok("session.open",
-                                          {"profile": again["result"]["profile"]})["session"]
-                        wrote = host.call("profile.storage.put",
-                                          {"session": session, "kind": "local_storage",
-                                           "key": "after-readonly", "value": "writable-again"})
-                        writable = bool(wrote.get("ok"))
-                    expect(tag + "R6: reopening without the mode is writable again",
-                           writable,
-                           {"answer": (again.get("result") or again.get("error"))})
+                    both_open = False
+                    if adopted is not None:
+                        ro = host.call("session.open", {"profile": adopted, "mode": "readonly"})
+                        rw = host.call("session.open", {"profile": adopted})
+                        both_open = bool(ro.get("ok") and rw.get("ok"))
+                        if rw.get("ok"):
+                            wrote = host.call("profile.storage.put",
+                                              {"session": rw["result"]["session"],
+                                               "kind": "local_storage",
+                                               "key": "after-readonly",
+                                               "value": "writable-again"})
+                            writable = bool(wrote.get("ok"))
+                        if ro.get("ok"):
+                            refused_here = host.call("profile.storage.put",
+                                                     {"session": ro["result"]["session"],
+                                                      "kind": "local_storage",
+                                                      "key": "still-no",
+                                                      "value": "must-not-write"})
+                            expect(tag + "R6b: the readonly session still refuses while the other writes",
+                                   not refused_here.get("ok"),
+                                   {"answer": refused_here.get("error")})
+                    expect(tag + "R6: a second session without the mode writes the same profile",
+                           writable and both_open,
+                           {"writable": writable, "both_open": both_open})
                 finally:
                     host.finish()
     finally:
@@ -327,7 +366,7 @@ def main():
     receipt = {
         "court": "native-dom readonly profiles (control 0.0.1 arguments)",
         "host_sha256": hashlib.sha256(Path(args.binary).read_bytes()).hexdigest(),
-        "ruled": {"shape": "mode argument on profile.create, open-only, not persisted",
+        "ruled": {"shape": "mode argument on session.open, per session, not persisted",
                   "read_only": "unchanged: the failed-commit latch",
                   "ephemeral_readonly": "refused",
                   "writer_lock": "still taken"},
@@ -336,7 +375,7 @@ def main():
         "checks_total": len(checks),
         "passed": all(c["passed"] for c in checks),
         "limitations": [
-            "design-frozen court: it fails until profile.create accepts the mode",
+            "design-frozen court: it fails until session.open accepts the mode",
             "on a host without the mode the run stops at R1 in each arm, so the criterion count is small until the capability exists and grows to the full set once R1 passes",
             "R5 is the criterion that matters: it proves the new mode did not eat read_only's meaning, and profile-court.py's own latch criterion must keep passing on the same binary",
             "two criteria read the contract source and its examples rather than the binary, so they are repo-local by design",
