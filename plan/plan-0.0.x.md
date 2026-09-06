@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: H3 versus the closed C2
+  (`labs/native-dom/h3-reserved-captures-design-0.0.1.md`). The conflict is
+  exact: H3 as worded says every capture is referenced, C2 permanently forbids
+  deleting `arrayIndexOf`, and `arrayIndexOf` has zero references.
+  **Recommended: quantify H3 over a declared set** — every capture *not* on a
+  reserved list must be referenced, and the reserved list is pinned to exactly
+  `["arrayIndexOf"]` with a written reason beside it. **Cost: zero** — no
+  runtime change, no bytes, no per-child effect, nothing touching M1/M2, D6 or
+  G1 — and it stays falsifiable, because a *new* dead capture still fails and
+  neither rule can be satisfied by writing a call. **Proving a host invariant
+  needs the capture is impossible as scoped**: the seven direct `.indexOf`
+  sites are four `classList` (page-internal — `class` is not in the snapshot),
+  two host-owned bookkeeping paths that fail closed, and one option comparison
+  with no measured effect; the enforcement path `SEAL_JS` uses **no**
+  replaceable call at all; and the capture lives in the base's closure, out of
+  reach of host scripts unless a new global is exposed, which would grow the
+  base. **Separate small finding**: `REALM_PROBE_JS`, the court-only realm
+  diagnostic, reads `Object.keys(window).indexOf(...)` and can be lied to by a
+  page — it cannot affect the seal, but it is the courts' own instrument, and
+  it is recorded unfixed for its own ruling. Five-criterion court draft in §8.
+  §9 also flags a tension in the instruction — evaluate removal, yet do not
+  reinstate C2's deletion — and states which reading was taken. H2 stays not
+  done; the 71 uncapturable sites stay a future candidate; snapshot shape
+  validation stays separate.
 - [ ] Design-only, nothing implemented: H2 and H3
   (`labs/native-dom/intrinsic-hardening-h2-audit-0.0.1.md`). **Recommendation:
   H3 yes, H2 no — on evidence, not on cost.** After H1, every monkeypatch
