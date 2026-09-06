@@ -9,7 +9,13 @@ The audit measured three things worth pinning. A page that replaces
 `JSON.stringify` can make the snapshot script hand the agent a document that
 does not exist; it can make the download probe send the host to a URL the
 agent never referenced, with the profile's cookies; and it **cannot** flip an
-activation refusal, because the host re-checks the node kind itself. The first
+activation refusal, because the host re-checks the node kind itself -- a
+sentence that was false when it was written and is true again now. At the time
+`not_a_link` was refused only when the **realm** declined to supply an href, and
+the realm decided that with `el.tagName.toLowerCase()`; measured and corrected
+in `uncaptured-intrinsic-audit-0.0.1.md` §4, and true again since `958f5c0` made
+the download probe ask `__mcsTag`, a store no page can write. No criterion below
+moved: the third one measured what it measured and still passes. The first
 two must stop being true. The third must stay true.
 
 The fix under test is that the host's own scripts serialise through

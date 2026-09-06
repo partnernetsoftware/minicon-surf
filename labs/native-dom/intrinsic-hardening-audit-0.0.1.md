@@ -84,8 +84,9 @@ flowchart TD
   J --> T["timer scripts — moved/refused/pending counts"]
   A --> C["classList, MutationObserver, __detach, selected option (2.3)"]
   J -.->|"already immune"| F["form-action script — uses the captured __mcsJson"]
-  P -.->|"resisted: the host re-checks the node kind"| PF["activation preflight (2.4)"]
-  %% Correction, 2026-09-06: that label was false when this was written --
+  P -.->|"resisted at the time -- see the note"| PF["activation preflight (2.4)"]
+  %% Correction, 2026-09-06: the label read "resisted: the host re-checks the
+  %% node kind", and that was false when this was written --
   %% `not_a_link` was refused only when the realm declined an href, and the
   %% realm decided it with `el.tagName.toLowerCase()`. Proven in
   %% `uncaptured-intrinsic-audit-0.0.1.md` §4, and true again since `958f5c0`

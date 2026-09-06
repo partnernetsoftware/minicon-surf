@@ -1,0 +1,176 @@
+{
+  "receipt_kind": "verification",
+  "what_this_is": "The current status of a live guard on the tree as it stands, not the evidence of any one round. It is rewritten whenever the guard is re-run; the historical receipt it links is never refreshed. See AGENTS.md, Lab discipline.",
+  "live_guard": "registry-brand-court.py's N3 shim hashes",
+  "historical_receipt": "-registry-brand (15/15 on ce371f78e38c\u2026, the round that implemented it)",
+  "verified_at_commit": "afeec8e (origin/main at the time of writing)",
+  "base_sha256": "f420f901907697c48e574de53f2540c1a657a0b8dfb7002d3d63741f2e34242f",
+  "checks": [
+    {
+      "check": "O: with a page that is honest, the agent's snapshot is the host's",
+      "detail": {
+        "names": [
+          "go",
+          "safe link"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "O: with a page that is honest, the revision advances when the document changes",
+      "detail": {
+        "first": 0,
+        "second": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "S: with a page that is honest, a stale reference is refused",
+      "detail": {
+        "code": "stale_revision",
+        "ok": false
+      },
+      "passed": true
+    },
+    {
+      "check": "T: with a page that is honest, the server is never asked for the swapped URL",
+      "detail": {
+        "hits": [
+          "/a.html"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "O: with a page that the page names __mcs first, the realm is refused rather than adopted",
+      "detail": {
+        "open_ok": false,
+        "snapshot_ok": null
+      },
+      "passed": true
+    },
+    {
+      "check": "O: with a page that the page names __mcs first, the refusal carries its own reason",
+      "detail": {
+        "code": "internal",
+        "reason": "registry_occupied"
+      },
+      "passed": true
+    },
+    {
+      "check": "S: with a page that the page names __mcs first, no reference is ever handed out to act on",
+      "detail": {
+        "stale_ok": null
+      },
+      "passed": true
+    },
+    {
+      "check": "T: with a page that the page names __mcs first, the server is never asked for the swapped URL",
+      "detail": {
+        "hits": [
+          "/a.html"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "I: with a page that the page nobbles defineProperty, the host refuses rather than proceeding blind",
+      "detail": {
+        "open_ok": false,
+        "snapshot_ok": null,
+        "stale_ok": null
+      },
+      "passed": true
+    },
+    {
+      "check": "T: with a page that the page nobbles defineProperty, the server is asked for nothing extra",
+      "detail": {
+        "hits": [
+          "/a.html"
+        ]
+      },
+      "passed": true
+    },
+    {
+      "check": "L: the second install keeps the count rather than resetting it",
+      "detail": {
+        "first": 0,
+        "second": 1
+      },
+      "passed": true
+    },
+    {
+      "check": "N1: the installer no longer adopts whatever it finds",
+      "detail": {
+        "install_bytes": 1401
+      },
+      "passed": true
+    },
+    {
+      "check": "N2: the registry is installed as a defined property, not an assignment",
+      "detail": {
+        "defines": true
+      },
+      "passed": true
+    },
+    {
+      "check": "N3: the shims are untouched by this work",
+      "detail": {
+        "base": "f420f901907697c4"
+      },
+      "passed": true
+    },
+    {
+      "check": "N4: the operation enum is unchanged at 26",
+      "detail": {
+        "operations": 26
+      },
+      "passed": true
+    }
+  ],
+  "checks_passed": 15,
+  "checks_total": 15,
+  "court": "native-dom revision registry ownership",
+  "host_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+  "limitations": [
+    "design-frozen court: the ownership, staleness and traffic criteria fail on a host that adopts the page's object",
+    "the server's request log is the witness: a swapped navigation shows up as a fetch the agent never asked for",
+    "the defineProperty case asks only that the host refuse rather than proceed blind; which typed refusal is a ruling, not a fixture",
+    "two criteria read the host's source rather than the binary, so they are repo-local by design",
+    "one hermetic loopback origin; no surface, no window, no AppKit"
+  ],
+  "main_sha256": "d319246e878b36993d7d607ec1c288f143669a1b1229a8ea60712d8f4030181c",
+  "observed": {
+    "honest": {
+      "first_names": [
+        "go",
+        "safe link"
+      ],
+      "first_revision": 0,
+      "hits": [
+        "/a.html"
+      ],
+      "second_names": [
+        "go",
+        "swapped link"
+      ],
+      "second_revision": 1
+    },
+    "the page names __mcs first": {
+      "hits": [
+        "/a.html"
+      ]
+    },
+    "the page nobbles defineProperty": {
+      "hits": [
+        "/a.html"
+      ]
+    }
+  },
+  "passed": true,
+  "ruled": {
+    "page": "naming the global first must not give it the counter",
+    "registry": "host-minted per realm, non-writable, non-configurable, non-enumerable, verified by every reader",
+    "unchanged": "the handle key set, the protocol, the shims, every bound"
+  }
+}

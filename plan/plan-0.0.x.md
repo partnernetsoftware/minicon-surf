@@ -1404,6 +1404,46 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Documentation-only maintenance, from the integration audit's findings
+  (`labs/native-dom/README.md`, `integration-consistency-audit-0.0.1.md`, and
+  the four new verification receipts). **No product code, no criterion, no
+  bound, handle or base byte changed**; the four governance documents that do
+  not exist here were **not created**, and the record says those roles are
+  external to this repository or absent. **Thirteen ledger rows were added, one
+  per binary, each sourced by opening the receipt that names it** — no
+  consolidation and nothing improvised: `8d5da2a706ae` downloads,
+  `4e8f753817b9` copy-on-write, `952226eeb470` the deliberately rebuilt
+  fallback, `e168722ca9b2` the no-fallback fork and the property-shape guard,
+  `18f935f5fe3e` H1, `05aa12f7cf6d` the capture guard with the frozen 21/25
+  probe arm, `ce371f78e38c` the registry brand, `ba46420bb1e6` the strict parse
+  and the uncaptured probe, `0da1c6b11553` signature integrity,
+  `e3cbf79eb64b` the discarded pricing build, `e9e071115461` the tag,
+  `cc8ebfa4a4dc` the attributes, and `2d57ce864002` the text cut, now current.
+  **Three things the register cannot carry are written beneath it instead of
+  guessed**: two rounds changed the host and produced no receipt, so no hash of
+  theirs exists anywhere (`b00dd3a` and `a229c13`); **the realm-probe repair has
+  no passing receipt at all** — `-probe-truthfulness` is committed at 21/25, the
+  arm frozen *before* the repair, and every 25/25 since has been a scratch run;
+  and the receipt/court naming and the one orphaned receipt are recorded with
+  **no renames**, because a committed receipt is history. **Two stale court
+  statuses corrected**: `element-tag-court.py`'s `not_under_test`, which wrote
+  "still open after this round" into every receipt, and
+  `signature-integrity-court.py`'s docstring — both now say when F1, F2 and F5
+  closed and that this court still does not test them. **The H1 label corrected
+  in both places**, with the twist recorded rather than glossed: it was false
+  when written and is true again since `958f5c0`. **The first four live-guard
+  verification receipts exist**, for `element-tag`'s cost equalities,
+  `signature-integrity`'s base pin, `registry-brand`'s N3 hashes and
+  `property-shape`'s fingerprints, each labelled `receipt_kind: verification`,
+  each naming the current binary `2d57ce864002…` and linking its historical arm,
+  and each rewritable while the historical one never is. **One correction to my
+  own audit, recorded rather than fixed silently**: it named the register's
+  newest row as `420cdf5b82bf…`; that is the row below it, and the gap it
+  reported is unchanged. Every court whose text moved was re-run: element-tag
+  52/52, signature-integrity 34/34, host-answer 9/9, registry-brand 15/15,
+  property-shape 22/22, attribute-fact 154/154, text-answer 29/29, form
+  179/179, 58 tests, contract 28 examples and 50 negatives. Not pushed.
+  G1, G3, P6 and G6 stay open.
 - [ ] Read-only integration audit across the documents
   (`labs/native-dom/integration-consistency-audit-0.0.1.md`). No product code,
   no court criterion, no bound, handle or base byte changed. **Four of the seven

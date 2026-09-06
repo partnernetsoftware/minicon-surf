@@ -12,9 +12,10 @@ between the two derivations -- through `Array.prototype.join` and through
 must still be seen when `String.prototype.startsWith` lies. The court's own
 realm probe must report the realm's truth when the page dictates a vector
 through `join(":")` or swaps the global `String`. What is **not** under test is
-F1 `methodOf`, F2 `targetOf` and F5 the download probe's node kind: they are
-separate candidates, they are still open, and every criterion below says
-`href` where it means href.
+F1 `methodOf`, F2 `targetOf` and F5 the download probe's node kind: they were
+separate candidates, open when this court was frozen and closed later -- F5 at
+`958f5c0` and F1 and F2 at `a0482ed` -- and nothing below tests any of them.
+Every criterion here says `href` where it means href.
 
 Half of this court exists to stop the other half passing for the wrong reason.
 A host that refused every activation would satisfy every refusal criterion, so

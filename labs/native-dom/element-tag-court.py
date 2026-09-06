@@ -416,8 +416,10 @@ def main():
         "score": f"{passed}/{len(checks)}",
         "checks": checks,
         "not_under_test": [
-            "F1 methodOf: a declared POST submitted as a GET -- still open after this round",
-            "F2 targetOf: a named-target link activated -- still open after this round",
+            "F1 methodOf: a declared POST submitted as a GET -- open when this court was "
+            "frozen, closed later at a0482ed by attribute-fact-court.py; still not tested here",
+            "F2 targetOf: a named-target link activated -- open when this court was frozen, "
+            "closed later at a0482ed by attribute-fact-court.py; still not tested here",
             "node names, which still come from the page's textContent",
         ],
         "headless": "no surface binary, no window, no AppKit; two hermetic loopback origins",

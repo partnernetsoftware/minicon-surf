@@ -37,10 +37,20 @@ What plays their parts today:
 ## 2. The evidence ledger stops thirteen binaries ago
 
 `labs/native-dom/README.md` carries the document that owns *which binary
-carries which evidence*: a 34-row ledger, newest row `420cdf5b82bf…`.
+carries which evidence*: a 34-row ledger, newest row `8ff70b9f26c1…`.
+
+*(Correction, recorded rather than silently fixed: this section first named the
+newest row as `420cdf5b82bf…`. That is the row **below** it; the newest is
+labelled `**current, …**` and my pattern skipped it. The gap it reports is
+unchanged — thirteen binaries, none of them in the register — but the hash was
+wrong and the maintenance round that repaired the ledger is where it was
+caught.)*
 
 Since that row was written, **thirteen commits have changed
-`labs/native-dom/src/`** and every one produced a different binary:
+`labs/native-dom/src/`**, and opening the receipts each of them committed shows
+**thirteen distinct binaries** — though not one per commit: two rounds produced
+no receipt at all, and one commit produced two binaries because it also rebuilt
+the defect it removed. The commits:
 
 ```
 b00dd3a  Stress the download transport          7cbf052  Fork profiles with copy-on-write
