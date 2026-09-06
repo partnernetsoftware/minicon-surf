@@ -1,0 +1,282 @@
+{
+ "adds": {
+  "authority": null,
+  "lifecycle": null,
+  "note": "it reads the tree through the selector engine a page can already call",
+  "reentrancy": null
+ },
+ "checks": [
+  {
+   "check": "H1: one definition serves both surfaces, and it is in the extension",
+   "detail": {
+    "definitions_in_main": 0,
+    "in_base": false
+   },
+   "passed": false
+  },
+  {
+   "check": "H2: the handle's key set is unchanged by this slice",
+   "detail": {
+    "missing": [],
+    "unexpected": []
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C1: the document surface finds every match, in document order",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C2: the element surface finds only its own descendants",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C3: order is the document's, not the query's",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C4: matching is case-sensitive",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C5: a class list means all of them, not any",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C6: the argument is trimmed",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C7: a repeated name is not a different query",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C8: an empty or blank argument is an empty result, not a throw",
+   "detail": {
+    "blank": "threw:TypeError",
+    "empty": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C9: no match is an empty result",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C10: it works inside a detached subtree",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C11: the result is a plain array, like querySelectorAll's",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C12: and it is not live \u2014 the recorded loss, pinned",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C13: a name the engine cannot express is empty, not a throw",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C14: it adds no authority \u2014 inert inside a dispatch",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C15: the child realm is untouched by this slice",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] C16: two hundred calls answer the same way every time",
+   "detail": {
+    "said": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] C17: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C1: the document surface finds every match, in document order",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C2: the element surface finds only its own descendants",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C3: order is the document's, not the query's",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C4: matching is case-sensitive",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C5: a class list means all of them, not any",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C6: the argument is trimmed",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C7: a repeated name is not a different query",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C8: an empty or blank argument is an empty result, not a throw",
+   "detail": {
+    "blank": "threw:TypeError",
+    "empty": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C9: no match is an empty result",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C10: it works inside a detached subtree",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C11: the result is a plain array, like querySelectorAll's",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C12: and it is not live \u2014 the recorded loss, pinned",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C13: a name the engine cannot express is empty, not a throw",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C14: it adds no authority \u2014 inert inside a dispatch",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C15: the child realm is untouched by this slice",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] C16: two hundred calls answer the same way every time",
+   "detail": {
+    "said": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] C17: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 5,
+ "checks_total": 36,
+ "court": "native-dom getElementsByClassName (control 0.0.2)",
+ "host_sha256": "420cdf5b82bf40104f272dc989e8d531fe0031b8e83a69145d00cbc4b8ee9bd6",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the method exists",
+  "the live HTMLCollection is a loss inherited from querySelectorAll, pinned here as a plain non-live array rather than newly introduced",
+  "a class name the selector engine cannot express answers empty; the standard method would match it, and that is a recorded loss",
+  "two criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the main-only slack bound and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

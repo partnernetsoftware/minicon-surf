@@ -1,0 +1,290 @@
+{
+ "adds": {
+  "authority": null,
+  "lifecycle": null,
+  "note": "it delegates to querySelectorAll, which a page can already call",
+  "reentrancy": null
+ },
+ "checks": [
+  {
+   "check": "H1: one definition serves both surfaces, and it is in the extension",
+   "detail": {
+    "definitions_in_main": 0,
+    "in_base": false
+   },
+   "passed": false
+  },
+  {
+   "check": "H2: the handle's key set is unchanged by this slice",
+   "detail": {
+    "missing": [],
+    "unexpected": []
+   },
+   "passed": true
+  },
+  {
+   "check": "H3: getElementsByClassName is still not here \u2014 it stays on hold",
+   "detail": {
+    "in_main": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T1: the document surface answers as the selector engine does",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T2: the element surface is scoped to its own descendants",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T3: an element does not find itself",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T4: results come in document order",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T5: the name is matched case-insensitively",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T6: '*' means everything, as the engine has it",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T7: it works inside a detached subtree",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T8: no match is an empty result",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T9: an empty name answers empty and does not throw",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T10: and so does a name the engine cannot parse",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L1: the result is a plain array, not an HTMLCollection",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T11: each call allocates its own array",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] L2: and that array is not live",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T12: it adds no authority \u2014 inert inside a dispatch",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T13: the child realm is untouched by this slice",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T14: two hundred calls answer the same way every time",
+   "detail": {
+    "said": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[system] T15: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T1: the document surface answers as the selector engine does",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T2: the element surface is scoped to its own descendants",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T3: an element does not find itself",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T4: results come in document order",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T5: the name is matched case-insensitively",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T6: '*' means everything, as the engine has it",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T7: it works inside a detached subtree",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T8: no match is an empty result",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T9: an empty name answers empty and does not throw",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T10: and so does a name the engine cannot parse",
+   "detail": {
+    "said": "threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L1: the result is a plain array, not an HTMLCollection",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T11: each call allocates its own array",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] L2: and that array is not live",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T12: it adds no authority \u2014 inert inside a dispatch",
+   "detail": {
+    "said": "probe-threw:TypeError"
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T13: the child realm is untouched by this slice",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T14: two hundred calls answer the same way every time",
+   "detail": {
+    "said": []
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] T15: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 6,
+ "checks_total": 37,
+ "court": "native-dom getElementsByTagName (control 0.0.2)",
+ "host_sha256": "e8f85cf593542c3e5c8f6fa004352494ccba0e4102e1c5949c1318ad4bc27c27",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the method exists",
+  "getElementsByClassName stays on hold and its own frozen court stays failing; H3 keeps it out of this slice",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the main-only slack bound and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "recorded_losses": [
+  "a plain array rather than a live HTMLCollection",
+  "a namespace-ish name such as a:b answers empty"
+ ]
+}

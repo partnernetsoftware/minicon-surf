@@ -1,0 +1,294 @@
+{
+ "adds": {
+  "authority": null,
+  "lifecycle": null,
+  "note": "it delegates to querySelectorAll, which a page can already call",
+  "reentrancy": null
+ },
+ "checks": [
+  {
+   "check": "H1: one definition serves both surfaces, and it is in the extension",
+   "detail": {
+    "definitions_in_main": 1,
+    "in_base": false
+   },
+   "passed": true
+  },
+  {
+   "check": "H2: the handle's key set is unchanged by this slice",
+   "detail": {
+    "missing": [],
+    "unexpected": []
+   },
+   "passed": true
+  },
+  {
+   "check": "H3: getElementsByClassName is still not here \u2014 it stays on hold",
+   "detail": {
+    "in_main": false
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T1: the document surface answers as the selector engine does",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T2: the element surface is scoped to its own descendants",
+   "detail": {
+    "said": "true|true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T3: an element does not find itself",
+   "detail": {
+    "said": "true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T4: results come in document order",
+   "detail": {
+    "said": "outside,first,second"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T5: the name is matched case-insensitively",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T6: '*' means everything, as the engine has it",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T7: it works inside a detached subtree",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T8: no match is an empty result",
+   "detail": {
+    "said": "0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T9: an empty name answers empty and does not throw",
+   "detail": {
+    "said": "length 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T10: and so does a name the engine cannot parse",
+   "detail": {
+    "said": "length 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L1: the result is a plain array, not an HTMLCollection",
+   "detail": {
+    "said": "true|undefined|undefined"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T11: each call allocates its own array",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] L2: and that array is not live",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T12: it adds no authority \u2014 inert inside a dispatch",
+   "detail": {
+    "said": "ran 1|unchanged true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T13: the child realm is untouched by this slice",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T14: two hundred calls answer the same way every time",
+   "detail": {
+    "said": [
+     "counted 200"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] T15: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T1: the document surface answers as the selector engine does",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T2: the element surface is scoped to its own descendants",
+   "detail": {
+    "said": "true|true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T3: an element does not find itself",
+   "detail": {
+    "said": "true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T4: results come in document order",
+   "detail": {
+    "said": "outside,first,second"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T5: the name is matched case-insensitively",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T6: '*' means everything, as the engine has it",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T7: it works inside a detached subtree",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T8: no match is an empty result",
+   "detail": {
+    "said": "0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T9: an empty name answers empty and does not throw",
+   "detail": {
+    "said": "length 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T10: and so does a name the engine cannot parse",
+   "detail": {
+    "said": "length 0"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L1: the result is a plain array, not an HTMLCollection",
+   "detail": {
+    "said": "true|undefined|undefined"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T11: each call allocates its own array",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] L2: and that array is not live",
+   "detail": {
+    "said": "true|true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T12: it adds no authority \u2014 inert inside a dispatch",
+   "detail": {
+    "said": "ran 1|unchanged true"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T13: the child realm is untouched by this slice",
+   "detail": {
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T14: two hundred calls answer the same way every time",
+   "detail": {
+    "said": [
+     "counted 200"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] T15: the owners come back when the targets close",
+   "detail": {
+    "after": 0,
+    "baseline": 0
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 37,
+ "checks_total": 37,
+ "court": "native-dom getElementsByTagName (control 0.0.2)",
+ "host_sha256": "420cdf5b82bf40104f272dc989e8d531fe0031b8e83a69145d00cbc4b8ee9bd6",
+ "hosts_killed": [],
+ "limitations": [
+  "design-frozen court: it fails until the method exists",
+  "getElementsByClassName stays on hold and its own frozen court stays failing; H3 keeps it out of this slice",
+  "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
+  "the main-only slack bound and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true,
+ "recorded_losses": [
+  "a plain array rather than a live HTMLCollection",
+  "a namespace-ish name such as a:b answers empty"
+ ]
+}

@@ -79,6 +79,9 @@ __mcsInternals((internals) => {
   // member on a shared prototype costs every child 600 to 960 bytes of M1,
   // and these are reachable from page script alone. Each is the base's own
   // implementation, moved rather than rewritten.
+  Node.prototype.getElementsByTagName = function (name) {
+    try { return this.querySelectorAll(String(name)); } catch (error) { return []; }
+  };
   Object.defineProperty(Node.prototype, "firstChild", {
     get() { return this.childNodes[0] || null; }, configurable: true });
   Object.defineProperty(Node.prototype, "lastChild", {
