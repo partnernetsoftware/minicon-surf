@@ -1404,6 +1404,35 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Frozen and verified (`3bce90d` pushed): the per-element slope guard
+  (`labs/native-dom/element-slope-court.py`, frozen from
+  `element-slope-guard-design-0.0.1.md` §5, receipt
+  `evidence/native-dom-control-0.0.2-element-slope-verification.json`). S1–S8
+  were **approved exactly as proposed and no threshold moved between the design
+  and the court**. First run on the shipped `2d57ce864002…` is **17 of 17**,
+  every measured value reproducing the audit: slope **1,329.5872 / 1,279.3224**,
+  intercept **329,360 / 319,696**, bare element 864.7 / 843.5, each attribute
+  229.8 / 200.4, R² 0.99999782 / 0.99999958, and the derived ceilings 12,370 /
+  12,864 elements **reported and not scored**, since they are a function of two
+  criteria already scored. The court **owns its own measurement** rather than
+  importing a probe, so a frozen criterion cannot drift when an exploratory
+  script changes, and it generates its fixtures into a temporary directory so
+  there is no committed fixture to drift and none shared with another court.
+  **One criterion was strengthened in implementation and the change is recorded
+  rather than passed over**: S3 was first written as a type-and-sign test that
+  **could not fail** — the very defect S7 exists to prevent for S1 — and is now
+  structural, failing unless both an S1 and an S2 check are present for the arm
+  and re-deriving both from that arm's stored figures reproduces the scored
+  values. It was **proved to fail**, not reasoned about: a mutant court with the
+  S2 scoring removed scored **13 of 15 with S3 failing on both arms**, and the
+  mutant was deleted rather than committed. The approved wording is unchanged;
+  this is that criterion made falsifiable. S7's own arm holds — the same court
+  at a 1,150.0 ceiling fails on this binary, which is also the counterfactual
+  that round C would have failed such a guard. Recorded as the **fifth live
+  guard** and the only one with no historical receipt of its own, since no round
+  produced it. **M1/M2 untouched and separate**; the guard bounds neither RSS nor
+  G1 nor D6. Rule 3 still honoured: nothing implemented for the `__attrs`
+  revision question. Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Ruling applied (`382657e` pushed): the per-element slope is recorded as a
   **standing product metric** and a guard for it is designed but **not frozen**
   (`labs/native-dom/element-slope-guard-design-0.0.1.md`, and "Standing memory

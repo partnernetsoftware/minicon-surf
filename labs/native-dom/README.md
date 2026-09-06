@@ -2291,7 +2291,7 @@ guessed at:
 
 ### Live-guard verification receipts
 
-Four courts carry a **live guard** — a criterion pinned to what the tree
+Five courts carry a **live guard** — a criterion pinned to what the tree
 currently costs rather than to what one round measured. Under the convention in
 `AGENTS.md` their historical receipts are never refreshed, and their current
 status lives in a separate verification receipt that names the current binary
@@ -2303,9 +2303,19 @@ and links the historical one:
 | `signature-integrity-court.py`'s base-byte pin | `-signature-integrity` (34/34 on `0da1c6b11553…`) | `-signature-integrity-verification` |
 | `registry-brand-court.py`'s N3 shim hashes | `-registry-brand` (15/15 on `ce371f78e38c…`) | `-registry-brand-verification` |
 | `property-shape-court.py`'s fingerprints | `-property-shape` (22/22 on `e168722ca9b2…`) | `-property-shape-verification` |
+| `element-slope-court.py`'s per-element slope and intercept, **wholly a live guard** | none of its own: the measurement it was built from is `-element-scaling` (on `2d57ce864002…`) with `-element-scaling-round-c` and `-element-scaling-pre-round-c` as its comparison arms | `-element-slope-verification` |
 
 A verification receipt is rewritten whenever the guard is re-run; a historical
 one never is.
+
+`element-slope-court.py` is the one entry with **no historical receipt of its
+own**, because it was not produced by a round that changed the host: every one
+of its criteria is pinned to what the tree costs now. Its numbers were
+pre-registered in `element-slope-guard-design-0.0.1.md` and approved before the
+court file existed, and it carries **zero measurement-noise tolerance** — the
+metric is exactly deterministic and criterion S6 re-proves that on every run, so
+all of its headroom is deliberate policy. It does **not** bound RSS, does
+**not** replace M1/M2, and is **not** a G1 or D6 criterion.
 
 
 ## Findings against product contracts

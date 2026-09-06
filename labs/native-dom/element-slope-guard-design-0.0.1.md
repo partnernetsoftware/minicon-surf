@@ -142,3 +142,39 @@ three measurement receipts stay exactly as they are.
   directed, and stays a separately scoped audit item.
 - Whether the slope should ever be *reduced* is not proposed. This guard only
   stops it from moving unremarked.
+
+## 9. Amendment: approved and frozen
+
+Recorded after the fact; §8 above is kept as it stood so the movement is
+visible. The ruling that followed this design **approved S1–S8 exactly as
+proposed**, with zero measurement-noise tolerance and the policy headroom as
+documented, and authorised freezing the court. `element-slope-court.py` is that
+court, and its first run on the shipped `2d57ce864002406e` is **17 of 17** in
+`evidence/native-dom-control-0.0.2-element-slope-verification.json`. No
+threshold moved between §5 and the court; every number in the court file is the
+number approved.
+
+**One criterion was strengthened in implementation, and it is recorded here
+rather than passed over.** S3 was first written as a type-and-sign test on the
+two numbers — and that form *could not fail*, which is exactly the defect S7
+exists to prevent for S1. It is now **structural**: it fails unless both an S1
+and an S2 check are present for the arm and re-deriving both from that arm's
+stored figures reproduces the two values that were scored. The approved wording
+is unchanged — joint slope-and-intercept reporting — this is that criterion made
+falsifiable rather than a different one.
+
+**It was proved to fail**, not merely reasoned about. A mutant copy of the court
+with the S2 scoring removed was run against the same binary and scored **13 of
+15, with S3 failing on both arms** (`intercept_checks: 0`). The mutant was
+deleted and is not committed; the run is what the claim rests on.
+
+Measured at the freeze, both arms, all reproducing the audit exactly:
+
+| | system | arena |
+| --- | ---: | ---: |
+| slope | 1,329.5872 | 1,279.3224 |
+| intercept | 329,360 | 319,696 |
+| bare element | 864.7 | 843.5 |
+| each attribute | 229.8 | 200.4 |
+| R² | 0.99999782 | 0.99999958 |
+| derived element ceiling, reported not scored | 12,370 | 12,864 |

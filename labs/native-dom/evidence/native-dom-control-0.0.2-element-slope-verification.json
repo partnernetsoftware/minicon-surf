@@ -1,0 +1,406 @@
+{
+  "court": "native-dom: the per-element slope guard",
+  "frozen_from": "labs/native-dom/element-slope-guard-design-0.0.1.md \u00a75",
+  "binary_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+  "passed": true,
+  "score": "17/17",
+  "criteria": {
+    "S1": "slope <= the arm's ceiling, in tracked bytes per element",
+    "S2": "intercept (measured empty-document tracked bytes) <= the arm's ceiling",
+    "S3": "both slope and intercept are scored, from one run: neither alone is a partial pass, so a refactor cannot trade one for the other",
+    "S4a": "bare element (no attributes) <= the arm's ceiling",
+    "S4b": "each attribute <= the arm's ceiling",
+    "S5": "linearity: R^2 >= 0.9999 over the five slope points",
+    "S6": "two independent runs per arm agree on every tracked figure, to the byte",
+    "S7": "falsification: the same scoring at a slope ceiling of 1150.0 fails",
+    "S8": "both allocator arms are measured and scored independently",
+    "reported_not_scored": "the derived element ceiling, being a function of S1 and S2"
+  },
+  "caps": {
+    "system": {
+      "slope": 1400.0,
+      "intercept": 336000,
+      "bare": 920.0,
+      "attribute": 240.0
+    },
+    "arena": {
+      "slope": 1350.0,
+      "intercept": 326000,
+      "bare": 900.0,
+      "attribute": 215.0
+    }
+  },
+  "minimum_r2": 0.9999,
+  "falsification_slope_ceiling": 1150.0,
+  "sample_plan": {
+    "scale_counts": [
+      0,
+      500,
+      1000,
+      2000,
+      4000
+    ],
+    "attr_counts": [
+      0,
+      1,
+      3,
+      6
+    ],
+    "attr_elements": 2000,
+    "runs_per_arm": 2,
+    "realm_limit_bytes": 16777216
+  },
+  "measured": {
+    "system": {
+      "slope": 1329.5872,
+      "intercept": 329360,
+      "fitted_intercept": 325673.6000000001,
+      "r2": 0.9999978172040818,
+      "bare_element": 864.728,
+      "per_attribute": 229.824,
+      "derived_element_ceiling": 12370
+    },
+    "arena": {
+      "slope": 1279.3224,
+      "intercept": 319696,
+      "fitted_intercept": 318181.1999999997,
+      "r2": 0.9999995830967848,
+      "bare_element": 843.544,
+      "per_attribute": 200.43866666666668,
+      "derived_element_ceiling": 12864
+    }
+  },
+  "tracked_figures": {
+    "system": [
+      {
+        "scale-0": {
+          "empty": 0,
+          "live": 329360
+        },
+        "scale-500": {
+          "empty": 0,
+          "live": 989648
+        },
+        "scale-1000": {
+          "empty": 0,
+          "live": 1654032
+        },
+        "scale-2000": {
+          "empty": 0,
+          "live": 2980752
+        },
+        "scale-4000": {
+          "empty": 0,
+          "live": 5646480
+        },
+        "attr-0": {
+          "empty": 0,
+          "live": 2058816
+        },
+        "attr-1": {
+          "empty": 0,
+          "live": 2501440
+        },
+        "attr-3": {
+          "empty": 0,
+          "live": 3374400
+        },
+        "attr-6": {
+          "empty": 0,
+          "live": 4816704
+        },
+        "attr-none": {
+          "empty": 0,
+          "live": 329360
+        }
+      },
+      {
+        "scale-0": {
+          "empty": 0,
+          "live": 329360
+        },
+        "scale-500": {
+          "empty": 0,
+          "live": 989648
+        },
+        "scale-1000": {
+          "empty": 0,
+          "live": 1654032
+        },
+        "scale-2000": {
+          "empty": 0,
+          "live": 2980752
+        },
+        "scale-4000": {
+          "empty": 0,
+          "live": 5646480
+        },
+        "attr-0": {
+          "empty": 0,
+          "live": 2058816
+        },
+        "attr-1": {
+          "empty": 0,
+          "live": 2501440
+        },
+        "attr-3": {
+          "empty": 0,
+          "live": 3374400
+        },
+        "attr-6": {
+          "empty": 0,
+          "live": 4816704
+        },
+        "attr-none": {
+          "empty": 0,
+          "live": 329360
+        }
+      }
+    ],
+    "arena": [
+      {
+        "scale-0": {
+          "empty": 0,
+          "live": 319696
+        },
+        "scale-500": {
+          "empty": 0,
+          "live": 958032
+        },
+        "scale-1000": {
+          "empty": 0,
+          "live": 1595536
+        },
+        "scale-2000": {
+          "empty": 0,
+          "live": 2876416
+        },
+        "scale-4000": {
+          "empty": 0,
+          "live": 5436144
+        },
+        "attr-0": {
+          "empty": 0,
+          "live": 2006784
+        },
+        "attr-1": {
+          "empty": 0,
+          "live": 2430416
+        },
+        "attr-3": {
+          "empty": 0,
+          "live": 3162592
+        },
+        "attr-6": {
+          "empty": 0,
+          "live": 4412048
+        },
+        "attr-none": {
+          "empty": 0,
+          "live": 319696
+        }
+      },
+      {
+        "scale-0": {
+          "empty": 0,
+          "live": 319696
+        },
+        "scale-500": {
+          "empty": 0,
+          "live": 958032
+        },
+        "scale-1000": {
+          "empty": 0,
+          "live": 1595536
+        },
+        "scale-2000": {
+          "empty": 0,
+          "live": 2876416
+        },
+        "scale-4000": {
+          "empty": 0,
+          "live": 5436144
+        },
+        "attr-0": {
+          "empty": 0,
+          "live": 2006784
+        },
+        "attr-1": {
+          "empty": 0,
+          "live": 2430416
+        },
+        "attr-3": {
+          "empty": 0,
+          "live": 3162592
+        },
+        "attr-6": {
+          "empty": 0,
+          "live": 4412048
+        },
+        "attr-none": {
+          "empty": 0,
+          "live": 319696
+        }
+      }
+    ]
+  },
+  "checks": [
+    {
+      "check": "arena: S6 two runs agree on every tracked figure, to the byte",
+      "passed": true,
+      "detail": {
+        "figures_compared": 10
+      }
+    },
+    {
+      "check": "system: S6 two runs agree on every tracked figure, to the byte",
+      "passed": true,
+      "detail": {
+        "figures_compared": 10
+      }
+    },
+    {
+      "check": "S8 both allocator arms were measured and are scored independently",
+      "passed": true,
+      "detail": {
+        "arms": [
+          "arena",
+          "system"
+        ]
+      }
+    },
+    {
+      "check": "arena: S1 slope 1279.3224 <= 1350.0",
+      "passed": true,
+      "detail": {
+        "slope": 1279.3224,
+        "ceiling": 1350.0
+      }
+    },
+    {
+      "check": "arena: S2 intercept 319,696 <= 326,000",
+      "passed": true,
+      "detail": {
+        "intercept": 319696,
+        "ceiling": 326000
+      }
+    },
+    {
+      "check": "arena: S4a bare element 843.5 <= 900.0",
+      "passed": true,
+      "detail": {
+        "bare_element": 843.544,
+        "ceiling": 900.0
+      }
+    },
+    {
+      "check": "arena: S4b per attribute 200.4 <= 215.0",
+      "passed": true,
+      "detail": {
+        "per_attribute": 200.43866666666668,
+        "ceiling": 215.0
+      }
+    },
+    {
+      "check": "arena: S5 linearity R^2 0.99999958 >= 0.9999",
+      "passed": true,
+      "detail": {
+        "r2": 0.9999995830967848,
+        "minimum": 0.9999
+      }
+    },
+    {
+      "check": "system: S1 slope 1329.5872 <= 1400.0",
+      "passed": true,
+      "detail": {
+        "slope": 1329.5872,
+        "ceiling": 1400.0
+      }
+    },
+    {
+      "check": "system: S2 intercept 329,360 <= 336,000",
+      "passed": true,
+      "detail": {
+        "intercept": 329360,
+        "ceiling": 336000
+      }
+    },
+    {
+      "check": "system: S4a bare element 864.7 <= 920.0",
+      "passed": true,
+      "detail": {
+        "bare_element": 864.728,
+        "ceiling": 920.0
+      }
+    },
+    {
+      "check": "system: S4b per attribute 229.8 <= 240.0",
+      "passed": true,
+      "detail": {
+        "per_attribute": 229.824,
+        "ceiling": 240.0
+      }
+    },
+    {
+      "check": "system: S5 linearity R^2 0.99999782 >= 0.9999",
+      "passed": true,
+      "detail": {
+        "r2": 0.9999978172040818,
+        "minimum": 0.9999
+      }
+    },
+    {
+      "check": "arena: S3 slope and intercept are both scored, from one run",
+      "passed": true,
+      "detail": {
+        "slope_checks": 1,
+        "intercept_checks": 1,
+        "rederived_slope": 1279.3224,
+        "rederived_intercept": 319696
+      }
+    },
+    {
+      "check": "system: S3 slope and intercept are both scored, from one run",
+      "passed": true,
+      "detail": {
+        "slope_checks": 1,
+        "intercept_checks": 1,
+        "rederived_slope": 1329.5872,
+        "rederived_intercept": 329360
+      }
+    },
+    {
+      "check": "arena: S7 the same court fails at a slope ceiling of 1150.0",
+      "passed": true,
+      "detail": {
+        "measured_slope": 1279.3224,
+        "falsification_ceiling": 1150.0
+      }
+    },
+    {
+      "check": "system: S7 the same court fails at a slope ceiling of 1150.0",
+      "passed": true,
+      "detail": {
+        "measured_slope": 1329.5872,
+        "falsification_ceiling": 1150.0
+      }
+    }
+  ],
+  "reported_not_scored": {
+    "arena": {
+      "derived_element_ceiling": 12864
+    },
+    "system": {
+      "derived_element_ceiling": 12370
+    }
+  },
+  "live_guard": "This court's criteria are pinned to what the tree currently costs. Per the receipt convention in AGENTS.md this receipt records the guard's status on the binary named above; the historical -element-scaling receipts committed at 382657e are never refreshed.",
+  "not_under_test": [
+    "M1 and M2, which bound fixed live owner bytes per child realm; untouched, separate, and neither may be traded against the slope",
+    "RSS and physical footprint: this court reads tracked script_realms.malloc_bytes only",
+    "G1 and D6: the slope is a standing metric beside the marginal-target figure, not folded into either gate",
+    "the __attrs direct-write and revision question, a separately scoped audit item"
+  ],
+  "tolerance": "zero measurement-noise tolerance: the metric is exactly deterministic and S6 proves it per run, so every byte of headroom in the caps is deliberate policy",
+  "headless": "no surface binary, no window, no AppKit; generated fixtures, no network"
+}
