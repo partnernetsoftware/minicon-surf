@@ -270,21 +270,85 @@ const OPERATIONS: &[&str] = &[
     "memory.trim",
 ];
 
-const INSTALL_JS: &str = r#"(() => {
-  if (!window.__mcs) {
-    const s = { revision: 0, snapshot: -1, nodes: [] };
-    new MutationObserver(() => { s.revision += 1; }).observe(
-      document.documentElement,
-      { childList: true, subtree: true, characterData: true, attributes: true });
-    window.__mcs = s;
-  }
-  return String(window.__mcs.revision);
-})()"#;
+/// Installs the revision registry, or refuses.
+///
+/// The registry used to be a plain assignment behind `if (!window.__mcs)`, and
+/// the guard was there because the lifecycle path installs a second time. A
+/// page's own scripts run before this does, so a page could name the global
+/// first and the host would keep the page's object: no observer, a counter
+/// that never advanced, and an agent's stale reference accepted against a
+/// swapped node. The registry is now branded with a capability the page cannot
+/// produce, installed as a non-writable, non-configurable, non-enumerable
+/// property, and its counter is a closure the page cannot reset -- `revision`
+/// is a getter with no setter. A second install recognises its own brand; a
+/// name that is already taken, or a property that would not define, answers
+/// "occupied" and the realm is refused.
+/// An unminted brand is quoted as an empty string rather than interpolated as
+/// a hole: a script that will refuse is safer than a script that will not parse.
+/// A registry brand, minted per realm at birth and quoted ready for a script.
+fn mint_brand() -> Result<String, ControlError> {
+    let brand = profile::random_bytes(16)
+        .map(|bytes| {
+            bytes
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        })
+        .map_err(|_| {
+            ControlError::new("internal", "the registry brand could not be minted", false)
+        })?;
+    Ok(serde_json::to_string(&brand).expect("brand serializes"))
+}
+
+fn quoted_brand(brand: &str) -> &str {
+    if brand.is_empty() { "\"\"" } else { brand }
+}
+
+fn install_script(brand: &str) -> String {
+    let brand = quoted_brand(brand);
+    format!(
+        r#"(() => {{
+  const existing = window.__mcs;
+  if (existing) {{
+    if (existing.brand !== {brand}) return "occupied";
+    return String(existing.revision);
+  }}
+  let counter = 0;
+  const s = {{ brand: {brand}, snapshot: -1, nodes: [] }};
+  Object.defineProperty(s, "revision", {{ get: () => counter, enumerable: true }});
+  new MutationObserver(() => {{ counter += 1; }}).observe(
+    document.documentElement,
+    {{ childList: true, subtree: true, characterData: true, attributes: true }});
+  // The counter is a closure. The two host scripts that must move it present
+  // the brand; a page can call these, but not with the right argument.
+  Object.defineProperty(s, "bump", {{
+    value: (b) => {{ if (b !== {brand}) return -1; counter += 1; return counter; }},
+    writable: false, configurable: false, enumerable: false }});
+  Object.defineProperty(s, "setTo", {{
+    value: (b, v) => {{ if (b !== {brand}) return -1; counter = v; return counter; }},
+    writable: false, configurable: false, enumerable: false }});
+  Object.defineProperty(window, "__mcs", {{ value: s, writable: false, configurable: false,
+    enumerable: false }});
+  // A page that replaced `Object.defineProperty` gets no registry at all, and
+  // the host refuses the realm rather than instrumenting it blind.
+  if (window.__mcs !== s || window.__mcs.brand !== {brand}) return "occupied";
+  return String(s.revision);
+}})()"#
+    )
+}
 const REVISION_JS: &str = "(() => String(window.__mcs ? window.__mcs.revision : -1))()";
 /// The painter's rows: (node id, role, name).
 type SemanticRows = Vec<(String, String, String)>;
 /// A host-side scroll advances the revision like any other page mutation.
-const SCROLL_REVISION_JS: &str = "(() => { if (!window.__mcs) { return '-1'; } window.__mcs.revision += 1; return String(window.__mcs.revision); })()";
+/// A host-side scroll advances the revision like any other page mutation, and
+/// presents the registry's brand to do it.
+fn scroll_revision_script(brand: &str) -> String {
+    let brand = quoted_brand(brand);
+    format!(
+        "(() => {{ const s = window.__mcs; if (!s || !s.bump) {{ return '-1'; }} \
+         return String(s.bump({brand})); }})()"
+    )
+}
 
 /// Arms the lifecycle bridge with a capability only the host holds. It runs
 /// once, before any page script, and closes over both the capability and the
@@ -812,6 +876,7 @@ fn form_action_script(
     has_base_target: bool,
     signature: &str,
     capability: &str,
+    brand: &str,
 ) -> String {
     let activation = activation_js(is_child, has_base_target);
     let serializer = SERIALIZE_JS;
@@ -836,7 +901,7 @@ fn form_action_script(
   // own: only what the handlers really changed does.
   const startRevision = s.revision;
   const settle = (outcome) => {{
-    if (outcome.applied && s.revision === startRevision) s.revision = startRevision + 1;
+    if (outcome.applied && s.revision === startRevision) s.bump({brand});
     return __mcsJson(outcome);
   }};
   const refuse = (reason) => __mcsJson({{ unsupported: true, reason }});
@@ -1948,6 +2013,9 @@ struct Realm {
     /// This realm's dispatch capability. Every realm has one, children
     /// included, because a child's actions are dispatched by the host too.
     dispatch: std::cell::RefCell<String>,
+    /// This realm's registry brand, minted at install and presented again by
+    /// the lifecycle path's second install.
+    registry: std::cell::RefCell<String>,
     #[cfg(target_os = "macos")]
     zone_used: Option<std::sync::Arc<std::sync::atomic::AtomicUsize>>,
     #[cfg(target_os = "macos")]
@@ -1999,6 +2067,7 @@ impl Realm {
             jobs,
             lifecycle: std::cell::RefCell::new(String::new()),
             dispatch: std::cell::RefCell::new(String::new()),
+            registry: std::cell::RefCell::new(mint_brand()?),
             zone_used,
             zone,
             arena,
@@ -3462,7 +3531,9 @@ impl Host {
                     }
                     .min(surface::MAX_SCROLL);
                     target.scroll_y = next;
-                    if let Ok(text) = target.eval(SCROLL_REVISION_JS, deadline, &policy)
+                    let brand = target.realm.registry.borrow().clone();
+                    if let Ok(text) =
+                        target.eval(&scroll_revision_script(&brand), deadline, &policy)
                         && let Ok(after) = text.parse::<u64>()
                         && let Some(revision) = target.global_revision(after)
                     {
@@ -4206,6 +4277,24 @@ impl Host {
             .details(json!({"reason": "dispatch_unarmed"})));
         }
         *realm.dispatch.borrow_mut() = quoted;
+        Ok(())
+    }
+
+    /// The registry's brand is minted per realm, like the dispatch capability,
+    /// and the realm is refused if the name is already taken or the property
+    /// will not define.
+    fn install_registry(realm: &Realm, deadline: Instant, id: &str) -> Result<(), ControlError> {
+        let quoted = realm.registry.borrow().clone();
+        let answer = realm.eval(&install_script(&quoted), deadline, id)?;
+        if answer == "occupied" {
+            return Err(ControlError::new(
+                "internal",
+                "the realm's revision registry is not the host's",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({"reason": "registry_occupied"})));
+        }
         Ok(())
     }
 
@@ -5664,7 +5753,7 @@ impl Host {
                 )?;
                 realm.eval(&location_script(&response.url), deadline, id)?;
                 realm.eval("__mcsComplete()", deadline, id)?;
-                realm.eval(INSTALL_JS, deadline, id)?;
+                Self::install_registry(&realm, deadline, id)?;
                 Ok(realm)
             })();
             let Ok(realm) = built else {
@@ -5770,7 +5859,22 @@ impl Host {
         }
         // The revision instrumentation is installed before the lifecycle, so
         // what a lifecycle handler mutates is counted like any page mutation.
-        target.eval(INSTALL_JS, deadline, &policy)?;
+        // The second install presents the brand this realm already carries, so
+        // it recognises its own registry instead of starting a new count.
+        {
+            let brand = target.realm.registry.borrow().clone();
+            let script = install_script(&brand);
+            let answer = target.eval(&script, deadline, &policy)?;
+            if answer == "occupied" {
+                return Err(ControlError::new(
+                    "internal",
+                    "the realm's revision registry is not the host's",
+                    false,
+                )
+                .scoped("target", id)
+                .details(json!({"reason": "registry_occupied"})));
+            }
+        }
         // The four observable steps, each its own evaluation. Every one of
         // them ends with the job drain under this request's deadline, so the
         // microtasks a handler queues finish before the next step begins and
@@ -5807,9 +5911,13 @@ impl Host {
 
         // Court-only seams: they do nothing unless the knobs are given.
         if self.court_frame_counter > 0 {
+            let brand = target.realm.registry.borrow().clone();
+            let brand = quoted_brand(&brand);
             let seed = format!(
-                "(() => {{ window.__mcs.revision = {}; return String(window.__mcs.revision); }})()",
-                self.court_frame_counter
+                "(() => {{ const s = window.__mcs; s.setTo({brand}, {counter}); \
+                 return String(s.revision); }})()",
+                brand = brand,
+                counter = self.court_frame_counter
             );
             target.eval(&seed, deadline, &policy)?;
         }
@@ -6432,7 +6540,7 @@ impl Host {
             )?;
             realm.eval(&location_script(&response.url), deadline, id)?;
             realm.eval("__mcsComplete()", deadline, id)?;
-            realm.eval(INSTALL_JS, deadline, id)?;
+            Self::install_registry(&realm, deadline, id)?;
             Ok(realm)
         })();
         let Ok(realm) = built else {
@@ -7186,6 +7294,11 @@ impl Host {
             None => target.realm.dispatch.borrow().clone(),
             Some(child) => target.children[child].realm.dispatch.borrow().clone(),
         };
+        let brand = match frame {
+            None => target.realm.registry.borrow().clone(),
+            Some(child) => target.children[child].realm.registry.borrow().clone(),
+        };
+        let brand = quoted_brand(&brand).to_owned();
         let script = if form_action {
             form_action_script(
                 frame_counter,
@@ -7195,6 +7308,7 @@ impl Host {
                 has_base_target,
                 &signature,
                 &capability,
+                &brand,
             )
         } else {
             act_script(

@@ -1381,6 +1381,34 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Frozen, then implemented: the revision registry is the host's
+  (`labs/native-dom/registry-brand-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-registry-brand.json`, record in
+  `snapshot-validation-audit-0.0.1.md` §11). Frozen first at **10/15** — the
+  page that names `__mcs` first had no revision advance, an **accepted** stale
+  reference and `/evil.html` in the server log — and now **15/15** on
+  `ce371f78…`. Every realm mints a brand at birth; the installer recognises its
+  own and answers `occupied` to anything else, which the host turns into
+  `internal` / `registry_occupied`; the registry is non-writable,
+  non-configurable and non-enumerable, and its counter is a **closure** whose
+  `revision` is a getter with no setter, so a page cannot reset it. The two host
+  scripts that must move it present the brand — `bump(brand)` for a settled
+  action or host scroll, `setTo(brand, n)` for the court-only seam. **Three
+  implementation faults are recorded rather than smoothed over**: an unminted
+  brand interpolated as a hole and made every page fail to open; installing
+  earlier looked tidier and silently stopped the `MutationObserver` attaching,
+  caught by the frames court; and the main realm is built at a third site the
+  installer calls did not cover, so its actions bumped with an empty brand —
+  fixed by minting in `Realm::new`, which covers every realm by construction
+  rather than by enumeration. **Two court amendments recorded**: the
+  pre-empting-page criteria now expect the ruled typed refusal rather than a
+  working snapshot, and the source extraction follows the installer from a
+  constant to a function. Regressions: host-answer 9/9, property-shape 22/22,
+  capture-declaration 8/8, probe-truthfulness 25/25, downloads 21/21,
+  copy-on-write 23/23, readonly 28/28, frame-action 182/182, child-frame 82/82,
+  timer 68/68, contract 28/50, 56 tests; navigation 89/90 and profile 92/94 fail
+  only their known memory-variance and D6 checks. Handle key set, protocol, both
+  shims (digests pinned in the court) and every bound untouched.
 - [ ] Design-only, nothing implemented: snapshot validation
   (`labs/native-dom/snapshot-validation-audit-0.0.1.md`). **The shape check is
   not the weak point — the provenance of the instrumentation object is, and it

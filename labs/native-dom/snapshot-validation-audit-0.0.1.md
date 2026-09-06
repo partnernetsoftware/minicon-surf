@@ -154,3 +154,75 @@ most.**
 3. Whether this finding changes the standing of the earlier "everything fails
    closed" conclusion. It should: that conclusion was measured over intrinsic
    replacement, and this defect is reached by naming a global instead.
+
+---
+
+## 11. Frozen, then implemented — 2026-09-06
+
+`registry-brand-court.py` was frozen first, receipt
+`evidence/native-dom-control-0.0.2-registry-brand.json`. On the shipped binary
+it read **10/15**: the honest page passed, and the failures were the page that
+names `__mcs` first — no revision advance, a stale reference **accepted**, and
+`/evil.html` in the server's log — plus the two source rules.
+
+It now reads **15/15** on `ce371f78…`.
+
+### What the registry became
+
+Every realm mints a brand at birth. The installer no longer adopts what it
+finds: it recognises its own brand, and anything else answers `occupied`, which
+the host turns into `internal` with `reason: "registry_occupied"`. The registry
+is defined non-writable, non-configurable and non-enumerable, and its counter is
+a **closure** — `revision` is a getter with no setter, so a page cannot reset
+it. The two host scripts that must move the counter present the brand:
+`bump(brand)` for a settled action or a host scroll, `setTo(brand, n)` for the
+court-only frame-counter seam. A page may call either; it cannot supply the
+argument.
+
+Measured against the audit's own attack: a page that names `__mcs` first now
+gets `internal` / `registry_occupied` at `target.open`, and the server log shows
+only `/a.html` — the swapped navigation never happens.
+
+### Three things went wrong on the way, and each is worth recording
+
+1. **An unminted brand interpolated as a hole.** The first build emitted
+   `s.setTo(, 9007199254740991)` and every page failed to open with "a script
+   threw". A brand that has not been minted is now quoted as `""` — a script
+   that will refuse rather than one that will not parse.
+2. **Installing earlier broke the observer.** Moving the install to realm
+   construction looked tidier and silently stopped the `MutationObserver` from
+   attaching, because `document.documentElement` does not exist yet there. The
+   frames court caught it: *a script-free main frame advances by exactly one*
+   failed with revision 0. The install keeps its original timing; only the
+   brand is minted early.
+3. **The main realm had no brand at all.** It is built at a third site that the
+   two installer call sites did not cover, so its actions bumped with an empty
+   brand and the counter never moved. Minting in `Realm::new` covers every
+   realm by construction rather than by enumeration.
+
+None of these was visible in the registry court alone. The frames court found
+two of them.
+
+### Two court amendments, recorded
+
+- The three criteria for the pre-empting page were written expecting the host to
+  keep working while ignoring the page's object. The ruling chose a **typed
+  refusal**, so a snapshot is not what a correct host produces there. They now
+  require a refusal carrying `registry_occupied`, that no reference is handed
+  out, and that the server is never asked for the swapped URL.
+- The installer moved from a constant to a function when it began carrying a
+  brand, and the source criterion could no longer find it. The extraction now
+  looks in both places; the criterion itself is unchanged.
+
+### Regressions
+
+registry-brand 15/15, host-answer 9/9, property-shape 22/22,
+capture-declaration 8/8, probe-truthfulness 25/25, downloads 21/21,
+copy-on-write 23/23, readonly 28/28, frame-action 182/182, child-frame 82/82,
+timer 68/68, contract 28 examples and 50 negative cases, `cargo test` 56 passed,
+fmt and clippy clean. navigation 89/90 and profile 92/94 fail only their known
+memory-variance and D6 checks, which fail the same way on binaries without this
+change.
+
+**Untouched**: the handle key set, the protocol, both shims (their digests are
+pinned in the court), and every bound.
