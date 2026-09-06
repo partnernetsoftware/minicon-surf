@@ -1282,6 +1282,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen:
+  `AbortSignal.timeout()` under the slack guard
+  (`labs/native-dom/abort-signal-timeout-audit-0.0.1.md`). **The short answer
+  is that the remaining slack fits the version that misbehaves and not the
+  version that behaves**, and both halves are measured. `timeout()` would own
+  an entry in the page's own timer table — one `Map` with `limit: 64`, shared
+  with every `setTimeout` — and it does fire, inside the host's job drain under
+  the request's deadline, with `reason.name` `TimeoutError`. But **62 timeout
+  signals left the page's `setTimeout` refusing immediately**, which is what
+  the ordinary idiom `fetch(url, {signal: AbortSignal.timeout(5000)})` would do
+  to a page after sixty-four in-flight requests. The variant that fixes it — a
+  quota of its own, measured at 16, leaving 48 for the page — **fails the
+  frozen slack check outright**: `shim-footprint` reads 17 of 18 with the
+  main-only bound failing at **66,704 against 65,536**. The cheap variant fits
+  at 61,504 with 4,032 to spare. The child floor is not the constraint: it has
+  13,462 bytes and neither shape threatens it. Retention is clean either way —
+  60 long timeouts held, target closed, owners returned to **exactly the
+  baseline**. No guard was touched: `timeout` stays absent in the tree, the
+  handle's key set is unchanged, and no host path aborts a page's signal;
+  moving the slack bound is listed as a trade the ruling can see, not as a
+  proposal. G1, G3, P6 and G6 stay open.
 - [~] R1-R5 implemented and qualified on the native route, court 37 of 37:
   the rest of `AbortSignal` (`labs/native-dom/abort-signal-surface-audit-0.0.1.md`), split
   into R1 the signal as an `EventTarget` with an `abort` event, R2 `reason`,
