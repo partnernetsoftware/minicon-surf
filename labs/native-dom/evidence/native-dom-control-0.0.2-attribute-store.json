@@ -1,0 +1,248 @@
+{
+  "probe": "attribute store: can a page write through the __attrs accessor?",
+  "binary_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+  "rows": [
+    {
+      "patch": "none",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "server_saw": []
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "set_method",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=get|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=get|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=get|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "delete_method",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=null|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=null|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=null|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "set_action",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/moved.html",
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "server_saw": []
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/moved.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/moved.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "delete_target",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "server_saw": []
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "set_href",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "server_saw": []
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /moved.html"
+        ]
+      }
+    },
+    {
+      "patch": "honest_set_method",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=get|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=get|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=get|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "honest_remove_method",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=null|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=null|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=null|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "honest_remove_target",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "server_saw": []
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /landed.html"
+        ]
+      }
+    },
+    {
+      "patch": "honest_set_href",
+      "submit_postform": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "server_saw": []
+      },
+      "activate_named": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "unsupported_capability/target_named",
+        "server_saw": []
+      },
+      "activate_plain": {
+        "in_snapshot": true,
+        "page_echo": "ran|method=post|action=/landed.html",
+        "outcome": "ok:applied=True",
+        "server_saw": [
+          "GET /moved.html"
+        ]
+      }
+    }
+  ]
+}

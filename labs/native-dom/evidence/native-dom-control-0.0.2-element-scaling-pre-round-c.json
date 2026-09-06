@@ -1,0 +1,121 @@
+{
+  "probe": "element scaling: tracked realm bytes per element, and per attribute",
+  "label": "fb4f001 rebuilt off-path: the tree before round C, base shim 32,898",
+  "binary_sha256": "b58bed5778c2afa0e329cd80ab100a9608d541e708c7d54500b62dd50acf0652",
+  "scale_counts": [
+    0,
+    500,
+    1000,
+    2000,
+    4000
+  ],
+  "attr_counts": [
+    0,
+    1,
+    3,
+    6
+  ],
+  "attr_elements": 2000,
+  "arms": {
+    "system": {
+      "scale": {
+        "0": {
+          "empty": 0,
+          "live": 325440
+        },
+        "500": {
+          "empty": 0,
+          "live": 869696
+        },
+        "1000": {
+          "empty": 0,
+          "live": 1417984
+        },
+        "2000": {
+          "empty": 0,
+          "live": 2512512
+        },
+        "4000": {
+          "empty": 0,
+          "live": 4713856
+        }
+      },
+      "attrs": {
+        "0": {
+          "empty": 0,
+          "live": 1590576
+        },
+        "1": {
+          "empty": 0,
+          "live": 2033200
+        },
+        "3": {
+          "empty": 0,
+          "live": 2906160
+        },
+        "6": {
+          "empty": 0,
+          "live": 4348464
+        },
+        "none": {
+          "empty": 0,
+          "live": 325440
+        }
+      },
+      "empty_realm_bytes": 325440,
+      "bytes_per_element_slope": 1097.4048,
+      "bytes_per_bare_element": 632.568,
+      "bytes_per_attribute": 229.824
+    },
+    "arena": {
+      "scale": {
+        "0": {
+          "empty": 0,
+          "live": 315216
+        },
+        "500": {
+          "empty": 0,
+          "live": 829136
+        },
+        "1000": {
+          "empty": 0,
+          "live": 1346048
+        },
+        "2000": {
+          "empty": 0,
+          "live": 2373424
+        },
+        "4000": {
+          "empty": 0,
+          "live": 4433408
+        }
+      },
+      "attrs": {
+        "0": {
+          "empty": 0,
+          "live": 1537744
+        },
+        "1": {
+          "empty": 0,
+          "live": 1957520
+        },
+        "3": {
+          "empty": 0,
+          "live": 2673216
+        },
+        "6": {
+          "empty": 0,
+          "live": 3928320
+        },
+        "none": {
+          "empty": 0,
+          "live": 315216
+        }
+      },
+      "empty_realm_bytes": 315216,
+      "bytes_per_element_slope": 1029.5248,
+      "bytes_per_bare_element": 611.264,
+      "bytes_per_attribute": 199.21466666666666
+    }
+  }
+}

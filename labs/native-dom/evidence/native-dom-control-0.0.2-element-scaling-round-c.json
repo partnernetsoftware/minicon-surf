@@ -1,0 +1,121 @@
+{
+  "probe": "element scaling: tracked realm bytes per element, and per attribute",
+  "label": "a26aea3 rebuilt off-path: round C only, tag WeakMap, attributes still an own Map",
+  "binary_sha256": "d09b543ae7d9985400b714b76671c732218977e663ce7383a7eef8a08ba6b3dc",
+  "scale_counts": [
+    0,
+    500,
+    1000,
+    2000,
+    4000
+  ],
+  "attr_counts": [
+    0,
+    1,
+    3,
+    6
+  ],
+  "attr_elements": 2000,
+  "arms": {
+    "system": {
+      "scale": {
+        "0": {
+          "empty": 0,
+          "live": 326800
+        },
+        "500": {
+          "empty": 0,
+          "live": 931088
+        },
+        "1000": {
+          "empty": 0,
+          "live": 1539472
+        },
+        "2000": {
+          "empty": 0,
+          "live": 2754192
+        },
+        "4000": {
+          "empty": 0,
+          "live": 5195920
+        }
+      },
+      "attrs": {
+        "0": {
+          "empty": 0,
+          "live": 1832256
+        },
+        "1": {
+          "empty": 0,
+          "live": 2274880
+        },
+        "3": {
+          "empty": 0,
+          "live": 3147840
+        },
+        "6": {
+          "empty": 0,
+          "live": 4590144
+        },
+        "none": {
+          "empty": 0,
+          "live": 326800
+        }
+      },
+      "empty_realm_bytes": 326800,
+      "bytes_per_element_slope": 1217.5872,
+      "bytes_per_bare_element": 752.728,
+      "bytes_per_attribute": 229.824
+    },
+    "arena": {
+      "scale": {
+        "0": {
+          "empty": 0,
+          "live": 317040
+        },
+        "500": {
+          "empty": 0,
+          "live": 902688
+        },
+        "1000": {
+          "empty": 0,
+          "live": 1491552
+        },
+        "2000": {
+          "empty": 0,
+          "live": 2670784
+        },
+        "4000": {
+          "empty": 0,
+          "live": 5028896
+        }
+      },
+      "attrs": {
+        "0": {
+          "empty": 0,
+          "live": 1783328
+        },
+        "1": {
+          "empty": 0,
+          "live": 2160256
+        },
+        "3": {
+          "empty": 0,
+          "live": 2906896
+        },
+        "6": {
+          "empty": 0,
+          "live": 4181040
+        },
+        "none": {
+          "empty": 0,
+          "live": 317040
+        }
+      },
+      "empty_realm_bytes": 317040,
+      "bytes_per_element_slope": 1178.3608,
+      "bytes_per_bare_element": 733.144,
+      "bytes_per_attribute": 199.80933333333334
+    }
+  }
+}

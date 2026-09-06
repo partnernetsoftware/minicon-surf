@@ -174,6 +174,24 @@ flowchart TD
    order the product wants; none is blocked by memory.
 5. **G3**, last, and only with an explicit visual authorisation.
 
+**Amendment, recorded after the fact and not erasing the order above.**
+Two later measurements contradict this section, and the original ordering is
+kept as it stood so the movement is visible:
+
+- **Item 1 does not exist.** `first-request-cost-audit-0.0.1.md` measured the
+  1.77 MB step and found it is not the profile: creating a profile costs about
+  16 KB, and the constant is paid by the host serving its **first line of any
+  kind**, a malformed one included. Item 1 should be read as struck. The order
+  that followed it — the first realm, then the allocator delta, then the engine
+  breakdown — was carried out and is recorded in those three audits.
+- **The ordering's filter measured only one of two terms.**
+  `element-scaling-audit-0.0.1.md` measured what an element costs a realm and
+  found the element-fact rounds bought +232 bytes per element, a 21% increase
+  that no cap and no yardstick watches, against fixed per-realm costs that
+  every cap does watch. Any future ordering that prices a shim or element
+  change by its fixed cost alone will understate it on a real page by two
+  orders of magnitude.
+
 **Nothing in this triage is proposed for implementation now.** The honest
 summary is that the page-surface work this batch has been doing is finished as
 far as the open goals are concerned: they are not waiting on the shim.

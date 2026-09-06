@@ -1404,6 +1404,38 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing changed: what an element costs a realm
+  (`labs/native-dom/element-scaling-audit-0.0.1.md`, receipts
+  `evidence/native-dom-control-0.0.2-element-scaling{,-round-c,-pre-round-c}.json`
+  and `-attribute-store.json`). No product code, court, criterion, cap, floor or
+  protocol touched; no cap moved; two comparison binaries were rebuilt from
+  committed commits in throwaway worktrees outside the checkout and left there.
+  **The element-fact programme was priced where its cost is smallest.** Every
+  round measured its fixed per-realm cost against a frozen ceiling and passed
+  honestly; none measured the term that scales with the page. Measured on three
+  builds, system arm: **1,097.4 → 1,217.6 → 1,329.6 bytes per element**, so
+  round C bought **+120.1** and round D **+112.0**, a **+232.2 (21%)** total,
+  while the per-attribute cost never moved (229.8 on all three, to the byte).
+  The fixed term behaved exactly as `first-realm-engine-audit-0.0.1.md`
+  predicted — 3.47, 4.30 and 3.97 bytes per byte of shim source against its
+  ~3.6 — so **that yardstick is confirmed and prices only one of two terms**.
+  The caps did not fail; they were never pointed at this: read on the
+  child-frame court's ~8-element fixture, round D's per-element term is 896
+  bytes against a fixed 2,560, but at 1,500 elements it is 65.6× it. The
+  consequence with a name: the 16 MiB realm limit falls from **14,991 to 12,370
+  elements (−17.5%)**, the price of closing F5, F1 and F2 — **possibly the right
+  trade, but never stated as one**. A second question was asked and answered
+  **no**: `Element.prototype.__attrs` hands the page the record's live `Map`,
+  but in ten arms every write through it lands exactly where its honest
+  `setAttribute`/`removeAttribute` twin lands, so **F1 and F2 stay closed** and
+  the pairing is the only reason that is a result rather than an omission. One
+  unmeasured difference is recorded as a question, not a claim: a direct write
+  skips the mutation record, so whether a page can move an attribute without the
+  revision moving needs a post-snapshot write this probe cannot produce.
+  `open-goal-triage-0.0.1.md` §8 was amended chronologically, its original
+  ordering kept: item 1 was struck, because
+  `first-request-cost-audit-0.0.1.md` had already measured the first-profile
+  cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Ruled and recorded: a binary hash is a same-path provenance token
   (`AGENTS.md`, "Lab discipline"; linked from `labs/native-dom/README.md`'s
   receipt-provenance section and measured in
