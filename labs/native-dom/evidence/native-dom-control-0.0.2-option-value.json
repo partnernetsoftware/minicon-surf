@@ -1,0 +1,674 @@
+{
+  "probe": "an option's label, and the value that reaches the server",
+  "binary_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+  "note": "Form values and built query strings are page data. The server records only which disjoint marker it saw, how many bytes the query was, and whether an emoji or a space survived encoding -- never the query.",
+  "shown_to_the_agent": "options[] = {index, label, selected, disabled} and selected",
+  "rows": [
+    {
+      "shape": "label_only",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Malpha",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mgamma",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 9,
+          "markers": [
+            "Mbeta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "label_only",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Malpha",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mgamma",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 9,
+          "markers": [
+            "Mbeta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "label_and_value",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mdelta",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Meta",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 9,
+          "markers": [
+            "Mepsi"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "label_and_value",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mdelta",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Meta",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 9,
+          "markers": [
+            "Mepsi"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "value_only",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Miota",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mkappa",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 10,
+          "markers": [
+            "Mtheta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "value_only",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Miota",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mkappa",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 10,
+          "markers": [
+            "Mtheta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "plain",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mlambda",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mmu",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 11,
+          "markers": [
+            "Mlambda"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "plain",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mlambda",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mmu",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 11,
+          "markers": [
+            "Mlambda"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "duplicate_labels",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "same",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "same",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 10,
+          "markers": [
+            "Malpha"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "duplicate_labels",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "same",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "same",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 10,
+          "markers": [
+            "Malpha"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "disabled_first",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mgamma",
+            "selected": true,
+            "disabled": true
+          },
+          {
+            "index": 1,
+            "label": "Mepsi",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 1,
+      "select_option": "ok:applied=True",
+      "select_disabled": "unsupported_capability/option_disabled",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 9,
+          "markers": [
+            "Mzeta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "disabled_first",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mgamma",
+            "selected": true,
+            "disabled": true
+          },
+          {
+            "index": 1,
+            "label": "Mepsi",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 1,
+      "select_option": "ok:applied=True",
+      "select_disabled": "unsupported_capability/option_disabled",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 9,
+          "markers": [
+            "Mzeta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "preselected_second",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Meta",
+            "selected": false,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Miota",
+            "selected": true,
+            "disabled": false
+          }
+        ],
+        "selected": 1,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 10,
+          "markers": [
+            "Mtheta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "preselected_second",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Meta",
+            "selected": false,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Miota",
+            "selected": true,
+            "disabled": false
+          }
+        ],
+        "selected": 1,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 10,
+          "markers": [
+            "Mtheta"
+          ],
+          "carried_emoji": false,
+          "carried_space": false
+        }
+      ]
+    },
+    {
+      "shape": "whitespace_and_unicode",
+      "door": "form",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mlambda\ud83d\ude00",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Malpha",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 23,
+          "markers": [
+            "Mmu"
+          ],
+          "carried_emoji": true,
+          "carried_space": true
+        }
+      ]
+    },
+    {
+      "shape": "whitespace_and_unicode",
+      "door": "submitter",
+      "mutated_between": false,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mlambda\ud83d\ude00",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Malpha",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "ok:applied=True",
+      "server": [
+        {
+          "path": "/landed.html",
+          "query_bytes": 23,
+          "markers": [
+            "Mmu"
+          ],
+          "carried_emoji": true,
+          "carried_space": true
+        }
+      ]
+    },
+    {
+      "shape": "label_only",
+      "door": "submitter",
+      "mutated_between": true,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Malpha",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Mgamma",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "unsupported_capability/preflight_mismatch",
+      "server": []
+    },
+    {
+      "shape": "label_and_value",
+      "door": "submitter",
+      "mutated_between": true,
+      "marker_in_snapshot": true,
+      "shown": {
+        "options": [
+          {
+            "index": 0,
+            "label": "Mdelta",
+            "selected": true,
+            "disabled": false
+          },
+          {
+            "index": 1,
+            "label": "Meta",
+            "selected": false,
+            "disabled": false
+          }
+        ],
+        "selected": 0,
+        "exposes_value": false
+      },
+      "chose_index": 0,
+      "select_option": "ok:applied=True",
+      "submit": "unsupported_capability/preflight_mismatch",
+      "server": []
+    }
+  ]
+}

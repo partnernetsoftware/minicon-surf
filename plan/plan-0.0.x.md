@@ -1404,6 +1404,55 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing implemented: an option's label and the value that
+  reaches the server (`labs/native-dom/option-value-audit-0.0.1.md`, probe
+  `option-value-probe.py`, receipt
+  `evidence/native-dom-control-0.0.2-option-value.json`). Eighteen arms — eight
+  select shapes through **both** act doors, plus two that mutate the chosen
+  option between the snapshot and the act. **The gap is real in the three shapes
+  an author can write** (`label` and no value → the text is sent; `label` and a
+  value → the value; a value and no label → the value) and **absent in the
+  plain control**, where what is read is what is sent. **But it is not an
+  oversight**: `form-court.py:405` freezes *"the snapshot reports no option
+  value"* in as many words, rooted in `form-interaction-design-0.0.1.md` §12.5,
+  so any candidate that exposes the value is a request to reverse a deliberate
+  decision rather than a bug fix — the most important thing this audit has to
+  say. **And it is a preview gap, not an information gap**: the same §12.5 says
+  `target.inspect` may report the committed URL *"query included, because that
+  is the browser state an Agent must be able to read"*, and measured, it does —
+  after the submit the agent can read the submitted option text and the typed
+  textbox value, though never the label, which never goes on the wire.
+  **Authority is bound throughout**: a form's approval signature includes the
+  built query, so a page that rewrites the chosen option's value between the two
+  derivations gets `preflight_mismatch` with **nothing fetched**, on both doors.
+  Not a fail-open, not a wrong answer — every reported field is true. The other
+  shapes: duplicate labels are indistinguishable from the answer but the host's
+  own `index` is the discriminator and it works; a disabled option is flagged
+  and refused `option_disabled`; a pre-selected one is reported truthfully, and
+  a form submitted with no act at all sends a value the agent never saw; and a
+  label of `"  X + emoji + "  "` is shown **trimmed** while the declared value
+  reached the server with its spaces and emoji intact. **One asymmetry is named
+  and not resolved**: a textbox's `value` **is** in the snapshot today and an
+  option's is not, while §12.5 governs ledgers and diagnostics and explicitly
+  exempts what an agent must read — so the option rule is stricter than the
+  written rule requires, and line 405 is where the extra strictness lives. Four
+  candidates in §9, **none of them a schema change** (the schema constrains a
+  `result` only as `{"type":"object","maxProperties":64}` and pins no node
+  field, and `check_contract.py` asserts none): expose the value (at most
+  **+17,088 bytes** on a select node measured at **4,603** today, and it
+  reverses line 405); expose a boolean (**≤1,408 bytes**, a smaller ruling in
+  the same category); a new request field (the only one that touches the
+  schema); or **document it**. `form-court.py:403`'s shape check is a subset
+  test and would not obstruct either exposure — only the no-value criterion
+  beside it would. **Recommended: do nothing and document it**, since authority
+  is bound, every field is true, and the agent can read the committed query
+  afterwards by a route the original design blessed. A court is drafted
+  **conditionally** in §13 and deliberately not for the recommendation.
+  Verification on `2d57ce86`: text-answer 29/29, form 179/179, attribute-fact
+  154/154, element-tag 52/52, signature-integrity 34/34, property-shape 22/22,
+  registry-brand 15/15, snapshot-schema 13/13, downloads 21/21, child-frame
+  82/82; fmt, 58 tests, contract 28 examples and 50 negatives. Not pushed.
+  G1, G3, P6 and G6 stay open.
 - [x] Frozen, then implemented: an answer is never lost to half a character
   (`labs/native-dom/text-answer-court.py`, receipts
   `evidence/native-dom-control-0.0.2-text-answer-court{,-falsification,-falsification-amended}.json`).
