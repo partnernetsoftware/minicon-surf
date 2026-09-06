@@ -142,3 +142,45 @@ forgotten, they are priced out for different reasons than cost.
    of the timer reserve it would sit inside.
 4. **The base group** — insertion and node kinds — as a single design if it is
    ever wanted, since they share the same machinery and the same court.
+
+
+## 7. Ruled
+
+**`getElementsByClassName` is taken, and nothing else**: no other method, no
+accessor, no `setInterval`, no base insertion group. The cost gate is the
+measured **+464**, taking main slack from 62,016 to about 62,480 with roughly
+3,056 left; the bound does not move, the handle does not widen, the base does
+not grow, and no capability is removed to pay for it.
+
+**One member serves both call surfaces.** `querySelectorAll` lives on
+`Node.prototype` in the base and both `Element` and `Document` extend `Node`,
+so defining `getElementsByClassName` there once gives a page
+`document.getElementsByClassName(…)` and `element.getElementsByClassName(…)`
+for the price of a single member. Two separate definitions would have cost
+two, which §2 measured at 5,056 and would not fit.
+
+**It adds no authority, no reentrancy and no lifetime semantics.** It reads
+the tree through the same selector engine a page can already call, runs no
+listener, mints no event, touches no host state and owns nothing that outlives
+the call.
+
+The shape it must have, so the court can pin it:
+
+- a class list is space-separated and means **all of them**: `"a b"` finds
+  elements carrying both, which is why it cannot be a bare `"." + name`;
+- the argument is trimmed, and an empty or whitespace-only one returns an
+  empty result rather than throwing;
+- matching is **case-sensitive**, as the engine already matches classes;
+- the result is a **plain array in document order**, non-live, exactly like
+  `querySelectorAll` — the live `HTMLCollection` is a loss already recorded
+  for that method and is inherited here rather than newly introduced;
+- a class name this host's selector engine cannot express returns an **empty
+  result and does not throw**, because the standard method never throws; that
+  is a new recorded loss and the court pins it.
+
+The implementation court is frozen before the code and covers both call
+surfaces, case, whitespace, multi-class conjunction, duplicates, empty
+results, document order, detached subtrees, the plain-array non-live shape,
+the inexpressible-name loss, the absence of the member in a child realm, owner
+release, the unchanged handle key set, and the main-slack bound on the same
+binary.
