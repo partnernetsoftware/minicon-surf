@@ -1381,6 +1381,25 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Read-only measurement, nothing implemented: the download envelope
+  (`labs/native-dom/download-envelope-audit-0.0.1.md`). Nothing was
+  downloaded — the fixture is local. **The envelope is not the binding
+  constraint**: a network-cap payload serializes to 1,398,652 bytes against the
+  4,194,304 bound, 2,795,652 spare, and the envelope could carry 3,145,317
+  bytes of payload — three times what the network layer will fetch. So the
+  ceiling can simply **inherit the network cap**, whose over-ceiling refusal
+  already exists and is already typed: a 1.4 MB document is refused
+  `resource_limit` / *"network policy: response-bytes"*, while 900 KB opens
+  fine. The measurement's real find is a **risk nobody had looked for**: no
+  path in this host emits a large line today — that same 900 KB document
+  snapshots to **666 bytes** at every `max_bytes`, because node text truncates
+  at 256 characters — so the 4 MiB transport bound is **declared but
+  unexercised**, and the court draft grows a criterion that a ~1.4 MB answer
+  round-trips as one line. A second edge: an oversized response becomes a
+  **generic** `internal`, so the download must refuse before serializing, which
+  §2 shows it already does. `download` is recommended over `download_link`,
+  permission is checked at use, and `reported_name` stays bounded, verbatim and
+  out of every ledger. G1, G3, P6 and G6 stay open, and D6 is untouched.
 - [ ] Design-only, nothing implemented: sink C
   (`labs/native-dom/download-sink-c-design-0.0.1.md`), the ruled shape —
   download bytes return through the control protocol, the filename is a
