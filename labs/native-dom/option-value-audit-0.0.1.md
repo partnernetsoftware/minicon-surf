@@ -248,6 +248,37 @@ court-only log and the receipt must still contain none of it — group 5's greps
 run unchanged, because the ruling would move what the *snapshot* may say and
 nothing else.
 
+## 15. The ruling
+
+Recorded as the standing decision, 2026-09-06:
+
+> **The asymmetry stays, and it is deliberate.** The snapshot does not expose
+> `options[].value`; no `value_differs` flag is added; no new request field is
+> added. `form-court.py:405` — *"the snapshot reports no option value"* — and
+> `form-interaction-design-0.0.1.md` §12.5 stand as they are.
+>
+> What this is: **a deliberate preview gap.** What it is not: an
+> information-integrity defect or an authority defect. The submitted query
+> remains readable after the commit through `target.inspect`, and the approval
+> signature covering the built query — with `preflight_mismatch` on any mutation
+> between the two derivations — is what keeps the act bound to what was
+> approved.
+
+So the four candidates in §9 are all declined, including the free one: even
+documenting it in the protocol README was not asked for, and this section is
+where the decision lives instead. An agent implementer reading this audit is
+told the two things that matter — that a label is not a payload, and that
+`target.inspect` reports the committed query — and the recommendation of §10 is
+superseded by the ruling above.
+
+The §6 asymmetry — a textbox's `value` is in the snapshot and an option's is
+not — is **settled as intended** by this ruling rather than left open. It is not
+a gap between the written rule and the code; it is a narrower rule for options
+than §12.5 requires, kept on purpose.
+
+Nothing in this round changed a bound, a handle, a base byte, a court criterion
+or a line of product code.
+
 ## 14. Non-goals, and what this does not settle
 
 No implementation, no court frozen, no criterion moved, no schema touched, no

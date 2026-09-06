@@ -402,6 +402,18 @@ def run(binary, allocator, origin, expect, tag):
                    isinstance(options, list) and 0 < len(options) <= CAPS["max_options_per_select"]
                    and all({"index", "label", "selected", "disabled"} <= set(o) for o in options),
                    shape(options))
+            # Ruled and recorded, 2026-09-06, in
+            # `option-value-audit-0.0.1.md` §15: this criterion is deliberate
+            # and stays. An option's label and the value that would be
+            # submitted are different strings in the three shapes an author can
+            # write, and the snapshot shows only the label -- measured across
+            # eighteen arms. That is a **preview gap**, not an
+            # information-integrity or authority defect: `target.inspect`
+            # reports the committed query afterwards (§12.5 blesses it), and the
+            # approval signature covers the built query, so a mutation between
+            # the two derivations answers `preflight_mismatch` and fetches
+            # nothing. Anyone who reaches this line wondering why the value is
+            # hidden is reading the answer: it was ruled, not overlooked.
             expect(tag + "the snapshot reports no option value",
                    all("value" not in o for o in (options or [])), shape(options))
             forms = [n for n in snap.get("nodes", []) if n.get("role") == "form"]

@@ -1404,6 +1404,25 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Ruled, nothing implemented: the option label/value asymmetry stays
+  (`labs/native-dom/option-value-audit-0.0.1.md` §15, and the ruling recorded at
+  the criterion itself in `form-court.py`). **The snapshot does not expose
+  `options[].value`; no `value_differs` flag and no new request field are
+  added; `form-court.py:405` and `form-interaction-design-0.0.1.md` §12.5 stand
+  as they are.** All four candidates are declined, the free one included. What
+  this is: **a deliberate preview gap**. What it is not: an
+  information-integrity defect or an authority defect — the submitted query
+  stays readable after the commit through `target.inspect`, and the approval
+  signature covering the built query, with `preflight_mismatch` on any mutation
+  between the two derivations, keeps the act bound to what was approved. The §6
+  asymmetry — a textbox's `value` is in the snapshot and an option's is not — is
+  **settled as intended** rather than left open: it is a narrower rule for
+  options than §12.5 requires, kept on purpose. The ruling is written twice on
+  purpose: in the audit, and as a comment above the criterion, so that whoever
+  next reaches that line wondering why the value is hidden reads that it was
+  ruled and not overlooked. **No product code, no criterion moved, no bound,
+  handle or base byte changed**, and `form-court.py` still reads 179/179 with
+  the comment in place. Not pushed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: an option's label and the value that
   reaches the server (`labs/native-dom/option-value-audit-0.0.1.md`, probe
   `option-value-probe.py`, receipt
