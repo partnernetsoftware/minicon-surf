@@ -1302,6 +1302,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented and no court frozen: the smallest
+  main-only method that fits
+  (`labs/native-dom/smallest-method-audit-0.0.1.md`). Every price measured for
+  the actual member, never extrapolated — the previous round's mistake.
+  Against the shipped line at 62,016: `hasAttributes` **+464**,
+  `hasChildNodes` **+464**, `getElementsByTagName` +496 and **+576 with the
+  never-throws guard**, all fitting; **any two of them +5,056 and all three
+  +5,520, both over the bound**. So exactly one member fits, whichever it is,
+  and the wall this time sits between the first and the second rather than
+  inside the first. The guard that sank `getElementsByClassName` costs 80
+  bytes here, because the body is a single delegation rather than token
+  joining. Measured behaviour of the guarded method: document and element
+  scope in document order, the element itself excluded, case-insensitive
+  matching, `'*'` equal to `querySelectorAll('*')`, empty and unparseable
+  arguments answering empty without throwing, a plain non-live array, working
+  in a detached subtree, and inert inside a dispatch. **It adds no authority,
+  no reentrancy and no lifecycle**: it calls the base's `querySelectorAll`,
+  which a page can already call, allocates one array per call and owns nothing
+  after. No child cost, no handle change. Two losses recorded: the live
+  `HTMLCollection` inherited from `querySelectorAll`, and a namespace-ish name
+  such as `a:b` answering empty where a browser matches the literal name.
+  Recommendation: take the guarded `getElementsByTagName` — the only one of
+  the three that real pages call — or `hasChildNodes` if the reserve matters
+  more, or none. G1, G3, P6 and G6 stay open.
 - [ ] Design-only triage, nothing implemented and no court frozen:
   page-observable gaps under the remaining slack
   (`labs/native-dom/browser-gap-triage-0.0.3.md`). Sixty-nine names probed
