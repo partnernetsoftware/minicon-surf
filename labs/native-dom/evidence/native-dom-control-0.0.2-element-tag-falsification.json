@@ -1,0 +1,501 @@
+{
+  "court": "native-dom round C: an element's tag is the host's",
+  "frozen_from": "labs/native-dom/element-tag-design-0.0.1.md \u00a74",
+  "binary_sha256": "0da1c6b11553288619298126bd7d4fbe215b50aef660355250bb84219738ca7a",
+  "passed": false,
+  "score": "38/52",
+  "checks": [
+    {
+      "check": "A: with `unpatched`, the div is never offered as a link and never downloads",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "A: with `unpatched`, nothing was fetched for the div",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `unpatched`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "A: with `unpatched`, a paragraph is still refused `not_a_link`",
+      "passed": true,
+      "detail": {
+        "reason": "not_a_link"
+      }
+    },
+    {
+      "check": "A: with `unpatched`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `unpatched`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `unpatched`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "B: with `unpatched`, the page's own script ran to completion",
+      "passed": true,
+      "detail": {
+        "echo": "tag=DIV",
+        "marker": true
+      }
+    },
+    {
+      "check": "B: with `unpatched`, ordinary markup still classifies",
+      "passed": true,
+      "detail": {
+        "roles": {
+          "mark": "text",
+          "echo": "text",
+          "realdl": "link",
+          "ajs": "link",
+          "afile": "link",
+          "across": "link",
+          "f": "form",
+          "q": "textbox",
+          "go": "button",
+          "clonedl": "link"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, the div is never offered as a link and never downloads",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "offered": true,
+        "role": "link"
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, nothing was fetched for the div",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/asked.bin"
+        ]
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, a paragraph is still refused `not_a_link`",
+      "passed": true,
+      "detail": {
+        "reason": "not_a_link"
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "B: with `lower_div_anchor`, the page's own script ran to completion",
+      "passed": true,
+      "detail": {
+        "echo": "tag=DIV",
+        "marker": true
+      }
+    },
+    {
+      "check": "B: with `lower_div_anchor`, ordinary markup still classifies",
+      "passed": true,
+      "detail": {
+        "roles": {
+          "mark": "text",
+          "echo": "text",
+          "fakedl": "link",
+          "realdl": "link",
+          "ajs": "link",
+          "afile": "link",
+          "across": "link",
+          "f": "form",
+          "q": "textbox",
+          "go": "button",
+          "clonedl": "link"
+        }
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, the div is never offered as a link and never downloads",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "offered": true,
+        "role": "link"
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, nothing was fetched for the div",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/asked.bin"
+        ]
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, a paragraph is still refused `not_a_link`",
+      "passed": true,
+      "detail": {
+        "reason": "not_a_link"
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "B: with `write_tag_name`, the page's own script ran to completion",
+      "passed": true,
+      "detail": {
+        "echo": "tag=A",
+        "marker": true
+      }
+    },
+    {
+      "check": "B: with `write_tag_name`, the page reads back the tag it wrote",
+      "passed": true,
+      "detail": {
+        "echo": "tag=A"
+      }
+    },
+    {
+      "check": "B: with `write_tag_name`, ordinary markup still classifies",
+      "passed": true,
+      "detail": {
+        "roles": {
+          "mark": "text",
+          "echo": "text",
+          "fakedl": "link",
+          "realdl": "link",
+          "ajs": "link",
+          "afile": "link",
+          "across": "link",
+          "f": "form",
+          "q": "textbox",
+          "go": "button",
+          "clonedl": "link"
+        }
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, the div is never offered as a link and never downloads",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "offered": true,
+        "role": "link"
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, nothing was fetched for the div",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/asked.bin"
+        ]
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, a paragraph is still refused `not_a_link`",
+      "passed": true,
+      "detail": {
+        "reason": "not_a_link"
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `take_the_reader`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "B: with `take_the_reader`, the page's own script ran to completion",
+      "passed": true,
+      "detail": {
+        "echo": "tag=A",
+        "marker": true
+      }
+    },
+    {
+      "check": "B: with `take_the_reader`, the page reads back the tag it wrote",
+      "passed": true,
+      "detail": {
+        "echo": "tag=A"
+      }
+    },
+    {
+      "check": "B: with `take_the_reader`, ordinary markup still classifies",
+      "passed": true,
+      "detail": {
+        "roles": {
+          "mark": "text",
+          "echo": "text",
+          "fakedl": "link",
+          "realdl": "link",
+          "ajs": "link",
+          "afile": "link",
+          "across": "link",
+          "f": "form",
+          "q": "textbox",
+          "go": "button",
+          "clonedl": "link"
+        }
+      }
+    },
+    {
+      "check": "B: a cloned anchor is still a link to the host and still downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "C: the fifteen declared captures are unchanged and there is no sixteenth",
+      "passed": true,
+      "detail": {
+        "found": [
+          "reflectApply",
+          "StringOf",
+          "MapOf",
+          "weakMapGet",
+          "weakMapSet",
+          "mapGet",
+          "mapSet",
+          "mapHas",
+          "arraySlice",
+          "arrayPush",
+          "arrayIndexOf",
+          "arraySplice",
+          "weakSetAdd",
+          "weakSetHas",
+          "jsonStringify"
+        ]
+      }
+    },
+    {
+      "check": "C: `SERIALIZE_JS` no longer asks the element for its tag",
+      "passed": false,
+      "detail": {
+        "found": true,
+        "length": 3330,
+        "still_asks": true
+      }
+    },
+    {
+      "check": "C: `ACTIVATION_JS` no longer asks the element for its tag",
+      "passed": false,
+      "detail": {
+        "found": true,
+        "length": 4206,
+        "still_asks": true
+      }
+    },
+    {
+      "check": "C: `snapshot_script` no longer asks the element for its tag",
+      "passed": false,
+      "detail": {
+        "found": true,
+        "length": 4334,
+        "still_asks": true
+      }
+    },
+    {
+      "check": "C: `download_probe_script` no longer asks the element for its tag",
+      "passed": false,
+      "detail": {
+        "found": true,
+        "length": 1268,
+        "still_asks": true
+      }
+    },
+    {
+      "check": "C: `form_action_script` no longer asks the element for its tag",
+      "passed": false,
+      "detail": {
+        "found": true,
+        "length": 8820,
+        "still_asks": true
+      }
+    },
+    {
+      "check": "C: `act_script` no longer asks the element for its tag",
+      "passed": false,
+      "detail": {
+        "found": true,
+        "length": 2071,
+        "still_asks": true
+      }
+    },
+    {
+      "check": "C: the reader is installed non-writable and non-configurable",
+      "passed": false,
+      "detail": {
+        "found": false
+      }
+    },
+    {
+      "check": "C: the base shim grows by at most 400 bytes and the main shim not at all",
+      "passed": false,
+      "detail": {
+        "base": 32898,
+        "ceiling": 33298,
+        "before": 32898,
+        "main": 26485
+      }
+    },
+    {
+      "check": "C: [system] one child costs at most 2048 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 233962,
+        "before": 233962,
+        "delta": 0
+      }
+    },
+    {
+      "check": "C: [system] seven children cost at most 14336 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 1636236,
+        "before": 1636236,
+        "delta": 0
+      }
+    },
+    {
+      "check": "C: [arena] one child costs at most 2048 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 225898,
+        "before": 225898,
+        "delta": 0
+      }
+    },
+    {
+      "check": "C: [arena] seven children cost at most 14336 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 1579500,
+        "before": 1579500,
+        "delta": 0
+      }
+    }
+  ],
+  "not_under_test": [
+    "F1 methodOf: a declared POST submitted as a GET -- still open after this round",
+    "F2 targetOf: a named-target link activated -- still open after this round",
+    "node names, which still come from the page's textContent"
+  ],
+  "headless": "no surface binary, no window, no AppKit; two hermetic loopback origins"
+}
