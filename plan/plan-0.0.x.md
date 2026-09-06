@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the first realm at engine level
+  (`labs/native-dom/first-realm-engine-audit-0.0.1.md`). Read-only; candidates
+  measured in a **scratch crate outside the repository** linking the same
+  pinned `rquickjs =0.12.2`. **The tracked per-realm cost is exactly constant**
+  — 327,456 system, 317,232 arena — released in full on close, so there is *no
+  first-realm premium in the tracked number*. The premium is real but untracked:
+  **14,416 malloc bytes that are never released** (identical on both arms, so
+  host state rather than realm state) and ~2.1 MB of RSS over a marginal realm.
+  Decomposed: `Runtime::new` 27,344 (8.4%), `Context::full` 76,640 (23.4%, of
+  which intrinsics 41,568 — TypedArrays alone 16,288), base shim 155,056, main
+  shim 87,040. **Two thirds of a realm is the shim**, and its 58,957 source
+  bytes cost 210,096 live: **an exchange rate of ~3.6 bytes of realm memory per
+  byte of shim source**, which turns the existing main-slack work into a
+  measurable programme. Candidates judged: shrinking the shim is the only large
+  semantics-neutral lever; one shared runtime would save 49,872 per realm
+  (15.2%) but collapses the per-realm memory limit and the very zone/arena
+  instrument D6 uses; trimming intrinsics buys under an eighth of a realm and
+  changes what a page may do; bytecode addresses parse, not the objects that
+  dominate; and skipping the main shim in child realms is **already done**
+  (87,040 per child realm). **D6 note**: D6 is measured in RSS and the system
+  arm returns none of it on close — RSS even grows 32,768 — so a saving shows
+  up only on the arena arm, which returned 901,120. Eight-criterion court draft
+  in §7; four rulings pending in §8. D6's criterion and bound untouched; G1
+  unaffected.
 - [ ] Design-only, nothing implemented: history persistence, P6
   (`labs/native-dom/history-persistence-audit-0.0.1.md`). Read-only, headless,
   no user data touched. **Confirmed first**: history is one ring per target,
