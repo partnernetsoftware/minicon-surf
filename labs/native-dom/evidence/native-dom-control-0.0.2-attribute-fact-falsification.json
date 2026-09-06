@@ -1,0 +1,1334 @@
+{
+  "court": "native-dom round D: the attributes a decision reads are the host's",
+  "frozen_from": "labs/native-dom/attribute-fact-design-0.0.1.md \u00a711, candidate E",
+  "binary_sha256": "e9e071115461129e02505528a0f0d896c78c72fa62ccf66d888c2fc1c18b453f",
+  "passed": false,
+  "score": "126/154",
+  "checks": [
+    {
+      "check": "A: with `unpatched`, a declared POST is refused `form_method_unsupported`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `unpatched`, a declared POST is refused through its submitter too",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `unpatched`, a declared POST reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `unpatched`, both submit doors read the same refusal",
+      "passed": true,
+      "detail": {
+        "activations": {
+          "postform": "form_method_unsupported",
+          "postgo": "form_method_unsupported",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `unpatched`, the snapshot reports the method the page declared",
+      "passed": true,
+      "detail": {
+        "methods": {
+          "postform": "post",
+          "getform": "get",
+          "cloneform": "post"
+        }
+      }
+    },
+    {
+      "check": "A: with `unpatched`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `unpatched`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `unpatched`, a named target is refused `target_named`",
+      "passed": true,
+      "detail": {
+        "reason": "target_named",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: with `unpatched`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `unpatched`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `unpatched`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `unpatched`, a cloned POST form keeps its method and is refused",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported",
+        "method": "post"
+      }
+    },
+    {
+      "check": "D: with `unpatched`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `unpatched`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `unpatched`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `unpatched`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `unpatched`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `unpatched`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, a declared POST is refused `form_method_unsupported`",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, a declared POST is refused through its submitter too",
+      "passed": false,
+      "detail": {
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, a declared POST reaches the server not at all",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, both submit doors read the same refusal",
+      "passed": false,
+      "detail": {
+        "activations": {
+          "postform": "allowed",
+          "postgo": "allowed",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, the snapshot reports the method the page declared",
+      "passed": false,
+      "detail": {
+        "methods": {
+          "postform": "get",
+          "getform": "get",
+          "cloneform": "get"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `lower_post_get`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `lower_post_get`, a named target is refused `target_named`",
+      "passed": true,
+      "detail": {
+        "reason": "target_named",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: with `lower_post_get`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `lower_post_get`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `lower_post_get`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `lower_post_get`, a cloned POST form keeps its method and is refused",
+      "passed": false,
+      "detail": {
+        "reason": null,
+        "method": "get"
+      }
+    },
+    {
+      "check": "D: with `lower_post_get`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `lower_post_get`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `lower_post_get`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `lower_post_get`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `lower_post_get`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `lower_post_get`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, a declared POST is refused `form_method_unsupported`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, a declared POST is refused through its submitter too",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, a declared POST reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, both submit doors read the same refusal",
+      "passed": true,
+      "detail": {
+        "activations": {
+          "postform": "form_method_unsupported",
+          "postgo": "form_method_unsupported",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, the snapshot reports the method the page declared",
+      "passed": true,
+      "detail": {
+        "methods": {
+          "postform": "post",
+          "getform": "get",
+          "cloneform": "post"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `lower_target_self`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `lower_target_self`, a named target is refused `target_named`",
+      "passed": false,
+      "detail": {
+        "reason": null,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `lower_target_self`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `lower_target_self`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `lower_target_self`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `lower_target_self`, a cloned POST form keeps its method and is refused",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported",
+        "method": "post"
+      }
+    },
+    {
+      "check": "D: with `lower_target_self`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `lower_target_self`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `lower_target_self`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `lower_target_self`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `lower_target_self`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `lower_target_self`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, a declared POST is refused `form_method_unsupported`",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, a declared POST is refused through its submitter too",
+      "passed": false,
+      "detail": {
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, a declared POST reaches the server not at all",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, both submit doors read the same refusal",
+      "passed": false,
+      "detail": {
+        "activations": {
+          "postform": "allowed",
+          "postgo": "allowed",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, the snapshot reports the method the page declared",
+      "passed": false,
+      "detail": {
+        "methods": {
+          "postform": "get",
+          "getform": "get",
+          "cloneform": "get"
+        }
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `map_get_lies`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `map_get_lies`, a named target is refused `target_named`",
+      "passed": false,
+      "detail": {
+        "reason": null,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `map_get_lies`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `map_get_lies`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `map_get_lies`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `map_get_lies`, a cloned POST form keeps its method and is refused",
+      "passed": false,
+      "detail": {
+        "reason": null,
+        "method": "get"
+      }
+    },
+    {
+      "check": "D: with `map_get_lies`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `map_get_lies`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `map_get_lies`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `map_get_lies`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `map_get_lies`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `map_get_lies`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, a declared POST is refused `form_method_unsupported`",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, a declared POST is refused through its submitter too",
+      "passed": false,
+      "detail": {
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, a declared POST reaches the server not at all",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, both submit doors read the same refusal",
+      "passed": false,
+      "detail": {
+        "activations": {
+          "postform": "allowed",
+          "postgo": "form_method_unsupported",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, the snapshot reports the method the page declared",
+      "passed": false,
+      "detail": {
+        "methods": {
+          "postform": "get",
+          "getform": "get",
+          "cloneform": "post"
+        }
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `write_attrs`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `write_attrs`, a named target is refused `target_named`",
+      "passed": false,
+      "detail": {
+        "reason": null,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `write_attrs`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `write_attrs`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `write_attrs`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `write_attrs`, a cloned POST form keeps its method and is refused",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported",
+        "method": "post"
+      }
+    },
+    {
+      "check": "D: with `write_attrs`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `write_attrs`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `write_attrs`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `write_attrs`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `write_attrs`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `write_attrs`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, a declared POST is refused `form_method_unsupported`",
+      "passed": false,
+      "detail": {
+        "marker": true,
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, a declared POST is refused through its submitter too",
+      "passed": false,
+      "detail": {
+        "reason": null
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, a declared POST reaches the server not at all",
+      "passed": false,
+      "detail": {
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, both submit doors read the same refusal",
+      "passed": false,
+      "detail": {
+        "activations": {
+          "postform": "allowed",
+          "postgo": "form_method_unsupported",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, the snapshot reports the method the page declared",
+      "passed": false,
+      "detail": {
+        "methods": {
+          "postform": "get",
+          "getform": "get",
+          "cloneform": "post"
+        }
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `take_the_readers`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `take_the_readers`, a named target is refused `target_named`",
+      "passed": true,
+      "detail": {
+        "reason": "target_named",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: with `take_the_readers`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `take_the_readers`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `take_the_readers`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `take_the_readers`, a cloned POST form keeps its method and is refused",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported",
+        "method": "post"
+      }
+    },
+    {
+      "check": "D: with `take_the_readers`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `take_the_readers`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `take_the_readers`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `take_the_readers`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `take_the_readers`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `take_the_readers`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, a declared POST is refused `form_method_unsupported`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, a declared POST is refused through its submitter too",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, a declared POST reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, both submit doors read the same refusal",
+      "passed": true,
+      "detail": {
+        "activations": {
+          "postform": "form_method_unsupported",
+          "postgo": "form_method_unsupported",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, the snapshot reports the method the page declared",
+      "passed": true,
+      "detail": {
+        "methods": {
+          "postform": "post",
+          "getform": "get",
+          "cloneform": "post"
+        }
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `lower_div_anchor`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `lower_div_anchor`, a named target is refused `target_named`",
+      "passed": true,
+      "detail": {
+        "reason": "target_named",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: with `lower_div_anchor`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `lower_div_anchor`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `lower_div_anchor`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `lower_div_anchor`, a cloned POST form keeps its method and is refused",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported",
+        "method": "post"
+      }
+    },
+    {
+      "check": "D: with `lower_div_anchor`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `lower_div_anchor`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `lower_div_anchor`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `lower_div_anchor`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `lower_div_anchor`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `lower_div_anchor`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, a declared POST is refused `form_method_unsupported`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, a declared POST is refused through its submitter too",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported"
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, a declared POST reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, both submit doors read the same refusal",
+      "passed": true,
+      "detail": {
+        "activations": {
+          "postform": "form_method_unsupported",
+          "postgo": "form_method_unsupported",
+          "getform": "allowed",
+          "getgo": "allowed"
+        }
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, the snapshot reports the method the page declared",
+      "passed": true,
+      "detail": {
+        "methods": {
+          "postform": "post",
+          "getform": "get",
+          "cloneform": "post"
+        }
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, the ledger records no method and no form value",
+      "passed": true,
+      "detail": {
+        "mentions_method": false
+      }
+    },
+    {
+      "check": "A: with `write_tag_name`, an honest GET form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: with `write_tag_name`, a named target is refused `target_named`",
+      "passed": true,
+      "detail": {
+        "reason": "target_named",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: with `write_tag_name`, an untargeted link still navigates",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `write_tag_name`, the page's write lands and its script completes",
+      "passed": true,
+      "detail": {
+        "echo": "attrs=map names=some"
+      }
+    },
+    {
+      "check": "D: with `write_tag_name`, a cloned anchor is a link and downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "D: with `write_tag_name`, a cloned POST form keeps its method and is refused",
+      "passed": true,
+      "detail": {
+        "reason": "form_method_unsupported",
+        "method": "post"
+      }
+    },
+    {
+      "check": "D: with `write_tag_name`, an anchor built by script downloads",
+      "passed": true,
+      "detail": {
+        "role": "link",
+        "ok": true
+      }
+    },
+    {
+      "check": "E: with `write_tag_name`, round C still holds -- the div is not offered",
+      "passed": true,
+      "detail": {
+        "offered": false,
+        "role": null
+      }
+    },
+    {
+      "check": "E: with `write_tag_name`, the honest link still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "F: with `write_tag_name`, an anchor with a javascript: href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `write_tag_name`, an anchor with a file:// href is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "scheme_unsupported",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: with `write_tag_name`, an anchor with an origin never allowed is still refused",
+      "passed": true,
+      "detail": {
+        "reason": "address",
+        "got_local_file": false
+      }
+    },
+    {
+      "check": "F: the fifteen declared captures are unchanged and there is no sixteenth",
+      "passed": true,
+      "detail": {
+        "found": [
+          "reflectApply",
+          "StringOf",
+          "MapOf",
+          "weakMapGet",
+          "weakMapSet",
+          "mapGet",
+          "mapSet",
+          "mapHas",
+          "arraySlice",
+          "arrayPush",
+          "arrayIndexOf",
+          "arraySplice",
+          "weakSetAdd",
+          "weakSetHas",
+          "jsonStringify"
+        ]
+      }
+    },
+    {
+      "check": "F: `__mcsTag` is installed non-writable and non-configurable",
+      "passed": true,
+      "detail": {
+        "found": true
+      }
+    },
+    {
+      "check": "F: `__mcsAttr` is installed non-writable and non-configurable",
+      "passed": false,
+      "detail": {
+        "found": false
+      }
+    },
+    {
+      "check": "F: the internals handle carries its thirteen keys and no reader",
+      "passed": true,
+      "detail": {
+        "found": true,
+        "missing": [],
+        "reader_in_handle": false
+      }
+    },
+    {
+      "check": "F: `__attrs` has a landing setter, so a page's write is ignored not fatal",
+      "passed": false,
+      "detail": {
+        "has_setter": false
+      }
+    },
+    {
+      "check": "F: the base shim grows by at most 600 bytes and the main shim not at all",
+      "passed": false,
+      "detail": {
+        "base": 33290,
+        "ceiling": 33890,
+        "after_round_c": 33290,
+        "main": 26485
+      }
+    },
+    {
+      "check": "F: [system] one child costs at most 3200 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 235658,
+        "after_round_c": 235658,
+        "delta": 0
+      }
+    },
+    {
+      "check": "F: [system] seven children cost at most 23000 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 1648172,
+        "after_round_c": 1648172,
+        "delta": 0
+      }
+    },
+    {
+      "check": "F: [arena] one child costs at most 3200 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 227850,
+        "after_round_c": 227850,
+        "delta": 0
+      }
+    },
+    {
+      "check": "F: [arena] seven children cost at most 23000 more owner bytes",
+      "passed": true,
+      "detail": {
+        "measured": 1592540,
+        "after_round_c": 1592540,
+        "delta": 0
+      }
+    }
+  ],
+  "not_under_test": [
+    "node names, which still come from the page's textContent"
+  ],
+  "headless": "no surface binary, no window, no AppKit; two hermetic loopback origins"
+}

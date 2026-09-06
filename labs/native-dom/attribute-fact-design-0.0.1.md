@@ -295,6 +295,46 @@ Every source criterion must first assert that the region it inspects was found
 and non-empty, and the court must be run against the pre-change binary and fail
 there for its own reasons before it is trusted.
 
+## 11b. The ruling, and what was frozen
+
+Candidate **E** was chosen: D1 closes too little for the same price, D3 is
+invalid because the parser seeds past the writer, and E is the cheapest complete
+fix. Recorded here as the standing decision.
+
+**`element-tag-court.py`'s cost group is rebased, not deleted.** Its five
+criteria were deltas from the pre-round-C tree with ceilings of +400, +2,048 and
++14,336; round C came in at +392, +1,696/+1,952 and +11,936/+13,040, inside
+every one, and then the group expired the moment a later candidate landed on
+top. It now pins **equalities at what the tree actually costs** — base 33,290,
+main 26,485, system M1 235,658 and M2 1,648,172, arena M1 227,850 and M2
+1,592,540 — which makes it a live regression guard that every future slice must
+re-freeze deliberately, the way `signature-integrity-court.py`'s base-byte pin
+already works. The old deltas and the reason are kept in the file above the new
+values. It reads 52/52 on the tree as it stands.
+
+**`attribute-fact-court.py` is frozen from §11**, 154 criteria, run against
+`e9e07111` at **126/154**: the unpatched arm passes in full, the F-group's three
+technique and cost criteria fail because only the implementation can satisfy
+them, and the rest are the defect. Two criteria were repaired before the freeze
+rather than after, both of the kind this project keeps catching:
+
+- **Both submit doors are asked.** With `el.__attrs` replaced, the *form's* own
+  activation reads `allowed` while the *submitter's* reads
+  `form_method_unsupported`; a court that acted only on the submitter would
+  have passed on a page that still submits its POST through the form. The court
+  now acts on both and requires both activations to agree.
+- **The handle check named its keys.** The first draft counted colons in a
+  regex match and failed for its own reasons rather than the host's. It now
+  requires the thirteen handle keys by name and requires that **neither reader
+  appears inside the handle** — the readers are separate globals, which is what
+  "no handle widening" means here.
+
+The four re-freezes the ruling authorised — `property-shape`'s `window` and
+`Element.prototype` rows, `signature-integrity`'s base-byte pin and
+`registry-brand`'s N3 hash — can only take their new values from the
+implementation, so they are applied **after** it and reported with the measured
+numbers, not guessed before it.
+
 ## 12. The builds are gone
 
 Four candidate binaries were built, measured and discarded — `97e14cd6` (D1),

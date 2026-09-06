@@ -46,16 +46,26 @@ HOST_SOURCE = ROOT / "labs" / "native-dom" / "src" / "main.rs"
 SHIM_BASE = ROOT / "labs" / "native-dom" / "src" / "dom_shim_base.js"
 SHIM_MAIN = ROOT / "labs" / "native-dom" / "src" / "dom_shim_main.js"
 
-# Frozen before the code. The previous round's measured candidate cost +293
-# base bytes and +1,776/+1,792 M1 and +12,496/+14,048 M2, so each ceiling has
-# margin and none of them is vacuous. The main shim is not touched at all.
-BASE_BYTES_BEFORE = 32898
-BASE_BYTES_CEILING = BASE_BYTES_BEFORE + 400
+# REBASED, 2026-09-06, ruled after the round-D audit. **The original form of
+# this group expired.** It was frozen before round C as deltas from the
+# pre-round-C tree -- base 32,898, M1 233,962/225,898, M2 1,636,236/1,579,500,
+# with ceilings of +400, +2,048 and +14,336 -- and round C came in at +392,
+# +1,696/+1,952 and +11,936/+13,040, inside every one. That was the right shape
+# while round C was the last thing to land, and meaningless the moment anything
+# landed on top: measured against a round-D candidate the group failed all five
+# criteria, reporting round C's cost **plus** round D's as if it were round
+# C's. A cost ceiling written as a delta from a fixed prior baseline expires
+# when the next slice lands.
+#
+# So the group is rebased to equalities at what the tree actually costs, which
+# is a live regression guard rather than a statement about one slice: any change
+# to these five numbers must now be ruled and re-frozen, exactly as
+# `signature-integrity-court.py`'s base-byte pin already works. The old deltas
+# and their reasons are kept above so the movement can be read off the file.
+BASE_BYTES = 33290
 MAIN_BYTES = 26485
-M1_BEFORE = {"system": 233962, "arena": 225898}
-M2_BEFORE = {"system": 1636236, "arena": 1579500}
-M1_CEILING = 2048
-M2_CEILING = 14336
+M1_PINNED = {"system": 235658, "arena": 227850}
+M2_PINNED = {"system": 1648172, "arena": 1592540}
 
 DECLARED_CAPTURES = [
     "reflectApply", "StringOf", "MapOf", "weakMapGet", "weakMapSet", "mapGet",
@@ -372,22 +382,21 @@ def main():
 
             base_bytes = len(SHIM_BASE.read_bytes())
             main_bytes = len(SHIM_MAIN.read_bytes())
-            expect("C: the base shim grows by at most 400 bytes and the main shim not at all",
-                   BASE_BYTES_BEFORE < base_bytes <= BASE_BYTES_CEILING
-                   and main_bytes == MAIN_BYTES,
-                   {"base": base_bytes, "ceiling": BASE_BYTES_CEILING,
-                    "before": BASE_BYTES_BEFORE, "main": main_bytes})
+            expect("C: the shims cost exactly what they are pinned at",
+                   base_bytes == BASE_BYTES and main_bytes == MAIN_BYTES,
+                   {"base": base_bytes, "pinned": BASE_BYTES,
+                    "main": main_bytes, "main_pinned": MAIN_BYTES})
 
             measured = {"system": (args.m1, args.m2), "arena": (args.m1_arena, args.m2_arena)}
             for arm, (m1, m2) in measured.items():
-                expect(f"C: [{arm}] one child costs at most {M1_CEILING} more owner bytes",
-                       m1 is not None and (m1 - M1_BEFORE[arm]) <= M1_CEILING,
-                       {"measured": m1, "before": M1_BEFORE[arm],
-                        "delta": None if m1 is None else m1 - M1_BEFORE[arm]})
-                expect(f"C: [{arm}] seven children cost at most {M2_CEILING} more owner bytes",
-                       m2 is not None and (m2 - M2_BEFORE[arm]) <= M2_CEILING,
-                       {"measured": m2, "before": M2_BEFORE[arm],
-                        "delta": None if m2 is None else m2 - M2_BEFORE[arm]})
+                expect(f"C: [{arm}] one child costs exactly {M1_PINNED[arm]} owner bytes",
+                       m1 == M1_PINNED[arm],
+                       {"measured": m1, "pinned": M1_PINNED[arm],
+                        "delta": None if m1 is None else m1 - M1_PINNED[arm]})
+                expect(f"C: [{arm}] seven children cost exactly {M2_PINNED[arm]} owner bytes",
+                       m2 == M2_PINNED[arm],
+                       {"measured": m2, "pinned": M2_PINNED[arm],
+                        "delta": None if m2 is None else m2 - M2_PINNED[arm]})
         finally:
             server.shutdown()
             other.shutdown()
