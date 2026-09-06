@@ -1404,6 +1404,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Documentation-only evidence repair: the probe-truthfulness court has a
+  passing receipt at last (`evidence/native-dom-control-0.0.2-probe-truthfulness-repaired.json`,
+  register note in `labs/native-dom/README.md`). The maintenance round found
+  that the realm-probe repair landed at `a229c13` and committed nothing, so the
+  court's only committed receipt was the arm frozen **before** it, at **21 of
+  25** on `05aa12f7cf6d…`, while every 25 of 25 since had been a scratch run.
+  The court was run on the current binary and the result committed: **25 of 25
+  on `2d57ce864002…`**. **The 21/25 receipt is not overwritten** and stays
+  exactly where it is; the new file says in as many words that it is today's
+  status and **not** the repair round's, because that round's binary hash is
+  written nowhere and cannot be reconstructed honestly. **No verification
+  receipt accompanies it**, and the file says why: this court carries no live
+  guard — its criteria pin behaviour and the shape of the probe's source, not a
+  number that tracks what the tree costs — and the convention in `AGENTS.md`
+  asks for a verification receipt only for a live guard. One inversion is
+  recorded for whoever reads the pair: here the **plainly named** receipt is the
+  failing arm and the suffixed one passes, the opposite of the `-falsification`
+  pattern used everywhere else. No probe code, no court, no product code, no
+  bound, handle or base byte changed; the court re-read 25/25 after the register
+  was updated, and the contract's 28 examples and 50 negative cases still pass.
+  Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Documentation-only maintenance, from the integration audit's findings
   (`labs/native-dom/README.md`, `integration-consistency-audit-0.0.1.md`, and
   the four new verification receipts). **No product code, no criterion, no
