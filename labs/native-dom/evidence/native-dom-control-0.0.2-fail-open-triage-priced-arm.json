@@ -1,0 +1,1073 @@
+{
+  "probe": "fail-open triage, priced arm: a page-unreachable tag for F5",
+  "note": "A throwaway build, measured and then discarded. Nothing from it was committed: `dom_shim_base.js` and `src/main.rs` were restored and the binary rebuilt back to 0da1c6b115532886. It exists so the loss matrix carries measurements instead of estimates.",
+  "binary_sha256": "e3cbf79eb64b8b649c97fd2a4653b56f02ccbcd06be79709515ea6eac81983df",
+  "shim_base_bytes": {
+    "before": 32898,
+    "after": 33191,
+    "delta": 293
+  },
+  "child_frame_owner_bytes": {
+    "before_0da1c6b1": {
+      "[system] M1: one child costs at most 262144 live owner bytes": 233962,
+      "[system] M2: seven children cost at most 1835008 live owner bytes": 1636236,
+      "[arena] M1: one child costs at most 262144 live owner bytes": 225898,
+      "[arena] M2: seven children cost at most 1835008 live owner bytes": 1579500
+    },
+    "after_e3cbf79e": {
+      "[system] M1: one child costs at most 262144 live owner bytes": 235738,
+      "[system] M2: seven children cost at most 1835008 live owner bytes": 1648732,
+      "[arena] M1: one child costs at most 262144 live owner bytes": 227690,
+      "[arena] M2: seven children cost at most 1835008 live owner bytes": 1593548
+    }
+  },
+  "child_frame_score": {
+    "before": "81/82 (the arena growth criterion, machine variance)",
+    "after": "82/82"
+  },
+  "rows": [
+    {
+      "patch": "none",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "fetched": [],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "unsupported_capability",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "post",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "target_named",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/target_named",
+        "fetched": []
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "lower_post_get",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "get",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "allowed",
+        "postgo": "allowed",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "target_named",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/target_named",
+        "fetched": []
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "lower_target_self",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "fetched": [],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "unsupported_capability",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "post",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "allowed",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "lower_div_anchor",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "fetched": [],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "unsupported_capability",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "post",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "target_named",
+        "plain": "allowed",
+        "fakedl": "download_available",
+        "realdl": "download_available",
+        "divjs": "download_available",
+        "ajs": "download_available",
+        "divfile": "download_available",
+        "afile": "download_available",
+        "divcross": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/target_named",
+        "fetched": []
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/not_a_link",
+        "fetched": []
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/not_a_link",
+        "fetched": []
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/not_a_link",
+        "fetched": []
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/not_a_link",
+        "fetched": []
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "map_get_method",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "get",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "allowed",
+        "postgo": "allowed",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "target_named",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/target_named",
+        "fetched": []
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "prop_tag_name",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "fetched": [],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "unsupported_capability",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "post",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "target_named",
+        "plain": "allowed",
+        "fakedl": "download_available",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/target_named",
+        "fetched": []
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/not_a_link",
+        "fetched": []
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "prop_attrs_method",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "null": "get",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postgo": "allowed",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "target_named",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/target_named",
+        "fetched": []
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "prop_attrs_target",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "fetched": [],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "unsupported_capability",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "post",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "allowed",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    },
+    {
+      "patch": "map_get_target",
+      "f1_post_submit": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/form_method_unsupported",
+        "fetched": [],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "unsupported_capability",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f1_snapshot_method": {
+        "postform": "post",
+        "getform": "get"
+      },
+      "f1_activation": {
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "named": "allowed",
+        "plain": "allowed",
+        "realdl": "download_available",
+        "ajs": "download_available",
+        "afile": "download_available",
+        "across": "download_available"
+      },
+      "f1_honest_get_submit": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ],
+        "ledger_mentions_method": false,
+        "ledger_leaks_value": false,
+        "ledger_entries": [
+          {
+            "deadline_ms": 30000,
+            "frame": "frame_1",
+            "operation": "target.act:submit",
+            "origin": null,
+            "outcome": "committed",
+            "profile": "profile_1",
+            "result_bytes_limit": 4194304,
+            "sequence": 0,
+            "session": "session_1",
+            "target": "target_1",
+            "value_bytes": null
+          }
+        ]
+      },
+      "f2_named_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f2_honest_plain_link": {
+        "in_snapshot": true,
+        "outcome": "ok:applied=True",
+        "fetched": [
+          "/landed.html"
+        ]
+      },
+      "f5_div": {
+        "in_snapshot": false
+      },
+      "f5_honest_anchor": {
+        "in_snapshot": true,
+        "outcome": "ok:byte_count=29",
+        "fetched": [
+          "/asked.bin"
+        ],
+        "got_asked_for": true,
+        "got_local_file": false
+      },
+      "f5_div_javascript": {
+        "in_snapshot": false
+      },
+      "f5_anchor_javascript": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_file": {
+        "in_snapshot": false
+      },
+      "f5_anchor_file": {
+        "in_snapshot": true,
+        "outcome": "unsupported_capability/scheme_unsupported",
+        "fetched": []
+      },
+      "f5_div_cross_origin": {
+        "in_snapshot": false
+      },
+      "f5_anchor_cross_origin": {
+        "in_snapshot": true,
+        "outcome": "permission_denied/address",
+        "fetched": []
+      }
+    }
+  ]
+}

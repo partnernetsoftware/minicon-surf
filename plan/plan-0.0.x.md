@@ -1404,6 +1404,55 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing implemented: F1, F2 and F5, and who actually owns
+  them (`labs/native-dom/fail-open-triage-audit-0.0.1.md`, probe
+  `fail-open-triage-probe.py`, receipts
+  `evidence/native-dom-control-0.0.2-fail-open-triage{,-priced-arm}.json`).
+  **The framing was wrong twice, and measurement said so both times.** These
+  three were carried as uncaptured-intrinsic defects; all three are reachable
+  with **no intrinsic replaced at all**, by assigning an ordinary own property —
+  `div.tagName = "A"` downloads the div, and replacing a form's or a link's
+  `__attrs` map submits a POST as a GET and activates a named target.
+  `dom_shim_base.js:315-318` keeps an element's tag and its whole attribute map
+  as writable own properties of a page-reachable object. And the natural fix —
+  let the realm report the raw attribute and have Rust decide — **also fails**,
+  measured: `getAttribute` reads through `Map.prototype.get`, and patching that
+  alone reproduces F1 and F2 with `toLowerCase` untouched. **Authority impact is
+  none, and for F5 it is proven rather than argued**: four escalation pairs run
+  the div and an honest anchor side by side, and `javascript:`, `file://` (a real
+  local file written for the probe, whose bytes never came back) and a second
+  loopback origin are refused identically for both, every refusal being the Rust
+  half's scheme, URL-bound and address policy. The honest controls sit in the
+  same document for all three and reach the identical outcome, so what the
+  defects buy is not reach but that the agent's closed refusal vocabulary —
+  `form_method_unsupported`, `target_named`, `not_a_link` — is the page's to
+  write, and the snapshot tells the agent the wrong thing first. The ledger
+  neither lies nor helps: the patched submit's entry is shape-identical to the
+  honest one and records no method, and no arm leaked a form value or a built
+  query. **Independent in effect, one owner in cause**: each selective patch
+  moves only its own defect across all nine arms, so they can be ruled on
+  separately in any order; but all three are the same sentence — the host reads
+  a fact out of a field the page can write — which no court covers, since
+  `property-shape-court.py` pins the internals handle, not an element's fields.
+  **Priced by building it, not by extrapolating**: a throwaway arm gave the base
+  shim a closure-owned `WeakMap` of element to tag and a non-writable `__mcsTag`
+  reader on the `__mcsJson` pattern, and it closes F5 under both routes while
+  the honest anchor still delivers its bytes — **+293 source bytes**, child-frame
+  M1 233,962 → 235,738 and M2 1,636,236 → 1,648,732 against caps 262,144 and
+  1,835,008, and 82/82 where the pushed build scores 81/82. **No per-realm figure
+  is offered**: the store holds one entry per element, the two measured points do
+  not divide to the same rate, and option D (the same shape for `__attrs`) is
+  deliberately left unpriced rather than extrapolated — that was the C1 error.
+  The build is gone: both files restored from copies and the binary rebuilt to
+  `0da1c6b1` with the base shim back at 32,898 bytes. Loss matrix in §9, three
+  separate court drafts in §12, each naming the honest control that must keep
+  working. **The ruling this asks for is whether the `activation` vocabulary is
+  worth defending at all**, since nothing here is a capability leak. Regressions
+  read-only and green on `0da1c6b1`: signature-integrity 34/34,
+  probe-truthfulness 25/25, host-answer 9/9, downloads 21/21, form 179/179,
+  frame-action 182/182, page-navigation 80/80, property-shape 22/22,
+  capture-declaration 8/8; fmt, 58 tests, clippy `-D warnings`, contract 28
+  examples and 50 negatives. Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Frozen, then implemented: the approval binds, the fragment is seen, and
   the probe is the host's (`labs/native-dom/signature-integrity-design-0.0.1.md`,
   court `labs/native-dom/signature-integrity-court.py`, receipts
