@@ -1,0 +1,183 @@
+{
+ "checks": [
+  {
+   "check": "C1: no new operation joins the enum -- the download is an act kind",
+   "detail": {
+    "operations": 26
+   },
+   "passed": true
+  },
+  {
+   "check": "C2: the contract accepts {kind: download} and refuses it with an argument",
+   "detail": {
+    "validator": "check_contract.validate_request"
+   },
+   "passed": false
+  },
+  {
+   "check": "C3: an example pair carries the act and the sink C answer",
+   "detail": {
+    "request": false
+   },
+   "passed": false
+  },
+  {
+   "check": "T1: a near-cap download round-trips through the real host as one line",
+   "detail": {
+    "byte_count": null,
+    "code": "invalid_request",
+    "line_bytes": 210,
+    "ok": false,
+    "payload_intact": false,
+    "sha256_matches": false,
+    "single_line": true
+   },
+   "passed": false
+  },
+  {
+   "check": "T2: a body over the network cap is a typed resource_limit, never internal",
+   "detail": {
+    "carried_bytes": false,
+    "code": "invalid_request",
+    "reason": null
+   },
+   "passed": false
+  },
+  {
+   "check": "S1: the answer carries the ruled keys and nothing else",
+   "detail": {
+    "keys": []
+   },
+   "passed": false
+  },
+  {
+   "check": "S3: a single transfer -- no handle, cursor or continuation",
+   "detail": {
+    "keys": []
+   },
+   "passed": false
+  },
+  {
+   "check": "N1: the name is bounded to 255 bytes and reported verbatim, not sanitised",
+   "detail": {
+    "name_bytes": null,
+    "truncated": null,
+    "verbatim": false
+   },
+   "passed": false
+  },
+  {
+   "check": "P1: with the policy denying, the download is permission_denied at use",
+   "detail": {
+    "code": "invalid_request"
+   },
+   "passed": false
+  },
+  {
+   "check": "P2: permission_denied stays distinct from the unsupported refusals",
+   "detail": {
+    "code": "invalid_request"
+   },
+   "passed": false
+  },
+  {
+   "check": "V1: the page's own click on a[download] stays silent to the page",
+   "detail": {
+    "page_observed": "dispatched,returned:undefined"
+   },
+   "passed": true
+  },
+  {
+   "check": "V3: the snapshot stops telling the agent the link is unsupported",
+   "detail": {
+    "activation": "download_unsupported"
+   },
+   "passed": false
+  },
+  {
+   "check": "V2: navigating at an attachment keeps its own typed refusal",
+   "detail": {
+    "code": "unsupported_capability",
+    "reason": null
+   },
+   "passed": true
+  },
+  {
+   "check": "B3: the download budgets are reported with their ruled values",
+   "detail": {
+    "download_bytes": null,
+    "downloads": null
+   },
+   "passed": false
+  },
+  {
+   "check": "V4: the agent's record names the attempt the page could not see",
+   "detail": {
+    "record_bytes": 1738
+   },
+   "passed": false
+  },
+  {
+   "check": "R1: the record carries no filename and no page values",
+   "detail": {
+    "audit_bytes": 1738
+   },
+   "passed": true
+  },
+  {
+   "check": "L1 (sink C): the download leaves no artefact on any disk",
+   "detail": {
+    "new_entries": []
+   },
+   "passed": true
+  },
+  {
+   "check": "B1: the 33rd download in a profile is refused resource_limit",
+   "detail": {
+    "limit": 32,
+    "pending": "measured once the capability exists"
+   },
+   "passed": false
+  },
+  {
+   "check": "B2: the byte budget binds independently of the count",
+   "detail": {
+    "limit": 33554432,
+    "pending": "measured once the capability exists"
+   },
+   "passed": false
+  },
+  {
+   "check": "L2: a target closed mid-transfer answers a cancellation, not a partial payload",
+   "detail": {
+    "pending": "measured once the capability exists"
+   },
+   "passed": false
+  }
+ ],
+ "checks_passed": 5,
+ "checks_total": 20,
+ "court": "native-dom downloads (sink C, act kind download)",
+ "host_sha256": "8ff70b9f26c1bdb3c0e409d704f8ecc0021663f2bb1dd0f96a4143e4ce39f093",
+ "limitations": [
+  "design-frozen court: it fails until target.act accepts the download kind",
+  "T1 is the gate and the join the two-half transport stress could not test; a failure there stops the work rather than being covered by the halves that passed",
+  "B1, B2 and L2 are stated but not driven against a host that refuses the first download; they must be measured once the capability exists",
+  "three criteria read the contract source and its examples rather than the binary, so they are repo-local by design",
+  "one hermetic loopback origin; nothing is fetched from outside this file",
+  "strictly headless: no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "ruled": {
+  "budgets": {
+   "download_bytes": 33554432,
+   "downloads": 32
+  },
+  "ceiling": 1048576,
+  "name": "bounded 255 bytes, verbatim, never a path",
+  "over_ceiling": "typed resource_limit before serialization",
+  "permission": "checked at use",
+  "request": "target.act, action kind download",
+  "sink": "C: bytes over the control protocol, never a disk"
+ }
+}

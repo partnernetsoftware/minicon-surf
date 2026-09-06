@@ -148,3 +148,45 @@ what keeps today's honest refusal from being quietly replaced by a vaguer one.
    `download_link`, given it takes a node reference.
 5. Chunking, explicitly deferred, to be designed with its own owner and
    lifetime if it is ever wanted.
+
+---
+
+## 8. Frozen — `downloads-court.py`, 2026-09-06
+
+Recorded chronologically, after the envelope measurement and the two-half
+transport stress, and after the ruling that set the budgets. The court is
+`downloads-court.py`; its receipt against the shipped
+`8ff70b9f26c1…` is `evidence/native-dom-control-0.0.2-downloads.json`.
+
+**Twenty criteria, five passing today.** The five are guards, not progress —
+they pass now and must keep passing after the capability lands:
+
+| passing today | what it guards |
+| --- | --- |
+| C1 | no new operation joins the enum; the download stays an act kind (26 operations) |
+| V1 | the page's own `link.click()` on `a[download]` observes `dispatched,returned:undefined` — no host vocabulary, nothing thrown |
+| V2 | navigating at an attachment keeps its own typed `unsupported_capability` |
+| R1 | no filename and no page values reach the agent's record |
+| L1 | nothing is written to any disk |
+
+The other fifteen fail because the capability does not exist. **T1 is the
+gate**: a near-cap download through the real host, `byte_count` and `sha256`
+verified after base64 decoding, exactly one newline. It is the join the
+transport stress could not test — the writer and the reader each passed alone —
+and per the ruling a failure there stops the work rather than being covered by
+the halves that passed.
+
+Two criteria were tightened before freezing, for the same reason four earlier
+courts were amended: they were measuring the fixture rather than the rule. C1
+had leaned on the substring `download`, which the contract already contains
+via `download_unsupported`; and B3 had matched the bare number `32`, which
+appears throughout a memory report. Both now assert the actual shape.
+
+Three criteria — B1, B2 and L2 — are stated but not driven: 33 downloads and
+32 MiB cannot be measured against a host that refuses the first one. They are
+recorded as failing rather than omitted, so the count cannot quietly grow when
+they are finally run.
+
+Frozen values, which do not move after this point: ceiling 1,048,576 inherited
+from the network cap; name bound 255 bytes; `downloads` 32; `download_bytes`
+32 MiB.

@@ -1381,6 +1381,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Frozen before the host changes, nothing implemented: the downloads court
+  (`labs/native-dom/downloads-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-downloads.json`, freeze recorded in
+  `download-sink-c-design-0.0.1.md` §8). **Twenty criteria, five passing** on
+  the shipped `8ff70b9f26c1…`. The five are guards that must keep passing:
+  the enum stays at 26 operations, the page's own `link.click()` on
+  `a[download]` observes `dispatched,returned:undefined` and nothing else,
+  navigating at an attachment keeps its typed `unsupported_capability`, no
+  filename reaches the agent's record, and nothing is written to any disk.
+  **T1 is the gate** — a near-cap download through the real host with
+  `byte_count` and sha256 verified after decoding and exactly one newline,
+  the join the two-half stress could not test; a failure there stops the work.
+  Two criteria were tightened before freezing because they measured the
+  fixture rather than the rule (C1 leaned on a substring the contract already
+  contains via `download_unsupported`; B3 matched the bare number 32), and
+  three (B1, B2, L2) are recorded as failing rather than omitted, so the count
+  cannot quietly grow. Frozen values: ceiling 1,048,576 inherited from the
+  network cap, name bound 255 bytes, `downloads` 32, `download_bytes` 32 MiB.
+  Headless, hermetic, nothing downloaded. G1, G3, P6 and G6 stay open; D6
+  untouched.
 - [ ] Required before implementation, nothing implemented: the download
   transport stressed (`labs/native-dom/download-transport-stress-0.0.1.md`,
   `transport-line-stress.py`, `transport_tests` in `src/main.rs`). Hermetic and
