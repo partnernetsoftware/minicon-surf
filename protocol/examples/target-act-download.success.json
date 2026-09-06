@@ -1,0 +1,14 @@
+{
+  "protocol": "minicon-surf.control",
+  "version": "0.0.2",
+  "request_id": "req_download_1",
+  "ok": true,
+  "result": {
+    "kind": "download",
+    "byte_count": 21,
+    "sha256": "94d64e35de98884489fe7806996cb76c88def962256b6b133baddbd670c5378a",
+    "reported_name": "court-fixture.txt",
+    "truncated": false,
+    "bytes_base64": "Y291cnQgZml4dHVyZSBwYXlsb2Fk"
+  }
+}

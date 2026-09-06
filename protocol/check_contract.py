@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Dependency-free contract example and bound checker with negative tests."""
 
+import base64
+import hashlib
 import json
 import pathlib
 import re
@@ -21,6 +23,10 @@ MAX_HISTORY_ENTRIES = 8
 # which it may use, and nothing is inferred from the shape.
 MAX_VALUE_BYTES = 1024
 MAX_OPTION_INDEX = 63
+# A download's ceiling is the network layer's per-response cap, and its name
+# is a bounded report string.
+MAX_DOWNLOAD_BYTES = 1048576
+MAX_DOWNLOAD_NAME_BYTES = 255
 ACTIVATION_KEYS = {"enter", "space"}
 MAX_REQUEST_BYTES = 65_536
 MAX_RESPONSE_BYTES = 4_194_304
@@ -227,6 +233,24 @@ def validate_request(document):
         )
 
 
+def validate_download_answer(document):
+    """Sink C's answer: bytes, their true length, the host's own digest, and a
+    bounded report string. Nothing here may name a place on a disk."""
+    downloaded = document["result"]
+    require(set(downloaded) == {"kind", "byte_count", "sha256", "reported_name", "truncated",
+                                "bytes_base64"},
+            "download answer fields differ")
+    require(len(downloaded["reported_name"].encode()) <= MAX_DOWNLOAD_NAME_BYTES,
+            "the reported name exceeds its byte bound")
+    require(type(downloaded["truncated"]) is bool, "truncated is a boolean")
+    require(re.fullmatch(r"[0-9a-f]{64}", downloaded["sha256"]), "the digest is not a sha256")
+    payload = base64.b64decode(downloaded["bytes_base64"], validate=True)
+    require(len(payload) == downloaded["byte_count"], "byte_count does not describe the payload")
+    require(hashlib.sha256(payload).hexdigest() == downloaded["sha256"],
+            "the digest does not describe the payload")
+    require(len(payload) <= MAX_DOWNLOAD_BYTES, "the payload exceeds the single-shot ceiling")
+
+
 def validate_action(action, version):
     """The action vocabulary of one version. 0.0.1 has click and nothing else."""
     require(isinstance(action, dict) and "kind" in action, "action is not a kind")
@@ -248,6 +272,11 @@ def validate_action(action, version):
         require(type(index) is int and 0 <= index <= MAX_OPTION_INDEX, "select_option index differs")
     elif kind == "submit":
         require(set(action) == {"kind"}, "submit takes no argument")
+    elif kind == "download":
+        # The download is an action on a node, not an operation of its own,
+        # and it takes nothing: a path, a name or a sink would be a way to
+        # ask this host to write somewhere, which it does not do.
+        require(set(action) == {"kind"}, "download takes no argument")
     elif kind == "press":
         require(set(action) == {"kind", "key"}, "press fields differ")
         require(action["key"] in ACTIVATION_KEYS, "press offers enter and space only")
@@ -452,6 +481,16 @@ def main():
             "the answer reports the mode that was asked for")
     require(readonly_success["result"]["read_only"] is False,
             "the mode does not set the failed-commit latch")
+    # The download answers with the bytes themselves: nothing names a path,
+    # the digest and the length are the host's own, and the reported name is
+    # a bounded report string.
+    download_request = load_bounded(examples / "target-act-download.request.json", MAX_REQUEST_BYTES)
+    download_success = load_bounded(examples / "target-act-download.success.json", MAX_RESPONSE_BYTES)
+    validate_request(download_request)
+    validate_response(download_success)
+    require(download_request["request_id"] == download_success["request_id"],
+            "download success does not echo request ID")
+    validate_download_answer(download_success)
     capability_request = load_bounded(examples / "target-snapshot-capability.request.json", MAX_REQUEST_BYTES)
     capability_success = load_bounded(examples / "target-snapshot-capability.success.json", MAX_RESPONSE_BYTES)
     surface_request = load_bounded(examples / "surface-owner-capability.request.json", MAX_REQUEST_BYTES)
@@ -671,6 +710,29 @@ def main():
     unknown_session_field = json.loads(json.dumps(readonly_request))
     unknown_session_field["arguments"]["persistence"] = "persistent"
     expect_invalid(unknown_session_field, validate_request)
+
+    # The download's own negatives. Every one of them is a way of asking this
+    # host to write somewhere, or to hand back something other than bytes.
+    for extra, value in (("path", "/tmp/x"), ("filename", "report.bin"),
+                         ("sink", "file"), ("chunk", 0)):
+        asked = json.loads(json.dumps(download_request))
+        asked["arguments"]["action"][extra] = value
+        expect_invalid(asked, validate_request)
+
+    # And the version that does not have it: 0.0.1 offers the click alone.
+    older = json.loads(json.dumps(download_request))
+    older["version"] = "0.0.1"
+    expect_invalid(older, validate_request)
+
+    # An answer that claims a length its payload does not have is not a
+    # different-sized download; it is not a download.
+    lying = json.loads(json.dumps(download_success))
+    lying["result"]["byte_count"] += 1
+    expect_invalid(lying, validate_download_answer)
+
+    oversized_name = json.loads(json.dumps(download_success))
+    oversized_name["result"]["reported_name"] = "x" * (MAX_DOWNLOAD_NAME_BYTES + 1)
+    expect_invalid(oversized_name, validate_download_answer)
 
     # And the profile's own field set, which the mode does not join.
     create_request = {

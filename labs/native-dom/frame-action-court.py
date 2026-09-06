@@ -171,7 +171,12 @@ LINKS = [
     ('<a id="top" href="/landed.html" target="_Top">top</a>', None),
     ('<a id="blank" href="/landed.html" target="_blank">blank</a>', "target_named"),
     ('<a id="named" href="/landed.html" target="side">named</a>', "target_named"),
-    ('<a id="down" href="/landed.html" download>down</a>', "download_unsupported"),
+    # Amended 2026-09-06, when downloads landed: the label was
+    # "download_unsupported" while nothing could serve the bytes. The
+    # behaviour it pins has not moved -- a click on this link is still refused
+    # and still moves nothing -- but the word no longer denies a capability
+    # this host now has. The download action serves it; the click does not.
+    ('<a id="down" href="/landed.html" download>down</a>', "download_available"),
     ('<a id="js" href="javascript:void(0)">js</a>', "scheme_unsupported"),
     ('<a id="frag" href="#here">frag</a>', "fragment_unsupported"),
 ]

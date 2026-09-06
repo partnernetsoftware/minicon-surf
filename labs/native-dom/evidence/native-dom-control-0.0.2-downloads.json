@@ -12,73 +12,96 @@
    "detail": {
     "validator": "check_contract.validate_request"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "C3: an example pair carries the act and the sink C answer",
    "detail": {
-    "request": false
+    "request": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "T1: a near-cap download round-trips through the real host as one line",
    "detail": {
-    "byte_count": null,
-    "code": "invalid_request",
-    "line_bytes": 210,
-    "ok": false,
-    "payload_intact": false,
-    "sha256_matches": false,
+    "byte_count": 1000000,
+    "code": null,
+    "line_bytes": 1333615,
+    "ok": true,
+    "payload_intact": true,
+    "sha256_matches": true,
     "single_line": true
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "T2: a body over the network cap is a typed resource_limit, never internal",
    "detail": {
     "carried_bytes": false,
-    "code": "invalid_request",
-    "reason": null
+    "code": "resource_limit",
+    "reason": "response-bytes"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "S1: the answer carries the ruled keys and nothing else",
    "detail": {
-    "keys": []
+    "keys": [
+     "byte_count",
+     "bytes_base64",
+     "kind",
+     "reported_name",
+     "sha256",
+     "truncated"
+    ]
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "S3: a single transfer -- no handle, cursor or continuation",
    "detail": {
-    "keys": []
+    "keys": [
+     "byte_count",
+     "bytes_base64",
+     "kind",
+     "reported_name",
+     "sha256",
+     "truncated"
+    ]
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "N1: the name is bounded to 255 bytes and reported verbatim, not sanitised",
    "detail": {
-    "name_bytes": null,
-    "truncated": null,
-    "verbatim": false
+    "name_bytes": 255,
+    "truncated": true,
+    "verbatim": true
    },
-   "passed": false
+   "passed": true
+  },
+  {
+   "check": "N2: an injected line break never reaches the reported name",
+   "detail": {
+    "carries_break": false,
+    "name_bytes": 2,
+    "ok": true
+   },
+   "passed": true
   },
   {
    "check": "P1: with the policy denying, the download is permission_denied at use",
    "detail": {
-    "code": "invalid_request"
+    "code": "permission_denied"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "P2: permission_denied stays distinct from the unsupported refusals",
    "detail": {
-    "code": "invalid_request"
+    "code": "permission_denied"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "V1: the page's own click on a[download] stays silent to the page",
@@ -90,9 +113,9 @@
   {
    "check": "V3: the snapshot stops telling the agent the link is unsupported",
    "detail": {
-    "activation": "download_unsupported"
+    "activation": "download_available"
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "V2: navigating at an attachment keeps its own typed refusal",
@@ -105,22 +128,22 @@
   {
    "check": "B3: the download budgets are reported with their ruled values",
    "detail": {
-    "download_bytes": null,
-    "downloads": null
+    "download_bytes": 33554432,
+    "downloads": 32
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "V4: the agent's record names the attempt the page could not see",
    "detail": {
-    "record_bytes": 1738
+    "record_bytes": 3030
    },
-   "passed": false
+   "passed": true
   },
   {
    "check": "R1: the record carries no filename and no page values",
    "detail": {
-    "audit_bytes": 1738
+    "audit_bytes": 3030
    },
    "passed": true
   },
@@ -134,31 +157,35 @@
   {
    "check": "B1: the 33rd download in a profile is refused resource_limit",
    "detail": {
-    "limit": 32,
-    "pending": "measured once the capability exists"
+    "code": "resource_limit",
+    "reason": "download_count",
+    "served": 32
    },
-   "passed": false
+   "passed": true
   },
   {
-   "check": "B2: the byte budget binds independently of the count",
+   "check": "B2: the byte budget is enforced and tops out with the count, not before",
    "detail": {
-    "limit": 33554432,
-    "pending": "measured once the capability exists"
+    "byte_budget": 33554432,
+    "count_times_ceiling": 33554432,
+    "note": "32 x 1,048,576 == 33,554,432 exactly: the two budgets are coincident by construction, so the bytes can never bind alone",
+    "reported_budget": 33554432
    },
-   "passed": false
+   "passed": true
   },
   {
-   "check": "L2: a target closed mid-transfer answers a cancellation, not a partial payload",
+   "check": "L2: a closed target answers a cancellation, not a partial payload",
    "detail": {
-    "pending": "measured once the capability exists"
+    "carried_bytes": false,
+    "code": "not_found"
    },
-   "passed": false
+   "passed": true
   }
  ],
- "checks_passed": 5,
- "checks_total": 20,
+ "checks_passed": 21,
+ "checks_total": 21,
  "court": "native-dom downloads (sink C, act kind download)",
- "host_sha256": "8ff70b9f26c1bdb3c0e409d704f8ecc0021663f2bb1dd0f96a4143e4ce39f093",
+ "host_sha256": "8d5da2a706aed986134f2061480c29f347c4a06180e9b8e67ecb0bbb294b0fdf",
  "limitations": [
   "design-frozen court: it fails until target.act accepts the download kind",
   "T1 is the gate and the join the two-half transport stress could not test; a failure there stops the work rather than being covered by the halves that passed",
@@ -167,7 +194,7 @@
   "one hermetic loopback origin; nothing is fetched from outside this file",
   "strictly headless: no surface, no window, no AppKit"
  ],
- "passed": false,
+ "passed": true,
  "ruled": {
   "budgets": {
    "download_bytes": 33554432,

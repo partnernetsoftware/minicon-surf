@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Implemented behind the frozen court: downloads, sink C, action kind
+  `download` (`labs/native-dom/src/main.rs`, `net.rs`,
+  `protocol/check_contract.py`, `downloads-court.py`, freeze and landing
+  records in `download-sink-c-design-0.0.1.md` §§8–9). **The court reads 21/21
+  on `8d5da2a7…`, with T1 green**: a near-cap download through the real host,
+  byte_count 1,000,000, sha256 matching after decoding, one line of 1,333,615
+  bytes with exactly one newline — the join the two-half transport stress
+  could not reach. Over the cap stays a typed `resource_limit` /
+  `response-bytes`, never the generic `internal`. Bytes come back over the
+  protocol and touch no disk; the download dispatches nothing into the page,
+  advances no revision, writes no cookie back, and spends no document fetch
+  allowance. The record carries `target.act:download`, outcome `served` and a
+  byte count — never the name, never the bytes. Three finds the design did not
+  have: **the byte budget cannot bind alone** (1,048,576 × 32 is exactly
+  32 MiB, so the two budgets are coincident, not independent — ruled to keep
+  all three values and restate the criterion), a quoted filename may contain
+  the `;` separator (the parser now honours the quoted string), and a name is
+  one line (an injected break yields no name rather than a piece of one).
+  `frame-action-court.py` moved by eight checks, all the same word —
+  `download_available` for `a[download]` per V3 — with **no behaviour change**,
+  and reads 182/182 after its amendment. The navigation court's two memory
+  checks were shown to be variance, not regression: both fail on the
+  pre-implementation binary too, at the same 16 KB-step values straddling the
+  cap, across five paired runs. G1, G3, P6 and G6 stay open; D6 untouched.
 - [ ] Frozen before the host changes, nothing implemented: the downloads court
   (`labs/native-dom/downloads-court.py`, receipt
   `evidence/native-dom-control-0.0.2-downloads.json`, freeze recorded in

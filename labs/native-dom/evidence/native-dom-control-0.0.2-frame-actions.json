@@ -304,19 +304,19 @@
    "passed": true
   },
   {
-   "check": "[system] a down link in the main frame is download_unsupported",
+   "check": "[system] a down link in the main frame is download_available",
    "detail": {
-    "activation": "download_unsupported"
+    "activation": "download_available"
    },
    "passed": true
   },
   {
-   "check": "[system] clicking it is refused download_unsupported and moves nothing",
+   "check": "[system] clicking it is refused download_available and moves nothing",
    "detail": {
     "error": {
      "code": "unsupported_capability",
      "details": {
-      "reason": "download_unsupported"
+      "reason": "download_available"
      },
      "message": "this host does not model that activation",
      "retryable": false,
@@ -507,19 +507,19 @@
    "passed": true
   },
   {
-   "check": "[system] a down link in the child frame is download_unsupported",
+   "check": "[system] a down link in the child frame is download_available",
    "detail": {
-    "activation": "download_unsupported"
+    "activation": "download_available"
    },
    "passed": true
   },
   {
-   "check": "[system] clicking it is refused download_unsupported and moves nothing",
+   "check": "[system] clicking it is refused download_available and moves nothing",
    "detail": {
     "error": {
      "code": "unsupported_capability",
      "details": {
-      "reason": "download_unsupported"
+      "reason": "download_available"
      },
      "message": "this host does not model that activation",
      "retryable": false,
@@ -1214,19 +1214,19 @@
    "passed": true
   },
   {
-   "check": "[arena] a down link in the main frame is download_unsupported",
+   "check": "[arena] a down link in the main frame is download_available",
    "detail": {
-    "activation": "download_unsupported"
+    "activation": "download_available"
    },
    "passed": true
   },
   {
-   "check": "[arena] clicking it is refused download_unsupported and moves nothing",
+   "check": "[arena] clicking it is refused download_available and moves nothing",
    "detail": {
     "error": {
      "code": "unsupported_capability",
      "details": {
-      "reason": "download_unsupported"
+      "reason": "download_available"
      },
      "message": "this host does not model that activation",
      "retryable": false,
@@ -1417,19 +1417,19 @@
    "passed": true
   },
   {
-   "check": "[arena] a down link in the child frame is download_unsupported",
+   "check": "[arena] a down link in the child frame is download_available",
    "detail": {
-    "activation": "download_unsupported"
+    "activation": "download_available"
    },
    "passed": true
   },
   {
-   "check": "[arena] clicking it is refused download_unsupported and moves nothing",
+   "check": "[arena] clicking it is refused download_available and moves nothing",
    "detail": {
     "error": {
      "code": "unsupported_capability",
      "details": {
-      "reason": "download_unsupported"
+      "reason": "download_available"
      },
      "message": "this host does not model that activation",
      "retryable": false,
@@ -1914,7 +1914,7 @@
  "checks_passed": 182,
  "checks_total": 182,
  "court": "native-dom frame-aware actions (control 0.0.2)",
- "host_sha256": "8ff70b9f26c1bdb3c0e409d704f8ecc0021663f2bb1dd0f96a4143e4ce39f093",
+ "host_sha256": "8d5da2a706aed986134f2061480c29f347c4a06180e9b8e67ecb0bbb294b0fdf",
  "limitations": [
   "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
   "children run no scripts, so an action in a child can never be canceled by the page",

@@ -61,6 +61,16 @@ const MAX_TARGETS: usize = 8;
 const MAX_PROFILES: usize = 8;
 const MAX_SESSIONS: usize = 8;
 const MAX_SNAPSHOT_NODES: u64 = 128;
+/// A download's ceiling is not its own number: it is the network layer's
+/// per-response cap, so the two can never disagree. Measured in
+/// `download-envelope-audit-0.0.1.md`: at this size the answer serializes to
+/// 1,398,652 bytes, comfortably under `MAX_RESPONSE_BYTES`.
+const MAX_DOWNLOADS_PER_PROFILE: usize = 32;
+const MAX_DOWNLOAD_BYTES_PER_PROFILE: usize = 32 * 1024 * 1024;
+/// The reported name is a bounded report string, never a path. It is carried
+/// verbatim -- sanitising it would tell the agent something the server did
+/// not say.
+const MAX_DOWNLOAD_NAME_BYTES: usize = 255;
 /// Frames per target, main frame included: the synthetic host's bound.
 const MAX_FRAMES_PER_TARGET: usize = 8;
 /// Node ids are target-scoped. Each frame's ids come from a disjoint band of
@@ -520,7 +530,10 @@ const ACTIVATION_JS: &str = r##"
     return targetOf(form, "target");
   };
   const linkDecision = (el) => {
-    if (el.hasAttribute("download")) return "download_unsupported";
+    // The bytes can be served, so the label says what activating this link
+    // means rather than denying it exists. A click is still not the way to
+    // ask: the download action is.
+    if (el.hasAttribute("download")) return "download_available";
     const decision = schemeDecision(el.getAttribute("href"));
     if (decision !== "allowed") return decision;
     return targetOf(el, "target");
@@ -667,6 +680,104 @@ fn microbench_script(nested: bool) -> String {
 /// Phase one of every activating action: the effective method, target and
 /// action, the URL the activation would navigate to, and a signature of all of
 /// it. Nothing is dispatched, nothing is written, no counter moves.
+/// The address a download would fetch, read off the node without touching
+/// it: no focus, no event, no revision. `href` and `declared` are page data.
+fn download_probe_script(revision: u64, index: usize) -> String {
+    format!(
+        r#"(() => {{
+  const s = window.__mcs;
+  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  const el = s.nodes[{index}];
+  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  if (el.tagName.toLowerCase() !== "a" || !el.hasAttribute("href")) return JSON.stringify({{}});
+  const out = {{ href: el.getAttribute("href") }};
+  if (el.hasAttribute("download")) out.declared = el.getAttribute("download");
+  return JSON.stringify(out);
+}})()"#
+    )
+}
+
+/// The name to report, in the order a browser decides it: what the server
+/// said, then what the page asked for, then the address's own last segment.
+/// It is bounded and carried verbatim -- rewriting it would report something
+/// nobody said -- and it is a report string, never a path.
+fn download_name(disposition: Option<&str>, declared: Option<&str>, url: &Url) -> (String, bool) {
+    let from_server = disposition.and_then(disposition_filename);
+    let from_page = declared.map(str::to_owned).filter(|name| !name.is_empty());
+    let from_url = url
+        .path_segments()
+        .and_then(|mut segments| segments.next_back().map(str::to_owned))
+        .filter(|segment| !segment.is_empty());
+    let name = from_server
+        .or(from_page)
+        .or(from_url)
+        .unwrap_or_else(|| "download".to_owned());
+    // The bound counts UTF-8 bytes, and the cut lands on a character
+    // boundary: a truncated name is still a string, never half a code point.
+    if name.len() <= MAX_DOWNLOAD_NAME_BYTES {
+        return (name, false);
+    }
+    let mut end = MAX_DOWNLOAD_NAME_BYTES;
+    while end > 0 && !name.is_char_boundary(end) {
+        end -= 1;
+    }
+    (name[..end].to_owned(), true)
+}
+
+/// The `filename` of a `Content-Disposition` line, unquoted but otherwise
+/// untouched. `filename*` is not decoded: reporting a name this host has not
+/// decoded correctly would be worse than reporting the plain one.
+fn disposition_filename(line: &str) -> Option<String> {
+    // The line is split on its own separators, not on every semicolon: a
+    // quoted filename may contain one, and cutting there would report a
+    // different name than the server sent.
+    let mut parts: Vec<String> = Vec::new();
+    let mut current = String::new();
+    let mut quoted = false;
+    let mut escaped = false;
+    for character in line.chars() {
+        match character {
+            _ if escaped => {
+                current.push(character);
+                escaped = false;
+            }
+            '\\' if quoted => escaped = true,
+            '"' => {
+                quoted = !quoted;
+                current.push(character);
+            }
+            ';' if !quoted => {
+                parts.push(std::mem::take(&mut current));
+            }
+            _ => current.push(character),
+        }
+    }
+    parts.push(current);
+    for part in parts {
+        let part = part.trim();
+        let Some((key, value)) = part.split_once('=') else {
+            continue;
+        };
+        if !key.trim().eq_ignore_ascii_case("filename") {
+            continue;
+        }
+        let value = value.trim();
+        let unquoted = value
+            .strip_prefix('"')
+            .and_then(|rest| rest.strip_suffix('"'))
+            .unwrap_or(value);
+        // A name is one line. Anything a server managed to break across
+        // lines is not reported at all rather than reported in pieces.
+        if unquoted.is_empty() || unquoted.contains(['\r', '\n']) {
+            return None;
+        }
+        return Some(unquoted.to_owned());
+    }
+    None
+}
+
 fn preflight_script(
     revision: u64,
     index: usize,
@@ -964,6 +1075,8 @@ fn profile_budgets() -> Value {
         "storage_value_bytes":profile::MAX_STORAGE_VALUE_BYTES,
         "accounted_bytes_per_profile":profile::MAX_ACCOUNTED_BYTES_PER_PROFILE,
         "record_bytes":profile::MAX_RECORD_BYTES,
+        "downloads":MAX_DOWNLOADS_PER_PROFILE,
+        "download_bytes":MAX_DOWNLOAD_BYTES_PER_PROFILE,
     })
 }
 
@@ -2140,6 +2253,11 @@ struct Profile {
     tls: Option<std::sync::Arc<net::TlsClient>>,
     /// The network switch and default permission answer of this profile.
     policy: ProfilePolicy,
+    /// What this profile has downloaded while it is loaded. Both counters are
+    /// live state, not record state: they are never persisted, so a profile
+    /// reopened tomorrow starts with its whole allowance.
+    downloads: usize,
+    download_bytes: usize,
 }
 
 /// A target's working copy of its profile's jar and storage, synced from the
@@ -3770,6 +3888,8 @@ impl Host {
                             lock: None,
                             tls: self.tls_client(),
                             policy: policy_from_record,
+                            downloads: 0,
+                            download_bytes: 0,
                         },
                     );
                 }
@@ -4581,6 +4701,8 @@ impl Host {
                 lock: None,
                 tls: self.tls_client(),
                 policy: ProfilePolicy::default(),
+                downloads: 0,
+                download_bytes: 0,
             },
         );
         Ok(
@@ -4654,6 +4776,8 @@ impl Host {
                 lock: None,
                 tls: self.tls_client(),
                 policy: ProfilePolicy::default(),
+                downloads: 0,
+                download_bytes: 0,
             },
         );
         Ok(
@@ -5698,6 +5822,7 @@ impl Host {
             "select_option" => "target.act:select_option",
             "submit" => "target.act:submit",
             "press" => "target.act:press",
+            "download" => "target.act:download",
             _ => "target.act:click",
         };
         let outcome = match outcome {
@@ -5709,6 +5834,9 @@ impl Host {
             "invalid_request" => "invalid_request",
             "deadline_exceeded" => "deadline_exceeded",
             "permission_denied" => "permission_denied",
+            // A download that answered is a served one. The word is not
+            // "applied": nothing in the page changed.
+            "served" => "served",
             _ => "internal",
         };
         ledger.append(AuditEntry {
@@ -6614,7 +6742,9 @@ impl Host {
             }
         };
         match kind {
-            "click" | "submit" => exact(&["kind"]),
+            // The download takes nothing: a path, a name or a sink would be
+            // a way to ask this host to write somewhere, which it does not.
+            "click" | "submit" | "download" => exact(&["kind"]),
             "set_value" => {
                 exact(&["kind", "value"])?;
                 let value = action
@@ -6774,6 +6904,24 @@ impl Host {
         // event, any fetch and any build.
         if frame_counter >= MAX_SAFE_COUNTER || current.checked_add(1).is_none() {
             return Err(saturated(&id));
+        }
+        // A download is not an activation. Nothing is dispatched into the
+        // page, no handler runs and no revision moves: the host reads the
+        // address off the node and fetches it itself, so the page cannot
+        // observe that an agent asked.
+        if kind == "download" {
+            if action.len() != 1 {
+                return Err(invalid("the download action takes no argument"));
+            }
+            return self.target_download(
+                &id,
+                frame,
+                within,
+                frame_counter,
+                revision,
+                current,
+                deadline,
+            );
         }
         let encoded =
             serde_json::to_string(&Value::Object(action.clone())).expect("action serializes");
@@ -7064,6 +7212,215 @@ impl Host {
             }
         }
         Ok(result)
+    }
+
+    /// Sink C: the bytes come back over the control protocol and touch no
+    /// disk anywhere. What the agent gets is the body, its length, the host's
+    /// own digest of it, and the name the server reported -- bounded, and
+    /// never used as a path.
+    #[allow(clippy::too_many_arguments)]
+    fn target_download(
+        &mut self,
+        id: &str,
+        frame: Option<usize>,
+        within: usize,
+        frame_counter: u64,
+        revision: u64,
+        current: u64,
+        deadline: Instant,
+    ) -> Result<Value, ControlError> {
+        let refuse = |code: &'static str, reason: &'static str| {
+            ControlError::new(code, "the download was refused", false)
+                .scoped("target", id)
+                .details(json!({ "reason": reason }))
+        };
+        // The open's promise comes first: a session that said it would not
+        // write does not spend a profile's allowance either.
+        let session_id = self
+            .targets
+            .get(id)
+            .map(|target| target.session_id.clone())
+            .ok_or_else(|| not_found("target", id))?;
+        self.refuse_if_read_only(&session_id)?;
+        let profile_id = self.session_profile_for(&session_id)?;
+
+        // Permission is answered where it is used, not where it was recorded.
+        let allowed = self
+            .profiles
+            .get(&profile_id)
+            .is_some_and(|profile| profile.policy.allow_by_default);
+        if !allowed {
+            self.audit_action(id, frame, "download", "permission_denied", None);
+            return Err(ControlError::new(
+                "permission_denied",
+                "this profile's policy denies downloads by default",
+                false,
+            )
+            .scoped("target", id)
+            .details(json!({"reason":"download_denied"})));
+        }
+
+        // The count is spent before the fetch, because a refusal that only
+        // arrives after a megabyte crossed the wire is not a budget.
+        let (spent, spent_bytes) = self
+            .profiles
+            .get(&profile_id)
+            .map(|profile| (profile.downloads, profile.download_bytes))
+            .unwrap_or((0, 0));
+        if spent >= MAX_DOWNLOADS_PER_PROFILE {
+            self.audit_action(id, frame, "download", "resource_limit", None);
+            return Err(refuse("resource_limit", "download_count"));
+        }
+        if spent_bytes >= MAX_DOWNLOAD_BYTES_PER_PROFILE {
+            self.audit_action(id, frame, "download", "resource_limit", None);
+            return Err(refuse("resource_limit", "download_bytes"));
+        }
+
+        // Phase one: the address, read off the node without touching it.
+        let policy = self.policy_for_target(id);
+        let target = self.target_mut(id)?;
+        let script = download_probe_script(frame_counter, within);
+        let probe = match frame {
+            None => Self::eval_json(target, &script, deadline, &policy)?,
+            Some(child) => {
+                let text = target.children[child].realm.eval(&script, deadline, id)?;
+                serde_json::from_str(&text).map_err(|_| {
+                    ControlError::new("internal", "engine returned malformed probe", false)
+                        .scoped("target", id)
+                })?
+            }
+        };
+        if let Some(reported) = probe.get("current").and_then(Value::as_u64) {
+            let target = self.target_mut(id)?;
+            let Some(global) = target.global_with(current, frame_counter, reported) else {
+                return Err(saturated(id));
+            };
+            return Err(ControlError::new(
+                "stale_revision",
+                "node reference revision no longer matches the target",
+                true,
+            )
+            .scoped("target", id)
+            .details(json!({"reference_revision":revision,"current_revision":global})));
+        }
+        if probe.get("missing").is_some() {
+            return Err(
+                ControlError::new("not_found", "node does not exist", false).scoped("target", id)
+            );
+        }
+        // Only a link has an address to download. Everything else keeps the
+        // refusal it already had.
+        let Some(href) = probe.get("href").and_then(Value::as_str) else {
+            self.audit_action(id, frame, "download", "unsupported_capability", None);
+            return Err(refuse("unsupported_capability", "not_a_link"));
+        };
+        // The `download` attribute's value is page data. It never reaches an
+        // error, a record or a receipt -- only, at the end, the answer's own
+        // bounded report string.
+        let declared = probe
+            .get("declared")
+            .and_then(Value::as_str)
+            .map(str::to_owned);
+
+        let target = self.target_mut(id)?;
+        let document = match frame {
+            None => target.url.clone(),
+            Some(child) => target.children[child].url.clone(),
+        };
+        let Some(document) = document else {
+            return Err(refuse("unsupported_capability", "document_has_no_url"));
+        };
+        let Ok(resolved) = document.join(href) else {
+            return Err(refuse("invalid_request", "malformed_href"));
+        };
+        if !matches!(resolved.scheme(), "http" | "https") {
+            self.audit_action(id, frame, "download", "unsupported_capability", None);
+            return Err(refuse("unsupported_capability", "scheme_unsupported"));
+        }
+        if resolved.as_str().len() > MAX_URL_BYTES {
+            self.audit_action(id, frame, "download", "resource_limit", None);
+            return Err(refuse("resource_limit", "submitted_url_bytes"));
+        }
+
+        // The fetch runs on a copy of the jar, like a child frame's: the
+        // download reads the profile's cookies and writes none back, so a
+        // download changes no profile state but its own allowance.
+        let now = profile::now_seconds();
+        let mut jar = target.io.jar.clone();
+        let mut rejections = target.io.cookie_rejections;
+        let document_host = document.host_str().map(|h| h.to_ascii_lowercase());
+        let tls = target.io.tls.clone();
+        // A download carries its own fetch allowance rather than spending the
+        // document's: the per-response cap is what bounds it, and that is the
+        // ceiling this capability inherits.
+        let mut budget = net::Budget::default();
+        let response = {
+            let mut hooks = JarHooks {
+                jar: &mut jar,
+                document_host: document_host.as_deref(),
+                now,
+                rejections: &mut rejections,
+            };
+            net::fetch_with(
+                resolved.as_str(),
+                &policy,
+                &mut budget,
+                deadline,
+                Some(&mut hooks),
+                tls.as_deref(),
+            )
+        };
+        let response = match response {
+            Ok(response) if response.status >= 400 => {
+                self.audit_action(id, frame, "download", "not_found", None);
+                return Err(refuse("not_found", "status_not_ok"));
+            }
+            Ok(response) => response,
+            Err(error) => {
+                self.audit_action(id, frame, "download", error.code, None);
+                return Err(ControlError::new(
+                    error.code,
+                    format!("network policy: {}", error.reason),
+                    false,
+                )
+                .scoped("target", id)
+                .details(json!({"reason": error.reason, "detail": error.detail})));
+            }
+        };
+
+        // The byte budget is checked against what actually arrived, and the
+        // bytes are not handed over if they do not fit.
+        let byte_count = response.body.len();
+        if spent_bytes.saturating_add(byte_count) > MAX_DOWNLOAD_BYTES_PER_PROFILE {
+            self.audit_action(id, frame, "download", "resource_limit", None);
+            return Err(refuse("resource_limit", "download_bytes"));
+        }
+        if let Some(profile) = self.profiles.get_mut(&profile_id) {
+            profile.downloads += 1;
+            profile.download_bytes = profile.download_bytes.saturating_add(byte_count);
+        }
+        let digest = {
+            use sha2::Digest;
+            format!("{:x}", sha2::Sha256::digest(&response.body))
+        };
+        let (reported_name, truncated) = download_name(
+            response.content_disposition.as_deref(),
+            declared.as_deref(),
+            &response.url,
+        );
+        // The record carries the fact and the size. It never carries the name
+        // or the bytes.
+        self.audit_action(id, frame, "download", "served", Some(byte_count as u64));
+        let encoded =
+            base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &response.body);
+        Ok(json!({
+            "kind":"download",
+            "byte_count":byte_count,
+            "sha256":digest,
+            "reported_name":reported_name,
+            "truncated":truncated,
+            "bytes_base64":encoded,
+        }))
     }
 
     fn target_wait(&mut self, arguments: &Value, deadline: Instant) -> Result<Value, ControlError> {

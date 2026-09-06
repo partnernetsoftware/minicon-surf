@@ -190,3 +190,52 @@ they are finally run.
 Frozen values, which do not move after this point: ceiling 1,048,576 inherited
 from the network cap; name bound 255 bytes; `downloads` 32; `download_bytes`
 32 MiB.
+
+---
+
+## 9. Landed — 2026-09-06
+
+The capability exists. Recorded chronologically after §8's freeze; nothing in
+§§1–8 is rewritten, and no frozen value moved.
+
+**The court reads 21/21** against `8d5da2a7…`, with T1 — the gate — green:
+byte_count 1,000,000, sha256 matching after base64 decoding, one line of
+1,333,615 bytes with exactly one newline, payload identical. That is the join
+the two-half transport stress could not test.
+
+Three things the implementation found that the design had not:
+
+1. **The byte budget cannot bind alone.** Ceiling 1,048,576 × `downloads` 32 is
+   exactly `download_bytes` 32 MiB, so thirty-two cap-sized downloads come to
+   precisely the byte budget and neither limit can be reached first. §5 of the
+   envelope audit claimed these values meant "neither limit makes the other
+   unreachable"; the arithmetic says they are *coincident*, which is a weaker
+   and different property. Ruled: keep all three values, and rewrite the
+   criterion to state what is true — the byte budget exists, is enforced, and
+   tops out in the same breath as the count.
+2. **A quoted filename may contain the separator.** The first parser split
+   `Content-Disposition` on every `;`, so a name containing one was reported
+   cut short. It now parses the quoted string properly, honouring `\"`.
+3. **A name is one line.** A server can inject a line break into the header.
+   Where the injection leaves a parseable line, the host reports no name at
+   all rather than a piece of one; where it leaves a malformed line, the
+   network layer refuses the response before a name exists. Both are pinned
+   (N2), and nothing from an injected line reaches the agent.
+
+Two court fixtures were amended for the same reason four earlier courts were:
+they measured the fixture, not the rule. The hostile filename carried a raw
+CRLF (which the header parser refuses before any name exists) and an unescaped
+`"` (which closes the quoted string, so the fixture was measuring where a name
+ends rather than how a long one is reported). Both are now escaped on the wire,
+and the CRLF case became its own criterion instead of quietly disabling N1.
+
+`frame-action-court.py` moved by eight checks, all of them the same word: the
+snapshot's activation label for `a[download]` is `download_available` rather
+than `download_unsupported`, as V3 required. **The behaviour did not move** —
+a click on such a link is still refused `unsupported_capability` and still
+advances no revision — and that court reads 182/182 after the amendment.
+
+What a download does *not* do: dispatch anything into the page, run a handler,
+advance a revision, write a cookie back, spend the document's fetch allowance,
+or touch a disk. The record carries `target.act:download`, the outcome
+`served` and a byte count; it never carries the name or the bytes.

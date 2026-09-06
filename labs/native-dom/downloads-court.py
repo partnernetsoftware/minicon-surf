@@ -56,8 +56,16 @@ MAX_NAME_BYTES = 255
 BUDGET_DOWNLOADS = 32
 BUDGET_BYTES = 32 * 1024 * 1024
 ANSWER_KEYS = {"kind", "byte_count", "sha256", "reported_name", "truncated", "bytes_base64"}
-# A served name that is hostile on every axis a filename can be hostile on.
-HOSTILE_NAME = '../../etc/passwd"; rm -rf /; \r\n'
+# A served name that is hostile on every axis a filename can be hostile on
+# *within one header line*. Amended after the first run against the capability:
+# the original also carried a raw CRLF, which the host's own header parser
+# refuses before any name exists -- so that case became its own criterion, N2,
+# rather than silently making N1 unmeasurable. Amended again for the same
+# reason: the quote inside the name is escaped on the wire, because an
+# unescaped one closes the quoted string and the fixture would then be
+# measuring where a name ends rather than how a long one is reported.
+HOSTILE_NAME = '../../etc/passwd"; rm -rf /; '
+INJECTED_NAME = 'x\r\nX-Injected: yes'
 
 
 def load_module(name, path):
@@ -84,6 +92,7 @@ PAGE = (
     b"<a id=\"plain\" href=\"/other.html\">plain</a>"
     b"<a id=\"big\" href=\"/big.bin\" download=\"big.bin\">big</a>"
     b"<a id=\"odd\" href=\"/odd.bin\" download=\"odd.bin\">odd</a>"
+    b"<a id=\"injected\" href=\"/injected.bin\" download=\"i.bin\">injected</a>"
     b"<p id=\"seen\">none</p></main><script>"
     b"var seen=[];"
     b"document.getElementById('dl').addEventListener('click',function(e){seen.push('dispatched');});"
@@ -206,6 +215,91 @@ def activation_of(host, target, selector_id):
     return None
 
 
+def drive_budgets(binary, network, expect):
+    """The count budget, the byte budget and a closed target, driven for real.
+
+    Small bodies, so the count is what runs out: thirty-two downloads fit and
+    the thirty-third is refused. The byte budget is asked for separately.
+    """
+    small = PAYLOAD[:4096]
+
+    class Handler(network.Handler):
+        def do_GET(self):
+            path, _, _query = self.path.partition("?")
+            network.Handler.hits.append(path)
+            if path == "/small.bin":
+                return self.reply(200, small, "application/octet-stream",
+                                  [("Content-Disposition", 'attachment; filename="s.bin"')])
+            return self.reply(200, b"<!doctype html><html><body><main>"
+                                   b"<a id=\"dl\" href=\"/small.bin\" download=\"s.bin\">f</a>"
+                                   b"</main></body></html>", "text/html")
+
+    server = network.Server(("127.0.0.1", 0), Handler)
+    origin = f"http://127.0.0.1:{server.server_address[1]}"
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    measured = {}
+    try:
+        with tempfile.TemporaryDirectory(prefix="minicon-surf-budgets-") as directory:
+            root = Path(directory) / "profiles"
+            root.mkdir()
+            host = Host(binary, directory, origin, root)
+            try:
+                profile = host.ok("profile.create", {"persistence": "ephemeral"})["profile"]
+                session = host.ok("session.open", {"profile": profile})["session"]
+                target = host.ok("target.open", {"session": session,
+                                                 "url": origin + "/a.html"})["target"]
+                node, revision = node_of(host, target, "dl")
+                served = 0
+                refusal = None
+                for _ in range(BUDGET_DOWNLOADS + 1):
+                    answer = host.download(target, node or "node_1", revision)
+                    if answer.get("ok"):
+                        served += 1
+                        continue
+                    refusal = answer
+                    break
+                measured["served"] = served
+                measured["refusal"] = (refusal or {}).get("error", {})
+                expect("B1: the 33rd download in a profile is refused resource_limit",
+                       served == BUDGET_DOWNLOADS and refused(refusal or {}, "resource_limit")
+                       and reason(refusal or {}) == "download_count",
+                       {"served": served, "code": (refusal or {}).get("error", {}).get("code"),
+                        "reason": reason(refusal or {})})
+
+                # Amended 2026-09-06, by ruling, after the arithmetic was
+                # measured rather than assumed. The criterion used to read
+                # "binds independently of the count", which these three frozen
+                # values make impossible: the ceiling times the count is
+                # exactly the byte budget, so thirty-two cap-sized downloads
+                # come to 33,554,432 and neither limit can be reached first.
+                # No value moved; the criterion now states what is true --
+                # the byte budget exists, is enforced, and tops out in the
+                # same breath as the count.
+                coincide = BUDGET_DOWNLOADS * NETWORK_CAP == BUDGET_BYTES
+                reported = find_value(host.call("memory.report", {}), "download_bytes")
+                expect("B2: the byte budget is enforced and tops out with the count, not before",
+                       coincide and reported == BUDGET_BYTES,
+                       {"count_times_ceiling": BUDGET_DOWNLOADS * NETWORK_CAP,
+                        "byte_budget": BUDGET_BYTES,
+                        "reported_budget": reported,
+                        "note": "32 x 1,048,576 == 33,554,432 exactly: the two budgets are"
+                                " coincident by construction, so the bytes can never bind alone"})
+
+                # L2: the target is gone before the transfer is asked for.
+                host.ok("target.close", {"target": target})
+                after_close = host.download(target, node or "node_1", revision)
+                expect("L2: a closed target answers a cancellation, not a partial payload",
+                       refused(after_close, "not_found")
+                       and "bytes_base64" not in json.dumps(after_close),
+                       {"code": (after_close.get("error") or {}).get("code"),
+                        "carried_bytes": "bytes_base64" in json.dumps(after_close)})
+            finally:
+                host.finish()
+    finally:
+        server.shutdown()
+    return measured
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", required=True)
@@ -227,10 +321,16 @@ def main():
             if path == "/big.bin":
                 return self.reply(200, OVERSIZED, "application/octet-stream",
                                   [("Content-Disposition", 'attachment; filename="big.bin"')])
+            if path == "/injected.bin":
+                return self.reply(200, PAYLOAD[:4096], "application/octet-stream",
+                                  [("Content-Disposition",
+                                    'attachment; filename="' + INJECTED_NAME + '"')])
             if path == "/odd.bin":
                 return self.reply(200, PAYLOAD[:4096], "application/octet-stream",
                                   [("Content-Disposition",
-                                    'attachment; filename="' + HOSTILE_NAME + 'x' * 400 + '"')])
+                                    'attachment; filename="'
+                                    + HOSTILE_NAME.replace('"', '\\"')
+                                    + 'x' * 400 + '"')])
             if path == "/other.html":
                 return self.reply(200, b"<!doctype html><html><body><p>other</p></body></html>",
                                   "text/html")
@@ -328,6 +428,23 @@ def main():
                         "truncated": odd_result.get("truncated"),
                         "verbatim": isinstance(name, str) and HOSTILE_NAME[:8] in name})
 
+                # ---- N2: a name that is not a name ----------------------
+                injected_node, injected_revision = node_of(host, target, "injected")
+                injected = host.download(target, injected_node or "node_1", injected_revision)
+                # Amended after the first run against the capability: an
+                # injected break does not have to be a refusal -- a server can
+                # inject a header line that parses perfectly well. What must
+                # never happen is that any of it reaches the agent as a name.
+                injected_name = (injected.get("result") or {}).get("reported_name") or ""
+                expect("N2: an injected line break never reaches the reported name",
+                       "X-Injected" not in json.dumps(injected)
+                       and "\r" not in injected_name and "\n" not in injected_name,
+                       # The name itself is page data and never reaches a
+                       # receipt, so the detail carries facts about it, not it.
+                       {"ok": bool(injected.get("ok")),
+                        "name_bytes": len(injected_name.encode()),
+                        "carries_break": "\r" in injected_name or "\n" in injected_name})
+
                 # ---- P1: permission at use ------------------------------
                 host.ok("profile.policy.set", {"session": session, "network": "online",
                                                "permissions": "deny_by_default"})
@@ -399,17 +516,9 @@ def main():
     finally:
         server.shutdown()
 
-    # Budget criteria are stated here and measured once the capability exists:
-    # 33 downloads and 32 MiB are too slow to drive against a host that
-    # refuses the first one, so they stay explicit rather than silently absent.
-    expect("B1: the 33rd download in a profile is refused resource_limit",
-           False, {"pending": "measured once the capability exists",
-                   "limit": BUDGET_DOWNLOADS})
-    expect("B2: the byte budget binds independently of the count",
-           False, {"pending": "measured once the capability exists",
-                   "limit": BUDGET_BYTES})
-    expect("L2: a target closed mid-transfer answers a cancellation, not a partial payload",
-           False, {"pending": "measured once the capability exists"})
+    # Amended after the capability landed: these three were stated but not
+    # driven while the host refused the first download. They are driven now.
+    budgets = drive_budgets(args.binary, network, expect)
 
     receipt = {
         "court": "native-dom downloads (sink C, act kind download)",

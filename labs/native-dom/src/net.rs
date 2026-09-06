@@ -374,6 +374,9 @@ pub struct Response {
     pub status: u16,
     pub url: Url,
     pub content_type: Option<String>,
+    /// The `Content-Disposition` line of the hop that answered, verbatim.
+    /// Only the download path reads it, and what it says is page data.
+    pub content_disposition: Option<String>,
     pub body: Vec<u8>,
     pub redirects: usize,
     pub framing: Framing,
@@ -673,6 +676,7 @@ pub fn fetch_with(
             status: hop.status,
             url: current,
             content_type: hop.content_type,
+            content_disposition: hop.content_disposition,
             body: hop.body,
             redirects,
             framing: hop.framing,
@@ -684,6 +688,7 @@ pub fn fetch_with(
 struct Hop {
     status: u16,
     content_type: Option<String>,
+    content_disposition: Option<String>,
     location: Option<String>,
     set_cookie: Vec<String>,
     body: Vec<u8>,
@@ -844,6 +849,7 @@ fn get_once(
     }
     let head = parse_head(&buffer[..header_end])?;
     let content_type = head.content_type.clone();
+    let content_disposition = head.content_disposition.clone();
     let location = head.location.clone();
     let set_cookie = head.set_cookie.clone();
     let mut body = buffer[header_end + 4..].to_vec();
@@ -856,6 +862,7 @@ fn get_once(
         return Ok(Hop {
             status: head.status,
             content_type,
+            content_disposition,
             location,
             set_cookie,
             body: Vec::new(),
@@ -912,6 +919,7 @@ fn get_once(
     Ok(Hop {
         status: head.status,
         content_type,
+        content_disposition,
         location,
         set_cookie,
         body,
@@ -945,6 +953,7 @@ struct Head {
     status: u16,
     content_length: Option<usize>,
     content_type: Option<String>,
+    content_disposition: Option<String>,
     location: Option<String>,
     set_cookie: Vec<String>,
 }
@@ -980,6 +989,7 @@ fn parse_head(head: &[u8]) -> Result<Head, NetError> {
     }
     let mut content_length: Option<usize> = None;
     let mut content_type = None;
+    let mut content_disposition = None;
     let mut location = None;
     let mut set_cookie = Vec::new();
     for line in lines {
@@ -1030,6 +1040,9 @@ fn parse_head(head: &[u8]) -> Result<Head, NetError> {
                 }
             }
             "content-type" => content_type = Some(value.to_ascii_lowercase()),
+            // Kept verbatim, and never lowered: a filename is page data, and
+            // this line is the only place a server states one.
+            "content-disposition" => content_disposition = Some(value.to_owned()),
             "location" => location = Some(value.to_owned()),
             "set-cookie" => set_cookie.push(value.to_owned()),
             _ => {}
@@ -1039,6 +1052,7 @@ fn parse_head(head: &[u8]) -> Result<Head, NetError> {
         status,
         content_length,
         content_type,
+        content_disposition,
         location,
         set_cookie,
     })
