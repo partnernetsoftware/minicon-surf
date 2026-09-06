@@ -158,9 +158,13 @@ same class as the two authorised re-freezes: a pin whose purpose was to prove
 was not. The recommended amendment is the same shape as the others — move the
 base-shim hash to `3561e774…`, keep the old one beside it with the date and the
 reason, and leave the main-shim hash at `d319246e…` untouched, since round C
-does not touch the main shim. **It is not applied here**, because the ruling
-authorised two re-freezes and naming a third is the coordinator's call, not
-this round's.
+does not touch the main shim. It was **not applied when this section was
+written**, because the ruling authorised two re-freezes and naming a third is
+the coordinator's call; it was then **ruled and applied**, and the court reads
+15/15 again. The base-shim hash is
+`3561e77425ba8efabc760c3355e051d6c53af4a9e5ea52228d148c40b8945adc`, the old one
+is kept beside it with the date and the reason, and the main-shim hash
+`d319246e…` is unchanged because round C does not touch the main shim.
 
 ## 5. Safe failures
 

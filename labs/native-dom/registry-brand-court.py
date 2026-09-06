@@ -278,9 +278,20 @@ def main():
            {"defines": "defineProperty" in install})
     # Pinned, not recorded: this work is host-side, and a shim that moved would
     # mean it was not.
+    #
+    # Amendment, 2026-09-06, ruled and recorded rather than absorbed. This pin
+    # did its job: the registry-brand slice added no shim source, and the pin is
+    # what noticed that a **later** slice did. Round C
+    # (`element-tag-design-0.0.1.md`) gives the base shim a closure-owned store
+    # for an element's tag, so `dom_shim_base.js` moves from
+    # `145f82eef240303af3296628d409aac208850360085438710f497d84bf5ab587` to the
+    # hash below. The old value is kept here so the movement can be read off the
+    # file. The **main** shim is untouched by round C and its hash below is
+    # unchanged; if it ever moves in a tag-only round, that round did something
+    # it did not intend.
     expect("N3: the shims are untouched by this work",
            hashlib.sha256((SRC / "dom_shim_base.js").read_bytes()).hexdigest()
-           == "145f82eef240303af3296628d409aac208850360085438710f497d84bf5ab587"
+           == "3561e77425ba8efabc760c3355e051d6c53af4a9e5ea52228d148c40b8945adc"
            and hashlib.sha256((SRC / "dom_shim_main.js").read_bytes()).hexdigest()
            == "d319246e878b36993d7d607ec1c288f143669a1b1229a8ea60712d8f4030181c",
            {"base": hashlib.sha256((SRC / "dom_shim_base.js").read_bytes()).hexdigest()[:16]})

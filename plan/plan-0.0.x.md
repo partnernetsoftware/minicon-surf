@@ -1437,8 +1437,10 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the ruling did not name is left failing rather than amended**:
   `registry-brand-court.py`'s N3 pins both shims' SHA-256 from that round and
   reads **14/15**, because round C is the first slice since to change the base
-  shim. The recommended amendment is in §4b; naming a third re-freeze is the
-  coordinator's call. **F1 and F2 stay open**, are not folded in, and are named
+  shim. The amendment was reported rather than taken, then **ruled and
+  applied**: the base-shim hash moves to `3561e774…` with the old one kept
+  beside it, the main-shim hash `d319246e…` stays put because round C does not
+  touch the main shim, and the court reads **15/15**. **F1 and F2 stay open**, are not folded in, and are named
   in the court's own receipt: a declared POST is still submitted as a GET and a
   named-target link is still activated. Regressions on `e9e07111`: element-tag
   52/52, property-shape 22/22, signature-integrity 34/34, probe-truthfulness
@@ -1447,8 +1449,8 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   28/28, secure-cookie 78/78, https 74/74, form 179/179, frame-action 182/182,
   page-navigation 80/80, lifecycle 53/53, job-deadline 42/42, element-api 28/28,
   dataset 15/15, event-fidelity 62/62, timer 68/68, frame-realm 62/62,
-  cdp-frame-tree 64/64, child-frame 82/82, and registry-brand 14/15 for the pin
-  above. Navigation soak not rerun by standing rule. fmt, 58 tests, clippy
+  cdp-frame-tree 64/64, child-frame 82/82, and registry-brand 15/15 after the
+  amendment above. Navigation soak not rerun by standing rule. fmt, 58 tests, clippy
   `-D warnings`, contract 28 examples and 50 negatives, `diff --check`,
   redaction scan. Not pushed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: host-owned element facts, with the
