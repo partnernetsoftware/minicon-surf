@@ -1381,6 +1381,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the court realm probe
+  (`labs/native-dom/realm-probe-audit-0.0.1.md`). **The diagnostic can be made
+  to lie, but only in the fail-safe direction, and no host answer or security
+  decision depends on it.** `REALM_PROBE_JS` runs only from `realm_probe()`,
+  which needs `--court-realm-probe` *and* `--surface-court-file` (the host exits
+  64 without the second); its only consumer is `memory.report`'s court section,
+  and its only readers are two criteria in `shim-footprint-court.py`. The
+  enforcement is elsewhere and is page-proof: `SEAL_JS` is `delete` plus
+  `typeof`, pure syntax, run before any page script. Measured, one tampering per
+  run: `present` (a `typeof`) **never** reported false while a property existed;
+  `enumerable` (`Object.keys(...).indexOf(...)`) was controllable both ways —
+  a false alarm when `indexOf` always finds, and masking when the page re-adds
+  the name and hides it. **Every tampering yields a court failure, never a false
+  pass**, since the criterion demands both fields false. So the residual risk is
+  false alarms discrediting the evidence chain, not a bypass. **Fix verified
+  rather than argued**: a syntax-only `for…in` told the truth under all three
+  tamperings where the method form was wrong under two; it is a host-script
+  change of H1's class with no per-realm retention. Six-criterion court draft
+  in §6; three rulings pending in §7, including the defensible option of leaving
+  it alone. H3's declared set untouched, H2 not done.
 - [x] Frozen guard, and the one violation it found:
   `labs/native-dom/capture-declaration-court.py`, receipt
   `evidence/native-dom-control-0.0.2-capture-declarations.json`, record in
