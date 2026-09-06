@@ -1381,6 +1381,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: copy-on-write profiles
+  (`labs/native-dom/copy-on-write-audit-0.0.1.md`). Read-only, headless, no
+  user data touched — every measurement ran in a temporary profile root.
+  **Two measurements decide the shape.** First, a profile's identity is inside
+  its seal: the same bytes under a new name answer *"format, protocol or
+  profile mismatch"*, and under the same name on another host *"record does not
+  authenticate"*, because the DEK is wrapped under that host's key account. So
+  a fork can never be a copy of bytes — it must re-seal inside a live host
+  holding both the master key and the source's DEK. Second, **the store is
+  already copy-on-write on every mutation**: `commit_control_mutation` clones
+  jar and storage as its rollback copy and rewrites the whole sealed record —
+  measured as 24 puts costing 25 writes and 379,190 bytes for a record ending
+  at 29,710, each put a flat ~12 ms. So deferring the copy saves only the
+  child's first write, 602 bytes and ~12 ms: **copy-on-write here is an
+  isolation feature, not a performance one**, and should be ruled on that
+  ground. Recommended protocol shape is a `from` argument on `profile.create`
+  — no new operation, the closed enum stays at 26, and the work lands where the
+  DEK is already minted. The hazard to rule on: `profile.inspect` succeeds from
+  a second host **without** the writer lock, so a fork of a profile another
+  host has open would silently copy a stale record. Twelve-criterion court
+  draft in §9; six rulings pending in §10. G1, G3, P6 and G6 stay open; D6
+  untouched.
 - [x] Implemented behind the frozen court: downloads, sink C, action kind
   `download` (`labs/native-dom/src/main.rs`, `net.rs`,
   `protocol/check_contract.py`, `downloads-court.py`, freeze and landing
