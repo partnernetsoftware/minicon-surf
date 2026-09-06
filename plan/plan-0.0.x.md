@@ -1319,7 +1319,18 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   extrapolated**. Recommendation: take at most one method — I would argue for
   `getElementsByClassName`, which older pages actually call, reuses the
   selector engine, is a method rather than an accessor and carries no
-  authority, reentrancy or lifetime question — or hold the reserve. Everything
+  authority, reentrancy or lifetime question — or hold the reserve.
+  **Ruled, frozen, built and then stopped at its own gate**: the court is
+  frozen at 36 criteria and reads 5 of 36 on the tree, but the method
+  **does not fit** — as designed 67,552, lean 67,040, and even stripped of its
+  never-throws guarantee 66,944, against a 65,536 bound that this ruling
+  forbids moving. `shim-footprint` reads 17 of 18 on every shape and the
+  implementation was reverted, so nothing shipped and the frozen court
+  describes a method this host does not have. **The recommendation that led
+  there was mine and it was wrong**: the `+464` in §2 was a one-line
+  `hasAttributes` and was really the remainder of the current allocation
+  block, not the price of a method — the triage's own rule about not
+  extrapolating applied to the triage, and the gate caught it. Everything
   else is priced out for reasons other than cost: the base group needs
   insertion primitives and would touch `cloneNode`'s frozen closed set;
   parser, layout and host-authority groups each need a design and a ruling

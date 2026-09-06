@@ -184,3 +184,55 @@ results, document order, detached subtrees, the plain-array non-live shape,
 the inexpressible-name loss, the absence of the member in a child realm, owner
 release, the unchanged handle key set, and the main-slack bound on the same
 binary.
+
+### 7.1 Court amendment, recorded chronologically
+
+**C14** asked that calling the method inside a dispatch change nothing, and
+expressed it as an absolute count — four. An earlier probe in the same
+document appends a matching element, so by the time C14 ran the answer was
+five and the criterion failed against a correct implementation. It was
+measuring the probe order, not the rule.
+
+It now compares the count with itself across the dispatch, which is what the
+criterion always meant. This is the third time in this batch that a criterion
+of mine has pinned a fixture's history instead of a behaviour; the pattern is
+worth naming — **a probe that shares a document with other probes must be
+order-independent, or it measures them.**
+
+### 7.2 The cost gate failed, measured, and the slice stopped
+
+The court was frozen, the method was written, and it **does not fit**. Three
+shapes were built and measured against the 65,536 bound, all on the same
+binary line:
+
+| shape | slack | over the bound by |
+| --- | --- | --- |
+| as designed — trim, split on whitespace, `filter`, `try`/`catch` | 67,552 | **2,016** |
+| lean — one loop, no regex, no closure, same behaviour | 67,040 | **1,504** |
+| lean without the never-throws `catch` (information only; it fails C13) | 66,944 | **1,408** |
+
+`shim-footprint` reads 17 of 18 on every one of them, failing *"a main-only
+page costs no more than 65536 bytes above the baseline"*. **The implementation
+was reverted and nothing shipped.** The court stays frozen and failing, which
+is the honest state: it describes a method this host does not have.
+
+**The recommendation that led here was mine, and it was wrong.** §2 measured
+`+464` for one plain method — but that method was a one-line `hasAttributes`,
+and the figure was the *remainder of the current allocation block*, not the
+price of a method. `getElementsByClassName` needs a real body, and any body
+crosses the block. The triage's own lesson applies to the triage: **the
+per-member price is a function of where the fill sits and what the member
+contains, and it must be measured for the actual member before it is
+recommended.** I extrapolated from a probe instead, and the gate caught it —
+which is what the gate is for.
+
+The options, none of them taken here:
+
+1. **Hold the method.** The court stays frozen against a future build; nothing
+   in the tree pretends the method exists.
+2. **Reclaim slack first.** Measured ceiling for capability-free slimming is
+   848 bytes, which does not cover 1,408, so this needs a capability trade —
+   forbidden by the same ruling.
+3. **Move the bound.** Forbidden, and this audit does not propose it.
+4. **A smaller member.** The floor measured here is 4,928 for a method that
+   still answers correctly; there is no shape below it.

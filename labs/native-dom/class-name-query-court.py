@@ -96,12 +96,18 @@ PROBES = [
      "return 'length '+r.length;}catch(e){return 'threw:'+e.name;}})()"),
     # It reads the tree and does nothing else: no listener runs, no event is
     # minted, and calling it inside a dispatch changes nothing.
+    # Amended after the first run: the expectation named an absolute count,
+    # which an earlier probe had already changed by appending to the fixture.
+    # It measured the probe order rather than the rule, so it now compares the
+    # count with itself across the dispatch.
     ("inert_during_dispatch",
      "(function(){var bus=document.getElementById('box');var seen=0;"
+     "var before=document.getElementsByClassName('alpha').length;"
      "bus.addEventListener('probe',function(){seen+=1;"
      "document.getElementsByClassName('alpha');});"
      "bus.dispatchEvent(new Event('probe'));"
-     "return 'ran '+seen+'|still '+document.getElementsByClassName('alpha').length;})()"),
+     "var after=document.getElementsByClassName('alpha').length;"
+     "return 'ran '+seen+'|unchanged '+String(before===after);})()"),
 ]
 
 
@@ -272,7 +278,7 @@ def main():
                            said.get("inexpressible_name") == "length 0",
                            {"said": said.get("inexpressible_name")})
                     expect(tag + "C14: it adds no authority — inert inside a dispatch",
-                           said.get("inert_during_dispatch") == "ran 1|still 4",
+                           said.get("inert_during_dispatch") == "ran 1|unchanged true",
                            {"said": said.get("inert_during_dispatch")})
 
                     # A child realm does not get it, and cannot: it runs no scripts.
