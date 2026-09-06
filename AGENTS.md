@@ -85,6 +85,14 @@ receipts.
   chains, CI and regressions never set that environment variable. Missing
   any part fails closed and reports `unverified`.
   `labs/native-dom/surface-headless-court.py` is the falsifiable check.
+- A committed receipt is the history of the round that produced it. It names
+  the binary it was measured on and is never refreshed or overwritten, not even
+  when the court that produced it is later re-frozen. A court that carries a
+  **live guard** — a criterion pinned to what the tree currently costs — reports
+  its current status in a separate verification receipt that names the current
+  binary and links the historical one, and the difference between "this round's
+  evidence" and "this guard's status now" is stated in the court and in the
+  plan entry. Never write a run over an existing receipt for a different binary.
 - Surface and platform receipts never record a pid, a window number or
   handle, screen coordinates, a capture, a hit map or any desktop content;
   court-only facts go to the court-only file that is removed at exit.

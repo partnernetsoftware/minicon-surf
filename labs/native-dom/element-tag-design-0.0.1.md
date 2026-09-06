@@ -177,6 +177,21 @@ is kept beside it with the date and the reason, and the main-shim hash
   it can write reaches a host decision, and nothing it writes can make the host
   crash, because no property is removed and no setter is introduced.
 
+## 5b. Since this round
+
+Recorded 2026-09-06, after the fact and without changing what is above. **F1 and
+F2 did not stay open.** They were closed in the round that followed, at
+`a0482ed`, by `attribute-fact-court.py` at 154/154, when the element's attribute
+store moved behind `__mcsAttr` and the normalisation was rebuilt. Everything
+this record says about round C stands; only the sentences that call F1 and F2
+open have been overtaken, and they are left as written because this is the
+record of a round rather than a statement about now.
+
+`element-tag-court.py`'s own `not_under_test` still says those two are "still
+open after this round", which is a sentence in a court and is reported for
+correction in `integration-consistency-audit-0.0.1.md` §3 rather than edited
+here.
+
 ## 6. Non-goals
 
 No D. No new capture. No key added to the internals handle — `__mcsTag` is a

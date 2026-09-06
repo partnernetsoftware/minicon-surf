@@ -1404,6 +1404,49 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Read-only integration audit across the documents
+  (`labs/native-dom/integration-consistency-audit-0.0.1.md`). No product code,
+  no court criterion, no bound, handle or base byte changed. **Four of the seven
+  documents it was asked to reconcile do not exist here**: there is no `PRD.md`,
+  no `prd/` module, no `evidence-registry.json`, no `alignment-contract.json`
+  and no `release-policy.json`, and none has ever existed — no deletion of any
+  such path appears across 419 commits and `git ls-files` matches none of the
+  names. What holds their roles today is listed in §1. **The largest real gap is
+  archive work**: `labs/native-dom/README.md`'s 34-row binary ledger stops at
+  `420cdf5b82bf…`, and **thirteen commits have changed `src/` since**, one
+  binary each, covering the entire security-and-answer line — grepping that
+  register for `signature-integrity`, `element-tag`, `attribute-fact`,
+  `text-answer`, `registry-brand`, `__mcsTag` or `__mcsAttr` returns zero. The
+  rows are not improvised here; the round that writes them needs a decision on
+  shape and the receipts open. **Two courts state a status that is no longer
+  true**: `element-tag-court.py`'s `not_under_test` calls F1 and F2 "still open
+  after this round" **in every receipt it writes**, and
+  `signature-integrity-court.py`'s docstring calls F1, F2 and F5 "still open" —
+  all three closed at `958f5c0` and `a0482ed`. Both are reported with their
+  exact edits and **not changed**, because this round may not touch courts. The
+  H1 sentence corrected in `uncaptured-intrinsic-audit-0.0.1.md` §4 survives in
+  two places, and there is a twist recorded rather than glossed: **it is true
+  again today**, because round C made the download probe ask `__mcsTag`. The
+  **receipt convention had no owning document** — it is now in `AGENTS.md`, and
+  two consequences are recorded with it: no verification receipt exists yet, and
+  the four live guards it governs are named. **One receipt of 107 is orphaned**
+  (`-job-deadline-falsification`); a first pass flagged four more, all mine, all
+  actually referenced through brace notation — the checker was wrong and that is
+  recorded, because an audit that invents orphans is worse than one that finds
+  none. `AbortSignal.any()` is decided out of scope in
+  `abort-signal-surface-audit-0.0.1.md` but **appeared nowhere in this plan**;
+  the line below fixes that. Open items are reconciled in §8 without changing a
+  decision. **What is consistent is reported too**: all 102 document references
+  resolve, nothing untracked or unpushed is implied, every settled ruling has one
+  owning document with a court or an explicit statement that it needs none, and
+  every frozen court in this line has a `passed: false` pre-change receipt and a
+  `passed: true` post-change one, each naming its own binary. Not pushed.
+  G1, G3, P6 and G6 stay open.
+- [ ] Recorded, not started: `AbortSignal.any()` is **out of scope and never
+  triaged** (`labs/native-dom/abort-signal-surface-audit-0.0.1.md` §§135, 149,
+  175). It composes signals and would need its own design round. Noted here
+  2026-09-06 because the decision existed only in that audit and a reader of
+  this plan alone would not have known the item exists.
 - [x] Ruled, nothing implemented: the option label/value asymmetry stays
   (`labs/native-dom/option-value-audit-0.0.1.md` §15, and the ruling recorded at
   the criterion itself in `form-court.py`). **The snapshot does not expose
@@ -2167,7 +2210,10 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   right URL and a non-link is still refused `not_a_link`. **All fail closed**,
   and each is something a page could already do by not rendering. The
   `classList` corruption persists but is confined: `class` is not part of the
-  snapshot. Surface: **85 of 156 sites have a capture to route through; 71 do
+  snapshot. (Superseded count, recorded 2026-09-06: the uncaptured half is
+  **121 today** under a wider method list —
+  `uncaptured-intrinsic-audit-0.0.1.md` §1 measures it and reconciles the two.)
+  Surface: **85 of 156 sites have a capture to route through; 71 do
   not**, `toLowerCase` alone being 20 of them, seven in host decision scripts
   including the download probe's `tagName.toLowerCase() !== "a"` — those need
   new captures, which would grow the base and are out of scope. Cost of
