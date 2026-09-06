@@ -56,15 +56,27 @@ EXPECTED = {
     # Amendment, 2026-09-06, ruled in `element-tag-design-0.0.1.md` §1 and
     # recorded rather than absorbed. Round C installs `__mcsTag`, and **any**
     # new global moves this row -- the same was true of `__mcsJson` when H1
-    # added it. The count goes 112 -> 113 and the checksum
-    # `156a0f8b` -> `5899bf6e`; nothing else about the window changed, and the
-    # old value is kept here so the movement can be read off the file.
-    "window": "113:5899bf6e:Object:v:011|Function:v:011|Error:v:011",
+    # added it. The count went 112 -> 113 and the checksum
+    # `156a0f8b` -> `5899bf6e`.
+    #
+    # Second amendment, same day, ruled in `attribute-fact-design-0.0.1.md`
+    # §11b: round D installs `__mcsAttr`, so the count goes 113 -> 114 and the
+    # checksum `5899bf6e` -> `5d05836a`. Both old values are kept here so the
+    # movement can be read off the file; nothing else about the window changed.
+    "window": "114:5d05836a:Object:v:011|Function:v:011|Error:v:011",
     "Node.prototype": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010",
-    # Deliberately NOT amended: round C adds no prototype member, so this row
-    # must stay exactly as it was. If it ever moves in a tag-only round, that
-    # round did something it did not intend.
-    "Element.prototype": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011",
+    # Not amended by round C, which adds no prototype member -- it stayed at
+    # `40:26312e4` across that whole round, which was the check that round C
+    # did only what it said.
+    #
+    # Amended by round D, ruled in `attribute-fact-design-0.0.1.md` §11b: the
+    # element's attribute store moves behind an accessor, so `__attrs` becomes
+    # a getter/setter pair on the prototype and the row goes
+    # `40:26312e4` -> `41:1c3f518d`. That is **page-observable** and is the one
+    # genuinely new cost of round D. The setter is a deliberate no-op landing
+    # place: without it a page's own `el.__attrs = ...` throws and kills the
+    # document, which was measured.
+    "Element.prototype": "41:1c3f518d:constructor:v:011|__attrs:gs:010|getAttribute:v:011",
     "Document.prototype": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010",
     "Event.prototype": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011",
     "document": "6:94aa8a2c:parentNode:v:111|childNodes:v:111|nodeType:v:111",

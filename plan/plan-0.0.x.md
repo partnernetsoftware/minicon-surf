@@ -1404,6 +1404,55 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Frozen, then implemented: round D, candidate E — one record per element
+  holds the tag and the attributes (`labs/native-dom/attribute-fact-design-0.0.1.md`
+  §11b, court `labs/native-dom/attribute-fact-court.py`, receipts
+  `evidence/native-dom-control-0.0.2-attribute-fact{,-falsification}.json`).
+  **Court frozen first at 126/154 on `e9e07111`** — the unpatched arm passing in
+  full, the three technique-and-cost criteria failing because only the code can
+  satisfy them, the rest the defect — then **154/154 on `cc8ebfa4`**. F1 and F2
+  are closed on every route: the two selective `toLowerCase` lies, a
+  `Map.prototype.get` that lies about method and target, a direct write of
+  `el.__attrs`, and an arm that replaces and deletes both readers. The snapshot
+  reports `method: "post"` for a declared POST on every arm, and both submit
+  doors — the form and its submitter — read the same refusal. **Two criteria
+  were repaired before the freeze rather than after**: with `el.__attrs`
+  replaced the *form's* activation reads `allowed` while the *submitter's* reads
+  `form_method_unsupported`, so a court that acted only on the submitter would
+  have passed on a page that still submits its POST; and the handle-widening
+  check counted colons in a regex and failed for its own reasons, so it now
+  names the thirteen handle keys and requires that **neither reader appears
+  inside the handle**. **Both construction doors are criteria**: a cloned anchor
+  is still a link and downloads, a cloned POST form keeps its method and is
+  refused, and an anchor built with `createElement` downloads — the doors the
+  audit's D3 candidate missed. **Page compatibility is kept** by an explicit
+  no-op landing setter: `el.__attrs = …` is ignored rather than fatal, the field
+  still reads back as a `Map`, and `getAttributeNames` still answers. **Costs,
+  measured on both allocators against ceilings frozen before the code**: base
+  shim 33,290 → **33,886** (+596, ceiling +600) with the main shim untouched at
+  26,485; child-frame M1 +2,896 system and +2,736 arena (ceiling +3,200); M2
+  +20,272 and +21,552 (ceiling +23,000). **Five frozen values were re-frozen,
+  each recorded chronologically with its old value and reason**:
+  `property-shape`'s `window` (`113:5899bf6e` → `114:5d05836a`) and
+  `Element.prototype` (`40:26312e4` → `41:1c3f518d`, `__attrs` becoming a
+  page-observable accessor — the one genuinely new cost of round D, and the row
+  that deliberately did **not** move in round C); `signature-integrity`'s base
+  pin; `registry-brand`'s N3 base-shim hash (`3561e774…` → `f420f901…`, main
+  shim untouched); and `element-tag`'s cost group, **rebased before the code**
+  from expiring deltas to equalities at round C's measured values and then
+  re-frozen by round D — which is the group working as intended, a live guard
+  every slice touching the shim must move deliberately. Regressions on
+  `cc8ebfa4`: attribute-fact 154/154, element-tag 52/52, signature-integrity
+  34/34, registry-brand 15/15, property-shape 22/22, capture-declaration 8/8
+  (**no sixteenth capture**), probe-truthfulness 25/25, host-answer 9/9,
+  downloads 21/21, copy-on-write 23/23, snapshot-schema 13/13, readonly-profile
+  28/28, secure-cookie 78/78, https 74/74, form 179/179, frame-action 182/182,
+  page-navigation 80/80, lifecycle 53/53, job-deadline 42/42, element-api 28/28,
+  dataset 15/15, event-fidelity 62/62, timer 68/68, frame-realm 62/62,
+  cdp-frame-tree 64/64, child-frame 82/82 — **no residual failures**. Navigation
+  soak not rerun by standing rule. fmt, 58 tests, clippy `-D warnings`, contract
+  28 examples and 50 negatives, `diff --check`, redaction scan. Not pushed.
+  G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: round D, the attributes a decision
   reads (`labs/native-dom/attribute-fact-design-0.0.1.md`, receipt
   `evidence/native-dom-control-0.0.2-attribute-fact-candidates.json`). Four

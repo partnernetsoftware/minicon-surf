@@ -289,9 +289,14 @@ def main():
     # file. The **main** shim is untouched by round C and its hash below is
     # unchanged; if it ever moves in a tag-only round, that round did something
     # it did not intend.
+    #
+    # Second amendment, same day, ruled in `attribute-fact-design-0.0.1.md`
+    # §11b: round D moves the attribute store into the base shim, so the base
+    # hash goes `3561e774…` -> `f420f901…`. The main shim is untouched by that
+    # round too and its hash is still `d319246e…`.
     expect("N3: the shims are untouched by this work",
            hashlib.sha256((SRC / "dom_shim_base.js").read_bytes()).hexdigest()
-           == "3561e77425ba8efabc760c3355e051d6c53af4a9e5ea52228d148c40b8945adc"
+           == "f420f901907697c48e574de53f2540c1a657a0b8dfb7002d3d63741f2e34242f"
            and hashlib.sha256((SRC / "dom_shim_main.js").read_bytes()).hexdigest()
            == "d319246e878b36993d7d607ec1c288f143669a1b1229a8ea60712d8f4030181c",
            {"base": hashlib.sha256((SRC / "dom_shim_base.js").read_bytes()).hexdigest()[:16]})

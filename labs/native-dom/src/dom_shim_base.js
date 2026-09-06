@@ -30,8 +30,9 @@
   const arrayIndexOf = Array.prototype.indexOf;
   const arraySplice = Array.prototype.splice;
   const invoke = (fn, self, args) => reflectApply(fn, self, args);
-  // The tag the host decides with (F5); `tagName` stays the page's.
-  const tags = new WeakMap();
+  // The tag and attributes the host decides with (F1, F2, F5). The page's
+  // own `tagName` and `__attrs` stay writable; the host reads neither.
+  const facts = new WeakMap();
   const observers = [];
   let flushScheduled = false;
   function contains(a, b) { for (let n = b; n; n = n.parentNode) if (n === a) return true; return false; }
@@ -316,13 +317,15 @@
   class Element extends Node {
     constructor(tag) {
       super(); this.nodeType = 1; this.localName = String(tag).toLowerCase(); this.tagName = this.localName.toUpperCase(); this.nodeName = this.tagName;
-      this.__attrs = new Map(); this.__value = null;
-      invoke(weakMapSet, tags, [this, this.localName]);
+      this.__value = null;
+      invoke(weakMapSet, facts, [this, { tag: this.localName, a: new MapOf() }]);
     }
-    getAttribute(name) { const v = this.__attrs.get(String(name).toLowerCase()); return v === undefined ? null : v; }
-    hasAttribute(name) { return this.__attrs.has(String(name).toLowerCase()); }
-    setAttribute(name, value) { name = String(name); if (!VALID_NAME.test(name)) throw new DOMExceptionCtor("the attribute name is not a valid name", "InvalidCharacterError"); name = name.toLowerCase(); const oldValue = this.getAttribute(name); this.__attrs.set(name, String(value)); record("attributes", this, { attributeName: name, oldValue }); }
-    removeAttribute(name) { name = String(name).toLowerCase(); if (!this.__attrs.has(name)) return; const oldValue = this.getAttribute(name); this.__attrs.delete(name); record("attributes", this, { attributeName: name, oldValue }); }
+    get __attrs() { return invoke(weakMapGet, facts, [this])?.a; }
+    set __attrs(_v) { /* the store is the host's; a page's write lands here and stops */ }
+    getAttribute(name) { const v = invoke(mapGet, this.__attrs, [StringOf(name).toLowerCase()]); return v === undefined ? null : v; }
+    hasAttribute(name) { return invoke(mapHas, this.__attrs, [StringOf(name).toLowerCase()]); }
+    setAttribute(name, value) { name = String(name); if (!VALID_NAME.test(name)) throw new DOMExceptionCtor("the attribute name is not a valid name", "InvalidCharacterError"); name = name.toLowerCase(); const oldValue = this.getAttribute(name); invoke(mapSet, this.__attrs, [name, StringOf(value)]); record("attributes", this, { attributeName: name, oldValue }); }
+    removeAttribute(name) { name = StringOf(name).toLowerCase(); if (!invoke(mapHas, this.__attrs, [name])) return; const oldValue = this.getAttribute(name); this.__attrs.delete(name); record("attributes", this, { attributeName: name, oldValue }); }
     get attributes() { return [...this.__attrs].map(([name, value]) => ({ name, value })); }
     get id() { return this.getAttribute("id") ?? ""; } set id(v) { this.setAttribute("id", v); }
     get className() { return this.getAttribute("class") ?? ""; } set className(v) { this.setAttribute("class", v); }
@@ -563,7 +566,15 @@
   });
   // An element the store never saw answers "": no role, no activation.
   Object.defineProperty(g, "__mcsTag", {
-    value: (el) => invoke(weakMapGet, tags, [el]) ?? "",
+    value: (el) => invoke(weakMapGet, facts, [el])?.tag ?? "",
+    writable: false, configurable: false, enumerable: false,
+  });
+  Object.defineProperty(g, "__mcsAttr", {
+    value: (el, name) => {
+      const map = invoke(weakMapGet, facts, [el])?.a;
+      if (map === undefined) return null;
+      return invoke(mapGet, map, [name]) ?? null;
+    },
     writable: false, configurable: false, enumerable: false,
   });
   Object.defineProperty(g, "__mcsArmDispatch", {

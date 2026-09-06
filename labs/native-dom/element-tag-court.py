@@ -62,10 +62,16 @@ SHIM_MAIN = ROOT / "labs" / "native-dom" / "src" / "dom_shim_main.js"
 # to these five numbers must now be ruled and re-frozen, exactly as
 # `signature-integrity-court.py`'s base-byte pin already works. The old deltas
 # and their reasons are kept above so the movement can be read off the file.
-BASE_BYTES = 33290
+# Re-frozen by round D, the first slice to exercise the rebased shape: the
+# equalities move from round C's numbers -- 33,290, 235,658/227,850 and
+# 1,648,172/1,592,540 -- to what the tree costs after round D. That is the
+# group working as intended: it is now a live guard that every slice touching
+# the shim must re-freeze deliberately, and the old values stay here so each
+# movement can be read off the file.
+BASE_BYTES = 33886
 MAIN_BYTES = 26485
-M1_PINNED = {"system": 235658, "arena": 227850}
-M2_PINNED = {"system": 1648172, "arena": 1592540}
+M1_PINNED = {"system": 238554, "arena": 230586}
+M2_PINNED = {"system": 1668444, "arena": 1614092}
 
 DECLARED_CAPTURES = [
     "reflectApply", "StringOf", "MapOf", "weakMapGet", "weakMapSet", "mapGet",

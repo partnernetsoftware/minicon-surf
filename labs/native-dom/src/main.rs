@@ -533,8 +533,8 @@ const SERIALIZE_JS: &str = r##"
     const tag = __mcsTag(el);
     const kind = (el.type || "").toLowerCase();
     const submits = (tag === "button" && (kind === "submit" || kind === "")) || (tag === "input" && kind === "submit");
-    if (tag === "a" && el.hasAttribute("href")) {
-      return { shape: "link", href: urlOf(el.getAttribute("href")), method: "get" };
+    if (tag === "a" && __mcsAttr(el, "href") !== null) {
+      return { shape: "link", href: urlOf(__mcsAttr(el, "href")), method: "get" };
     }
     let form = null;
     let submitter = null;
@@ -577,8 +577,9 @@ const ACTIVATION_JS: &str = r##"
     // HTML consults a base target only when the element has no target
     // attribute at all. A present one, even empty or whitespace, is the
     // element's own answer and means the current frame.
-    if (!el.hasAttribute(attr)) return HAS_BASE_TARGET ? "base_target_unmodeled" : "allowed";
-    const value = String(el.getAttribute(attr) || "").trim().toLowerCase();
+    const declared = __mcsAttr(el, attr);
+    if (declared === null) return HAS_BASE_TARGET ? "base_target_unmodeled" : "allowed";
+    const value = NORMALISE(declared);
     if (value === "" || value === "_self") return "allowed";
     if (value === "_parent" || value === "_top") return IS_CHILD ? "target_cross_frame" : "allowed";
     return "target_named";
@@ -594,6 +595,23 @@ const ACTIVATION_JS: &str = r##"
   // value the shim stores is already a string primitive (`setAttribute` stores
   // `String(value)`), so the coercion consults no prototype and no
   // `Symbol.toPrimitive`.
+  const UP = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const LO = "abcdefghijklmnopqrstuvwxyz";
+  const NORMALISE = (raw) => {
+    const s = raw == null ? "" : "" + raw;
+    let a = 0;
+    let b = s.length;
+    while (a < b && WS(s[a])) a++;
+    while (b > a && WS(s[b - 1])) b--;
+    let out = "";
+    for (let i = a; i < b; i++) {
+      const c = s[i];
+      let hit = c;
+      for (let j = 0; j < 26; j++) { if (UP[j] === c) { hit = LO[j]; break; } }
+      out += hit;
+    }
+    return out;
+  };
   const WS = (c) => c === " " || c === "\t" || c === "\n" || c === "\r" || c === "\f";
   const urlOf = (raw) => {
     const s = raw == null ? "" : "" + raw;
@@ -617,16 +635,13 @@ const ACTIVATION_JS: &str = r##"
     return "allowed";
   };
   const methodOf = (form, submitter) => {
-    const raw = submitter && submitter.hasAttribute("formmethod")
-      ? submitter.getAttribute("formmethod")
-      : form.getAttribute("method");
-    return String(raw || "get").trim().toLowerCase();
+    const override = submitter ? __mcsAttr(submitter, "formmethod") : null;
+    const raw = override === null ? __mcsAttr(form, "method") : override;
+    return NORMALISE(raw || "get");
   };
   const actionOf = (form, submitter) => {
-    const declared = submitter && submitter.hasAttribute("formaction")
-      ? submitter.getAttribute("formaction")
-      : form.getAttribute("action");
-    return urlOf(declared);
+    const override = submitter ? __mcsAttr(submitter, "formaction") : null;
+    return urlOf(override === null ? __mcsAttr(form, "action") : override);
   };
   const submitDecision = (form, submitter) => {
     if (!form) return "allowed";
@@ -642,8 +657,8 @@ const ACTIVATION_JS: &str = r##"
     // The bytes can be served, so the label says what activating this link
     // means rather than denying it exists. A click is still not the way to
     // ask: the download action is.
-    if (el.hasAttribute("download")) return "download_available";
-    const decision = schemeDecision(el.getAttribute("href"));
+    if (__mcsAttr(el, "download") !== null) return "download_available";
+    const decision = schemeDecision(__mcsAttr(el, "href"));
     if (decision !== "allowed") return decision;
     return targetOf(el, "target");
   };
@@ -651,7 +666,7 @@ const ACTIVATION_JS: &str = r##"
     const tag = __mcsTag(el);
     const kind = (el.type || "").toLowerCase();
     if (el.disabled) return "control_disabled";
-    if (tag === "a" && el.hasAttribute("href")) return linkDecision(el);
+    if (tag === "a" && __mcsAttr(el, "href") !== null) return linkDecision(el);
     if (tag === "form") return submitDecision(el, null);
     const submits = (tag === "button" && (kind === "submit" || kind === "")) || (tag === "input" && kind === "submit");
     if (submits) return submitDecision(el.form, el);
@@ -731,7 +746,7 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
     }}
     if (r === "form") {{
       name = (el.getAttribute("aria-label") || el.getAttribute("name") || el.getAttribute("id") || "").trim();
-      entry.method = String(el.getAttribute("method") || "get").toLowerCase();
+      entry.method = NORMALISE(__mcsAttr(el, "method") || "get");
       entry.has_action = el.hasAttribute("action");
       entry.controls = el.elements.slice(0, 64)
         .filter((c) => place.has(c)).map((c) => "node_" + (place.get(c) + 1));
@@ -804,9 +819,10 @@ fn download_probe_script(revision: u64, index: usize) -> String {
     return __mcsJson({{ unusable: true }});
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
-  if (__mcsTag(el) !== "a" || !el.hasAttribute("href")) return __mcsJson({{}});
-  const out = {{ href: el.getAttribute("href") }};
-  if (el.hasAttribute("download")) out.declared = el.getAttribute("download");
+  if (__mcsTag(el) !== "a" || __mcsAttr(el, "href") === null) return __mcsJson({{}});
+  const out = {{ href: __mcsAttr(el, "href") }};
+  const declaredName = __mcsAttr(el, "download");
+  if (declaredName !== null) out.declared = declaredName;
   return __mcsJson(out);
 }})()"#
     )

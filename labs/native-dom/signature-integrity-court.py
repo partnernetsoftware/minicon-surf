@@ -59,7 +59,11 @@ SHIM_MAIN = ROOT / "labs" / "native-dom" / "src" / "dom_shim_main.js"
 # 33,290 (+392, inside that round's own frozen ceiling of +400). The main shim
 # is untouched at 26,485. The old value is kept here so the movement can be
 # read off the file.
-BASE_BYTES = 33290
+# Second amendment, 2026-09-06, ruled in `attribute-fact-design-0.0.1.md`
+# §11b: round D moves the element's attribute store into the base shim, so this
+# goes 33,290 -> 33,886 (+596, inside that round's own frozen ceiling of +600).
+# The main shim is still untouched at 26,485.
+BASE_BYTES = 33886
 MAIN_BYTES = 26485
 
 # The fifteen captures the base declares today. A sixteenth is a different
