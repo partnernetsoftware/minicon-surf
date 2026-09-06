@@ -109,6 +109,21 @@ PATCHES = {
         "var a = document.getElementById('named');"
         "a.__attrs = new Map([['href', '/landed.html'], ['id', 'named']]);"
     ),
+    # Whether a host-owned reader, once it exists, is the page's to replace or
+    # delete. On a build without the readers these are no-ops, which is what
+    # makes them a fair before/after comparison.
+    "override_readers": (
+        "var d = document.getElementById('fakedl');"
+        "d.tagName = 'A'; d.localName = 'a';"
+        "var f = document.getElementById('postform');"
+        "f.__attrs = new Map([['method', 'get'], ['action', '/landed.html'], ['id', 'postform']]);"
+        "try { window.__mcsTag = function () { return 'a'; }; } catch (e) {}"
+        "try { window.__mcsAttr = function () { return 'get'; }; } catch (e) {}"
+        "try { delete window.__mcsTag; } catch (e) {}"
+        "try { delete window.__mcsAttr; } catch (e) {}"
+        "try { Object.defineProperty(window, '__mcsTag',"
+        " { value: function () { return 'a'; } }); } catch (e) {}"
+    ),
     "map_get_target": (
         "var MG2 = Map.prototype.get;"
         "Map.prototype.get = function (k) {"
@@ -319,6 +334,11 @@ def run_arm(binary, origin, served, patch_name, workspace, local_file):
 
     # ------------------------------------------------------------ F1 methodOf
     post, by_id, nodes = one_act("f1-post", "postgo", {"kind": "submit"}, want_ledger=True)
+    # Anti-vacuity: the page's own script ran before the host looked. Without
+    # this every refusal below could pass on a page that installed nothing.
+    record["marker_in_snapshot"] = "mark" in by_id
+    record["div_role"] = (by_id.get("fakedl") or {}).get("role")
+    record["anchor_role"] = (by_id.get("realdl") or {}).get("role")
     record["f1_post_submit"] = post
     record["f1_snapshot_method"] = {n.get("dom_id"): n.get("method") for n in nodes
                                     if n.get("role") == "form"}

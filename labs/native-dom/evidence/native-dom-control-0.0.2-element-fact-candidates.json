@@ -1,0 +1,1027 @@
+{
+  "probe": "host-owned element facts: candidates C, D and combined, each built and measured",
+  "note": "Throwaway builds. Every one was reverted with `git checkout -- src/` and the binary rebuilt; the tree is back at 0da1c6b115532886 with dom_shim_base.js at 32,898 bytes and dom_shim_main.js at 26,485. Nothing from these builds is committed except their numbers. Caps: child-frame M1 262,144 and M2 1,835,008.",
+  "builds": {
+    "baseline": {
+      "binary": "0da1c6b115532886",
+      "shim_base_bytes": 32898,
+      "child_frame": {
+        "system M1": 233962,
+        "system M2": 1636236,
+        "arena M1": 225898,
+        "arena M2": 1579500
+      },
+      "child_frame_score": "81/82"
+    },
+    "C_tag_reader": {
+      "binary": "a247ea290c809a10",
+      "shim_base_bytes": 33191,
+      "child_frame": {
+        "system M1": 235738,
+        "system M2": 1648732,
+        "arena M1": 227690,
+        "arena M2": 1593548
+      },
+      "child_frame_score": "81/82"
+    },
+    "D2_attribute_reader": {
+      "binary": "35e50de86d92a597",
+      "shim_base_bytes": 33575,
+      "child_frame": {
+        "system M1": 237498,
+        "system M2": 1661052,
+        "arena M1": 229450,
+        "arena M2": 1605548
+      },
+      "child_frame_score": "82/82",
+      "form_court": "179/179",
+      "frame_action_court": "182/182"
+    },
+    "CD2_combined_with_a_sixteenth_capture": {
+      "binary": "94724ef6a26dc99d",
+      "shim_base_bytes": 33868,
+      "child_frame": {
+        "system M1": 240234,
+        "system M2": 1680268,
+        "arena M1": 231322,
+        "arena M2": 1619116
+      },
+      "child_frame_score": "82/82",
+      "signature_integrity": "32/34",
+      "property_shape": "18/22"
+    },
+    "CD3_combined_no_new_capture": {
+      "binary": "3eb55470c3cef0ba",
+      "shim_base_bytes": 33812,
+      "child_frame": {
+        "system M1": 239866,
+        "system M2": 1677692,
+        "arena M1": 231258,
+        "arena M2": 1617580
+      },
+      "child_frame_score": "82/82",
+      "signature_integrity": "33/34",
+      "property_shape": "18/22",
+      "capture_declaration": "8/8",
+      "form_court": "179/179"
+    }
+  },
+  "arms": {
+    "baseline": {
+      "binary_sha256": "0da1c6b11553288619298126bd7d4fbe215b50aef660355250bb84219738ca7a",
+      "arms": {
+        "none": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_post_get": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_target_self": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "ok:applied=True",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_div_anchor": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": "ok:byte_count=29",
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_method": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_tag_name": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": "ok:byte_count=29",
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_method": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "null": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "ok:applied=True",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "ok:applied=True",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": null,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        }
+      }
+    },
+    "C_tag_reader": {
+      "binary_sha256": "a247ea290c809a102f2ea3ee8a444ebad5d9c52c5b2a3b4e3eb7d540142cdee3",
+      "arms": {
+        "none": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_post_get": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_target_self": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "ok:applied=True",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_div_anchor": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_method": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_tag_name": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_method": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "null": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "ok:applied=True",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "override_readers": {
+          "f1_post_submit": "ok:applied=True",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "get",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "ok:applied=True",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        }
+      }
+    },
+    "D2_attribute_reader": {
+      "binary_sha256": "35e50de86d92a597b70cf8feabc83c86d51d83e8270ab7c5b7852f3c38bfd3c3",
+      "arms": {
+        "none": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_post_get": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_target_self": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_div_anchor": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": "ok:byte_count=29",
+          "f5_div_role": "link",
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_method": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_tag_name": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": "ok:byte_count=29",
+          "f5_div_role": "link",
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_method": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "override_readers": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": "ok:byte_count=29",
+          "f5_div_role": "link",
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        }
+      }
+    },
+    "CD2_combined": {
+      "binary_sha256": "94724ef6a26dc99d8004e346f8dfe9d377f3dc4da279b5a582fcd2affb1e8ed6",
+      "arms": {
+        "none": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_post_get": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_target_self": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_div_anchor": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_method": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_tag_name": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_method": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "override_readers": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        }
+      }
+    },
+    "CD3_combined": {
+      "binary_sha256": "3eb55470c3cef0bafaa8a59ee2546a506617c5ef9db4f7f5f036a7d9cef525ea",
+      "arms": {
+        "none": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_post_get": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_target_self": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "lower_div_anchor": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_method": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_tag_name": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_method": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "prop_attrs_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "override_readers": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        },
+        "map_get_target": {
+          "f1_post_submit": "unsupported_capability/form_method_unsupported",
+          "f2_named_link": "unsupported_capability/target_named",
+          "f5_div_download": null,
+          "f5_div_role": null,
+          "snapshot_form_method": {
+            "postform": "post",
+            "getform": "get"
+          },
+          "honest_get_form": "ok:applied=True",
+          "honest_plain_link": "ok:applied=True",
+          "honest_anchor_download": "ok:byte_count=29",
+          "anchor_javascript": "unsupported_capability/scheme_unsupported",
+          "anchor_file": "unsupported_capability/scheme_unsupported",
+          "anchor_cross_origin": "permission_denied/address",
+          "marker_in_snapshot": true,
+          "ledger_mentions_method": false,
+          "ledger_leaks_value": false
+        }
+      }
+    }
+  }
+}

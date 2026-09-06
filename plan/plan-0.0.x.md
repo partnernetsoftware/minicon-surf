@@ -1404,6 +1404,53 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing implemented: host-owned element facts, with the
+  ruling recorded (`labs/native-dom/element-fact-design-0.0.1.md`, receipt
+  `evidence/native-dom-control-0.0.2-element-fact-candidates.json`).
+  **The ruling**: an element's activation, method and tag are agent-facing facts
+  and must be the host's; the typed refusal vocabulary and every Rust scheme,
+  origin and bound guard stay exactly as they are; the three defects stay
+  separate in behaviour. **Four candidates were built, measured on both
+  allocators, and discarded.** C gives the base shim a closure-owned `WeakMap`
+  of element to tag behind a non-writable `__mcsTag`, and closes F5 more than
+  expected — with `role()` reading it, the div is not merely undownloadable, it
+  is **not a node at all** on every arm. D moves the attribute map into a
+  closure-owned store behind `__mcsAttr` — **and on its own does not close F1 or
+  F2**, measured: `map_get_*` and `prop_attrs_*` close but `lower_post_get`
+  survives, because the value was still normalised with `trim().toLowerCase()`.
+  D only works with the normalisation rebuilt from index reads and `+=`, the
+  technique already ruled in for `urlOf`. With that, **all ten arms are clean on
+  the combined build**: every selective monkeypatch, every direct page write,
+  both `Map.prototype.get` patches and an arm that tries to replace and delete
+  the readers themselves; every honest control still works (`method="get"` form
+  submits, untargeted link navigates, real `<a download>` delivers its bytes);
+  the marker proves the page's script ran first; **no authority expansion** —
+  `javascript:`, `file://` at a real local file whose bytes never came back, and
+  an unallowed origin are refused identically as before, all by the Rust half —
+  and the ledger mentions no method and leaks no form value. **Costs, measured,
+  never derived** (caps M1 262,144 / M2 1,835,008): C +293 base bytes, system
+  +1,776 M1 / +12,496 M2, arena +1,792 / +14,048; D +677, +3,536 / +24,816,
+  +3,552 / +26,048; C+D +914, +5,904 / +41,456, +5,360 / +38,080, leaving 22,278
+  and 157,316 of headroom. **Combining is 1,408 bytes cheaper than the two
+  apart** — a cost argument, not a security one. No per-realm rate is offered:
+  both stores hold one entry per element and the two points do not divide to the
+  same number. **Three costs only a build could reveal.** The natural
+  `removeAttribute` captures `Map.prototype.delete`, and
+  `signature-integrity`'s group D caught the sixteenth capture; the measured
+  build avoids it by leaving that `delete` on the prototype, and
+  `capture-declaration` reads 8/8. `property-shape` moves four criteria on both
+  allocators — `window` for any new global and `Element.prototype` for anything
+  containing D — and **re-freezing it is the ruling's decision and a
+  precondition, not part of the slice**. And taking `__attrs` away without an
+  ignoring setter makes a page's own assignment throw, killing its script and
+  answering `target_crashed` on three of ten arms; the setter restores it. Loss
+  matrix in §9 with five options, dependencies in §10, safe failures in §11.
+  Tree is back at `0da1c6b1` with the shims at 32,898 and 26,485 bytes.
+  Regressions read-only and green: signature-integrity 34/34,
+  probe-truthfulness 25/25, property-shape 22/22, capture-declaration 8/8,
+  host-answer 9/9, downloads 21/21, form 179/179, frame-action 182/182,
+  page-navigation 80/80, child-frame 82/82; fmt, 58 tests, clippy `-D warnings`,
+  contract 28 examples and 50 negatives. Not pushed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: F1, F2 and F5, and who actually owns
   them (`labs/native-dom/fail-open-triage-audit-0.0.1.md`, probe
   `fail-open-triage-probe.py`, receipts
