@@ -412,6 +412,14 @@ def main():
         finally:
             host.finish()
 
+    # F20 and F21, added 2026-09-06 after review caught a gap this court did
+    # not cover: the first implementation, when it could not re-read the
+    # source's record under the lock, fell back to whatever this host had
+    # loaded at startup. Every criterion above passed on that build, because
+    # none of them ever made the re-read fail, and none of them proved where
+    # the copied bytes came from.
+    drive_reread(args.binary, expect)
+
     # F12, driven now that the fork exists. The download counters are live
     # state that is never persisted, so a child starts full however much its
     # source has spent -- which is exactly why the ruling had to say so out
@@ -449,6 +457,103 @@ def main():
         if not check["passed"]:
             print("FAIL", json.dumps(check)[:170])
     return 0 if receipt["passed"] else 1
+
+
+def drive_reread(binary, expect):
+    """Where do the child's bytes come from, and what happens when they cannot
+    be read at all?"""
+    # F21: another host commits to the source after this host adopted it. A
+    # fork that copied memory would miss the write; one that re-reads the
+    # record under the lock carries it.
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-cow-reread-") as directory:
+        root = Path(directory) / "profiles"
+        root.mkdir(mode=0o700)
+        adopter = Host(binary, directory, root)
+        try:
+            parent = adopter.ok("profile.create", {"persistence": "persistent",
+                                                   "name": "alpha"})["profile"]
+            session = adopter.ok("session.open", {"profile": parent})["session"]
+            fill(adopter, session)
+            adopter.ok("session.close", {"session": session})
+
+            # A second host writes a key this one has never seen, then leaves.
+            writer = Host(binary, str(Path(directory) / "second"), root)
+            try:
+                other = writer.ok("session.open", {"profile": "profile_alpha"})["session"]
+                writer.ok("profile.storage.put", {"session": other, "kind": "local_storage",
+                                                  "key": "written-elsewhere",
+                                                  "value": FAKE_VALUE + "-elsewhere"})
+                writer.ok("session.close", {"session": other})
+            finally:
+                writer.finish()
+
+            forked = adopter.fork("beta", parent)
+            child = (forked.get("result") or {}).get("profile")
+            carried = None
+            if child:
+                child_session = adopter.ok("session.open", {"profile": child})["session"]
+                got = adopter.call("profile.storage.get", {"session": child_session,
+                                                           "kind": "local_storage",
+                                                           "key": "written-elsewhere"})
+                carried = bool(got.get("ok")) and bool((got.get("result") or {}).get("found", True))
+                adopter.call("session.close", {"session": child_session})
+            expect("F21: the child carries the committed record, not this host's startup state",
+                   bool(child) and carried is True,
+                   {"child": child, "carried_other_hosts_write": carried})
+        finally:
+            adopter.finish()
+
+    # F20: a record that cannot be read is a refusal, never a fallback copy.
+    with tempfile.TemporaryDirectory(prefix="minicon-surf-cow-unreadable-") as directory:
+        root = Path(directory) / "profiles"
+        root.mkdir(mode=0o700)
+        host = Host(binary, directory, root)
+        try:
+            parent = host.ok("profile.create", {"persistence": "persistent",
+                                                "name": "alpha"})["profile"]
+            session = host.ok("session.open", {"profile": parent})["session"]
+            fill(host, session)
+            host.ok("session.close", {"session": session})
+            before = counts(host, parent)
+
+            # The record on disk stops being readable while the host holds the
+            # profile in memory -- exactly the case a fallback would paper over.
+            record = record_of(root, "alpha")
+            original = record.read_bytes()
+            record.write_bytes(b"{\"format\":\"broken\"}")
+            refused_answer = host.fork("beta", parent)
+            child_made = record_of(root, "beta") is not None
+            # The store's own vocabulary, not a new one: a corrupt record is
+            # already `not_found` everywhere else in this host, an unreadable
+            # one `internal`, a missing key `unsupported_capability`. What the
+            # criterion insists on is that the fork answers with one of them
+            # and a reason, rather than quietly copying something else.
+            expect("F20: an unreadable source record is a typed refusal, and no child appears",
+                   (not refused_answer.get("ok"))
+                   and (refused_answer.get("error") or {}).get("code") in ("not_found", "internal",
+                                                                          "unsupported_capability")
+                   and ((refused_answer.get("error") or {}).get("details") or {}).get("reason")
+                   and not child_made,
+                   {"code": (refused_answer.get("error") or {}).get("code"),
+                    "child_on_disk": child_made})
+
+            # The parent is untouched by the refusal: its bytes are what the
+            # court broke, not what the host wrote, and it is not latched.
+            record.write_bytes(original)
+            probe = host.call("session.open", {"profile": parent})
+            wrote = False
+            if probe.get("ok"):
+                answer = host.call("profile.storage.put",
+                                   {"session": probe["result"]["session"],
+                                    "kind": "local_storage", "key": "after-refusal",
+                                    "value": FAKE_VALUE})
+                wrote = bool(answer.get("ok"))
+                host.call("session.close", {"session": probe["result"]["session"]})
+            expect("F20b: a refused fork does not latch the parent",
+                   wrote and counts(host, parent)["cookies"] == before["cookies"],
+                   {"parent_still_writes": wrote})
+        finally:
+            host.finish()
 
 
 def drive_download_budget(binary, network, expect):

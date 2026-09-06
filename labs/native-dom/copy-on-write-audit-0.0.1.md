@@ -370,3 +370,51 @@ writer.
 Regressions checked on the same binary: `downloads-court` 21/21,
 `readonly-profile-court` 28/28, `profile-court` 92/94 with only its two known
 D6 memory checks failing, which fail on the pre-fork binary as well.
+
+---
+
+## 14. Amended — 2026-09-06, the re-read has no fallback
+
+Recorded after §13, because review found a gap §13 itself had described without
+noticing it was one.
+
+The first implementation, when it could not re-read the source's record under
+the lock, **fell back to whatever this host had loaded at startup**. §13 stated
+that plainly and called it safe on the grounds that the lock had already
+excluded the racing writer. That reasoning is wrong: the lock excludes a
+concurrent writer, but it says nothing about *why* the record could not be
+read. A corrupt record, a truncated one, a record sealed under a key this host
+no longer has — each of those would have produced a child built from unverified
+memory, and the caller would have been told the copy succeeded.
+
+**There is now no fallback.** A record that cannot be re-read is a refusal in
+the store's existing vocabulary — `not_found` for a corrupt record, `internal`
+for an unreadable one, `unsupported_capability` for a missing master key — each
+carrying its reason, and **no child directory is created and the parent is not
+latched**.
+
+Two criteria were added, and the court proves the fix rather than asserting it:
+
+- **F20 / F20b** — the source's record is made unreadable while the host holds
+  the profile in memory; the fork must refuse, typed and with a reason, create
+  no child, and leave the parent writable afterwards.
+- **F21** — a second host commits a key to the source after this host adopted
+  it; the child must carry that key. This proves the copy is the committed
+  record rather than the adopter's startup state.
+
+**Falsification.** The court was run against a rebuilt fallback binary
+(`952226ee…`, receipt
+`evidence/native-dom-control-0.0.2-copy-on-write-falsification.json`). It reads
+**22/23**: F20 fails there because the fork **succeeded** on an unreadable
+source and wrote a child from memory — the exact defect, caught by the exact
+criterion. F21 passes on both builds, since the fallback only triggers when the
+re-read fails; it guards a different regression and is not the discriminating
+check.
+
+The court now reads **23/23** on `e168722c…`. Regressions on the same binary:
+downloads 21/21, readonly 28/28, profile 92/94 with only its two known D6
+memory checks failing.
+
+What this cost: nothing but the fallback. No bound moved, no ruled value
+changed, and no criterion was weakened — F20's expected codes were written to
+the store's existing vocabulary rather than a new one.

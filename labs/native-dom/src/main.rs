@@ -4797,21 +4797,26 @@ impl Host {
             Err(error) => return Err(store_error(error, source_id)),
         };
         // Read the record back from disk under the lock rather than trusting
-        // what this host has in memory.
-        let copied = (|| {
-            let key_source = self.key_source.as_ref()?;
-            let bytes = std::fs::read(directory.join(profile::RECORD_FILE)).ok()?;
-            let (_dek, data) = profile::open_record(key_source, source_id, &bytes).ok()?;
-            Some(data)
-        })();
+        // what this host has in memory. There is deliberately no fallback: a
+        // record that cannot be read is a refusal, not a licence to copy
+        // whatever this host adopted at startup. Falling back would hand the
+        // caller a stale or unverified copy of a source it was told had been
+        // copied faithfully -- the one thing this whole path exists to avoid.
+        // The lock is a local, so every early return below releases it.
+        let key_source = self.key_source.as_ref().ok_or_else(|| {
+            ControlError::new(
+                "unsupported_capability",
+                "persistent profiles need --profile-root and a master-key source",
+                false,
+            )
+            .scoped("profile", source_id)
+            .details(json!({"reason":"no_master_key"}))
+        })?;
+        let bytes = std::fs::read(directory.join(profile::RECORD_FILE))
+            .map_err(|error| store_error(profile::StoreError::Io(error.to_string()), source_id))?;
+        let (_dek, copied) = profile::open_record(key_source, source_id, &bytes)
+            .map_err(|error| store_error(error, source_id))?;
         drop(held);
-        let source = self.profiles.get(source_id).expect("source still exists");
-        let copied = copied.unwrap_or_else(|| profile::RecordData {
-            persistent_cookies: source.jar.persistent.clone(),
-            storage: source.storage.clone(),
-            online: source.policy.online,
-            allow_by_default: source.policy.allow_by_default,
-        });
         Ok(ForkSource {
             jar: profile::Jar {
                 persistent: copied.persistent_cookies,

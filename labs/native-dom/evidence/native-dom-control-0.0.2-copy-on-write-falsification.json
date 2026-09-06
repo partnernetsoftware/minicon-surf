@@ -222,10 +222,10 @@
   {
    "check": "F20: an unreadable source record is a typed refusal, and no child appears",
    "detail": {
-    "child_on_disk": false,
-    "code": "not_found"
+    "child_on_disk": true,
+    "code": null
    },
-   "passed": true
+   "passed": false
   },
   {
    "check": "F20b: a refused fork does not latch the parent",
@@ -243,10 +243,10 @@
    "passed": true
   }
  ],
- "checks_passed": 23,
+ "checks_passed": 22,
  "checks_total": 23,
  "court": "native-dom copy-on-write profiles (profile.create from)",
- "host_sha256": "e168722ca9b20c2ea3ef704223187fef6f56b9e0b0f93eee4fee6eea989d7bde",
+ "host_sha256": "952226eeb470e82e9075a1b1364fac2f429770462b8c37d3050d737559e4add3",
  "limitations": [
   "design-frozen court: it fails until profile.create accepts from",
   "F3 and F10 are the criteria that matter: a fork that damaged the profile it copied from would pass every other one",
@@ -255,7 +255,7 @@
   "the keychain-backed store is the default mode, as the profile court runs it",
   "no profile outside a temporary root is touched, and nothing is fetched from outside this file"
  ],
- "passed": true,
+ "passed": false,
  "ruled": {
   "forbidden_source": "ephemeral",
   "inherits": "cookies, storage and the policy",

@@ -1381,6 +1381,24 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Fixed before the implementation was pushed: the fork's re-read has no
+  fallback (`copy-on-write-audit-0.0.1.md` §14, falsification receipt
+  `evidence/native-dom-control-0.0.2-copy-on-write-falsification.json`).
+  Review caught what §13 had described without recognising it: when the source's
+  record could not be re-read under the lock, the first build **fell back to
+  this host's startup state**, so a corrupt or unverifiable source would have
+  produced a child from unverified memory while the caller was told the copy
+  succeeded. The lock excludes a racing writer; it says nothing about why a
+  record cannot be read. There is now **no fallback** — a refusal in the store's
+  existing vocabulary (`not_found`, `internal`, `unsupported_capability`), each
+  with its reason, no child directory, no latch on the parent. Two criteria
+  added: **F20/F20b** makes the record unreadable and demands a typed refusal,
+  and **F21** has a second host commit a key after adoption and demands the
+  child carry it. **The court proves the fix**: against a rebuilt fallback
+  binary (`952226ee…`) it reads 22/23, F20 failing because the fork *succeeded*
+  on an unreadable source and wrote a child from memory. On `e168722c…` it
+  reads **23/23**; downloads 21/21, readonly 28/28, profile 92/94 with its two
+  known D6 checks. No bound moved and no criterion was weakened.
 - [x] Implemented behind the frozen court: copy-on-write profiles
   (`labs/native-dom/src/main.rs`, `protocol/check_contract.py`,
   `copy-on-write-court.py`, landing record in `copy-on-write-audit-0.0.1.md`
