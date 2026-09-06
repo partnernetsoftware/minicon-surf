@@ -1302,6 +1302,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented and **HOLD is the answer**:
+  architecture-level main-slack recovery
+  (`labs/native-dom/main-slack-recovery-audit-0.0.1.md`). The target was 1,408
+  bytes so `getElementsByClassName` could be verified; **the best measured
+  recovery is 304, and nothing compounds**. Five candidates were built against
+  the shipped line at 62,592: removing the `quota` helper outright **+304**;
+  that plus `writeTokens` inlined **+208** — strictly more removed and *less*
+  reclaimed, because the block boundary sits between them; `quota` delegating
+  instead of deleting **+48**; merging the two signal `WeakMap`s **−304**; and
+  giving `dataset` and `classList` a shared per-element record **−6,112**.
+  Inlining `kebab` cost 448 because it replaced one closure with three arrows
+  at the call sites. **Every indirection lost.** The rule this establishes,
+  now measured twice: **main slack is closure count** at roughly 300 bytes
+  each, so the way to spend less is to write fewer live functions rather than
+  fewer bytes. The only bigger lever anywhere is the prose strip at 832, which
+  an earlier ruling declined and which reaches just 1,136 even taken with the
+  best candidate. C7 is also recorded as the one that trades **review safety**
+  for bytes — it puts one invariant into three copies that no criterion would
+  keep in step — which is a cost the courts cannot catch. Nothing was
+  implemented; `getElementsByClassName` stays unimplemented with its frozen
+  36-criterion court as the gate. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 37 of 37: the
   smallest main-only method that fits
   (`labs/native-dom/smallest-method-audit-0.0.1.md`). Every price measured for
