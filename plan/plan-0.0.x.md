@@ -1363,6 +1363,45 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   pre-implementation binary**, so the two failures beyond the known D6 pair are
   machine drift in the store's `resident_delta` rather than this slice. G1, G3,
   P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the page's own activation is silent
+  (`labs/native-dom/page-activation-silence-audit-0.0.1.md`). **This corrects
+  the downloads audit's framing**: the silent `link.click()` is not a download
+  defect but an instance of a general one. Measured, a page navigating itself
+  works through **`location` only** — `location.href` and `location.assign`
+  both land on the new document — while **`link.click()` and `form.submit()`
+  do nothing at all**: the click event dispatches normally, listeners run,
+  `dispatchEvent` returns `true`, and then the target stays put and the server
+  never sees the request. Recommendation, split by what a page is entitled to
+  observe: **A for links and forms** — activation raises the same intent
+  `location` already raises, which is a fidelity fix with **no new authority**,
+  since a page can already navigate itself with one line of `location.href`;
+  and **B for `a[download]`** — the page still observes nothing, because a
+  browser page observes nothing there either, while the **agent** gains a
+  closed-vocabulary record of the attempt. An eight-criterion court draft is in
+  §5, whose fourth criterion writes the ruling's own constraint as a check: no
+  host control error text reaches the page, `click()` still returns
+  `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: sink C
+  (`labs/native-dom/download-sink-c-design-0.0.1.md`), the ruled shape —
+  download bytes return through the control protocol, the filename is a
+  reported string and never a path, the request is an action kind on
+  `target.act`, the permission is checked at use. Bounds measured first: the
+  control request is 65,536 bytes, the **response 4,194,304**, and the network
+  layer will not hand over more than 1,048,576 in one fetch, so the transport
+  ceiling is real and a design that promised streaming would be lying about
+  both. **A single-shot ceiling is recommended over chunking**: chunking means
+  a partial transfer held across requests — an owner with a lifetime, a
+  resumption token, an eviction rule and a target that can close underneath it
+  — inside a host whose whole design is that state is owned, bounded and
+  visible. **The filename is the whole security story, and sink C deletes it**:
+  the name is never resolved, joined or opened, so traversal is not a bug class
+  here; it is reported **verbatim and bounded** rather than silently sanitised,
+  because normalising it would hide what the page tried. No new long-lived
+  owner, nothing to clean up on close, nothing for an ephemeral profile to
+  leave behind. A ten-criterion court draft is in §6; criteria 4 and 10 are why
+  sink C is worth choosing, and criterion 9 keeps today's honest
+  `unsupported_capability` from being quietly replaced by something vaguer.
+  G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: downloads
   (`labs/native-dom/downloads-audit-0.0.1.md`). Every vector measured, and
   **nothing was downloaded** — the fixtures are hermetic. An agent clicking
