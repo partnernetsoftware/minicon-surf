@@ -133,3 +133,37 @@ enough that its main argument is cheapness.
 Whatever is taken, the court for it should pin what §3 measured — including
 the two losses — because both are the kind a page discovers as a wrong answer
 rather than an error.
+
+
+## 7. Ruled
+
+**The guarded `getElementsByTagName(name)` is taken, and nothing else** — not
+`hasAttributes`, not `hasChildNodes`, and `getElementsByClassName` stays on
+hold with its own frozen court untouched. The gate is the measured **+576**,
+main slack 62,016 to 62,592 with 2,944 left; the bound does not move, the
+handle does not widen, the base does not grow, and no capability is traded.
+
+One member on `Node.prototype` serves both call surfaces, because
+`querySelectorAll` lives there and `Element` and `Document` both extend it.
+A second definition would be a second member, which §1 measured at 5,056 and
+does not fit.
+
+**It adds no authority, no reentrancy and no lifecycle semantics**, and the
+court says so with a criterion rather than leaving it as an absence: it
+delegates to a method the page can already call, allocates one array per call
+and owns nothing afterwards.
+
+Two divergences are accepted as **recorded losses**, both pinned by criteria
+because a page meets them as a wrong answer rather than an error:
+
+- the result is a plain array, not a live `HTMLCollection` — inherited from
+  `querySelectorAll`, not introduced here;
+- a namespace-ish name such as `a:b` answers empty, where a browser matches an
+  element whose literal tag name is `a:b`.
+
+The implementation court is frozen before the code and covers both scopes, the
+element's own exclusion, document order, case-insensitive names, `'*'`,
+detached subtrees, no match, the empty and unparseable arguments answering
+empty without throwing, the plain non-live array, a fresh allocation per call,
+both losses, dispatch inertness, the child realm's absence, owner release, the
+unchanged handle key set, and the main-slack bound on the same binary.
