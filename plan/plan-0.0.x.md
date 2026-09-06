@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: snapshot defaulting
+  (`labs/native-dom/snapshot-defaulting-audit-0.0.1.md`). **The defaults are
+  hygiene, not a hole**: `error` and `revision` refuse, and everything else —
+  `truncated`, `nodes`, each entry's `node`, `role`, `name` — defaults in
+  silence, with `node_0` the worst of them because the parser invents a
+  reference id. Almost none of it is page-reachable: after H1 the answer is
+  serialised by `__mcsJson` over values the host's own script builds, and the
+  count is bounded. What remains page-writable after the brand is the
+  registry's `snapshot` and `nodes` fields. **Measured, one timer per run, in
+  the window `target.act` opens by running due timers before resolving a node**:
+  a disconnected poison answers `not_found`, a connected one answers
+  `stale_revision`, a bogus `snapshot` marker answers `not_found`, and
+  `nodes = null` answers `internal` — the server received nothing in any case.
+  **The interlock is why**: an act needs a matching revision *and* a connected
+  element, and connecting one is a mutation that advances the branded counter,
+  so a page cannot hold both. The blemish is naming, not direction —
+  `nodes = null` reads as a host fault when a page caused it. Recommended:
+  **strict parse plus that relabel, at zero per-realm cost**; **not**
+  recommended is branding `snapshot` and `nodes` as well, measured at
+  **+1,872 bytes per realm** (a registry of today's shape costs +944, the
+  guarded one +2,816) to convert a denial into a slightly earlier denial.
+  Eight-criterion court draft in §9; three rulings pending in §10. Regressions
+  verified unchanged: registry-brand 15/15, host-answer 9/9,
+  probe-truthfulness 25/25.
 - [x] Frozen, then implemented: the revision registry is the host's
   (`labs/native-dom/registry-brand-court.py`, receipt
   `evidence/native-dom-control-0.0.2-registry-brand.json`, record in
