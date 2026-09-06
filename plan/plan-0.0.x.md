@@ -1404,6 +1404,51 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing implemented: the uncaptured intrinsic call sites
+  (`labs/native-dom/uncaptured-intrinsic-audit-0.0.1.md`, probe
+  `labs/native-dom/uncaptured-intrinsic-probe.py`, receipt
+  `evidence/native-dom-control-0.0.2-uncaptured-intrinsic.json`). H2 left 71
+  sites with no capture to route through; **today there are 121** (base 41,
+  main 27, host scripts 53), and the growth is entirely in the host scripts,
+  because `download_probe_script`, `form_action_script` and `act_script` landed
+  after H2 was written — the uncaptured surface grows with every host script
+  added. **The interesting part is not `toLowerCase`.** Blanket replacement of
+  any intrinsic collapses the page's own document — every `toLowerCase` variant
+  empties the agent's snapshot to **0 nodes**, because `getAttribute` and
+  `hasAttribute` lowercase the attribute *name*, so `hasAttribute("href")` is
+  false for everything — and **18 of the 43 patched runs changed nothing at all**,
+  `JSON.stringify` replaced with a forgery among them, which is H1 holding,
+  re-measured. Selective patches, which lie about one comparison and leave the
+  document intact, are where everything is: **five fail-opens**. A `method=
+  "post"` form is **submitted as a GET** and the server receives it (`methodOf`,
+  `main.rs:591`); a `target="somewhere"` link is **activated in-frame**
+  (`targetOf`, `main.rs:572`); a `#fragment` link **navigates** and the revision
+  advances (`main.rs:582`); a `<div href=… download=…>` is **downloaded as a
+  link** (`main.rs:775`); and, the one escalation a page cannot achieve
+  honestly, **the two-phase approval stops binding**: the page moves an approved
+  link's `href` from its own `focus` handler, which runs inside the window the
+  act script opens, and one patched `Array.prototype.join(" ")` in the approval
+  signature (`main.rs:558`) turns a `preflight_mismatch` refusal with nothing
+  fetched into an applied act that fetches a URL the agent never approved,
+  bounded only by the host's own scheme and origin re-decision. The court's own
+  instrument is writable the same way: a page whose `join(":")` returns a chosen
+  seven-field vector **dictates `owners.realm_probe` exactly**, reporting
+  `main_present: true` where the truth is false. **The rule the measurements
+  draw**: every decision the Rust half re-makes for itself (scheme, origin, URL
+  bounds, snapshot shape) survives page ownership as answer corruption only;
+  every decision it takes on the realm's word does not — and no quantity of new
+  captures changes that. **A correction to the record**: H1 §3's "the host
+  re-checks the node kind itself" is wrong as stated (`main.rs:7602-7604`
+  refuses `not_a_link` only when the realm declines to supply an href); nothing
+  frozen moves, the sentence does. Six court candidates and a loss matrix in
+  §7-§8, whose shape is that **the free remedies close the most**: build the
+  approval signature and the probe's answer by concatenation and test the
+  fragment with `value[0]`, and F3-F4 and the probe close for no capture and no
+  per-realm bytes; a new captured lowercase is the most expensive option and
+  closes strictly less than surfacing method and target for the host to
+  re-decide. Gates read-only and green: fmt, 58 tests, clippy `-D warnings`,
+  and the contract's 28 examples and 50 negative cases. Not pushed. G1, G3, P6
+  and G6 stay open.
 - [ ] Design-only, nothing implemented: cache, P6
   (`labs/native-dom/cache-audit-0.0.1.md`). **One cache exists and it is not the
   one the question is usually about.** A per-profile TLS session cache:

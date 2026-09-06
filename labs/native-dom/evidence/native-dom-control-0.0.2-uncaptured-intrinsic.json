@@ -1,0 +1,5288 @@
+{
+  "probe": "uncaptured-intrinsic",
+  "binary_sha256": "ba46420bb1e6d986509db52da28c9292710f42ff98a17d3e613e60f27b8f2011",
+  "patches": 44,
+  "rows": [
+    {
+      "patch": "baseline",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "toLowerCase_const_a",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "toLowerCase_const_get",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "toLowerCase_identity",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "toLowerCase_upper",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "toUpperCase_const",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "trim_const_post",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "trim_identity",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "regexp_test_true",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 17,
+      "roles": [
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading",
+        "heading"
+      ],
+      "activations": {},
+      "form_methods": {},
+      "names": [
+        "the paragraph the page really hasa plain linka download linka script linka padded script linka fragment linka named-target linknot a link at allgosend",
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "not a link at all",
+        "go",
+        "",
+        "",
+        "go",
+        "send",
+        "",
+        "send",
+        "(function(){var R={toUpperCase:String.prototype.toUpperCase};try{RegExp.prototype.test = function () { return true; };}catch(e){}})();"
+      ],
+      "value_fields": 0,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "unsupported_capability/not_a_link",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "regexp_test_false",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 11,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "button",
+        "form",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "go",
+        "postform",
+        "send"
+      ],
+      "value_fields": 0,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "regexp_exec_null",
+      "opened": true,
+      "snapshot": "internal",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "internal"
+    },
+    {
+      "patch": "startsWith_false",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "allowed",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "ok:applied=True",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=2"
+    },
+    {
+      "patch": "replace_identity",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "allowed",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "slice_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "": "form_method_unsupported"
+      },
+      "form_methods": {
+        "": "post"
+      },
+      "names": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "value_fields": 2,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "split_empty",
+      "opened": true,
+      "snapshot": "internal",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "internal"
+    },
+    {
+      "patch": "join_const",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "JOINED",
+        "JOINED",
+        "JOINED",
+        "JOINED",
+        "JOINED",
+        "JOINED",
+        "JOINED",
+        "getform",
+        "q",
+        "JOINED",
+        "postform",
+        "p",
+        "JOINED"
+      ],
+      "value_fields": 2,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_push_noop",
+      "opened": true,
+      "snapshot": "internal",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "internal"
+    },
+    {
+      "patch": "array_map_empty",
+      "opened": true,
+      "snapshot": "internal",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "internal"
+    },
+    {
+      "patch": "array_filter_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "array_indexOf_zero",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_includes_true",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_concat_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_slice_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_forEach_noop",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_find_undefined",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 0,
+      "roles": [],
+      "activations": {},
+      "form_methods": {},
+      "names": [],
+      "value_fields": 0,
+      "real_text_present": false,
+      "password_value_leaked": false,
+      "act_js_link": "absent-from-snapshot",
+      "act_padded_js_link": "absent-from-snapshot",
+      "act_fragment_link": "absent-from-snapshot",
+      "act_named_link": "absent-from-snapshot",
+      "act_download_link_click": "absent-from-snapshot",
+      "act_download": "absent-from-snapshot",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "absent-from-snapshot",
+      "act_post_button": "absent-from-snapshot",
+      "act_post_submit": "absent-from-snapshot",
+      "post_submit_fetched": [],
+      "act_get_submit": "absent-from-snapshot",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=0"
+    },
+    {
+      "patch": "array_splice_noop",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "object_keys_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "object_entries_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "object_assign_identity",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "json_parse_throw",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "json_stringify_forge",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_isArray_false",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "array_from_empty",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "math_min_zero",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "charCodeAt_zero",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_method_get",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "allowed",
+        "postgo": "allowed"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "get"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "ok:applied=True",
+      "act_post_submit": "ok:applied=True",
+      "post_submit_fetched": [
+        "/landed.html"
+      ],
+      "act_get_submit": "stale_revision",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_target_self",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "allowed",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "ok:applied=True",
+      "act_download_link_click": "stale_revision",
+      "act_download": "stale_revision",
+      "download_fetched": [],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "stale_revision",
+      "act_post_button": "stale_revision",
+      "act_post_submit": "stale_revision",
+      "post_submit_fetched": [],
+      "act_get_submit": "stale_revision",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_trim_method_get",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "allowed",
+        "postgo": "allowed"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "ok:applied=True",
+      "act_post_submit": "ok:applied=True",
+      "post_submit_fetched": [
+        "/landed.html"
+      ],
+      "act_get_submit": "stale_revision",
+      "get_submit_fetched": [],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_test_scheme_ok",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "allowed",
+        "wsjs": "allowed",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_exec_no_scheme",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "allowed",
+        "wsjs": "allowed",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_replace_no_strip",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "allowed",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_startsWith_frag",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "allowed",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "ok:applied=True",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=2"
+    },
+    {
+      "patch": "sel_div_is_anchor",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 14,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "fakedl": "download_available",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "not a link at all",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "ok:byte_count=29",
+      "non_link_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    },
+    {
+      "patch": "sel_join_signature",
+      "opened": true,
+      "snapshot": "ok:revision=0",
+      "node_count": 13,
+      "roles": [
+        "text",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "link",
+        "form",
+        "textbox",
+        "button",
+        "form",
+        "textbox",
+        "button"
+      ],
+      "activations": {
+        "plain": "allowed",
+        "dl": "download_available",
+        "js": "scheme_unsupported",
+        "wsjs": "scheme_unsupported",
+        "frag": "fragment_unsupported",
+        "named": "target_named",
+        "getform": "allowed",
+        "getgo": "allowed",
+        "postform": "form_method_unsupported",
+        "postgo": "form_method_unsupported"
+      },
+      "form_methods": {
+        "getform": "get",
+        "postform": "post"
+      },
+      "names": [
+        "the paragraph the page really has",
+        "a plain link",
+        "a download link",
+        "a script link",
+        "a padded script link",
+        "a fragment link",
+        "a named-target link",
+        "getform",
+        "q",
+        "go",
+        "postform",
+        "p",
+        "send"
+      ],
+      "value_fields": 2,
+      "real_text_present": true,
+      "password_value_leaked": false,
+      "act_js_link": "unsupported_capability/scheme_unsupported",
+      "act_padded_js_link": "unsupported_capability/scheme_unsupported",
+      "act_fragment_link": "unsupported_capability/fragment_unsupported",
+      "act_named_link": "unsupported_capability/target_named",
+      "act_download_link_click": "unsupported_capability/download_available",
+      "act_download": "ok:byte_count=29",
+      "download_fetched": [
+        "/asked.bin"
+      ],
+      "act_download_non_link": "absent-from-snapshot",
+      "non_link_fetched": [],
+      "act_download_text": "unsupported_capability/not_a_link",
+      "act_post_button": "unsupported_capability/form_method_unsupported",
+      "act_post_submit": "unsupported_capability/form_method_unsupported",
+      "post_submit_fetched": [],
+      "act_get_submit": "ok:applied=True",
+      "get_submit_fetched": [
+        "/landed.html"
+      ],
+      "final_snapshot": "ok:revision=1"
+    }
+  ],
+  "differences": [
+    {
+      "patch": "toLowerCase_const_a",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "toLowerCase_const_get",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "toLowerCase_identity",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "toLowerCase_upper",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "toUpperCase_const",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "trim_const_post",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "trim_identity",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "regexp_test_true",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 17
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": [
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading",
+            "heading"
+          ]
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": [
+            "the paragraph the page really hasa plain linka download linka script linka padded script linka fragment linka named-target linknot a link at allgosend",
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "not a link at all",
+            "go",
+            "",
+            "",
+            "go",
+            "send",
+            "",
+            "send",
+            "(function(){var R={toUpperCase:String.prototype.toUpperCase};try{RegExp.prototype.test = function () { return true; };}catch(e){}})();"
+          ]
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "act_download_non_link": {
+          "baseline": "absent-from-snapshot",
+          "patched": "unsupported_capability/not_a_link"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "regexp_test_false",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 11
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "button",
+            "form",
+            "button"
+          ]
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "go",
+            "postform",
+            "send"
+          ]
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "regexp_exec_null",
+      "changed": {
+        "snapshot": {
+          "baseline": "ok:revision=0",
+          "patched": "internal"
+        },
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "internal"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "startsWith_false",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "allowed",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "ok:applied=True"
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=2"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "replace_identity",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "allowed",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "slice_empty",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "": "form_method_unsupported"
+          }
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {
+            "": "post"
+          }
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ]
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "split_empty",
+      "changed": {
+        "snapshot": {
+          "baseline": "ok:revision=0",
+          "patched": "internal"
+        },
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "internal"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "join_const",
+      "changed": {
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": [
+            "JOINED",
+            "JOINED",
+            "JOINED",
+            "JOINED",
+            "JOINED",
+            "JOINED",
+            "JOINED",
+            "getform",
+            "q",
+            "JOINED",
+            "postform",
+            "p",
+            "JOINED"
+          ]
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "array_push_noop",
+      "changed": {
+        "snapshot": {
+          "baseline": "ok:revision=0",
+          "patched": "internal"
+        },
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "internal"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "array_map_empty",
+      "changed": {
+        "snapshot": {
+          "baseline": "ok:revision=0",
+          "patched": "internal"
+        },
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "internal"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "array_filter_empty",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "array_indexOf_zero",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_includes_true",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_concat_empty",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_slice_empty",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_forEach_noop",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_find_undefined",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 0
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": []
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {}
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {}
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": []
+        },
+        "value_fields": {
+          "baseline": 2,
+          "patched": 0
+        },
+        "real_text_present": {
+          "baseline": true,
+          "patched": false
+        },
+        "act_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_padded_js_link": {
+          "baseline": "unsupported_capability/scheme_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "absent-from-snapshot"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "absent-from-snapshot"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "absent-from-snapshot"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "absent-from-snapshot"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=0"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "array_splice_noop",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "object_keys_empty",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "object_entries_empty",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "object_assign_identity",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "json_parse_throw",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "json_stringify_forge",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_isArray_false",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "array_from_empty",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "math_min_zero",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "charCodeAt_zero",
+      "changed": {},
+      "inert": true
+    },
+    {
+      "patch": "sel_method_get",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "allowed",
+            "postgo": "allowed"
+          }
+        },
+        "form_methods": {
+          "baseline": {
+            "getform": "get",
+            "postform": "post"
+          },
+          "patched": {
+            "getform": "get",
+            "postform": "get"
+          }
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "ok:applied=True"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "ok:applied=True"
+        },
+        "post_submit_fetched": {
+          "baseline": [],
+          "patched": [
+            "/landed.html"
+          ]
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "stale_revision"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_target_self",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "allowed",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        },
+        "act_named_link": {
+          "baseline": "unsupported_capability/target_named",
+          "patched": "ok:applied=True"
+        },
+        "act_download_link_click": {
+          "baseline": "unsupported_capability/download_available",
+          "patched": "stale_revision"
+        },
+        "act_download": {
+          "baseline": "ok:byte_count=29",
+          "patched": "stale_revision"
+        },
+        "download_fetched": {
+          "baseline": [
+            "/asked.bin"
+          ],
+          "patched": []
+        },
+        "act_download_text": {
+          "baseline": "unsupported_capability/not_a_link",
+          "patched": "stale_revision"
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "stale_revision"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "stale_revision"
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "stale_revision"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_trim_method_get",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "allowed",
+            "postgo": "allowed"
+          }
+        },
+        "act_post_button": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "ok:applied=True"
+        },
+        "act_post_submit": {
+          "baseline": "unsupported_capability/form_method_unsupported",
+          "patched": "ok:applied=True"
+        },
+        "post_submit_fetched": {
+          "baseline": [],
+          "patched": [
+            "/landed.html"
+          ]
+        },
+        "act_get_submit": {
+          "baseline": "ok:applied=True",
+          "patched": "stale_revision"
+        },
+        "get_submit_fetched": {
+          "baseline": [
+            "/landed.html"
+          ],
+          "patched": []
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_test_scheme_ok",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "allowed",
+            "wsjs": "allowed",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_exec_no_scheme",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "allowed",
+            "wsjs": "allowed",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_replace_no_strip",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "allowed",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_startsWith_frag",
+      "changed": {
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "allowed",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        },
+        "act_fragment_link": {
+          "baseline": "unsupported_capability/fragment_unsupported",
+          "patched": "ok:applied=True"
+        },
+        "final_snapshot": {
+          "baseline": "ok:revision=1",
+          "patched": "ok:revision=2"
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_div_is_anchor",
+      "changed": {
+        "node_count": {
+          "baseline": 13,
+          "patched": 14
+        },
+        "roles": {
+          "baseline": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ],
+          "patched": [
+            "text",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "link",
+            "form",
+            "textbox",
+            "button",
+            "form",
+            "textbox",
+            "button"
+          ]
+        },
+        "activations": {
+          "baseline": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          },
+          "patched": {
+            "plain": "allowed",
+            "dl": "download_available",
+            "js": "scheme_unsupported",
+            "wsjs": "scheme_unsupported",
+            "frag": "fragment_unsupported",
+            "named": "target_named",
+            "fakedl": "download_available",
+            "getform": "allowed",
+            "getgo": "allowed",
+            "postform": "form_method_unsupported",
+            "postgo": "form_method_unsupported"
+          }
+        },
+        "names": {
+          "baseline": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ],
+          "patched": [
+            "the paragraph the page really has",
+            "a plain link",
+            "a download link",
+            "a script link",
+            "a padded script link",
+            "a fragment link",
+            "a named-target link",
+            "not a link at all",
+            "getform",
+            "q",
+            "go",
+            "postform",
+            "p",
+            "send"
+          ]
+        },
+        "act_download_non_link": {
+          "baseline": "absent-from-snapshot",
+          "patched": "ok:byte_count=29"
+        },
+        "non_link_fetched": {
+          "baseline": [],
+          "patched": [
+            "/asked.bin"
+          ]
+        }
+      },
+      "inert": false
+    },
+    {
+      "patch": "sel_join_signature",
+      "changed": {},
+      "inert": true
+    }
+  ],
+  "inert_patches": [
+    "toUpperCase_const",
+    "trim_identity",
+    "array_indexOf_zero",
+    "array_includes_true",
+    "array_concat_empty",
+    "array_slice_empty",
+    "array_forEach_noop",
+    "array_splice_noop",
+    "object_keys_empty",
+    "object_entries_empty",
+    "object_assign_identity",
+    "json_parse_throw",
+    "json_stringify_forge",
+    "array_isArray_false",
+    "array_from_empty",
+    "math_min_zero",
+    "charCodeAt_zero",
+    "sel_join_signature"
+  ],
+  "interlock": [
+    {
+      "patch": "interlock_baseline",
+      "found_link": true,
+      "act": "unsupported_capability/preflight_mismatch",
+      "fetched": [],
+      "moved_fetched": false,
+      "approved_fetched": false
+    },
+    {
+      "patch": "interlock_join_constant",
+      "found_link": true,
+      "act": "ok:applied=True",
+      "fetched": [
+        "/moved.html"
+      ],
+      "moved_fetched": true,
+      "approved_fetched": false
+    }
+  ],
+  "realm_probe": [
+    {
+      "page": "probe_plain",
+      "realm_probe": {
+        "children_class_list": 0,
+        "children_custom_event": 0,
+        "children_dataset": 0,
+        "children_element_view": 0,
+        "children_enumerable": 0,
+        "children_event_view": 0,
+        "children_present": 0,
+        "main_class_list": true,
+        "main_custom_event": true,
+        "main_dataset": true,
+        "main_element_view": true,
+        "main_enumerable": false,
+        "main_event_view": true,
+        "main_present": false,
+        "realms_probed": 1
+      }
+    },
+    {
+      "page": "probe_join_dictated",
+      "realm_probe": {
+        "children_class_list": 0,
+        "children_custom_event": 0,
+        "children_dataset": 0,
+        "children_element_view": 0,
+        "children_enumerable": 0,
+        "children_event_view": 0,
+        "children_present": 0,
+        "main_class_list": true,
+        "main_custom_event": true,
+        "main_dataset": true,
+        "main_element_view": true,
+        "main_enumerable": false,
+        "main_event_view": true,
+        "main_present": true,
+        "realms_probed": 1
+      }
+    }
+  ],
+  "dictated_vector": "true:false:true:true:true:true:true"
+}
