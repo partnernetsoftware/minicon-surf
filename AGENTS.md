@@ -85,6 +85,24 @@ receipts.
   chains, CI and regressions never set that environment variable. Missing
   any part fails closed and reports `unverified`.
   `labs/native-dom/surface-headless-court.py` is the falsifiable check.
+- **A binary hash is a same-path provenance token, not a portable digest of
+  the source.** Every hash in `labs/native-dom/README.md`'s ledger and in the
+  receipts was produced by building in place in one checkout, at one absolute
+  path — `~/repos/minicon-surf/labs/native-dom`. Rebuilding the same commit
+  **at that same path** reproduces the hash exactly; rebuilding it anywhere else
+  does not, because cargo derives each package's `-C metadata` from its
+  absolute path and rustc hashes that into every mangled symbol name. So a hash
+  answers "which build produced this receipt" and cannot be re-derived from
+  source by someone building elsewhere. Measured in
+  `labs/native-dom/reproducible-build-audit-0.0.1.md`: a fixed build path is the
+  one option that works, and it works byte-exactly; `--remap-path-prefix` and
+  `RUSTFLAGS="-Cmetadata=…"` were both measured **ineffective**, the first
+  changing the output without making two paths agree and the second losing to
+  cargo's own flag. Do not add either in the hope of reproducibility, and do not
+  read a ledger hash as a claim anyone else can check from source. If
+  cross-machine re-derivation is ever needed it takes a fixed build path shared
+  by everyone who builds — a container, say — which is unmeasured and would be
+  its own round.
 - A committed receipt is the history of the round that produced it. It names
   the binary it was measured on and is never refreshed or overwritten, not even
   when the court that produced it is later re-frozen. A court that carries a

@@ -1404,6 +1404,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Ruled and recorded: a binary hash is a same-path provenance token
+  (`AGENTS.md`, "Lab discipline"; linked from `labs/native-dom/README.md`'s
+  receipt-provenance section and measured in
+  `reproducible-build-audit-0.0.1.md`). **Nothing about the build changed** — no
+  cargo setting, no build script, no product code, no court, no bound, and no
+  historical receipt rewritten. The rule states what the audit measured: every
+  ledger hash was produced by building in place in one checkout at one absolute
+  path; rebuilding the same commit **at that path** reproduces it byte-exactly
+  and rebuilding it anywhere else does not, because cargo derives `-C metadata`
+  from the package's absolute path and rustc hashes that into every mangled
+  symbol name. So a hash answers *which build produced this receipt* and is
+  **not** a claim anyone else can check from source. The two options that look
+  like fixes are named as measured failures so nobody adds them hopefully:
+  `--remap-path-prefix` changes the output without making two paths agree, and
+  `RUSTFLAGS="-Cmetadata=…"` loses to cargo's own flag. Cross-machine
+  re-derivation would take a fixed build path shared by everyone who builds — a
+  container — which is unmeasured and would be its own round. The rule went into
+  the repository's actual tracked owner; **no external governance file was
+  invented**, consistent with the ruling of `2c87f29`. Not pushed. G1, G3, P6
+  and G6 stay open.
 - [ ] Design-only, nothing changed: why two builds of one commit differ
   (`labs/native-dom/reproducible-build-audit-0.0.1.md`, receipt
   `evidence/native-dom-control-0.0.2-reproducible-build.json`). No build script,

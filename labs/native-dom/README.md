@@ -2174,7 +2174,16 @@ open, as do G1, P6 and G6.
 
 Each receipt records the SHA-256 of the host binary that produced it. The
 binary is rebuilt from the commit that added the receipt, so the hashes
-differ across receipts by design:
+differ across receipts by design.
+
+**What a hash in this table means.** It is a **same-path provenance token**, not
+a portable digest of the source. Every one of them was produced by building in
+place in one checkout at one absolute path; rebuilding the same commit at that
+path reproduces the hash exactly, and rebuilding it anywhere else does not,
+because cargo derives `-C metadata` from the package's absolute path and rustc
+hashes that into every mangled symbol name. Measured, with the mechanism and the
+options that do **not** work, in `reproducible-build-audit-0.0.1.md`; stated as
+a rule in `AGENTS.md`.
 
 | receipt | host built from | note |
 |---|---|---|
