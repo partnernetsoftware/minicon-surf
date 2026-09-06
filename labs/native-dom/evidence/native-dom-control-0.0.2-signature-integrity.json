@@ -1,0 +1,384 @@
+{
+  "court": "native-dom approval signature, fragment and probe integrity",
+  "frozen_from": "labs/native-dom/signature-integrity-design-0.0.1.md \u00a75",
+  "binary_sha256": "0da1c6b11553288619298126bd7d4fbe215b50aef660355250bb84219738ca7a",
+  "passed": true,
+  "score": "34/34",
+  "checks": [
+    {
+      "check": "A: with `none` patched, a moved href is refused `preflight_mismatch`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "preflight_mismatch",
+        "ok": false
+      }
+    },
+    {
+      "check": "A: with `none` patched, a moved href reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `none` patched, an unmoved approved link still navigates",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `join` patched, a moved href is refused `preflight_mismatch`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "preflight_mismatch",
+        "ok": false
+      }
+    },
+    {
+      "check": "A: with `join` patched, a moved href reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `join` patched, an unmoved approved link still navigates",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `replace` patched, a moved href is refused `preflight_mismatch`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "preflight_mismatch",
+        "ok": false
+      }
+    },
+    {
+      "check": "A: with `replace` patched, a moved href reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `replace` patched, an unmoved approved link still navigates",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `none` patched, a moved form action is refused `preflight_mismatch`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "preflight_mismatch",
+        "ok": false
+      }
+    },
+    {
+      "check": "A: with `none` patched, a moved form action reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `none` patched, an unmoved form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `join` patched, a moved form action is refused `preflight_mismatch`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "preflight_mismatch",
+        "ok": false
+      }
+    },
+    {
+      "check": "A: with `join` patched, a moved form action reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `join` patched, an unmoved form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "A: with `replace` patched, a moved form action is refused `preflight_mismatch`",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "reason": "preflight_mismatch",
+        "ok": false
+      }
+    },
+    {
+      "check": "A: with `replace` patched, a moved form action reaches the server not at all",
+      "passed": true,
+      "detail": {
+        "server_saw": []
+      }
+    },
+    {
+      "check": "A: with `replace` patched, an unmoved form still submits and is fetched",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: unpatched, `#section` reads `fragment_unsupported` and is refused",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "activation": "fragment_unsupported",
+        "reason": "fragment_unsupported",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: startsWith patched, `#section` reads `fragment_unsupported` and is refused",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "activation": "fragment_unsupported",
+        "reason": "fragment_unsupported",
+        "server_saw": []
+      }
+    },
+    {
+      "check": "B: with `startsWith` patched, a plain link still reads `allowed` and navigates",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "activation": "allowed",
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "B: an empty href still reads `allowed` and still loads the current document",
+      "passed": true,
+      "detail": {
+        "activation": "allowed",
+        "ok": true,
+        "server_saw": [
+          "/page.html"
+        ]
+      }
+    },
+    {
+      "check": "B: a whitespace-only href still reads `allowed` and still loads the current document",
+      "passed": true,
+      "detail": {
+        "activation": "allowed",
+        "ok": true,
+        "server_saw": [
+          "/page.html"
+        ]
+      }
+    },
+    {
+      "check": "C: with `none` patched, the probe reports the realm's truth",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "realms_probed": 1,
+        "reported": {
+          "main_present": false,
+          "main_enumerable": false,
+          "main_class_list": true,
+          "main_custom_event": true,
+          "main_event_view": true,
+          "main_element_view": true,
+          "main_dataset": true
+        }
+      }
+    },
+    {
+      "check": "C: with `join` patched, the probe reports the realm's truth",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "realms_probed": 1,
+        "reported": {
+          "main_present": false,
+          "main_enumerable": false,
+          "main_class_list": true,
+          "main_custom_event": true,
+          "main_event_view": true,
+          "main_element_view": true,
+          "main_dataset": true
+        }
+      }
+    },
+    {
+      "check": "C: with `join` patched, the page's own script had run first",
+      "passed": true,
+      "detail": {
+        "marker": true
+      }
+    },
+    {
+      "check": "C: with `string` patched, the probe reports the realm's truth",
+      "passed": true,
+      "detail": {
+        "marker": true,
+        "realms_probed": 1,
+        "reported": {
+          "main_present": false,
+          "main_enumerable": false,
+          "main_class_list": true,
+          "main_custom_event": true,
+          "main_event_view": true,
+          "main_element_view": true,
+          "main_dataset": true
+        }
+      }
+    },
+    {
+      "check": "C: with `string` patched, the page's own script had run first",
+      "passed": true,
+      "detail": {
+        "marker": true
+      }
+    },
+    {
+      "check": "D: `REALM_PROBE_JS` builds its answer without `join` or the global `String`",
+      "passed": true,
+      "detail": {
+        "found": true,
+        "length": 650,
+        "has_join": false,
+        "has_String": false
+      }
+    },
+    {
+      "check": "D: the approval signature is built without `join`",
+      "passed": true,
+      "detail": {
+        "found": true,
+        "length": 593,
+        "has_join": false
+      }
+    },
+    {
+      "check": "D: `urlOf` strips without `replace` and without the global `String`",
+      "passed": true,
+      "detail": {
+        "found": true,
+        "length": 265,
+        "has_replace": false,
+        "has_String": false
+      }
+    },
+    {
+      "check": "D: the fragment is detected without `startsWith`",
+      "passed": true,
+      "detail": {
+        "found": true,
+        "length": 567,
+        "has_startsWith": false
+      }
+    },
+    {
+      "check": "D: the declared captures are unchanged and there is no sixteenth",
+      "passed": true,
+      "detail": {
+        "found": [
+          "reflectApply",
+          "StringOf",
+          "MapOf",
+          "weakMapGet",
+          "weakMapSet",
+          "mapGet",
+          "mapSet",
+          "mapHas",
+          "arraySlice",
+          "arrayPush",
+          "arrayIndexOf",
+          "arraySplice",
+          "weakSetAdd",
+          "weakSetHas",
+          "jsonStringify"
+        ],
+        "declared": [
+          "reflectApply",
+          "StringOf",
+          "MapOf",
+          "weakMapGet",
+          "weakMapSet",
+          "mapGet",
+          "mapSet",
+          "mapHas",
+          "arraySlice",
+          "arrayPush",
+          "arrayIndexOf",
+          "arraySplice",
+          "weakSetAdd",
+          "weakSetHas",
+          "jsonStringify"
+        ]
+      }
+    },
+    {
+      "check": "D: no base bytes moved -- this slice is not slimming and does not pay with them",
+      "passed": true,
+      "detail": {
+        "base": 32898,
+        "base_frozen": 32898,
+        "main": 26485,
+        "main_frozen": 26485
+      }
+    }
+  ],
+  "not_under_test": [
+    "F1 methodOf: a target or formmethod moved between the derivations",
+    "F2 targetOf: the target vocabulary read through trim/toLowerCase",
+    "F5 the download probe's node kind"
+  ],
+  "headless": "no surface binary, no window, no AppKit; one hermetic loopback origin"
+}

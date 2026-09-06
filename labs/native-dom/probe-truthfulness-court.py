@@ -210,9 +210,24 @@ def main():
     expect("S1: the probe asks its two handle questions without a replaceable call",
            "Object.keys" not in probe and ".indexOf(" not in probe,
            {"object_keys": "Object.keys" in probe, "index_of": ".indexOf(" in probe})
+    # Amendment, 2026-09-06, recorded rather than substituted. S2 was frozen as
+    # `probe.count("String(") >= 7`, a spelling that stood in for "seven
+    # questions are still asked". The signature-integrity slice had to remove
+    # every `String(` from this script, because the global `String` is the
+    # page's and a page that swapped it flipped all seven reported fields
+    # (`signature-integrity-design-0.0.1.md` §4). The proxy therefore reads 0 on
+    # a probe that answers all seven correctly. The criterion below measures the
+    # property the old one stood for, and measures it more strictly: the seven
+    # questions are each present by name and exactly six literal separators join
+    # them. The old spelling is left here in the record and not in the check.
+    questions = ["__mcsInternals", "classList", "CustomEvent", "isTrusted",
+                 "appendChild", "closest", "dataset"]
     expect("S2: the probe still answers its other five questions",
-           probe.count("String(") >= 7,
-           {"answers": probe.count("String(")})
+           all(name in probe for name in questions) and probe.count('+ ":" +') == 6
+           and "String(" not in probe and ".join(" not in probe,
+           {"missing": [name for name in questions if name not in probe],
+            "separators": probe.count('+ ":" +'),
+            "legacy_String_calls": probe.count("String(")})
     expect("S3: the seal is untouched and still contains no method call",
            "delete window.__mcsInternals" in seal and "Object." not in seal
            and ".indexOf(" not in seal,

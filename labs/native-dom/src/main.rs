@@ -231,19 +231,24 @@ const DOM_SHIM_MAIN_JS: &str = include_str!("dom_shim_main.js");
 /// and refuses the realm if it is still there afterwards.
 const SEAL_JS: &str =
     r#"(() => { delete window.__mcsInternals; return String(typeof window.__mcsInternals); })()"#;
-/// Court-only: whether a realm still has the internals handle, and whether
-/// it has the two main-only page APIs. Three fixed names, three booleans, and
-/// nothing a page owns.
-const REALM_PROBE_JS: &str = r#"(() => [
-  String(typeof window.__mcsInternals !== "undefined"),
-  String((() => { for (const k in window) { if (k === "__mcsInternals") return true; } return false; })()),
-  String(typeof window.document.body?.classList !== "undefined"),
-  String(typeof window.CustomEvent !== "undefined"),
-  String("isTrusted" in window.Event.prototype && "timeStamp" in window.Event.prototype),
-  String("appendChild" in window.Element.prototype && "submit" in window.Element.prototype
-    && "contains" in window.Element.prototype && "closest" in window.Element.prototype),
-  String("dataset" in window.Element.prototype),
-].join(":"))()"#;
+/// Court-only: whether a realm still has the internals handle, and whether it
+/// has the main-only page APIs. Seven booleans joined by a literal `":"`, and
+/// nothing a page owns on the whole path: a page that replaced
+/// `Array.prototype.join` or the global `String` could otherwise dictate this
+/// answer field by field, which was measured, not supposed. Converting a
+/// boolean to a string is done by the specification and never consults
+/// `Boolean.prototype.toString`, so the concatenation below is the answer's
+/// own and not the document's.
+const REALM_PROBE_JS: &str = r#"(() => (
+  (typeof window.__mcsInternals !== "undefined") + ":" +
+  ((() => { for (const k in window) { if (k === "__mcsInternals") return true; } return false; })()) + ":" +
+  (typeof window.document.body?.classList !== "undefined") + ":" +
+  (typeof window.CustomEvent !== "undefined") + ":" +
+  ("isTrusted" in window.Event.prototype && "timeStamp" in window.Event.prototype) + ":" +
+  ("appendChild" in window.Element.prototype && "submit" in window.Element.prototype
+    && "contains" in window.Element.prototype && "closest" in window.Element.prototype) + ":" +
+  ("dataset" in window.Element.prototype)
+))()"#;
 const OPERATIONS: &[&str] = &[
     "profile.create",
     "profile.list",
@@ -555,7 +560,11 @@ const SERIALIZE_JS: &str = r##"
       decision,
       href: navigation.href,
       shape: navigation.shape,
-      signature: [navigation.shape, decision, navigation.method || "", navigation.href || ""].join(" "),
+      // Concatenated with a literal separator, never `join`: the array method
+      // is the page's, and one that answered with a constant made a moved
+      // address pass as the approved one.
+      signature: navigation.shape + " " + decision + " "
+        + (navigation.method || "") + " " + (navigation.href || ""),
     };
   };
 "##;
@@ -576,10 +585,33 @@ const ACTIVATION_JS: &str = r##"
   };
   // HTML strips leading and trailing ASCII whitespace before it parses a URL,
   // so every judgement here is made on the stripped value.
-  const urlOf = (raw) => String(raw == null ? "" : raw).replace(/^[ \t\n\r\f]+|[ \t\n\r\f]+$/g, "");
+  //
+  // Built from operations a page cannot reach: `"" + raw` coercion, a string's
+  // own `length`, index reads and `+=`. It used `String(...)` and a regex
+  // `replace`, and both are the page's -- a `replace` that answered with a
+  // constant made two different addresses produce one approval signature, so
+  // the host fetched an address the agent never approved. Every attribute
+  // value the shim stores is already a string primitive (`setAttribute` stores
+  // `String(value)`), so the coercion consults no prototype and no
+  // `Symbol.toPrimitive`.
+  const WS = (c) => c === " " || c === "\t" || c === "\n" || c === "\r" || c === "\f";
+  const urlOf = (raw) => {
+    const s = raw == null ? "" : "" + raw;
+    let a = 0;
+    let b = s.length;
+    while (a < b && WS(s[a])) a++;
+    while (b > a && WS(s[b - 1])) b--;
+    let out = "";
+    for (let i = a; i < b; i++) out += s[i];
+    return out;
+  };
   const schemeDecision = (raw) => {
     const value = urlOf(raw);
-    if (value.startsWith("#")) return "fragment_unsupported";
+    // An index read, not `startsWith`: the prototype method is the page's, and
+    // answering `false` for `"#"` made a fragment activate. On an empty value
+    // the read is `undefined`, which is not `"#"`, so the empty address keeps
+    // the judgement it has always had.
+    if (value[0] === "#") return "fragment_unsupported";
     const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(value);
     if (scheme && !/^https?$/i.test(scheme[1])) return "scheme_unsupported";
     return "allowed";

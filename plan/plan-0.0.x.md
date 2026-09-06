@@ -1404,6 +1404,64 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Frozen, then implemented: the approval binds, the fragment is seen, and
+  the probe is the host's (`labs/native-dom/signature-integrity-design-0.0.1.md`,
+  court `labs/native-dom/signature-integrity-court.py`, receipts
+  `evidence/native-dom-control-0.0.2-signature-integrity{,-falsification}.json`).
+  **Measuring before freezing changed the design.** The ruling proposed closing
+  F4 by building the approval signature with concatenation instead of `join`;
+  the same fixture patched at `String.prototype.replace` instead defeats the
+  interlock exactly as well, because the signature is only as honest as its four
+  inputs and one of them — `href`, built by `urlOf` — was itself made with a
+  replaceable `replace`. A court frozen on the `join` route alone would have
+  passed over a live F4. So the slice is **four edits, all inside host scripts**:
+  the signature concatenates with a literal separator; `urlOf` is rebuilt from
+  `"" + raw`, a string's own `length`, index reads and `+=`, with no `replace`
+  and no global `String`; the fragment test is `value[0] === "#"`; and
+  `REALM_PROBE_JS` concatenates its seven booleans with `":"` and calls neither
+  `join` nor `String` — boolean-to-string conversion is the specification's and
+  never consults `Boolean.prototype.toString`, so **no page-owned operation is
+  left on the probe's path at all**. A correction recorded before it could become
+  a criterion: the global `String` is replaceable and the host's scripts do use
+  it, but in the F4 shape it is not a route, because `setAttribute` stores
+  `String(value)` and a patch that lies about the moved address also stops the
+  address moving; it stays a live route into the probe, and that is where the
+  court puts it. **Court frozen first at 19/34 on `ba46420b`** — every control
+  and every anti-vacuity criterion passing, the fifteen failures exactly the
+  defects — then **34/34 on `0da1c6b1`**. Three fixture defects were caught in
+  the freeze rather than after: a form is not focusable so a `submit` aimed at it
+  opens no window for page code, a click on a submit button never submits, and
+  the probe's `join` patch must delegate to the captured original or the
+  snapshot throws and the anti-vacuity marker cannot be read. **One frozen court
+  was amended, chronologically and in writing**: `probe-truthfulness-court.py`'s
+  S2 counted `String(` occurrences as a proxy for "seven questions are still
+  asked", and the repair had to remove every one of them; the criterion now
+  names the seven questions and requires exactly six literal separators, which
+  is stricter, and the old spelling is left in the record beside it. The
+  independent audit probe, rerun on the new binary, confirms the scope exactly:
+  the interlock's `join` arm goes from applied-and-fetched-`/moved.html` to
+  `preflight_mismatch` with nothing fetched, the dictated probe vector's
+  `main_present` goes from `true` to the truth, both fragment arms go from
+  applied to `fragment_unsupported` — and **F1 `methodOf`, F2 `targetOf` and F5
+  the download probe's node kind are unchanged and stay open**, deliberately not
+  folded in. Regressions on `0da1c6b1`: signature-integrity 34/34,
+  probe-truthfulness 25/25, host-answer 9/9, capture-declaration 8/8,
+  property-shape 22/22, registry-brand 15/15, snapshot-schema 13/13, downloads
+  21/21, copy-on-write 23/23, form 179/179, frame-action 182/182,
+  page-navigation 80/80, lifecycle 53/53, job-deadline 42/42, element-api 28/28,
+  event-fidelity 62/62, timer 68/68, frame-realm 62/62, cdp-frame-tree 64/64,
+  and child-frame **81/82** whose one failure is the arena footprint-growth
+  criterion — **proven machine variance by rebuilding `ba46420b` and rerunning:
+  the pre-change binary fails the same criterion, 81/82, on the other allocator
+  arm**. Child-frame's M1 233,962 of 262,144 and M2 1,636,236 of 1,835,008 show
+  no per-realm growth, which follows from host scripts being compiled per
+  evaluation rather than resident. Navigation soak not rerun by standing rule.
+  Gates: fmt, 58 tests, clippy `-D warnings`, contract 28 examples and 50
+  negatives, `diff --check`, redaction scan. No new capture (the fifteen declared
+  are pinned by the court), no widened handle, no bound moved, and
+  `dom_shim_base.js` 32,898 and `dom_shim_main.js` 26,485 bytes pinned unchanged
+  so the slice cannot pay for itself with base bytes. Implementation not pushed.
+  G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: the uncaptured intrinsic call sites
   (`labs/native-dom/uncaptured-intrinsic-audit-0.0.1.md`, probe
   `labs/native-dom/uncaptured-intrinsic-probe.py`, receipt
