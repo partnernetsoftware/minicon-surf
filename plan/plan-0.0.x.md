@@ -1302,6 +1302,29 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only host-side triage of P6's six remaining capabilities
+  (`labs/native-dom/p6-host-triage-0.0.1.md`), each measured black-box rather
+  than read off the plan. **Permissions**: the host already reports
+  `permissions_effect: "recorded_only"` — it says out loud that it records and
+  does not enforce — and `profile.policy.set` accepts exactly
+  `{session, network, permissions}`, refusing any other field. **Downloads**:
+  clicking a `download` link answers `unsupported_capability` with
+  `reason: download_unsupported`, a typed refusal rather than a silent failure.
+  **History**: per target, bounded to eight, and measured after one link click
+  as `{can_go_back: false, length: 1, position: 0}` with `traverse -1`
+  answering `not_found` / `history_offset_out_of_window`; there is no
+  profile-level or persisted history at all. **Cache**: none — the network
+  layer's "cache" is the bounded per-profile TLS session cache. **Readonly**:
+  `profile.inspect` already reports `read_only: false` and **nothing can set
+  it**, so the report exists without the capability. **Copy-on-write**:
+  nothing. Ordering by cost and dependency: readonly first (the field exists,
+  smallest protocol change, precondition for COW), then permissions — whose
+  honest version may be to keep `recorded_only` until a permission-bearing
+  capability exists to enforce against — then history persistence, downloads,
+  copy-on-write, and **cache last and only with a memory ruling, since it is
+  the one item that makes G1 and D6 worse**. None of the six moves D6, whose
+  gap is the first-request constant and the realms; profile machinery measures
+  about 16 KB. G1, G3, P6 and G6 stay open.
 - [~] Run report, headless and read-only, **BLOCKED on the baseline half**:
   the G1 comparison campaign (`labs/native-dom/g1-campaign-0.0.1.md`). The
   route half is measured in the shape the gate asks for, both arms, eight
