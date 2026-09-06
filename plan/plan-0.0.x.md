@@ -1302,6 +1302,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [~] Run report, headless and read-only, **BLOCKED on the baseline half**:
+  the G1 comparison campaign (`labs/native-dom/g1-campaign-0.0.1.md`). The
+  route half is measured in the shape the gate asks for, both arms, eight
+  targets, with peak and post-close and with the host's tracked realm bytes
+  reported beside every footprint. System: empty **213,064**, one target
+  **3,359,056**, eight **6,046,032**, peak 6,111,568, and **5,898,504 retained**
+  after close — nothing returned. Arena: empty 196,680, one target
+  **2,818,432**, eight 6,488,616, peak 6,505,000, **2,539,808 retained** and
+  **3,768,512 returned** at close. Marginal target 383,854 system against
+  524,312 arena. Reported as a pair per the standing ruling, since either alone
+  flatters one arm. **The named same-machine comparison could not be run**: the
+  sanctioned courts require a Lightpanda 0.4.0 binary that is absent and would
+  be fetched from GitHub releases, and their `--lightpanda` argument is
+  required, so they will not run Chrome-only even though Chrome is installed;
+  `servo-control` is not built. The `process-tree-sampler` is **not** a blocker
+  — it builds offline, which I verified without touching its source. **I did
+  not hand-roll a Chrome-versus-route comparison outside the court**: a
+  different sampler and readiness condition presented as G1 evidence would be
+  precisely the guessed pass the brief forbade, so the route numbers are
+  labelled as the route's own and the comparison is recorded as unrun. To
+  unblock: a local Lightpanda binary matching the pinned digest or explicit
+  authorisation to download it, and a built `servo-control` for that row; both
+  courts already accept the native host as an optional arm, so no code is
+  needed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: the 720 KB allocator delta
   (`labs/native-dom/allocator-delta-audit-0.0.1.md`). **There is exactly one
   product-controllable path and it is already built and opt-in.** Measured with
