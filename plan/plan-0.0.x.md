@@ -1363,6 +1363,34 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   pre-implementation binary**, so the two failures beyond the known D6 pair are
   machine drift in the store's `resident_delta` rather than this slice. G1, G3,
   P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: downloads
+  (`labs/native-dom/downloads-audit-0.0.1.md`). Every vector measured, and
+  **nothing was downloaded** — the fixtures are hermetic. An agent clicking
+  `a[download]` is refused `unsupported_capability` / `download_unsupported`; a
+  plain link whose response is `Content-Disposition: attachment` is refused
+  after the fetch, with `content_type` and `navigation: "failed"` in the
+  details; a direct `target.navigate` at an attachment is refused too. **The
+  fourth vector is the defect**: a page's own `link.click()` on a download link
+  returns normally and does nothing — no download, no error — the same silent
+  shape as `handleEvent` and `onabort`, and reachable today whatever is decided
+  about downloads. One mechanical detail shapes the design: the attachment
+  refusal happens **after** the fetch, so the host already buys a bounded
+  download before refusing it, against a 1 MiB network response bound far below
+  a real one. Three sink shapes: **(c) the bytes come back over the control
+  protocol, recommended** — the host keeps writing only its own sealed records,
+  and a page-authored filename becomes **a reported string rather than a path**,
+  which deletes the traversal surface entirely; (a) a per-profile sink
+  directory, which would be the host's first arbitrary file writes; (b) a
+  shared root, argued against because it mixes profiles. The probe deliberately
+  offered the name `report .. /etc/passwd.txt` to make that concrete. Downloads
+  are also **where the first permission question lands** by the previous
+  ruling: `permission_denied` at the point of use, distinct from
+  `session_read_only` and from `unsupported_capability` — three questions,
+  three answers — and it is what would move `permissions_effect` off
+  `recorded_only`. Protocol shape proposed: an **action kind on `target.act`**
+  rather than growing the operation enum. A nine-criterion court draft is in
+  §7, whose third criterion — the name never becomes a path — is nearly free
+  under (c) and is the audit's argument for it. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: permissions enforcement
   (`labs/native-dom/permissions-enforcement-audit-0.0.1.md`). **The gap is real
   and it is not a lie.** Measured: `network` **is** a capability — `offline`
