@@ -243,3 +243,23 @@ What moved, and what did not:
   for the negative to be kept, and the honest place for it is the court.
 - **Unchanged**: the `read_only` fail-closed latch and its own criterion, the
   writer lock, and every typed error already in the contract.
+
+### 9.1 Court amendment before the code: one live session per profile
+
+Writing the host change surfaced a second lifecycle fact the design had not
+measured: **this host allows one live session per profile**. A second
+`session.open` on the same profile answers `resource_limit` — *"this profile
+owns one live session; close it first"*.
+
+So §9's R6, frozen minutes earlier as "two sessions at once, the plain one
+writes while the readonly one refuses", **cannot pass as written** — not
+because the mode is wrong but because the shape it assumed does not exist.
+
+R6 is now the sequence that proves the same property: open readonly, confirm a
+rival open is refused, close it, open plain, write. **R6b** pins the one-live-
+session rule itself, so a future slice that relaxes it has to say so.
+
+That is twice in this capability that a constraint appeared only when the code
+was written: first that persistent profiles are adopted rather than created,
+now that sessions are exclusive. Both were found by measuring rather than by
+reading, and both are recorded where they were found.

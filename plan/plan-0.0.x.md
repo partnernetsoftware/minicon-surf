@@ -1344,9 +1344,25 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   exists for. Options measured in §8.1: **A′ `session.open {profile, mode}`**,
   recommended, the same size of change and per-client; B′ a host startup flag,
   no protocol cost but whole-host and invisible to a second client; C′ a new
-  `profile.open` operation, which grows the closed enum. Amending the frozen
-  court and contract is a ruling, not an edit, and neither has been touched.
-  G1, G3, P6 and G6 stay open.
+  `profile.open` operation, which grows the closed enum. **Ruled A′ and
+  built**: the mode is an argument of `session.open`, per session and not
+  persisted, and `profile.create` does not take it — pinned by a contract
+  negative. A readonly session refuses writes with `unsupported_capability` /
+  `session_read_only`, **deliberately distinct from the latch's
+  `commit_failed`**, so a client can tell *you asked* from *the store broke*;
+  an ephemeral profile cannot be opened readonly; the writer lock is still
+  taken. The court was refrozen against A′ and reads **28 of 28** against **4
+  of 6** on the build before, the count growing once the argument exists
+  exactly as its limitation said. **The shape moved twice and both moves are
+  recorded**: a mode on `profile.create` cannot reach a profile adopted at
+  startup, and a court written for two live sessions cannot pass a host that
+  allows one per profile — §9.1. Both constraints appeared only when the code
+  was written, not when the design was read. **The latch criterion passes on
+  both arms**, which is what this slice existed to protect. Twenty-nine
+  receipts rerun on the binary; `-profile` reads **90 of 94 and so does the
+  pre-implementation binary**, so the two failures beyond the known D6 pair are
+  machine drift in the store's `resident_delta` rather than this slice. G1, G3,
+  P6 and G6 stay open.
 - [ ] Design-only host-side triage of P6's six remaining capabilities
   (`labs/native-dom/p6-host-triage-0.0.1.md`), each measured black-box rather
   than read off the plan. **Permissions**: the host already reports

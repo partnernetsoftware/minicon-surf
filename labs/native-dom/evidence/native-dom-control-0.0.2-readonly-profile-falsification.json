@@ -1,0 +1,88 @@
+{
+ "checks": [
+  {
+   "check": "C1: the contract puts the mode on session.open and keeps it off profile.create",
+   "detail": {
+    "create_rule_gone": true,
+    "session_rule": true
+   },
+   "passed": true
+  },
+  {
+   "check": "C2: an example pair carries the mode on the session and leaves read_only alone",
+   "detail": {
+    "request": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R0: the profile is adopted at startup, not created again",
+   "detail": {
+    "listed": [
+     {
+      "available": true,
+      "name": "alpha",
+      "persistence": "persistent",
+      "profile": "profile_alpha"
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R1: an adopted profile opens readonly and says so, without the latch",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "expected exactly the fields [\"profile\"]",
+     "retryable": false
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "[arena] R0: the profile is adopted at startup, not created again",
+   "detail": {
+    "listed": [
+     {
+      "available": true,
+      "name": "alpha",
+      "persistence": "persistent",
+      "profile": "profile_alpha"
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1: an adopted profile opens readonly and says so, without the latch",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "expected exactly the fields [\"profile\"]",
+     "retryable": false
+    }
+   },
+   "passed": false
+  }
+ ],
+ "checks_passed": 4,
+ "checks_total": 6,
+ "court": "native-dom readonly profiles (control 0.0.1 arguments)",
+ "host_sha256": "420cdf5b82bf40104f272dc989e8d531fe0031b8e83a69145d00cbc4b8ee9bd6",
+ "limitations": [
+  "design-frozen court: it fails until session.open accepts the mode",
+  "on a host without the mode the run stops at R1 in each arm, so the criterion count is small until the capability exists and grows to the full set once R1 passes",
+  "R5 is the criterion that matters: it proves the new mode did not eat read_only's meaning, and profile-court.py's own latch criterion must keep passing on the same binary",
+  "two criteria read the contract source and its examples rather than the binary, so they are repo-local by design",
+  "the sealed store is enabled through the profile-store environment knob, as the profile court does",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false,
+ "ruled": {
+  "ephemeral_readonly": "refused",
+  "read_only": "unchanged: the failed-commit latch",
+  "shape": "mode argument on session.open, per session, not persisted",
+  "writer_lock": "still taken"
+ }
+}

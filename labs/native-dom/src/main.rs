@@ -2194,6 +2194,11 @@ impl net::CookieHooks for JarHooks<'_> {
 struct Session {
     id: String,
     profile_id: String,
+    /// The open's own mode, not the profile's and not the record's: a readonly
+    /// session refuses writes while it lives and takes the mode with it when
+    /// it closes. Distinct from `Profile::read_only`, which is the
+    /// fail-closed latch after a commit that could not be written.
+    read_only: bool,
 }
 
 /// A bounded child frame: a static embedded document with its own identity,
@@ -4657,10 +4662,41 @@ impl Host {
     }
 
     fn session_open(&mut self, arguments: &Value) -> Result<Value, ControlError> {
-        let object = exact_object(arguments, &["profile"])?;
+        let object = match arguments.as_object() {
+            Some(object)
+                if object.contains_key("profile")
+                    && object.keys().all(|k| k == "profile" || k == "mode") =>
+            {
+                object
+            }
+            _ => {
+                return Err(invalid(
+                    "expected exactly the fields [\"profile\", \"mode\"]",
+                ));
+            }
+        };
+        let read_only = match object.get("mode") {
+            None => false,
+            Some(_) => match string_field(object, "mode")? {
+                "readwrite" => false,
+                "readonly" => true,
+                _ => return Err(invalid("mode must be readwrite or readonly")),
+            },
+        };
         let profile = typed_field(object, "profile", "profile")?;
         if !self.profiles.contains_key(profile) {
             return Err(not_found("profile", profile));
+        }
+        if read_only
+            && !self
+                .profiles
+                .get(profile)
+                .map(|record| record.persistent)
+                .unwrap_or(false)
+        {
+            return Err(invalid(
+                "an ephemeral profile has nothing to read: it cannot be opened readonly",
+            ));
         }
         if self.sessions.len() >= MAX_SESSIONS {
             return Err(ControlError::new(
@@ -4705,9 +4741,17 @@ impl Host {
             Session {
                 id: id.clone(),
                 profile_id: profile.to_owned(),
+                read_only,
             },
         );
-        Ok(json!({"kind":"session","session":id,"profile":profile}))
+        let latched = self
+            .profiles
+            .get(profile)
+            .map(|record| record.read_only)
+            .unwrap_or(false);
+        Ok(
+            json!({"kind":"session","session":id,"profile":profile,"mode":if read_only { "readonly" } else { "readwrite" },"read_only":latched}),
+        )
     }
 
     fn session_close(&mut self, arguments: &Value) -> Result<Value, ControlError> {
@@ -4759,9 +4803,31 @@ impl Host {
             .ok_or_else(|| not_found("session", session_id))
     }
 
+    /// A readonly session refuses writes for itself. The refusal is
+    /// deliberately not the failed-commit latch's: `commit_failed` means the
+    /// store broke, this means the open asked not to write.
+    fn refuse_if_read_only(&self, session_id: &str) -> Result<(), ControlError> {
+        if self
+            .sessions
+            .get(session_id)
+            .map(|session| session.read_only)
+            .unwrap_or(false)
+        {
+            return Err(ControlError::new(
+                "unsupported_capability",
+                "this session was opened readonly",
+                false,
+            )
+            .scoped("session", session_id)
+            .details(json!({"reason": "session_read_only"})));
+        }
+        Ok(())
+    }
+
     fn profile_storage_put(&mut self, arguments: &Value) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["session", "kind", "key", "value"])?;
         let session_id = typed_field(object, "session", "session")?;
+        self.refuse_if_read_only(session_id)?;
         let profile_id = self.session_profile_for(session_id)?;
         let kind = string_field(object, "kind")?.to_owned();
         let key = string_field(object, "key")?.to_owned();
@@ -5544,6 +5610,7 @@ impl Host {
     fn profile_policy_set(&mut self, arguments: &Value) -> Result<Value, ControlError> {
         let object = exact_object(arguments, &["session", "network", "permissions"])?;
         let session_id = typed_field(object, "session", "session")?.to_owned();
+        self.refuse_if_read_only(&session_id)?;
         let online = match string_field(object, "network")? {
             "online" => true,
             "offline" => false,

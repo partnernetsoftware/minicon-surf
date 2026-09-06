@@ -1,0 +1,396 @@
+{
+ "checks": [
+  {
+   "check": "C1: the contract puts the mode on session.open and keeps it off profile.create",
+   "detail": {
+    "create_rule_gone": true,
+    "session_rule": true
+   },
+   "passed": true
+  },
+  {
+   "check": "C2: an example pair carries the mode on the session and leaves read_only alone",
+   "detail": {
+    "request": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R0: the profile is adopted at startup, not created again",
+   "detail": {
+    "listed": [
+     {
+      "available": true,
+      "name": "alpha",
+      "persistence": "persistent",
+      "profile": "profile_alpha"
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R1: an adopted profile opens readonly and says so, without the latch",
+   "detail": {
+    "answer": {
+     "kind": "session",
+     "mode": "readonly",
+     "profile": "profile_alpha",
+     "read_only": false,
+     "session": "session_1"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R3: reads still answer from the record",
+   "detail": {
+    "answer": {
+     "found": true,
+     "kind": "profile_storage_get",
+     "profile": "profile_alpha",
+     "value": "written-once"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R2: every write is refused, and not as a failed commit",
+   "detail": {
+    "policy": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "session_read_only"
+     },
+     "message": "this session was opened readonly",
+     "retryable": false,
+     "scope": {
+      "id": "session_1",
+      "kind": "session"
+     }
+    },
+    "put": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "session_read_only"
+     },
+     "message": "this session was opened readonly",
+     "retryable": false,
+     "scope": {
+      "id": "session_1",
+      "kind": "session"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R3b: a page still opens and runs against a readonly profile",
+   "detail": {
+    "answer": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R7: an ephemeral profile cannot be opened readonly",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "an ephemeral profile has nothing to read: it cannot be opened readonly",
+     "retryable": false
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R9: an unknown mode is refused",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "mode must be readwrite or readonly",
+     "retryable": false
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R9b: profile.create does not take a mode",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "profile.create accepts persistence and an optional name",
+     "retryable": false
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R4: a writable sibling is unaffected",
+   "detail": {
+    "answer": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R5: a failed commit still latches, with its own reason",
+   "detail": {
+    "again": {
+     "code": "internal",
+     "details": {
+      "detail": "storage is read-only after an earlier failed commit",
+      "reason": "storage_commit_failed"
+     },
+     "message": "profile storage commit failed; the previous record is kept",
+     "retryable": false,
+     "scope": {
+      "id": "profile_beta",
+      "kind": "profile"
+     }
+    },
+    "failed": {
+     "code": "internal",
+     "details": {
+      "detail": "profile record could not be written",
+      "reason": "storage_commit_failed"
+     },
+     "message": "profile storage commit failed; the previous record is kept",
+     "retryable": false,
+     "scope": {
+      "id": "profile_beta",
+      "kind": "profile"
+     }
+    },
+    "read_only": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R8: a second host is still locked out, readonly or not",
+   "detail": {
+    "answer": {
+     "code": "profile_locked",
+     "message": "another host holds this profile's writer lock",
+     "retryable": true,
+     "scope": {
+      "id": "profile_alpha",
+      "kind": "profile"
+     }
+    },
+    "seen": "profile_alpha"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R6: after the readonly session closes, a plain one writes",
+   "detail": {
+    "writable": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R6b: one live session per profile still holds, readonly or not",
+   "detail": {
+    "second_refused": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R0: the profile is adopted at startup, not created again",
+   "detail": {
+    "listed": [
+     {
+      "available": true,
+      "name": "alpha",
+      "persistence": "persistent",
+      "profile": "profile_alpha"
+     }
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R1: an adopted profile opens readonly and says so, without the latch",
+   "detail": {
+    "answer": {
+     "kind": "session",
+     "mode": "readonly",
+     "profile": "profile_alpha",
+     "read_only": false,
+     "session": "session_1"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R3: reads still answer from the record",
+   "detail": {
+    "answer": {
+     "found": true,
+     "kind": "profile_storage_get",
+     "profile": "profile_alpha",
+     "value": "written-once"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R2: every write is refused, and not as a failed commit",
+   "detail": {
+    "policy": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "session_read_only"
+     },
+     "message": "this session was opened readonly",
+     "retryable": false,
+     "scope": {
+      "id": "session_1",
+      "kind": "session"
+     }
+    },
+    "put": {
+     "code": "unsupported_capability",
+     "details": {
+      "reason": "session_read_only"
+     },
+     "message": "this session was opened readonly",
+     "retryable": false,
+     "scope": {
+      "id": "session_1",
+      "kind": "session"
+     }
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R3b: a page still opens and runs against a readonly profile",
+   "detail": {
+    "answer": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R7: an ephemeral profile cannot be opened readonly",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "an ephemeral profile has nothing to read: it cannot be opened readonly",
+     "retryable": false
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R9: an unknown mode is refused",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "mode must be readwrite or readonly",
+     "retryable": false
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R9b: profile.create does not take a mode",
+   "detail": {
+    "answer": {
+     "code": "invalid_request",
+     "message": "profile.create accepts persistence and an optional name",
+     "retryable": false
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R4: a writable sibling is unaffected",
+   "detail": {
+    "answer": null
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R5: a failed commit still latches, with its own reason",
+   "detail": {
+    "again": {
+     "code": "internal",
+     "details": {
+      "detail": "storage is read-only after an earlier failed commit",
+      "reason": "storage_commit_failed"
+     },
+     "message": "profile storage commit failed; the previous record is kept",
+     "retryable": false,
+     "scope": {
+      "id": "profile_beta",
+      "kind": "profile"
+     }
+    },
+    "failed": {
+     "code": "internal",
+     "details": {
+      "detail": "profile record could not be written",
+      "reason": "storage_commit_failed"
+     },
+     "message": "profile storage commit failed; the previous record is kept",
+     "retryable": false,
+     "scope": {
+      "id": "profile_beta",
+      "kind": "profile"
+     }
+    },
+    "read_only": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R8: a second host is still locked out, readonly or not",
+   "detail": {
+    "answer": {
+     "code": "profile_locked",
+     "message": "another host holds this profile's writer lock",
+     "retryable": true,
+     "scope": {
+      "id": "profile_alpha",
+      "kind": "profile"
+     }
+    },
+    "seen": "profile_alpha"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R6: after the readonly session closes, a plain one writes",
+   "detail": {
+    "writable": true
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R6b: one live session per profile still holds, readonly or not",
+   "detail": {
+    "second_refused": true
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 28,
+ "checks_total": 28,
+ "court": "native-dom readonly profiles (control 0.0.1 arguments)",
+ "host_sha256": "8ff70b9f26c1bdb3c0e409d704f8ecc0021663f2bb1dd0f96a4143e4ce39f093",
+ "limitations": [
+  "design-frozen court: it fails until session.open accepts the mode",
+  "on a host without the mode the run stops at R1 in each arm, so the criterion count is small until the capability exists and grows to the full set once R1 passes",
+  "R5 is the criterion that matters: it proves the new mode did not eat read_only's meaning, and profile-court.py's own latch criterion must keep passing on the same binary",
+  "two criteria read the contract source and its examples rather than the binary, so they are repo-local by design",
+  "the sealed store is enabled through the profile-store environment knob, as the profile court does",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": true,
+ "ruled": {
+  "ephemeral_readonly": "refused",
+  "read_only": "unchanged: the failed-commit latch",
+  "shape": "mode argument on session.open, per session, not persisted",
+  "writer_lock": "still taken"
+ }
+}

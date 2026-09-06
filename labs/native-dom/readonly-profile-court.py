@@ -314,12 +314,20 @@ def main():
                     with tempfile.TemporaryDirectory(prefix="minicon-surf-readonly-2-") as other:
                         rival = Host(args.binary, other, allocator, origin, root)
                         try:
-                            contended = rival.call("profile.create",
-                                                   {"persistence": "persistent",
-                                                    "name": "alpha", "mode": "readonly"})
+                            # The rival adopts the same root, so the profile is
+                            # already listed; the lock is taken at the open.
+                            rival_list = rival.call("profile.list", {})
+                            rival_id = None
+                            if rival_list.get("ok"):
+                                rival_id = next((p["profile"] for p
+                                                 in rival_list["result"]["profiles"]
+                                                 if p.get("name") == "alpha"), None)
+                            contended = rival.call("session.open",
+                                                   {"profile": rival_id,
+                                                    "mode": "readonly"}) if rival_id else {}
                             expect(tag + "R8: a second host is still locked out, readonly or not",
                                    refused(contended, "profile_locked"),
-                                   {"answer": contended.get("error")})
+                                   {"answer": contended.get("error"), "seen": rival_id})
                         finally:
                             rival.finish()
                 finally:
@@ -330,15 +338,24 @@ def main():
                 # profile and not to the record.
                 host = Host(args.binary, directory, allocator, origin, root)
                 try:
+                    # Amended before the code, on a second measured lifecycle
+                    # fact: this host allows ONE LIVE SESSION PER PROFILE —
+                    # a second open answers resource_limit — so "two sessions
+                    # at once" cannot be the test. The sequence proves the same
+                    # thing: the mode dies with the session that carried it.
                     listed = host.ok("profile.list", {})["profiles"]
                     adopted = next((p["profile"] for p in listed
                                     if p.get("name") == "alpha"), None)
                     writable = False
-                    both_open = False
+                    second_refused = False
                     if adopted is not None:
                         ro = host.call("session.open", {"profile": adopted, "mode": "readonly"})
+                        if ro.get("ok"):
+                            rival = host.call("session.open", {"profile": adopted})
+                            second_refused = refused(rival, "resource_limit")
+                            host.call("session.close",
+                                      {"session": ro["result"]["session"]})
                         rw = host.call("session.open", {"profile": adopted})
-                        both_open = bool(ro.get("ok") and rw.get("ok"))
                         if rw.get("ok"):
                             wrote = host.call("profile.storage.put",
                                               {"session": rw["result"]["session"],
@@ -346,18 +363,10 @@ def main():
                                                "key": "after-readonly",
                                                "value": "writable-again"})
                             writable = bool(wrote.get("ok"))
-                        if ro.get("ok"):
-                            refused_here = host.call("profile.storage.put",
-                                                     {"session": ro["result"]["session"],
-                                                      "kind": "local_storage",
-                                                      "key": "still-no",
-                                                      "value": "must-not-write"})
-                            expect(tag + "R6b: the readonly session still refuses while the other writes",
-                                   not refused_here.get("ok"),
-                                   {"answer": refused_here.get("error")})
-                    expect(tag + "R6: a second session without the mode writes the same profile",
-                           writable and both_open,
-                           {"writable": writable, "both_open": both_open})
+                    expect(tag + "R6: after the readonly session closes, a plain one writes",
+                           writable, {"writable": writable})
+                    expect(tag + "R6b: one live session per profile still holds, readonly or not",
+                           second_refused, {"second_refused": second_refused})
                 finally:
                     host.finish()
     finally:
