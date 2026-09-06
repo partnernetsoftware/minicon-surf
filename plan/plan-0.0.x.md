@@ -1404,6 +1404,46 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Frozen, then implemented: an answer is never lost to half a character
+  (`labs/native-dom/text-answer-court.py`, receipts
+  `evidence/native-dom-control-0.0.2-text-answer-court{,-falsification,-falsification-amended}.json`).
+  **Court frozen first at 13/29 on `cc8ebfa4`**, then **29/29 on `2d57ce86`**.
+  The audit drafted sixteen criteria; the ruling asked for **all six** places the
+  snapshot cuts a page-derived string, so the frozen court carries twenty-nine —
+  a name, an input `value` and an option `label` cut at 256, and a `dom_id`, a
+  control's name and a radio's `group` cut at 64, each with a surrogate pair
+  straddling its own boundary. `snapshot_script` gains `cut(raw, n)`, built only
+  from a string's own `length`, index reads and `+=`: it stops one character
+  early rather than splitting a pair, and replaces an unpaired surrogate
+  anywhere with U+FFFD. **The measured cost is zero on every axis**: shims
+  unchanged at 33,886 and 26,485, and child-frame M1 and M2 identical on both
+  allocators — the whole change lives in a host script, compiled per evaluation
+  and not resident per realm. **No re-freeze of any settled court was needed**,
+  the first slice in this line for which that is true. **Two scope notes,
+  reported rather than absorbed.** The frozen criterion forbade `.slice(0,`
+  anywhere in the script, which also caught two *array* slices bounding the
+  option and control counts; rather than weaken a frozen criterion I made it
+  true, adding a `take(list, n)` on the same index-only technique — which
+  incidentally takes those two counts out of the page's hands as well. And one
+  criterion was **amended after the freeze**, recorded in the file beside its old
+  form: it checked every field against the single limit its document was built
+  around, and a textbox's `name` falls back to the `name` attribute and is cut
+  at 256 rather than 64, so it failed at 68 characters on a host that was right.
+  It now checks each field against **its own** ruled limit, which is strictly
+  more precise, and the amended court **still scores 13/29 on the pre-change
+  binary** — identical to the freeze, recorded in its own falsification receipt
+  rather than over the original. Regressions on `2d57ce86`, all green:
+  attribute-fact 154/154, element-tag 52/52, signature-integrity 34/34,
+  property-shape 22/22, registry-brand 15/15, capture-declaration 8/8,
+  probe-truthfulness 25/25, host-answer 9/9, downloads 21/21, snapshot-schema
+  13/13, copy-on-write 23/23, readonly-profile 28/28, form 179/179, frame-action
+  182/182, page-navigation 80/80, lifecycle 53/53, job-deadline 42/42,
+  element-api 28/28, dataset 15/15, event-fidelity 62/62, timer 68/68, and
+  **child-frame 82/82** — the audit round's 81/82 was batch variance and did not
+  recur. Navigation soak not rerun by standing rule. fmt, 58 tests, clippy
+  `-D warnings`, contract 28 examples and 50 negatives. The option label/value
+  exposure stays a **separate protocol question**, named in the court's own
+  receipt. Not pushed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: the C class, what a page's own text
   reaches (`labs/native-dom/text-answer-audit-0.0.1.md`, probe
   `text-answer-probe.py`, receipt

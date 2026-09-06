@@ -1,0 +1,391 @@
+{
+  "court": "native-dom: an answer is never lost to half a character",
+  "frozen_from": "labs/native-dom/text-answer-audit-0.0.1.md \u00a712",
+  "binary_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+  "passed": true,
+  "score": "29/29",
+  "checks": [
+    {
+      "check": "A: `name_pair_straddles` still returns an answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "code": null,
+        "nodes": 1
+      }
+    },
+    {
+      "check": "A: `name_pair_straddles` carries no half character and stays inside its bound",
+      "passed": true,
+      "detail": {
+        "lone_surrogate": false,
+        "over_its_limit": [],
+        "site_limit": 256,
+        "fields": [
+          [
+            255,
+            256
+          ],
+          [
+            1,
+            64
+          ]
+        ],
+        "blob_bytes": 370
+      }
+    },
+    {
+      "check": "A: `dom_id_pair_straddles` still returns an answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "code": null,
+        "nodes": 1
+      }
+    },
+    {
+      "check": "A: `dom_id_pair_straddles` carries no half character and stays inside its bound",
+      "passed": true,
+      "detail": {
+        "lone_surrogate": false,
+        "over_its_limit": [],
+        "site_limit": 64,
+        "fields": [
+          [
+            6,
+            256
+          ],
+          [
+            63,
+            64
+          ]
+        ],
+        "blob_bytes": 183
+      }
+    },
+    {
+      "check": "A: `value_pair_straddles` still returns an answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "code": null,
+        "nodes": 2
+      }
+    },
+    {
+      "check": "A: `value_pair_straddles` carries no half character and stays inside its bound",
+      "passed": true,
+      "detail": {
+        "lone_surrogate": false,
+        "over_its_limit": [],
+        "site_limit": 256,
+        "fields": [
+          [
+            1,
+            256
+          ],
+          [
+            255,
+            256
+          ],
+          [
+            1,
+            64
+          ],
+          [
+            1,
+            64
+          ]
+        ],
+        "blob_bytes": 634
+      }
+    },
+    {
+      "check": "A: `option_pair_straddles` still returns an answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "code": null,
+        "nodes": 2
+      }
+    },
+    {
+      "check": "A: `option_pair_straddles` carries no half character and stays inside its bound",
+      "passed": true,
+      "detail": {
+        "lone_surrogate": false,
+        "over_its_limit": [],
+        "site_limit": 256,
+        "fields": [
+          [
+            1,
+            256
+          ],
+          [
+            1,
+            64
+          ],
+          [
+            1,
+            64
+          ],
+          [
+            255,
+            256
+          ]
+        ],
+        "blob_bytes": 712
+      }
+    },
+    {
+      "check": "A: `control_name_pair_straddles` still returns an answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "code": null,
+        "nodes": 2
+      }
+    },
+    {
+      "check": "A: `control_name_pair_straddles` carries no half character and stays inside its bound",
+      "passed": true,
+      "detail": {
+        "lone_surrogate": false,
+        "over_its_limit": [],
+        "site_limit": 64,
+        "fields": [
+          [
+            68,
+            256
+          ],
+          [
+            1,
+            256
+          ],
+          [
+            1,
+            64
+          ],
+          [
+            63,
+            64
+          ]
+        ],
+        "blob_bytes": 520
+      }
+    },
+    {
+      "check": "A: `group_pair_straddles` still returns an answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "code": null,
+        "nodes": 2
+      }
+    },
+    {
+      "check": "A: `group_pair_straddles` carries no half character and stays inside its bound",
+      "passed": true,
+      "detail": {
+        "lone_surrogate": false,
+        "over_its_limit": [],
+        "site_limit": 64,
+        "fields": [
+          [
+            68,
+            256
+          ],
+          [
+            1,
+            64
+          ],
+          [
+            63,
+            64
+          ],
+          [
+            63,
+            64
+          ]
+        ],
+        "blob_bytes": 598
+      }
+    },
+    {
+      "check": "A: the control `plain` answers with a node and a name",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 5
+      }
+    },
+    {
+      "check": "A: the control `long_plain` answers with a node and a name",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 256
+      }
+    },
+    {
+      "check": "A: the control `pair_ends_at_the_cut` answers with a node and a name",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 255
+      }
+    },
+    {
+      "check": "A: the control `pair_after_the_cut` answers with a node and a name",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 256
+      }
+    },
+    {
+      "check": "A: the control `emoji_in_short_text` answers with a node and a name",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 7
+      }
+    },
+    {
+      "check": "B: `written_lone_surrogate` does not lose the answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 3,
+        "lone": false
+      }
+    },
+    {
+      "check": "B: `written_lone_low_surrogate` does not lose the answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 3,
+        "lone": false
+      }
+    },
+    {
+      "check": "B: `written_pair` does not lose the answer",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "name_len": 3,
+        "lone": false
+      }
+    },
+    {
+      "check": "C: with `slice_identity` the cut is still the host's",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "longest": 256,
+        "truncated": false
+      }
+    },
+    {
+      "check": "C: with `slice_empty` the cut is still the host's",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "nodes": 1,
+        "longest": 256,
+        "truncated": false
+      }
+    },
+    {
+      "check": "D: a node's id is the host's, and a div is still not a link",
+      "passed": true,
+      "detail": {
+        "ids": {
+          "p": "node_1",
+          "link": "node_2",
+          "dl": "node_3",
+          "js": "node_4",
+          "f": "node_5",
+          "go": "node_6",
+          "named": "node_7"
+        },
+        "div_offered": false
+      }
+    },
+    {
+      "check": "D: the typed refusals a page's text cannot reach are unchanged",
+      "passed": true,
+      "detail": {
+        "activations": {
+          "link": "allowed",
+          "dl": "download_available",
+          "js": "scheme_unsupported",
+          "f": "form_method_unsupported",
+          "go": "form_method_unsupported",
+          "named": "target_named"
+        }
+      }
+    },
+    {
+      "check": "D: a link still navigates, and to nowhere else",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "server_saw": [
+          "/landed.html"
+        ]
+      }
+    },
+    {
+      "check": "D: text written during an act moves the revision and staleness still bites",
+      "passed": true,
+      "detail": {
+        "before": 0,
+        "after": 2,
+        "stale_code": "stale_revision"
+      }
+    },
+    {
+      "check": "D: an honest download still delivers its bytes",
+      "passed": true,
+      "detail": {
+        "ok": true,
+        "bytes": 29
+      }
+    },
+    {
+      "check": "D: the snapshot cuts without `slice` and without the global `String`",
+      "passed": true,
+      "detail": {
+        "found": true,
+        "length": 5760,
+        "has_slice": false,
+        "has_String": false
+      }
+    },
+    {
+      "check": "D: no shim byte moved -- the whole change is in a host script",
+      "passed": true,
+      "detail": {
+        "base": 33886,
+        "base_pinned": 33886,
+        "main": 26485,
+        "main_pinned": 26485
+      }
+    }
+  ],
+  "not_under_test": [
+    "an option's label and the value that would be submitted are two different strings and the snapshot shows only the first -- conformant HTML, and a separate protocol question"
+  ],
+  "headless": "no surface binary, no window, no AppKit; one hermetic loopback origin"
+}

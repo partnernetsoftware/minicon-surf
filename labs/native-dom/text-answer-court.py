@@ -272,22 +272,34 @@ def main():
                 result = answer.get("result") or {}
                 nodes = result.get("nodes") or []
                 blob = json.dumps(nodes)
-                fields = [n.get(key) for n in nodes
-                          for key in ("name", "value", "dom_id", "control_name", "group")
+                # Amendment, 2026-09-06, recorded rather than substituted.
+                # The first form checked every field of every node against the
+                # one limit the document was built around, and a textbox's
+                # `name` falls back to its `name` attribute and is cut at 256,
+                # not at 64 -- so the criterion failed at 68 characters on a
+                # host that was right. Each field is now checked against **its
+                # own** ruled limit, which is strictly more precise than what
+                # it replaces and still fails on the pre-change binary, where
+                # these documents return no answer at all.
+                LIMITS = {"name": 256, "value": 256, "dom_id": 64,
+                          "control_name": 64, "group": 64}
+                fields = [(n.get(key), LIMITS[key]) for n in nodes for key in LIMITS
                           if n.get(key)]
-                fields += [o.get("label") for n in nodes for o in (n.get("options") or [])
-                           if o.get("label")]
+                fields += [(o.get("label"), 256) for n in nodes
+                           for o in (n.get("options") or []) if o.get("label")]
                 expect(f"A: `{label}` still returns an answer",
                        bool(answer.get("ok")) and nodes,
                        {"ok": bool(answer.get("ok")),
                         "code": (answer.get("error") or {}).get("code"),
                         "nodes": len(nodes)})
+                over = [(len(f), cap) for f, cap in fields if len(f) > cap]
                 expect(f"A: `{label}` carries no half character and stays inside its bound",
-                       bool(answer.get("ok"))
-                       and not any(has_lone_surrogate(f) for f in fields)
-                       and all(len(f) <= limit for f in fields),
-                       {"lone_surrogate": any(has_lone_surrogate(f) for f in fields),
-                        "longest": max((len(f) for f in fields), default=0), "limit": limit,
+                       bool(answer.get("ok")) and fields
+                       and not any(has_lone_surrogate(f) for f, _cap in fields)
+                       and not over,
+                       {"lone_surrogate": any(has_lone_surrogate(f) for f, _cap in fields),
+                        "over_its_limit": over, "site_limit": limit,
+                        "fields": [(len(f), cap) for f, cap in fields],
                         "blob_bytes": len(blob)})
 
             # ------------------------------- the controls that must keep working

@@ -690,6 +690,42 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
   const s = window.__mcs;
   if (!s) return "{{\"error\":\"uninstrumented\"}}";
 {activation}
+  // A cut that cannot leave half a character. `String.prototype.slice` and
+  // the global `String` are the page's, and a cut that split a surrogate pair
+  // made the whole snapshot fail with a bare `internal` -- reachable by
+  // ordinary content at an unlucky offset, not only by a page trying. Built
+  // from a string's own `length`, index reads and `+=`, none of which a page
+  // can reach.
+  const cut = (raw, n) => {{
+    const s = raw == null ? "" : "" + raw;
+    const end = s.length < n ? s.length : n;
+    let out = "";
+    for (let i = 0; i < end; i++) {{
+      const c = s[i];
+      if (c >= "\ud800" && c <= "\udbff") {{
+        const d = i + 1 < s.length ? s[i + 1] : "";
+        if (d >= "\udc00" && d <= "\udfff") {{
+          // The pair is kept whole or dropped whole: a cut that would land
+          // between its halves stops one character early instead.
+          if (i + 1 >= end) break;
+          out += c; out += d; i++; continue;
+        }}
+        out += "\ufffd"; continue;
+      }}
+      if (c >= "\udc00" && c <= "\udfff") {{ out += "\ufffd"; continue; }}
+      out += c;
+    }}
+    return out;
+  }};
+  // The same discipline for a list's own bound: `Array.prototype.slice` is
+  // the page's too, and a replaced one decides how many options or controls
+  // the answer carries. Index reads and index writes are nobody else's.
+  const take = (list, n) => {{
+    const out = [];
+    const end = list.length < n ? list.length : n;
+    for (let i = 0; i < end; i++) out[i] = list[i];
+    return out;
+  }};
   const role = (el) => {{
     const t = __mcsTag(el);
     const type = (el.type || "").toLowerCase();
@@ -727,19 +763,19 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
     if (r === "textbox") {{
       const label = el.id ? document.querySelector('label[for="' + el.id + '"]') : null;
       name = (label ? label.textContent : (el.getAttribute("aria-label") || el.getAttribute("name") || "")).trim();
-      entry.value = String(el.value || "").slice(0, 256);
+      entry.value = cut(el.value, 256);
     }}
     if (r === "checkbox" || r === "radio") {{
       const label = el.id ? document.querySelector('label[for="' + el.id + '"]') : null;
       name = (label ? label.textContent : (el.getAttribute("aria-label") || el.getAttribute("name") || "")).trim();
       entry.checked = !!el.checked;
-      if (r === "radio") entry.group = String(el.getAttribute("name") || "").slice(0, 64);
+      if (r === "radio") entry.group = cut(el.getAttribute("name"), 64);
     }}
     if (r === "select") {{
       name = (el.getAttribute("aria-label") || el.getAttribute("name") || "").trim();
-      const options = el.options.slice(0, 64);
+      const options = take(el.options, 64);
       entry.options = options.map((o, index) => ({{
-        index, label: String(o.label || "").trim().slice(0, 256),
+        index, label: cut((o.label || "").trim(), 256),
         selected: index === el.selectedIndex, disabled: !!o.disabled,
       }}));
       entry.selected = el.selectedIndex;
@@ -748,21 +784,21 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
       name = (el.getAttribute("aria-label") || el.getAttribute("name") || el.getAttribute("id") || "").trim();
       entry.method = NORMALISE(__mcsAttr(el, "method") || "get");
       entry.has_action = el.hasAttribute("action");
-      entry.controls = el.elements.slice(0, 64)
+      entry.controls = take(el.elements, 64)
         .filter((c) => place.has(c)).map((c) => "node_" + (place.get(c) + 1));
     }}
     if (r === "textbox" || r === "checkbox" || r === "radio" || r === "select" || r === "button") {{
       entry.disabled = !!el.disabled;
       entry.read_only = !!el.readOnly;
-      const control = String(el.getAttribute("name") || "");
-      if (control) entry.control_name = control.slice(0, 64);
+      const control = cut(el.getAttribute("name"), 64);
+      if (control) entry.control_name = control;
     }}
     // What an activation of this node would decide, over a closed
     // vocabulary, so an agent can see a refusal coming without reading the
     // target, the href or any other page text.
     if (r === "link" || r === "button" || r === "form") entry.activation = activationOf(el);
-    entry.name = name.slice(0, 256);
-    if (el.id) entry.dom_id = String(el.id).slice(0, 64);
+    entry.name = cut(name, 256);
+    if (el.id) entry.dom_id = cut(el.id, 64);
     nodes.push(el);
     out.push(entry);
   }}
