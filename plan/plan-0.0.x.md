@@ -1381,6 +1381,34 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Frozen, then implemented: the snapshot parse stops defaulting
+  (`labs/native-dom/snapshot-schema-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-snapshot-schema.json`, record in
+  `snapshot-defaulting-audit-0.0.1.md` §11). Frozen at **7/13**, now **13/13**
+  on `ba46420b…`. Both parse sites require every field to be what it claims —
+  a missing or mistyped `nodes`, `node`, `role`, `name` or `truncated` is
+  refused `target_crashed` with `reason: "snapshot_schema"` and the **field
+  named** — and the `node_0` default is gone, which was the one default that
+  could hand an agent a reference resolving to nothing. The four act scripts
+  guard the list before indexing, so `nodes = null` gets that typed refusal
+  rather than `internal` / *a script threw*: the audit's blemish, a
+  page-authored break reading as a host fault. **The court's shape was decided
+  by a measurement**: a page cannot produce a malformed field at all —
+  `textContent = 42`, `= {}`, `= null` and `setAttribute("id", 7)` all arrive
+  as strings — so those criteria are pinned at the source and in
+  `snapshot_schema_tests` rather than pretended through a fixture, and only the
+  act path is driven live. **A court weakness was caught before the freeze
+  stood**: the source criteria matched exact multi-line strings and passed
+  because the formatting differed, not because the defaults were gone; they are
+  now window-based and assert they found both sites. Regressions:
+  registry-brand 15/15, host-answer 9/9, property-shape 22/22,
+  capture-declaration 8/8, probe-truthfulness 25/25, downloads 21/21,
+  copy-on-write 23/23, readonly 28/28, frame-action 182/182, child-frame 82/82,
+  timer 68/68, contract 28/50, **58 tests**; navigation 89/90 on its known
+  memory-variance check. Branding `snapshot`/`nodes` stays **not done** as
+  ruled (+1,872 bytes per realm); the interlock carries it, and the court keeps
+  it as a standing regression. Handle key set, enum at 26, both shims and every
+  bound untouched.
 - [ ] Design-only, nothing implemented: snapshot defaulting
   (`labs/native-dom/snapshot-defaulting-audit-0.0.1.md`). **The defaults are
   hygiene, not a hole**: `error` and `revision` refuse, and everything else —

@@ -142,3 +142,60 @@ fail-closed.
    recommended **not**, on the measurement.
 3. Whether the `node_0` default is worth its own note in the protocol
    documentation, since it is the one place the host invents an identifier.
+
+---
+
+## 11. Frozen, then implemented — 2026-09-06
+
+`snapshot-schema-court.py` was frozen first, receipt
+`evidence/native-dom-control-0.0.2-snapshot-schema.json`, reading **7/13** on
+the shipped binary. It now reads **13/13** on `ba46420b…`.
+
+One thing settled before the court was written, and it shaped it: **a page
+cannot produce a malformed field.** Measured — `textContent = 42`, `= {}`,
+`= null` and `setAttribute("id", 7)` arrive as the strings `"42"`,
+`"[object Object]"`, `"null"` and `"7"`. So the missing-and-mistyped criteria
+cannot be driven through a fixture. They are pinned where they live: at the
+source, and in `snapshot_schema_tests`, which hands the refusal the shapes a
+page cannot. The one page-reachable route — the act path — is driven for real.
+
+### What changed
+
+Both parse sites now require every field to be what it claims: a missing or
+mistyped `nodes` array, `node`, `role`, `name` or `truncated` is refused with
+`target_crashed`, `reason: "snapshot_schema"`, and the **field named**. The
+`node_0` default is gone; inventing a reference the realm never issued was the
+one default that could hand an agent a name resolving to nothing.
+
+The four act scripts also guard the list before indexing it, so a page that
+sets `nodes` to null gets that same typed refusal instead of `internal` with
+`engine_error: "a script threw"`. That was the audit's blemish: a page-authored
+break reading as a host fault.
+
+### Two court weaknesses caught before the freeze stood
+
+The first draft's source criteria matched **exact multi-line strings**. They
+passed on the shipped binary — not because the defaults were gone, but because
+the formatting did not match what I had typed. A criterion that stops matching
+when the code is reformatted passes for the wrong reason. They are now
+window-based: the ten lines before and sixty after each parse site must contain
+no `unwrap_or_default()`, `unwrap_or("")`, `unwrap_or(Value::Null)`,
+`unwrap_or(false)` or `unwrap_or("node_0")`, and the court asserts it found
+**two** such sites, so a site that moved would be noticed rather than skipped.
+
+### Regressions
+
+registry-brand 15/15, host-answer 9/9, property-shape 22/22,
+capture-declaration 8/8, probe-truthfulness 25/25, downloads 21/21,
+copy-on-write 23/23, readonly 28/28, frame-action 182/182, child-frame 82/82,
+timer 68/68, contract 28 examples and 50 negative cases, `cargo test` **58
+passed** (two new), fmt and clippy clean. navigation 89/90 fails only its known
+memory-variance check.
+
+**Not done, as ruled**: branding `snapshot` and `nodes`, measured at +1,872
+bytes per realm. The interlock still carries that case, and the court keeps it
+as a standing regression: a disconnected poison is `not_found`, a connected one
+is `stale_revision`, and the server is asked for neither.
+
+**Untouched**: the handle key set, the protocol enum at 26, both shims (digests
+pinned in the court), and every bound.

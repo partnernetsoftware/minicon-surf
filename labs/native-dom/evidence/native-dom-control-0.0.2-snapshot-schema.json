@@ -1,0 +1,148 @@
+{
+ "checks": [
+  {
+   "check": "R1: a page that breaks the registry is refused, not served",
+   "detail": {
+    "ok": false
+   },
+   "passed": true
+  },
+  {
+   "check": "R1b: that refusal does not read as a host fault",
+   "detail": {
+    "code": "target_crashed"
+   },
+   "passed": true
+  },
+  {
+   "check": "R1c: that refusal names what went wrong",
+   "detail": {
+    "details": {
+     "field": "nodes",
+     "reason": "snapshot_schema"
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "R1d: the agent still read the real document before it",
+   "detail": {
+    "names": [
+     "safe link"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "I1: a disconnected poison is not_found",
+   "detail": {
+    "code": "not_found",
+    "hits": [
+     "/a.html"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "I2: a connected poison is stale_revision -- connecting it moved the counter",
+   "detail": {
+    "code": "stale_revision",
+    "hits": [
+     "/a.html"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "I3: the server is never asked for the swapped URL, either way",
+   "detail": {
+    "joined": [
+     "/a.html"
+    ],
+    "loose": [
+     "/a.html"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "S1: the parser never invents a node reference",
+   "detail": {
+    "found": false
+   },
+   "passed": true
+  },
+  {
+   "check": "S2: neither parse site defaults a missing or mistyped field",
+   "detail": {
+    "defaulting_found": [],
+    "sites": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "S3: truncated is not silently read as false",
+   "detail": {
+    "sites": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "S4: unit tests exercise the shapes a page cannot produce",
+   "detail": {
+    "present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "S5: the shims are untouched by this work",
+   "passed": true
+  },
+  {
+   "check": "S6: the operation enum is unchanged at 26",
+   "detail": {
+    "operations": 26
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 13,
+ "checks_total": 13,
+ "court": "native-dom snapshot schema strictness",
+ "host_sha256": "ba46420bb1e6d986509db52da28c9292710f42ff98a17d3e613e60f27b8f2011",
+ "limitations": [
+  "design-frozen court: R1b, R1c and the source criteria fail until the parse is made strict",
+  "a page cannot produce a malformed field -- measured: textContent = 42, {}, null and setAttribute(\"id\", 7) all arrive as strings -- so those criteria are pinned at the source and in unit tests, not through a fixture",
+  "the act path is the one page-reachable route, and it is driven for real through a timer in the window target.act opens",
+  "the interlock criteria are a standing regression of what the audit measured, not new behaviour",
+  "one hermetic loopback origin; no surface, no window, no AppKit"
+ ],
+ "observed": {
+  "connected poison": {
+   "code": "stale_revision",
+   "hits": [
+    "/a.html"
+   ]
+  },
+  "disconnected poison": {
+   "code": "not_found",
+   "hits": [
+    "/a.html"
+   ]
+  },
+  "nodes = null": {
+   "code": "target_crashed",
+   "hits": [
+    "/a.html"
+   ],
+   "reason": "snapshot_schema"
+  }
+ },
+ "passed": true,
+ "ruled": {
+  "node_0": "the parser never invents a reference id",
+  "page_fault": "a page-authored break is not an internal host fault",
+  "parse": "missing or mistyped fields are refused, never defaulted",
+  "rejected": "branding snapshot and nodes, measured at 1,872 bytes per realm"
+ }
+}

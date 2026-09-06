@@ -304,6 +304,19 @@ fn quoted_brand(brand: &str) -> &str {
     if brand.is_empty() { "\"\"" } else { brand }
 }
 
+/// The realm handed back an answer the host cannot read. A page can cause this
+/// -- by breaking the registry it shares with the host -- so the refusal says
+/// what was wrong with the answer rather than blaming the host.
+fn malformed_snapshot(target_id: &str, field: &'static str) -> ControlError {
+    ControlError::new(
+        "target_crashed",
+        "the realm's snapshot answer could not be read",
+        false,
+    )
+    .scoped("target", target_id)
+    .details(json!({"reason": "snapshot_schema", "field": field}))
+}
+
 fn install_script(brand: &str) -> String {
     let brand = quoted_brand(brand);
     format!(
@@ -753,6 +766,10 @@ fn download_probe_script(revision: u64, index: usize) -> String {
   if (!s) return "{{\"error\":\"uninstrumented\"}}";
   if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
   if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
+  // The registry's node list is the page's to break -- it shares the realm --
+  // so a list that is not a list is reported, not thrown over.
+  if (!s.nodes || typeof s.nodes !== "object" || typeof s.nodes.length !== "number")
+    return __mcsJson({{ unusable: true }});
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
   if (el.tagName.toLowerCase() !== "a" || !el.hasAttribute("href")) return __mcsJson({{}});
@@ -857,6 +874,10 @@ fn preflight_script(
   if (!s) return "{{\"error\":\"uninstrumented\"}}";
   if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
   if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
+  // The registry's node list is the page's to break -- it shares the realm --
+  // so a list that is not a list is reported, not thrown over.
+  if (!s.nodes || typeof s.nodes !== "object" || typeof s.nodes.length !== "number")
+    return __mcsJson({{ unusable: true }});
   const el = s.nodes[{index}];
   if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
   const action = {action};
@@ -887,6 +908,10 @@ fn form_action_script(
   if (!s) return __mcsJson({{ error: "uninstrumented" }});
   if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
   if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
+  // The registry's node list is the page's to break -- it shares the realm --
+  // so a list that is not a list is reported, not thrown over.
+  if (!s.nodes || typeof s.nodes !== "object" || typeof s.nodes.length !== "number")
+    return __mcsJson({{ unusable: true }});
   const el = s.nodes[{index}];
   // An agent's action focuses what it acts on, the way a person's would,
   // and before anything is applied, so a handler already sees it. The base
@@ -1052,6 +1077,10 @@ fn act_script(
   if (!s) return __mcsJson({{ error: "uninstrumented" }});
   if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
   if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
+  // The registry's node list is the page's to break -- it shares the realm --
+  // so a list that is not a list is reported, not thrown over.
+  if (!s.nodes || typeof s.nodes !== "object" || typeof s.nodes.length !== "number")
+    return __mcsJson({{ unusable: true }});
   const el = s.nodes[{index}];
   // An agent's action focuses what it acts on, the way a person's would,
   // and before anything is applied, so a handler already sees it. The base
@@ -3086,32 +3115,25 @@ impl Host {
             }
             return Ok((Vec::new(), revision));
         }
-        let nodes = raw
+        // Every field is required to be what it claims. A missing array is not
+        // an empty page, and a missing id is not `node_0`: inventing a
+        // reference the realm never issued is the one default that could put a
+        // name in an agent's hand that resolves to nothing.
+        let entries = raw
             .get("nodes")
             .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default()
-            .iter()
-            .map(|entry| {
-                (
-                    entry
-                        .get("node")
-                        .and_then(Value::as_str)
-                        .unwrap_or("node_0")
-                        .to_owned(),
-                    entry
-                        .get("role")
-                        .and_then(Value::as_str)
-                        .unwrap_or("")
-                        .to_owned(),
-                    entry
-                        .get("name")
-                        .and_then(Value::as_str)
-                        .unwrap_or("")
-                        .to_owned(),
-                )
-            })
-            .collect();
+            .ok_or_else(|| malformed_snapshot(&target.id, "nodes"))?;
+        let mut nodes: SemanticRows = Vec::with_capacity(entries.len());
+        for entry in entries {
+            let field = |name: &'static str| -> Result<String, ControlError> {
+                entry
+                    .get(name)
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+                    .ok_or_else(|| malformed_snapshot(&target.id, name))
+            };
+            nodes.push((field("node")?, field("role")?, field("name")?));
+        }
         stage("after_rows_extract", target.realm.arena_statistics());
         drop(raw);
         stage("after_value_drop", target.realm.arena_statistics());
@@ -6898,21 +6920,21 @@ impl Host {
         let mut truncated = raw
             .get("truncated")
             .and_then(Value::as_bool)
-            .unwrap_or(false);
+            .ok_or_else(|| malformed_snapshot(&id, "truncated"))?;
         let mut nodes = Vec::new();
         let mut budget = 0usize;
         for entry in raw
             .get("nodes")
             .and_then(Value::as_array)
-            .cloned()
-            .unwrap_or_default()
+            .ok_or_else(|| malformed_snapshot(&id, "nodes"))?
+            .clone()
         {
             // Target-scoped node ids: each frame's band is disjoint, so a
             // reference taken in a child can never resolve in the main frame.
             let node = entry
                 .get("node")
                 .and_then(Value::as_str)
-                .unwrap_or("node_0")
+                .ok_or_else(|| malformed_snapshot(&id, "node"))?
                 .to_owned();
             let node = match selected {
                 None => node,
@@ -6920,14 +6942,16 @@ impl Host {
                     let within = node
                         .strip_prefix("node_")
                         .and_then(|n| n.parse::<u64>().ok())
-                        .unwrap_or(0);
+                        .ok_or_else(|| malformed_snapshot(&id, "node"))?;
                     format!("node_{}", NODE_BAND * (index as u64 + 1) + within)
                 }
             };
             let mut item = json!({
                 "reference":{"target":id,"revision":revision,"node":node},
-                "role":entry.get("role").cloned().unwrap_or(Value::Null),
-                "name":entry.get("name").cloned().unwrap_or(Value::Null),
+                "role":entry.get("role").filter(|value| value.is_string())
+                    .cloned().ok_or_else(|| malformed_snapshot(&id, "role"))?,
+                "name":entry.get("name").filter(|value| value.is_string())
+                    .cloned().ok_or_else(|| malformed_snapshot(&id, "name"))?,
             });
             if let Some(value) = entry.get("value") {
                 item["value"] = value.clone();
@@ -7206,6 +7230,9 @@ impl Host {
                 .scoped("target", &id)
                 .details(json!({"reference_revision":revision,"current_revision":global})));
             }
+            if preflight.get("unusable").is_some() {
+                return Err(malformed_snapshot(&id, "nodes"));
+            }
             if preflight.get("missing").is_some() {
                 return Err(ControlError::new("not_found", "node does not exist", false)
                     .scoped("target", &id));
@@ -7350,6 +7377,9 @@ impl Host {
             )
             .scoped("target", &id)
             .details(json!({"reference_revision":revision,"current_revision":global})));
+        }
+        if outcome.get("unusable").is_some() {
+            return Err(malformed_snapshot(&id, "nodes"));
         }
         if outcome.get("missing").is_some() {
             return Err(
@@ -7558,6 +7588,9 @@ impl Host {
             )
             .scoped("target", id)
             .details(json!({"reference_revision":revision,"current_revision":global})));
+        }
+        if probe.get("unusable").is_some() {
+            return Err(malformed_snapshot(id, "nodes"));
         }
         if probe.get("missing").is_some() {
             return Err(
@@ -8832,6 +8865,50 @@ mod revision_tests {
             target.global_revision(MAX_SAFE_COUNTER),
             Some(MAX_SAFE_COUNTER),
             "a counter at its own limit is still an exact global revision"
+        );
+    }
+}
+
+#[cfg(test)]
+mod snapshot_schema_tests {
+    use super::*;
+
+    /// The shapes a page cannot produce -- the realm coerces every value it
+    /// touches to a string before the host sees it -- and which the parse must
+    /// therefore refuse on its own account rather than default away. Each one
+    /// is a field the audit found silently defaulted.
+    #[test]
+    fn a_malformed_answer_names_the_field_and_does_not_blame_the_host() {
+        for field in ["nodes", "node", "role", "name", "truncated"] {
+            let error = malformed_snapshot("target_1", field);
+            let rendered = error.to_json();
+            assert_eq!(
+                rendered["code"],
+                json!("target_crashed"),
+                "a page-authored break is not the host's fault"
+            );
+            assert_eq!(rendered["details"]["reason"], json!("snapshot_schema"));
+            assert_eq!(
+                rendered["details"]["field"],
+                json!(field),
+                "the refusal names which field could not be read"
+            );
+            assert_eq!(
+                rendered["retryable"],
+                json!(false),
+                "re-asking will not make the answer readable"
+            );
+        }
+    }
+
+    /// The default that mattered most: a reference id the parser invented
+    /// rather than the realm issuing it. There is no such string left.
+    #[test]
+    fn the_parser_invents_no_node_reference() {
+        let source = include_str!("main.rs");
+        assert!(
+            !source.contains("unwrap_or(\"node_0\")"),
+            "node_0 was the one default that could hand an agent a name resolving to nothing"
         );
     }
 }
