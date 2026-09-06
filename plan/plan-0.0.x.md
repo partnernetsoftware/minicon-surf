@@ -1381,6 +1381,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: cache, P6
+  (`labs/native-dom/cache-audit-0.0.1.md`). **One cache exists and it is not the
+  one the question is usually about.** A per-profile TLS session cache:
+  `ClientSessionMemoryCache` of **16 entries**, memory only, one client per
+  profile, never shared, gone on restart — and a copy-on-write child mints its
+  own, so it inherits no tickets. `secure-cookie-court.py:242` already pins that
+  a restarted host's first https fetch is a full handshake. **There is no HTTP
+  response cache at any scope, proven rather than assumed**: against an origin
+  serving `Cache-Control: max-age=3600`, an `ETag` and a `Last-Modified`, the
+  page was fetched again on reload, on navigate-away-and-back, in a second
+  target, a second session, a second profile and after a restart — 7 fetches for
+  7 asks. The host never revalidates either: across thirteen requests the only
+  headers it sent were `accept`, `connection`, `host`, `user-agent` — no
+  `If-None-Match`, no `If-Modified-Since`. Connections are not pooled: thirteen
+  fetches, **thirteen TCP connections**, which follows from the
+  `Connection: close` on every request. Nothing accumulates: twelve reloads left
+  tracked realm bytes identical at 329,088. **What that buys for free**: no
+  staleness, no cross-profile channel, no new retention class, and a readonly
+  session that writes nothing because there is nothing to write. If a cache were
+  added it would need its own budget (the 131,072-byte accounted budget is
+  already tight), must be measured on the arena arm because D6 is RSS, would
+  make G1 runs depend on whether the cache was warm, would re-seal the whole
+  profile record per store at ~12 ms if persistent, and must exclude downloads.
+  Eight-criterion court draft for a future cache in §7, four criteria pinning
+  today's absence in §8, three rulings pending in §9.
 - [x] Frozen, then implemented: the snapshot parse stops defaulting
   (`labs/native-dom/snapshot-schema-court.py`, receipt
   `evidence/native-dom-control-0.0.2-snapshot-schema.json`, record in
