@@ -189,3 +189,36 @@ candidate.
 4. The history budget, if it is not the recommended 8 entries / 16 KiB.
 5. Whether a readonly session's asymmetry (history moves, nothing persists) is
    acceptable, or whether readonly should freeze the ring too.
+
+---
+
+## 11. Ruled — 2026-09-06: deferred, deliberately
+
+No candidate is chosen. The audit asked which of two features is wanted before
+which shape it should take, and the ruling is that neither is taken yet: the
+next round on P6 must first say whether it is **agent disclosure** or
+**reopen-target restoration**, and then design that one alone, with its own
+permission, redaction and budget rulings.
+
+**The status quo is now a decision, not an absence.** It stands as measured in
+§1, and each of these is a thing the next design must keep or explicitly
+overturn:
+
+| held | |
+| --- | --- |
+| the ring is per target, in memory, 8 entries | |
+| no URL is persisted anywhere | |
+| a copy-on-write fork inherits no history | |
+| a download never enters history | |
+| a readonly session's ring moves, and writes nothing | |
+| an ephemeral profile is a no-op | |
+
+## 12. Carried forward as its own question
+
+`target.inspect` reports the target's current `url` **including its query**,
+while the audit ledger carries origins only and the history ring exposes no
+URLs at all. That asymmetry is deliberate today — a caller that opened a target
+already knows the address it asked for — but it is the one place a query string
+crosses the protocol, and it is **not** fixed in this round. It is recorded
+here as a disclosure question of its own, to be ruled on its own merits rather
+than as a side effect of a storage design.

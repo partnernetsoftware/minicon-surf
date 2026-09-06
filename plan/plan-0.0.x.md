@@ -1403,8 +1403,16 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   wanted. Recommended: history not inherited by a fork, a 8-entry / 16 KiB
   budget, joining the existing atomic commit rather than getting a second write
   path, and nothing written under a readonly session. Twelve-criterion court
-  draft in §9; five rulings pending in §10. G1, G3, P6 and G6 stay open; D6
-  untouched.
+  draft in §9; five rulings pending in §10. **Ruled: deferred deliberately**
+  (§11) — no candidate is taken, and the next round must first say whether it
+  is agent disclosure or reopen-target restoration before designing either.
+  The status quo is now a decision rather than an absence: a per-target
+  in-memory ring of 8, no URL persisted, no history inherited by a fork, no
+  download in history, a readonly session's ring moving without writing, and a
+  no-op on an ephemeral profile. Carried forward as its own disclosure question
+  (§12): `target.inspect` reports the current `url` **with its query**, the one
+  place a query crosses the protocol, deliberately not fixed this round.
+  G1, G3, P6 and G6 stay open; D6 untouched.
 - [x] Fixed before the implementation was pushed: the fork's re-read has no
   fallback (`copy-on-write-audit-0.0.1.md` §14, falsification receipt
   `evidence/native-dom-control-0.0.2-copy-on-write-falsification.json`).
