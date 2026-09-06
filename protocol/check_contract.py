@@ -151,6 +151,28 @@ def validate_request(document):
         target = document["arguments"].get("target")
         if target is not None:
             object_id("target", target)
+    if document["operation"] == "profile.create":
+        # The profile's own field set, mirrored here so a client can be wrong
+        # before it reaches a host. `mode` belongs to the open and is not
+        # persisted; an ephemeral profile has nothing to read, so the pair is
+        # refused rather than silently accepted.
+        arguments = document["arguments"]
+        allowed = {"persistence", "name", "mode"}
+        require("persistence" in arguments and set(arguments) <= allowed,
+                "profile.create arguments differ")
+        require(arguments["persistence"] in ("ephemeral", "persistent"),
+                "profile persistence differs")
+        if "mode" in arguments:
+            require(arguments["mode"] in ("readwrite", "readonly"),
+                    "profile mode differs")
+            require(not (arguments["mode"] == "readonly"
+                         and arguments["persistence"] == "ephemeral"),
+                    "an ephemeral profile cannot be opened readonly")
+        if "name" in arguments:
+            name = arguments["name"]
+            require(type(name) is str and 1 <= len(name) <= 64
+                    and all(c.isalnum() or c in "-_" for c in name),
+                    "profile name differs")
     if document["operation"] == "target.snapshot":
         arguments = document["arguments"]
         fields = {"target", "format", "max_bytes", "max_nodes"}
@@ -317,10 +339,15 @@ def validate_snapshot(result):
         require(reference["revision"] == revision, "node revision differs from snapshot")
 
 
+NEGATIVE_CASES = 0
+
+
 def expect_invalid(document, validator):
+    global NEGATIVE_CASES
     try:
         validator(document)
     except ValueError:
+        NEGATIVE_CASES += 1
         return
     raise AssertionError("negative contract case unexpectedly passed")
 
@@ -406,6 +433,19 @@ def main():
     validate_response(failure)
     require(request["request_id"] == success["request_id"], "response does not echo request ID")
     require(stale_request["request_id"] == failure["request_id"], "failure does not echo request ID")
+    # The profile mode is an open-only argument: the request carries it, the
+    # answer reports it, and `read_only` stays what it has always been — the
+    # fail-closed latch, not the mode.
+    readonly_request = load_bounded(examples / "profile-create-readonly.request.json", MAX_REQUEST_BYTES)
+    readonly_success = load_bounded(examples / "profile-create-readonly.success.json", MAX_RESPONSE_BYTES)
+    validate_request(readonly_request)
+    validate_response(readonly_success)
+    require(readonly_request["request_id"] == readonly_success["request_id"],
+            "profile mode success does not echo request ID")
+    require(readonly_success["result"]["mode"] == readonly_request["arguments"]["mode"],
+            "the answer reports the mode that was asked for")
+    require(readonly_success["result"]["read_only"] is False,
+            "the mode does not set the failed-commit latch")
     capability_request = load_bounded(examples / "target-snapshot-capability.request.json", MAX_REQUEST_BYTES)
     capability_success = load_bounded(examples / "target-snapshot-capability.success.json", MAX_RESPONSE_BYTES)
     surface_request = load_bounded(examples / "surface-owner-capability.request.json", MAX_REQUEST_BYTES)
@@ -612,9 +652,30 @@ def main():
     older_capability_scope = json.loads(json.dumps(capability_request))
     older_capability_scope["capability"]["scope"].append("target.navigate")
     expect_invalid(older_capability_scope, validate_request)
+
+    # The profile mode's own negatives: an unknown mode, the pair that has
+    # nothing to read, an unknown field, and a missing persistence.
+    unknown_mode = json.loads(json.dumps(readonly_request))
+    unknown_mode["arguments"]["mode"] = "sometimes"
+    expect_invalid(unknown_mode, validate_request)
+
+    ephemeral_readonly = json.loads(json.dumps(readonly_request))
+    ephemeral_readonly["arguments"]["persistence"] = "ephemeral"
+    expect_invalid(ephemeral_readonly, validate_request)
+
+    unknown_profile_field = json.loads(json.dumps(readonly_request))
+    unknown_profile_field["arguments"]["downloads"] = "allow"
+    expect_invalid(unknown_profile_field, validate_request)
+
+    missing_persistence = json.loads(json.dumps(readonly_request))
+    del missing_persistence["arguments"]["persistence"]
+    expect_invalid(missing_persistence, validate_request)
+    # Counted rather than quoted: the line used to carry fixed numbers, and
+    # they had already drifted from the files on disk.
+    example_count = len([path for path in examples.iterdir() if path.suffix == ".json"])
     print(
-        "control 0.0.1 and 0.0.2: two schemas, two mappings, 22 examples, "
-        "and 35 negative cases passed"
+        "control 0.0.1 and 0.0.2: two schemas, two mappings, "
+        f"{example_count} examples, and {NEGATIVE_CASES} negative cases passed"
     )
 
 
