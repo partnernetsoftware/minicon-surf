@@ -1302,6 +1302,29 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only triage, nothing implemented and no court frozen:
+  page-observable gaps under the remaining slack
+  (`labs/native-dom/browser-gap-triage-0.0.3.md`). Sixty-nine names probed
+  mechanically; the missing ones sort into main-only methods, main-only
+  accessors, base work, parser work, layout work and host-authority work.
+  **The headline is the budget, not the inventory**: at 62,016 of 65,536,
+  **one plain prototype method costs 464 and fits with 3,056 left, while two
+  cost 5,056 and a single `defineProperty` accessor costs 4,880** — over the
+  bound on its own. So **accessors are about ten times a method here**, and
+  the price is block-quantized with the current fill sitting near a boundary,
+  which is why five accessors and five methods land within 300 bytes of each
+  other while one of each differs tenfold. Earlier calibration on a less-full
+  extension read 512 to 832 per method, so **the per-member price is a
+  function of the current fill and must be re-measured per slice, never
+  extrapolated**. Recommendation: take at most one method — I would argue for
+  `getElementsByClassName`, which older pages actually call, reuses the
+  selector engine, is a method rather than an accessor and carries no
+  authority, reentrancy or lifetime question — or hold the reserve. Everything
+  else is priced out for reasons other than cost: the base group needs
+  insertion primitives and would touch `cloneNode`'s frozen closed set;
+  parser, layout and host-authority groups each need a design and a ruling
+  first. `setInterval` is called out for its own audit because it would sit
+  inside the timer reserve. G1, G3, P6 and G6 stay open.
 - [~] Implemented and qualified on the native route, court 25 of 25:
   `AbortSignal.timeout()` under the slack guard
   (`labs/native-dom/abort-signal-timeout-audit-0.0.1.md`). **The short answer
