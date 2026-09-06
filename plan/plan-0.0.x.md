@@ -1330,7 +1330,23 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   redaction are all nil: profiles measure about 16 KB and the mode is a
   two-word closed vocabulary. A nine-criterion court draft is in §6, whose
   fifth criterion is the important one: the latch still behaves, so the old
-  meaning was not eaten. G1, G3, P6 and G6 stay open.
+  meaning was not eaten. **Ruled as Option A and then stopped before
+  implementing**: the court and the contract were frozen against it — the
+  contract gained its first profile coverage, an example pair and four negative
+  cases, and its summary line was corrected from fixed numbers that had drifted
+  to computed ones, 24 examples and 38 negative cases — and implementing then
+  uncovered a **lifecycle hole the audit had not measured**. A persistent
+  profile is **adopted at startup** and never passes through `profile.create`
+  again: after a restart it is in `profile.list` as available, `profile.create`
+  for that name answers **`conflict`**, and the way in is `session.open`. So a
+  `mode` on create describes only a profile's first creation, and **a readonly
+  open of an existing profile is unreachable** — exactly the case readonly
+  exists for. Options measured in §8.1: **A′ `session.open {profile, mode}`**,
+  recommended, the same size of change and per-client; B′ a host startup flag,
+  no protocol cost but whole-host and invisible to a second client; C′ a new
+  `profile.open` operation, which grows the closed enum. Amending the frozen
+  court and contract is a ruling, not an edit, and neither has been touched.
+  G1, G3, P6 and G6 stay open.
 - [ ] Design-only host-side triage of P6's six remaining capabilities
   (`labs/native-dom/p6-host-triage-0.0.1.md`), each measured black-box rather
   than read off the plan. **Permissions**: the host already reports

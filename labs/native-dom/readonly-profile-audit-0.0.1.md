@@ -162,3 +162,55 @@ not eat the old meaning.
 5. **`read_only` keeps its meaning**, and the new mode gets a new field. If a
    future ruling wants one field with a reason, that is an amendment to a
    frozen criterion and should be taken knowingly rather than as a side effect.
+
+
+## 8. Stopped before implementing: the ruled shape has a lifecycle hole
+
+The ruling took Option A — a `mode` argument on `profile.create`, open-only and
+not persisted — and the court and contract were frozen against it. Implementing
+it uncovered a problem the audit had not measured, and this is the record of
+it rather than a quiet workaround.
+
+**A persistent profile is adopted at startup, and never passes through
+`profile.create` again.** Measured:
+
+| step | answer |
+| --- | --- |
+| `profile.create {persistence: persistent, name: alpha}` on a fresh root | ok, `created: true` |
+| restart the host over the same profile root, then `profile.list` | `alpha` is present, `available: true`, with no create call |
+| `profile.create` for `alpha` again | **`conflict: profile name already exists`** |
+| `session.open {profile: profile_alpha}` | ok |
+
+So `mode` on `profile.create` can only ever describe a profile at the moment it
+is **first created**. Every later run adopts it and opens it through
+`session.open`. **A readonly open of an existing profile is unreachable through
+the ruled shape** — which is precisely the case readonly is for: reading a
+profile you already have without risking a write to it.
+
+### 8.1 The options, now that the lifecycle is measured
+
+| shape | reaches adopted profiles | protocol cost | notes |
+| --- | --- | --- | --- |
+| **A′ `session.open {profile, mode}`** | **yes** — every use goes through it | one argument on an existing operation, like A | a session *is* the open; the mode is per client, and writes are refused for that session. Two sessions could differ, which needs one sentence of rule rather than a new concept |
+| B′ a host startup flag, e.g. `--profile-mode alpha=readonly` | yes | **none** — not protocol at all | coarse: whole-host, not per client, and invisible to a second client |
+| C′ a new `profile.open {name, mode}` operation | yes | grows the closed enum in both schemas, mappings and examples | the ruling declined a new operation when create looked sufficient; it no longer is |
+| A as ruled | **no** — creation only | already frozen | ships a "readonly profile" that cannot open the profiles you have |
+
+**Recommendation: A′.** It is the same size of change the ruling already
+accepted, it reaches the case the capability exists for, and the refusal stays
+per-session, which matches how the host already scopes `profile.policy.set`.
+
+### 8.2 What that would cost in the frozen artefacts
+
+Both were frozen against A and would need amending **by ruling, not by edit**:
+
+- `readonly-profile-court.py` — R1, R2, R6 and R7 name `profile.create`; under
+  A′ they would name `session.open`, and R6 becomes "a second session without
+  the mode writes", which is a better test of open-scope than a restart is.
+- `protocol/check_contract.py` and the new example pair — the rule and the
+  example would move from `profile.create` to `session.open`. The four negative
+  cases survive unchanged in shape.
+
+Nothing has been implemented, and neither artefact has been amended. The court
+stands frozen at 2 of 4 against a shape that, as measured, cannot reach adopted
+profiles.
