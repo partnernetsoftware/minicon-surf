@@ -1,0 +1,186 @@
+{
+ "checks": [
+  {
+   "check": "F1: the contract takes {persistence, name, from} and the enum is still 26",
+   "detail": {
+    "example": false,
+    "operations": 26
+   },
+   "passed": false
+  },
+  {
+   "check": "F7: a source with a live session is refused, and nothing is created",
+   "detail": {
+    "child_on_disk": false,
+    "code": "invalid_request"
+   },
+   "passed": false
+  },
+  {
+   "check": "F3: the parent's record is byte-for-byte unchanged by the fork",
+   "detail": {
+    "forked": false,
+    "unchanged": true
+   },
+   "passed": false
+  },
+  {
+   "check": "F3b: the child is sealed under its own identity",
+   "detail": {
+    "child": null
+   },
+   "passed": false
+  },
+  {
+   "check": "F2: the child reproduces the cookies and storage it was copied from",
+   "detail": {
+    "child": {},
+    "parent": {
+     "cookie_bytes": 49,
+     "cookies": 1,
+     "policy": {
+      "network": "online",
+      "permissions": "allow_by_default",
+      "permissions_effect": "recorded_only"
+     },
+     "storage": 2
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "F11: the policy is inherited",
+   "detail": {
+    "child_policy": null,
+    "parent_policy": {
+     "network": "online",
+     "permissions": "allow_by_default",
+     "permissions_effect": "recorded_only"
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "F4: writing in the child changes nothing in the parent",
+   "detail": {
+    "parent_now": {
+     "cookie_bytes": 49,
+     "cookies": 1,
+     "policy": {
+      "network": "online",
+      "permissions": "allow_by_default",
+      "permissions_effect": "recorded_only"
+     },
+     "storage": 2
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "F5: writing in the parent changes nothing in the child",
+   "detail": {
+    "child_now": null
+   },
+   "passed": false
+  },
+  {
+   "check": "F6: parent and child hold their own locks at the same time",
+   "detail": {
+    "child": null,
+    "parent": true
+   },
+   "passed": false
+  },
+  {
+   "check": "F13: an ephemeral source is refused, typed, and creates nothing",
+   "detail": {
+    "code": "invalid_request",
+    "reason": null
+   },
+   "passed": false
+  },
+  {
+   "check": "F14: neither the child's record nor the answer names the parent",
+   "detail": {
+    "record_bytes": 0
+   },
+   "passed": false
+  },
+  {
+   "check": "F17: the child seals under its own DEK",
+   "detail": {
+    "distinct": false
+   },
+   "passed": false
+  },
+  {
+   "check": "F10: a failed fork leaves no child and does not latch the parent",
+   "detail": {
+    "code": "invalid_request",
+    "parent_still_writes": true
+   },
+   "passed": false
+  },
+  {
+   "check": "F9: at the profile ceiling the fork is refused and creates nothing",
+   "detail": {
+    "code": "invalid_request"
+   },
+   "passed": false
+  },
+  {
+   "check": "F15: no value, key or cookie reaches an answer or the ledger",
+   "detail": {
+    "answer_bytes": 40
+   },
+   "passed": false
+  },
+  {
+   "check": "F16: deleting the parent leaves the child intact and readable",
+   "detail": {
+    "child_readable": false,
+    "deleted": true,
+    "listed": [
+     "alpha"
+    ]
+   },
+   "passed": false
+  },
+  {
+   "check": "F8: a source locked by another host is refused, and creates nothing",
+   "detail": {
+    "code": "invalid_request"
+   },
+   "passed": false
+  },
+  {
+   "check": "F12: the child's download allowance is full even when the parent's is spent",
+   "detail": {
+    "pending": "driven once profile.create accepts from"
+   },
+   "passed": false
+  }
+ ],
+ "checks_passed": 0,
+ "checks_total": 18,
+ "court": "native-dom copy-on-write profiles (profile.create from)",
+ "host_sha256": "8d5da2a706aed986134f2061480c29f347c4a06180e9b8e67ecb0bbb294b0fdf",
+ "limitations": [
+  "design-frozen court: it fails until profile.create accepts from",
+  "F3 and F10 are the criteria that matter: a fork that damaged the profile it copied from would pass every other one",
+  "F12 is stated but not driven; it needs a network arm against a live parent and child once the fork exists",
+  "one criterion reads the contract source and its examples rather than the binary, so it is repo-local by design",
+  "the keychain-backed store is the default mode, as the profile court runs it",
+  "no profile outside a temporary root is touched, and nothing is fetched from outside this file"
+ ],
+ "passed": false,
+ "ruled": {
+  "forbidden_source": "ephemeral",
+  "inherits": "cookies, storage and the policy",
+  "lock": "the fork takes the source's writer lock; any live session refuses",
+  "parent": "read only, byte-for-byte unchanged",
+  "provenance": "the child's record does not name its parent",
+  "resets": "download count and bytes",
+  "shape": "profile.create gains from; the operation enum stays at 26"
+ }
+}

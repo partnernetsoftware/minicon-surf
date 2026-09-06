@@ -192,3 +192,145 @@ key material is already being minted.
 6. Whether provenance (the parent's name) is recorded in the child's record, or
    deliberately not — it is the only way a fork could leak one profile's
    identity into another's.
+
+---
+
+## 11. Ruled — 2026-09-06
+
+Recorded chronologically; §§1–10 stand as written. Candidate **A** is taken,
+with the concurrency hazard of §5 closed by a lock rather than by a disclaimer.
+
+### 11.1 The shape
+
+`profile.create` gains one optional argument:
+
+```json
+{"persistence": "persistent", "name": "beta", "from": "profile_alpha"}
+```
+
+The operation enum stays at **26**. `from` names an existing **persistent**
+profile. The contract accepts `{persistence, name}` and `{persistence, name,
+from}` and refuses every other field set, as it does today.
+
+### 11.2 What the fork does, in order
+
+1. Validate the child's name and the argument set. A malformed name is the
+   existing `invalid_request`; a taken name is the existing `conflict`.
+2. Resolve the source. Unknown is `not_found`; **ephemeral is refused** — it
+   has no record to copy.
+3. Refuse if the source has **any live session**, readonly included:
+   `resource_limit`, the existing one-live-session refusal. A readonly session
+   is not an exception — it is a session, and the fork wants the lock.
+4. **Take the source's writer lock.** Held by another host, that is
+   `profile_locked`, retryable. Holding it is what makes the copy a committed,
+   non-racing one: the fork reads the record it just locked, not a record
+   somebody else is mid-write on.
+5. Refuse at the ceiling: the eighth profile already exists →
+   `resource_limit`, *profile capacity reached*, and nothing is created.
+6. Open the source record with its DEK, mint the child's own DEK, re-seal the
+   plaintext under the child's id, and commit it the way every record is
+   committed — temporary file, fsync, atomic rename, directory fsync.
+7. Release the source's lock. **The parent's record is byte-for-byte
+   unchanged**: the fork never writes to it, so its digest is the same before
+   and after.
+
+A failure at step 6 leaves **no child directory** and **does not latch the
+parent** — the parent was only read.
+
+### 11.3 What the child inherits, and what it does not
+
+| inherited | reset or absent |
+| --- | --- |
+| cookies (the whole jar) | the source's **DEK** — the child mints its own |
+| local storage | the **download budgets** — live counters, so the child starts full |
+| the **policy** (network and permissions), stated in the answer | the **failed-commit latch** — live host state |
+| | the **writer lock** — the child has its own |
+| | the parent's **name**: the child's record does **not** record its provenance |
+| | **history** and **cache**: nothing to carry |
+| | the parent's **uncommitted state** — the lock makes this vacuous, which is the point |
+
+Provenance is deliberately absent. A child that named its parent would be a way
+for one profile's identity to leak into another's record, and nothing in the
+capability needs it.
+
+The download reset deserves its own sentence: because the counters are never
+persisted, a fork **is** a way to obtain a fresh allowance of 32 downloads.
+That is ruled acceptable — a fork costs one of eight profile slots, which is
+the scarcer resource.
+
+### 11.4 Retention
+
+The child is an ordinary profile: `profile.delete` removes its directory
+entirely, and deleting the parent leaves the child intact and readable, since
+nothing on disk links them. An ephemeral child of a persistent source is not
+ruled here and stays open (§11.6).
+
+### 11.5 Court draft, revised
+
+Superseding §9, twelve criteria become seventeen — the additions are the
+ruling's own guarantees, not new scope.
+
+| # | criterion |
+| --- | --- |
+| F1 | the contract accepts `{persistence, name, from}`, refuses any other field set, and the operation enum is still 26 |
+| F2 | the child reproduces every cookie and storage key, by count and accounted bytes, and reads back the same values |
+| F3 | the **parent's file is byte-for-byte unchanged** by the fork (digest before and after) |
+| F3b | the child's sealed file names the child, not the parent |
+| F4 | writing in the child changes nothing in the parent |
+| F5 | writing in the parent changes nothing in the child |
+| F6 | parent and child hold their own locks: both can have a live session at once |
+| F7 | a source with a live session — readonly included — is refused `resource_limit`, and nothing is created |
+| F8 | a source locked by another host is refused `profile_locked`, and nothing is created |
+| F9 | at the eighth profile the fork is refused `resource_limit`, and no directory or partial record appears |
+| F10 | a failed re-seal leaves no child directory and does not latch the parent — the parent still writes afterwards |
+| F11 | the policy is inherited, and the answer says so |
+| F12 | the child's download allowance is full even when the parent's is spent |
+| F13 | an ephemeral source is refused, typed, and nothing is created |
+| F14 | neither the child's record nor any answer carries the parent's name |
+| F15 | no value, key, cookie or name reaches the ledger, an error or a receipt |
+| F16 | deleting the parent leaves the child intact and readable |
+| F17 | the child's key material is its own: its sealed file shares no DEK ciphertext with the parent's |
+
+### 11.6 Still open
+
+1. The exact code for an ephemeral source: `invalid_request` (the argument
+   names something that cannot be a source, known at request time) is what the
+   court will pin unless ruled otherwise.
+2. Whether an **ephemeral child** of a persistent source is allowed — a
+   memory-only copy that leaves nothing behind. Not ruled; the court does not
+   test it either way.
+
+---
+
+## 12. Frozen — `copy-on-write-court.py`, 2026-09-06
+
+Frozen before the host changes. Receipt:
+`evidence/native-dom-control-0.0.2-copy-on-write.json` against `8d5da2a7…`.
+
+**Eighteen criteria, none passing.** That is the correct reading: every one of
+them depends on a fork existing, so a host that cannot fork should score zero.
+
+It did not, at first. The court's first run scored **6 of 18**, and all six
+were **vacuous**: the parent's record was unchanged because nothing had
+happened to it, the child's record named no parent because there was no record
+(zero bytes), a failed fork left no child because no fork could land, and the
+ephemeral-source refusal was `invalid_request` — for the right code but the
+wrong reason, since the host was rejecting an argument it has never heard of.
+Six criteria would have gone green on a host with no capability at all, and
+turned amber only much later, if ever.
+
+They are now gated on `made_a_child`, and the ephemeral refusal must carry its
+own `reason` rather than sharing a code with an unknown-argument error. **This
+is the sixth time a court in this directory has been caught measuring its
+fixture rather than its rule**, and the first time the whole set went green
+that way — worth recording as a pattern with a name: *a criterion that cannot
+fail on a host without the capability is not a criterion.*
+
+The two that matter most stay F3 and F10: the parent is only read, so its
+digest is identical afterwards, and a re-seal that cannot land leaves no child
+directory and does not latch the parent. A fork that damaged the profile it
+copied from would satisfy every other criterion here.
+
+F12 — the child's download allowance being full while the parent's is spent —
+is stated but not driven; it needs a network arm against a live parent and
+child, and is recorded as failing rather than omitted.

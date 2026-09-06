@@ -1381,6 +1381,28 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Ruled and frozen before the host changes: the copy-on-write court
+  (`labs/native-dom/copy-on-write-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-copy-on-write.json`, ruling and freeze in
+  `copy-on-write-audit-0.0.1.md` §§11–12). Ruled shape: `profile.create` gains
+  a `from` argument, the operation enum stays at **26**; the fork opens the
+  source inside the host and **takes its writer lock**, so any live session —
+  readonly included — refuses rather than copying a stale commit; the parent is
+  read only and stays byte-for-byte unchanged; cookies, storage and the policy
+  are inherited; the download counters reset because they are never persisted;
+  an ephemeral profile cannot be a source; and the child's record does not name
+  its parent, so a fork cannot leak one profile's identity into another's.
+  **Eighteen criteria, none passing** — the honest score for a host that cannot
+  fork. The first run scored 6, and all six were **vacuous**: the parent was
+  unchanged because nothing happened, the child's record named no parent
+  because it had zero bytes, and the ephemeral refusal shared its code with an
+  unknown-argument error. They are now gated on a child actually existing.
+  Sixth occurrence of this trap here, and the first where the whole passing set
+  was vacuous: *a criterion that cannot fail on a host without the capability
+  is not a criterion.* F3 and F10 remain the ones that matter — a fork that
+  damaged the profile it copied from would satisfy every other criterion.
+  Headless, hermetic, no user data touched. G1, G3, P6 and G6 stay open; D6
+  untouched.
 - [ ] Design-only, nothing implemented: copy-on-write profiles
   (`labs/native-dom/copy-on-write-audit-0.0.1.md`). Read-only, headless, no
   user data touched — every measurement ran in a temporary profile root.
