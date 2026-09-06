@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: history persistence, P6
+  (`labs/native-dom/history-persistence-audit-0.0.1.md`). Read-only, headless,
+  no user data touched. **Confirmed first**: history is one ring per target,
+  in memory, keyed by a target id that is never reused — `length 1` after a
+  reopen and after a restart, **no URL anywhere in the sealed record**, and
+  nothing of it crosses a copy-on-write fork. The protocol exposes `position`,
+  `length` and `can_go_*` and **never the URLs**, while `target.inspect`'s
+  `url` field does carry the current query and the ledger carries origins only.
+  **Two costs shape any design**: a single target's full window of maximal URLs
+  measures **15,416 bytes**, so eight targets is ~123,328 against a profile's
+  131,072-byte accounted budget — up to 94% of it — and every record mutation
+  is a full re-seal at ~12 ms, so persisting per navigation makes every
+  navigation a whole-profile commit. **The audit's main finding is that "history
+  persistence" is two features wearing one name**: letting the agent see where a
+  profile has been needs a *disclosure* ruling, because the URLs are structurally
+  invisible today; restoring a reopened target's back/forward needs an *identity*
+  that does not exist, since target ids are never reused. Four protocol
+  candidates are enumerated with their contract impact, and the recommendation
+  is **not to pick one yet** — the next ruling should be which feature is
+  wanted. Recommended: history not inherited by a fork, a 8-entry / 16 KiB
+  budget, joining the existing atomic commit rather than getting a second write
+  path, and nothing written under a readonly session. Twelve-criterion court
+  draft in §9; five rulings pending in §10. G1, G3, P6 and G6 stay open; D6
+  untouched.
 - [x] Fixed before the implementation was pushed: the fork's re-read has no
   fallback (`copy-on-write-audit-0.0.1.md` §14, falsification receipt
   `evidence/native-dom-control-0.0.2-copy-on-write-falsification.json`).
