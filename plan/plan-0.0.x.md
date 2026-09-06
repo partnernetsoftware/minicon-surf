@@ -1381,6 +1381,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: snapshot validation
+  (`labs/native-dom/snapshot-validation-audit-0.0.1.md`). **The shape check is
+  not the weak point — the provenance of the instrumentation object is, and it
+  fails open.** Measured: `window.__mcs` is `undefined` while a page's own
+  scripts run, because `INSTALL_JS` runs after `__mcsComplete()`; and
+  `INSTALL_JS` keeps whatever it finds (`if (!window.__mcs)`, a plain
+  assignment), a guard that exists for the lifecycle path's second install and
+  cannot tell the host's object from a page's. So a page only has to name the
+  global first. **Exploit measured end to end**: a page that defines `__mcs`
+  with a `revision` getter returning 0, then swaps a link on click — with honest
+  instrumentation the agent's stale reference is refused `stale_revision` and
+  the server sees nothing; with the page owning the counter the reference is
+  **accepted**, the click reaches the **swapped** element, and the server
+  receives **`GET /evil.html`**, a navigation the agent never chose. Unlike
+  every earlier tampering finding, **this one fails open**. Not forgeable, and
+  the reason the answer is not "validate harder": the node list is rebuilt from
+  the DOM each call (an output, not an input), the serialiser is already closed
+  by H1, and counts and `truncated` are host-computed. Recommended candidate:
+  **brand the registry** with a per-realm host-minted token installed
+  non-writable and non-configurable, verified by every reader, mismatch
+  refusing the realm — the pattern the host already uses for dispatch and
+  lifecycle capabilities, at ~0 per-realm cost. Six-criterion court draft in §9;
+  three rulings pending in §10, including that this finding revises the earlier
+  "everything fails closed" conclusion. Regressions verified unchanged:
+  host-answer 9/9, capture-declaration 8/8, probe-truthfulness 25/25.
 - [x] Implemented behind the frozen court: the probe's evidence chain
   (`labs/native-dom/src/main.rs`, record in `realm-probe-audit-0.0.1.md` §9).
   `REALM_PROBE_JS`'s enumerability question is now a syntax-only `for…in`, and
