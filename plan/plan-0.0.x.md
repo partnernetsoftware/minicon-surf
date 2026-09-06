@@ -1381,6 +1381,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Frozen guard kept, C1 withdrawn on measurement
+  (`labs/native-dom/property-shape-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-property-shape.json`, record in
+  `shim-reduction-audit-0.0.1.md` §9). The court was frozen first and reads
+  **22/22** on the shipped binary: it pins every own property of `window`,
+  `Node.prototype`, `Element.prototype`, `Document.prototype`,
+  `Event.prototype` and `document` — names, **creation order**, kind and all
+  three flags — reported by a page and read back through a snapshot, on both
+  arms. C1 was then written exactly as ruled and **it does not pay**. Order
+  preservation limits it to three adjacent groups of 4, 3 and 2 members, not the
+  27 sites the audit counted; with the refactor in place the guard still passed
+  22/22, but tracked bytes went **327,456 → 327,456** on system and
+  **317,232 → 317,872 (+640)** on arena. A group-size sweep shows why: batching
+  saves the call site and pays for its own descriptor container, so it breaks
+  even between **three and four members** (2: +48, 3: +16, 4: −16, 8: −144,
+  32: −560). §5's ~31-bytes-per-member price came from a 200-member experiment
+  and was extrapolated to a 3-member regime — **the same extrapolation error
+  this project has recorded twice before**. The shims are back as shipped, the
+  guard court stays, and C1 is withdrawn. D6 untouched; no lazy install, no
+  comment stripping, no member semantics changed, no shared runtime.
 - [ ] Design-only, nothing implemented: shim reduction
   (`labs/native-dom/shim-reduction-audit-0.0.1.md`). **The 3.6 bytes-per-source-byte
   yardstick is an average and a false guide, and this audit replaces it.**

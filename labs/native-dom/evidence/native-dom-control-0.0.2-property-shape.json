@@ -1,0 +1,202 @@
+{
+ "base_sha256": "04eea38b81656528ddd2d9f17d574f91212c711dbcdf48f66ae32f08443ac070",
+ "checks": [
+  {
+   "check": "[system] S: Document.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010",
+    "observed": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S: Element.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011",
+    "observed": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S: Event.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011",
+    "observed": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S: Node.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010",
+    "observed": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S: document keeps its properties, flags and order",
+   "detail": {
+    "expected": "6:94aa8a2c:parentNode:v:111|childNodes:v:111|nodeType:v:111",
+    "observed": "6:94aa8a2c:parentNode:v:111|childNodes:v:111|nodeType:v:111"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] S: window keeps its properties, flags and order",
+   "detail": {
+    "expected": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011",
+    "observed": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] H: the handle is gone before any page script runs",
+   "detail": {
+    "window": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] B: one realm's tracked bytes are reported and non-zero",
+   "detail": {
+    "malloc_bytes": 351088
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] R: the target reports its realms",
+   "detail": {
+    "realms": "[{\"frame\": \"frame_1\", \"realm\": \"realm_1\", \"world\": \"main\"}]"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S: Document.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010",
+    "observed": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S: Element.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011",
+    "observed": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S: Event.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011",
+    "observed": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S: Node.prototype keeps its properties, flags and order",
+   "detail": {
+    "expected": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010",
+    "observed": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S: document keeps its properties, flags and order",
+   "detail": {
+    "expected": "6:94aa8a2c:parentNode:v:111|childNodes:v:111|nodeType:v:111",
+    "observed": "6:94aa8a2c:parentNode:v:111|childNodes:v:111|nodeType:v:111"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] S: window keeps its properties, flags and order",
+   "detail": {
+    "expected": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011",
+    "observed": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] H: the handle is gone before any page script runs",
+   "detail": {
+    "window": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011"
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] B: one realm's tracked bytes are reported and non-zero",
+   "detail": {
+    "malloc_bytes": 340880
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] R: the target reports its realms",
+   "detail": {
+    "realms": "[{\"frame\": \"frame_1\", \"realm\": \"realm_1\", \"world\": \"main\"}]"
+   },
+   "passed": true
+  },
+  {
+   "check": "K: the handle's key set is exactly the thirteen the court pins",
+   "detail": {
+    "keys": 13
+   },
+   "passed": true
+  },
+  {
+   "check": "K: nothing new joins the handle",
+   "detail": {
+    "mentions": 2
+   },
+   "passed": true
+  },
+  {
+   "check": "A: the arms agree on the shape they observed",
+   "detail": {
+    "agree": true
+   },
+   "passed": true
+  },
+  {
+   "check": "B: the two arms' tracked per-realm bytes are both recorded",
+   "detail": {
+    "arena": 340880,
+    "system": 351088
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 22,
+ "checks_total": 22,
+ "court": "native-dom shim property shape (C1 refactor guard)",
+ "host_sha256": "e168722ca9b20c2ea3ef704223187fef6f56b9e0b0f93eee4fee6eea989d7bde",
+ "limitations": [
+  "a refactor guard, not a capability court: it passes before and after C1, and a failure means the refactor changed something it may not",
+  "the page reports the shape, because this host has no evaluation operation; the checksum is a djb2 over the ordered descriptor list",
+  "property order is part of the pinned value, so a merge that reorders fails even when every descriptor matches",
+  "tracked bytes are recorded on both arms; RSS is deliberately not a criterion, because the arena's page granularity dwarfs this refactor",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "main_sha256": "d319246e878b36993d7d607ec1c288f143669a1b1229a8ea60712d8f4030181c",
+ "observed_shape": {
+  "Document.prototype": "9:917a7738:constructor:v:011|documentElement:g:010|head:g:010",
+  "Element.prototype": "40:26312e4:constructor:v:011|getAttribute:v:011|hasAttribute:v:011",
+  "Event.prototype": "15:33f66125:constructor:v:011|defaultPrevented:g:010|preventDefault:v:011",
+  "Node.prototype": "22:8d099852:constructor:v:011|isConnected:g:010|children:g:010",
+  "document": "6:94aa8a2c:parentNode:v:111|childNodes:v:111|nodeType:v:111",
+  "window": "112:156a0f8b:Object:v:011|Function:v:011|Error:v:011"
+ },
+ "passed": true,
+ "ruled": {
+  "c1": "batch adjacent defineProperty calls on one object",
+  "d6": "the tracked bytes may fall; RSS is not claimed to move",
+  "forbidden": "reordering, renaming, flag changes, lazy install, comment stripping, member semantics, shared runtime"
+ },
+ "tracked_bytes": {
+  "arena": 340880,
+  "system": 351088
+ }
+}

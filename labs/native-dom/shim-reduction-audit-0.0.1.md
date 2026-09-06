@@ -140,3 +140,74 @@ should measure the structural remainder first.
 3. Whether C6 candidates are drawn from the browser-gap triage, and if so which
    members are on the table, given that removing a member removes a capability
    from every page.
+
+---
+
+## 9. C1 was implemented, measured, and not taken — 2026-09-06
+
+The court was frozen first (`property-shape-court.py`, receipt
+`evidence/native-dom-control-0.0.2-property-shape.json`, **22/22** on the
+shipped binary). Then C1 was written exactly as ruled — descriptors, names,
+order and page-visible behaviour preserved item by item — and measured.
+
+**It does not pay, and the shims are back as they were.**
+
+### What C1 could actually reach
+
+Order must be preserved, so only **adjacent** `defineProperty` calls on the
+*same* object may merge. That is three groups, not the twenty-seven sites §5
+counted:
+
+| group | members |
+| --- | ---: |
+| base, on `g`: `__mcsString`, `__mcsJson`, `__mcsArmDispatch`, `__mcsInternals` | 4 |
+| main, on `Node.prototype`: `firstChild`, `lastChild`, `parentElement` | 3 |
+| main, on `Element.prototype`: `innerText`, `defaultValue` | 2 |
+
+### What it measured
+
+With the refactor in place, the guard court still passed 22/22 — the property
+shape is untouched, which is what the ruling required. The bytes went the wrong
+way:
+
+| per realm, tracked | before | after |
+| --- | ---: | ---: |
+| system | 327,456 | **327,456** (unchanged) |
+| arena | 317,232 | **317,872** (+640) |
+
+### Why the audit was wrong
+
+§5 priced batching at ~31 bytes per member from a 200-member experiment. That
+saving is the **call site**, amortised across the batch — and the batch pays for
+its own descriptor container. Sweeping group sizes shows where the two cross:
+
+| members | separate | batched | difference |
+| ---: | ---: | ---: | ---: |
+| 2 | 768 | 816 | **+48** |
+| 3 | 1,536 | 1,552 | **+16** |
+| 4 | 1,920 | 1,904 | −16 |
+| 6 | 2,688 | 2,608 | −80 |
+| 8 | 3,456 | 3,312 | −144 |
+| 16 | 8,576 | 8,272 | −304 |
+| 32 | 15,872 | 15,312 | −560 |
+
+**Batching pays from four members up, and only from about six is it worth
+noticing.** Our three groups are 4, 3 and 2, whose net is +48 logical bytes;
+allocator quantisation then rendered that as 0 on the system arm and +640 on
+the arena.
+
+The error was mine and it is the same one this project has recorded twice
+before: **a per-member price measured at one scale was extrapolated to
+another.** A 200-member batch and a 3-member batch are different regimes, and
+nothing in §5 said which one the shim is in.
+
+### What is kept
+
+- `property-shape-court.py` **stays**, frozen. It is a refactor guard: it pins
+  every own property of `window`, `Node.prototype`, `Element.prototype`,
+  `Document.prototype`, `Event.prototype` and `document` — names, creation
+  order, kind and all three flags — and it is what proved C1 was semantically
+  clean before the byte measurement rejected it on other grounds.
+- The break-even table above, so the next person does not re-derive it.
+- **C1 is withdrawn.** The recommendation in §5 is superseded: batching is not
+  a reduction for groups this small.
