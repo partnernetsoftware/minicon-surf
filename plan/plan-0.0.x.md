@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the dead `arrayIndexOf` capture, C2
+  (`labs/native-dom/dead-capture-audit-0.0.1.md`). **HOLD the deletion — and
+  the reason is not the bytes.** It is confirmed dead (referenced nowhere in
+  the repo), and removing it is a wash: **−112 per realm on the system arm,
+  +96 on the arena arm** (a packing artefact, reproducible), with no RSS effect
+  at all. The finding that matters is *why* it is dead: the shim captures
+  intrinsics so a page cannot change what host code does, and **the pattern is
+  about a third applied** — `arrayPush` 7 captured uses against 26 direct
+  calls, `weakMapGet` 7 against 11, `mapGet` 3 against 11, `mapHas` 1 against
+  6, `arraySplice` 1 against 4, and `arrayIndexOf` **0 against 7**. **The gap
+  is exploitable, and was measured**: a hermetic page that assigns
+  `Array.prototype.indexOf = () => -1` gets the shim to call its replacement
+  six times, makes `classList.contains("alpha")` return false on
+  `class="alpha beta"`, and makes `classList.add` write
+  `class="alpha alpha alpha"` — duplicate tokens the spec forbids, in the
+  attribute the **agent** then reads through a snapshot or selects on. Same
+  shape reaches `MutationObserver.disconnect`, `__detach` and the
+  selected-option path. So the capture should not be deleted (it is the last
+  evidence of an intent the code still needs) and not quietly left either; the
+  fix is to route the direct calls through the captures already present, which
+  is a behaviour-preserving change with a security purpose that will *cost*
+  bytes and needs its own ruling, court and per-site measurement — explicitly
+  not bundled with any byte-reduction programme. Six-criterion court draft in
+  §6; three rulings pending in §7. D6 and the slack bound untouched.
 - [ ] Frozen guard kept, C1 withdrawn on measurement
   (`labs/native-dom/property-shape-court.py`, receipt
   `evidence/native-dom-control-0.0.2-property-shape.json`, record in
