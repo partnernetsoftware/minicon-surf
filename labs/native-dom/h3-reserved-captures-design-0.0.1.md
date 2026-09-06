@@ -130,3 +130,47 @@ be ruled on its own.
    the intent was the opposite — that removal is back on the table under a new,
    non-byte justification — say so and it will be redesigned around that.
 3. Whether `REALM_PROBE_JS` (§6) gets its own round.
+
+---
+
+## 10. Frozen and run — 2026-09-06
+
+`capture-declaration-court.py` is frozen from §8, receipt
+`evidence/native-dom-control-0.0.2-capture-declarations.json`. It is a **source
+rule** with one runtime criterion that records what a realm costs rather than
+judging it, and `--base`/`--main` point it at any tree.
+
+**Against three shim revisions before any change** — `9b5e390`, `900b111` and
+`4b7d42c` — the result was identical each time: **11 captures, exactly one at
+zero uses (`arrayIndexOf`), 7 of 8 criteria passing.** So the rule's substance
+holds historically: no new dead capture has ever crept in, and the reserved set
+matches what every tree actually contains.
+
+The one failure, on every tree including the current one, was **W1: the
+declared exception carried no written reason**. That is a real violation of the
+frozen rule rather than a defect in it — the reason had simply never been
+written — so the reason was written beside the declaration: that the seven
+`.indexOf` calls still go straight to the prototype, that the capture is the
+record of a partly-applied hardening, that deleting it would erase the evidence
+and save nothing measurable, and that it must stay at zero uses.
+
+The court now reads **8/8**.
+
+**What the comment cost**, measured twice per arm and identical both times:
+
+| per realm, tracked | before | after |
+| --- | ---: | ---: |
+| system | 327,456 | **327,424** (−32) |
+| arena | 317,232 | **317,360** (+128) |
+
+Both directions at once, from a change that creates no object — the same
+packing artefact the C2 audit measured (−112 / +96 there). It is consistent
+with the earlier controlled result that comments carry **no** object cost, and
+it is reported rather than rounded away.
+
+Guards re-run on the same binary: property-shape **22/22**, host-answer
+**9/9**.
+
+**Not done, deliberately**: no call was added, nothing was deleted or restored,
+no capture changed, H2 remains untouched, and the `REALM_PROBE_JS` diagnostic
+(§6) stays for its own audit.

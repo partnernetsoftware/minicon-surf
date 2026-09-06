@@ -21,6 +21,12 @@
   const mapHas = Map.prototype.has;
   const arraySlice = Array.prototype.slice;
   const arrayPush = Array.prototype.push;
+  // Declared unused, and kept deliberately. The seven `.indexOf` calls in
+  // these shims still go straight to the prototype, so this capture is the
+  // record of a hardening that is only partly applied; deleting it would
+  // erase the evidence and save nothing measurable (-112 bytes on one
+  // allocator, +96 on the other). It must stay at zero uses: acquiring one
+  // means the reserved list is revisited in writing.
   const arrayIndexOf = Array.prototype.indexOf;
   const arraySplice = Array.prototype.splice;
   const invoke = (fn, self, args) => reflectApply(fn, self, args);

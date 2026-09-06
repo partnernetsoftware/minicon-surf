@@ -1,0 +1,150 @@
+{
+ "base_sha256": "145f82eef240303af3296628d409aac208850360085438710f497d84bf5ab587",
+ "captures": {
+  "arrayIndexOf": {
+   "expression": "Array.prototype.indexOf",
+   "uses": 0
+  },
+  "arrayPush": {
+   "expression": "Array.prototype.push",
+   "uses": 7
+  },
+  "arraySlice": {
+   "expression": "Array.prototype.slice",
+   "uses": 1
+  },
+  "arraySplice": {
+   "expression": "Array.prototype.splice",
+   "uses": 1
+  },
+  "jsonStringify": {
+   "expression": "JSON.stringify",
+   "uses": 1
+  },
+  "mapGet": {
+   "expression": "Map.prototype.get",
+   "uses": 3
+  },
+  "mapHas": {
+   "expression": "Map.prototype.has",
+   "uses": 1
+  },
+  "mapSet": {
+   "expression": "Map.prototype.set",
+   "uses": 1
+  },
+  "reflectApply": {
+   "expression": "Reflect.apply",
+   "uses": 1
+  },
+  "weakMapGet": {
+   "expression": "WeakMap.prototype.get",
+   "uses": 7
+  },
+  "weakMapSet": {
+   "expression": "WeakMap.prototype.set",
+   "uses": 2
+  }
+ },
+ "checks": [
+  {
+   "check": "D1: the base declares captures, and this court can see them",
+   "detail": {
+    "captures": 11
+   },
+   "passed": true
+  },
+  {
+   "check": "R1: every capture that is not a declared exception is referenced",
+   "detail": {
+    "reserved": [
+     "arrayIndexOf"
+    ],
+    "unused": [
+     "arrayIndexOf"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "E1: the exception set is exactly the one the ruling froze",
+   "detail": {
+    "note": "a reserved capture that acquires a use fails here too, on purpose: the list is then revisited in writing rather than silently",
+    "reserved": [
+     "arrayIndexOf"
+    ],
+    "unused": [
+     "arrayIndexOf"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "E2: the exception set has not grown",
+   "detail": {
+    "reserved": [
+     "arrayIndexOf"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "W1: the declared exception arrayIndexOf carries a written reason beside it",
+   "detail": {
+    "declared": true,
+    "reason_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "W2: no call was added to satisfy this court",
+   "detail": {
+    "reserved_uses": {
+     "arrayIndexOf": 0
+    }
+   },
+   "passed": true
+  },
+  {
+   "check": "[system] N1: a realm still serves a snapshot with this rule in force",
+   "detail": {
+    "malloc_bytes": 333472,
+    "nodes": 1
+   },
+   "passed": true
+  },
+  {
+   "check": "[arena] N1: a realm still serves a snapshot with this rule in force",
+   "detail": {
+    "malloc_bytes": 323632,
+    "nodes": 1
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 8,
+ "checks_total": 8,
+ "court": "native-dom capture declarations (H3, declared-set form)",
+ "host_sha256": "05aa12f7cf6d1d2561cc1fa74a03dbdb69943b337d0f3ba58aa123055ae80a64",
+ "limitations": [
+  "a source rule: it reads the shims rather than driving the host, and --base/--main can point it at any tree",
+  "a reserved capture that acquires a use fails E1 by design, so the list is revisited in writing rather than silently",
+  "only const bindings of an intrinsic count as captures; a helper built from one does not",
+  "the runtime criterion records what a realm costs as evidence; it judges no threshold, because this rule has no runtime effect",
+  "H2 is not in scope, and no direct call site is asked to change here"
+ ],
+ "main_sha256": "d319246e878b36993d7d607ec1c288f143669a1b1229a8ea60712d8f4030181c",
+ "passed": true,
+ "ruled": {
+  "forbidden": "adding a call to satisfy the rule; deleting or restoring C2",
+  "reason": "a declared exception carries a written reason beside it",
+  "reserved": [
+   "arrayIndexOf"
+  ],
+  "rule": "every capture not declared an exception is referenced at least once"
+ },
+ "tracked_bytes": {
+  "arena": 323632,
+  "system": 333472
+ }
+}

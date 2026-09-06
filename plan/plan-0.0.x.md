@@ -1381,6 +1381,25 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Frozen guard, and the one violation it found:
+  `labs/native-dom/capture-declaration-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-capture-declarations.json`, record in
+  `h3-reserved-captures-design-0.0.1.md` §10. H3 in its declared-set form: every
+  capture not on the reserved list is referenced, the reserved list is exactly
+  `["arrayIndexOf"]`, each exception carries a written reason, and a reserved
+  capture staying at **zero** uses is itself a criterion — so the rule cannot be
+  satisfied by adding a call. Run against three shim revisions before any change
+  (`9b5e390`, `900b111`, `4b7d42c`): identical each time — **11 captures, exactly
+  one at zero uses, 7/8 passing** — so no new dead capture has ever crept in.
+  The single failure everywhere was the missing written reason, a real violation
+  of the frozen rule rather than a flaw in it; the reason is now written beside
+  the declaration and the court reads **8/8**. The comment's cost, measured
+  twice per arm and identical: **system 327,456 → 327,424 (−32), arena
+  317,232 → 317,360 (+128)** — both directions at once from a change that
+  creates no object, the same packing artefact the C2 audit measured, reported
+  rather than rounded away. Guards re-run: property-shape 22/22, host-answer
+  9/9. No call added, nothing deleted or restored, H2 untouched, and
+  `REALM_PROBE_JS` left for its own audit.
 - [ ] Design-only, nothing implemented: H3 versus the closed C2
   (`labs/native-dom/h3-reserved-captures-design-0.0.1.md`). The conflict is
   exact: H3 as worded says every capture is referenced, C2 permanently forbids
