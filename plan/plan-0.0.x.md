@@ -1282,6 +1282,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the `TypeError` correction. M1 is **233,530** and M2 **1,632,428** against
   unchanged floors of 245,760 and 1,720,320.
 
+- [ ] Design-only, nothing implemented and no court frozen: reclaiming
+  main-extension slack (`labs/native-dom/main-slack-reclaim-audit-0.0.1.md`).
+  The brief was 1,168 bytes. **Measured, the capability-free ceiling is 848**:
+  removing **every full-line comment in the main extension — 8,063 source
+  bytes, a third of the file — reclaims 832**, and consolidating three
+  accessors into a table reclaims 16. Prose and structure are nearly free
+  here; **runtime members are the whole cost**, at 512 to 832 bytes each, and
+  ten trivial added members cost 8,320. Removing `CustomEvent` would reclaim
+  1,856 and drop `event-fidelity` to 60 of 62, which is a capability ruling
+  rather than slimming. **But the premise turned out to be wrong**, which is
+  the useful result: T2's 1,168-byte overrun was one *implementation* of the
+  quota, a counter object and a closure, not the quota itself. **T3b does the
+  same job with no new state** — `timeout()` refuses when the page's existing
+  timer table is fuller than the reserve — and measures **62,016 of 65,536,
+  3,520 to spare**, with exactly T2's semantics: fourteen signals accepted,
+  forty-eight timer slots kept for the page. `shim-footprint` 18/18,
+  `child-frames` 82/82, M1 and M2 unmoved. So R6 needs no slimming at all, and
+  the standing lesson is that **a shape's cost is not its source size**: a
+  design that misses a bound should be re-shaped and re-measured before a
+  capability is given up to fund it. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented and no court frozen:
   `AbortSignal.timeout()` under the slack guard
   (`labs/native-dom/abort-signal-timeout-audit-0.0.1.md`). **The short answer
