@@ -1302,6 +1302,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the 720 KB allocator delta
+  (`labs/native-dom/allocator-delta-audit-0.0.1.md`). **There is exactly one
+  product-controllable path and it is already built and opt-in.** Measured with
+  libmalloc's own accounting: on the system arm a realm's `in_use` rises about
+  330 KB — exactly the host's tracked `script_realm_bytes` — while the
+  footprint rises **1,458,176** for the first realm and 360-606 KB after, so
+  the difference is **pages touched across libmalloc's magazines, not engine
+  demand**. On the arena arm `in_use` rises about **4.5 KB** per realm, because
+  the realm never enters libmalloc at all, and the footprint rises 524-786 KB
+  inside its own mapping. Two details recorded rather than smoothed: libmalloc's
+  8 MiB reservation lands on realm 3 in one run and at a different starting
+  point in another, so **reservation timing varies between runs while the
+  footprint deltas do not**; and the arena is not thrift either — ~557 KB per
+  realm against ~317 KB tracked, so ~240 KB is its own page granularity. On
+  recovery the arms diverge completely: closing four targets returns nothing on
+  the system arm and 1,851,488 on the arena, and `memory.trim` — implemented as
+  `malloc_zone_pressure_relief` plus an arena tail `madvise` — reports
+  `released_bytes: 0` on both, so **the host already asks and libmalloc already
+  refuses**. The conclusion is that **D6 is not an allocator problem**: even the
+  arena arm measures 6,046,200 against the 4,178,196 threshold, so the arena
+  makes it slightly better and nowhere near passing. This ends that line of
+  enquiry; the remaining honest candidates are the engine's own ~330 KB per
+  realm, the first-request constant, or the G1 comparison campaign the gate
+  actually asks for. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: the first realm's fixed cost
   (`labs/native-dom/first-realm-cost-audit-0.0.1.md`), measured after paying
   the first-request constant so it is not double-counted. **The first realm is
