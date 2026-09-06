@@ -166,3 +166,46 @@ decaying again.
 4. Whether the snapshot's host-side check should be strengthened beyond
    "a revision field exists" — the audit does not propose a shape, because that
    is a protocol question.
+
+---
+
+## 8. H1 landed — 2026-09-06
+
+The court was frozen first (`host-answer-court.py`, receipt
+`evidence/native-dom-control-0.0.2-host-answers.json`) and read **3/9** on the
+shipped binary: the forged snapshot, the forged download target and the source
+rule all failed, exactly as the audit predicted. After the change it reads
+**9/9**.
+
+**What changed**: the twenty-four `JSON.stringify` calls in the host's in-realm
+script constants now serialise through `__mcsJson` — twenty of them directly,
+and the remaining four, all of which are the `{"error":"uninstrumented"}`
+branch, became **literal strings**. That branch runs precisely when the shim is
+*not* installed, so serialising it through a shim-installed capture would have
+turned a graceful answer into a thrown evaluation. The fix must not depend on
+the thing whose absence it reports.
+
+**What it closes**, both measured against the same tampering page:
+
+| before | after |
+| --- | --- |
+| the agent's snapshot returned `FORGED-BY-PAGE` and none of the real document | the snapshot carries the real document; the forgery cannot reach the agent |
+| the agent's reference named `/asked.bin`, the server received `/never-asked.bin` | the server receives `/asked.bin` and nothing else, and the agent gets those bytes |
+
+**What it does not change**: the activation refusal still refuses a forged
+decision (A1, a standing regression of the audit's negative result); the
+handle's key set is untouched; no capture was added; the base and main shims
+are byte-for-byte unchanged.
+
+Two criteria were gated before freezing, for the reason this project has
+recorded before: while the snapshot is forgeable the agent cannot find the link
+at all, so the download criteria would have **passed because nothing
+happened**. They now require the probe to have actually run.
+
+Regressions on the same binary: property-shape 22/22, timer 68/68,
+frame-action 182/182, downloads 21/21, copy-on-write 23/23, child-frame 82/82,
+navigation 90/90, readonly 28/28, contract 28 examples and 50 negative cases,
+`cargo test` 56 passed, fmt and clippy clean.
+
+H2 and H3 remain untouched and independent, and are not to be traded against a
+byte target.

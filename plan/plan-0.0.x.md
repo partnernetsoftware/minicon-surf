@@ -1381,6 +1381,27 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [x] Implemented behind a frozen court: H1, the host's answers stop passing
+  through page-replaceable functions (`labs/native-dom/src/main.rs`,
+  `host-answer-court.py`, receipt
+  `evidence/native-dom-control-0.0.2-host-answers.json`, record in
+  `intrinsic-hardening-audit-0.0.1.md` §8). The court was frozen first and read
+  **3/9** on the shipped binary; it now reads **9/9**. The twenty-four
+  `JSON.stringify` calls in the host's in-realm scripts serialise through
+  `__mcsJson` — twenty directly, and the four `{"error":"uninstrumented"}`
+  branches became **literal strings**, because that branch runs exactly when the
+  shim is absent and must not depend on a shim-installed capture. **Closed**: a
+  tampering page can no longer put `FORGED-BY-PAGE` into the agent's snapshot,
+  and a download that the page rewrote to `/never-asked.bin` now fetches only
+  the `/asked.bin` the agent's reference names, proven by the server's request
+  log. **Unchanged**: the activation refusal still refuses a forged decision (a
+  standing regression of the audit's negative result), the handle key set, and
+  both shims byte-for-byte. Two criteria were gated before freezing because a
+  forgeable snapshot hides the link, so they would have passed for want of
+  anything happening. Regressions: property-shape 22/22, timer 68/68,
+  frame-action 182/182, downloads 21/21, copy-on-write 23/23, child-frame
+  82/82, navigation 90/90, readonly 28/28, contract 28/50, 56 tests. H2 and H3
+  stay independent and outside any byte target. D6 and G1 untouched.
 - [ ] Design-only, nothing implemented: intrinsic hardening
   (`labs/native-dom/intrinsic-hardening-audit-0.0.1.md`). **Three of four host
   paths probed are page-controllable.** 186 direct calls of replaceable methods

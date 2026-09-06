@@ -1,0 +1,92 @@
+{
+ "checks": [
+  {
+   "check": "S1: a tampering page cannot put its own nodes in the agent's snapshot",
+   "detail": {
+    "forged_present": false,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "S2: the snapshot carries the document that is really there, or is refused",
+   "detail": {
+    "ok": true,
+    "real_present": true
+   },
+   "passed": true
+  },
+  {
+   "check": "D1: the download fetches the URL the agent's reference names, and no other",
+   "detail": {
+    "found_link": true,
+    "server_saw": [
+     "/asked.bin"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "D2: the bytes the agent receives are that URL's bytes",
+   "detail": {
+    "got_asked_for": true,
+    "got_other": false,
+    "ok": true
+   },
+   "passed": true
+  },
+  {
+   "check": "A1: a forged decision still does not flip an activation refusal",
+   "detail": {
+    "code": "unsupported_capability"
+   },
+   "passed": true
+  },
+  {
+   "check": "H1: the handle's key set is untouched by this work",
+   "detail": {
+    "mcsJson_in_base": true
+   },
+   "passed": true
+  },
+  {
+   "check": "R1: no page text and no query reaches the ledger",
+   "detail": {
+    "audit_bytes": 1869
+   },
+   "passed": true
+  },
+  {
+   "check": "J1: no host-side script serialises through JSON.stringify",
+   "detail": {
+    "remaining": 0
+   },
+   "passed": true
+  },
+  {
+   "check": "J2: the host's scripts serialise through the captured __mcsJson",
+   "detail": {
+    "uses": 45
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 9,
+ "checks_total": 9,
+ "court": "native-dom host answers (H1: __mcsJson in host scripts)",
+ "host_sha256": "18f935f5fe3ec835b4d2c4078535f30e0950bcd786481181916ebdbcca70cb77",
+ "limitations": [
+  "design-frozen court: S1, D1, D2, J1 and J2 fail until the host's scripts stop calling JSON.stringify",
+  "A1 is a standing regression of a negative result: the activation path already resisted this forgery and must keep resisting",
+  "two criteria read the host's source rather than the binary, so they are repo-local by design",
+  "the page tampers by branch, so a failure names which host answer gave way",
+  "one hermetic loopback origin; nothing is fetched from outside this file",
+  "this is not a claim that a shared realm can be made hostile-page-proof; it is that the host's own answers do not pass through page-replaceable functions"
+ ],
+ "passed": true,
+ "ruled": {
+  "h1": "host-side scripts serialise through __mcsJson",
+  "invariant": "the host's answers to the agent are not the page's to write",
+  "unchanged": "the activation refusal, the handle key set, D6, G1"
+ }
+}

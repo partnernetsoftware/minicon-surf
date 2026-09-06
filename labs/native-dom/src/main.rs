@@ -96,12 +96,12 @@ const MAX_TIMER_CALLBACKS_PER_BOUNDARY: usize = 32;
 /// page cleared that handle inside the same turn.
 const TIMER_COLLECT_JS: &str = r#"(() => {
   const t = window.__mcsTimers;
-  if (!t) return JSON.stringify({ moved: [], refused: 0, pending: 0 });
+  if (!t) return __mcsJson({ moved: [], refused: 0, pending: 0 });
   const moved = t.scheduled;
   const refused = t.refused;
   t.scheduled = [];
   t.refused = 0;
-  return JSON.stringify({ moved, refused, pending: t.pending.size });
+  return __mcsJson({ moved, refused, pending: t.pending.size });
 })()"#;
 
 /// Run one due callback. The realm answers whether it ran, whether it threw,
@@ -110,16 +110,16 @@ fn timer_fire_script(handle: u64) -> String {
     format!(
         r#"(() => {{
   const t = window.__mcsTimers;
-  if (!t) return JSON.stringify({{ missing: true }});
+  if (!t) return __mcsJson({{ missing: true }});
   const entry = t.pending.get({handle});
-  if (!entry) return JSON.stringify({{ missing: true }});
+  if (!entry) return __mcsJson({{ missing: true }});
   t.pending.delete({handle});
   try {{
     entry.fn(...entry.args);
   }} catch (error) {{
-    return JSON.stringify({{ threw: true }});
+    return __mcsJson({{ threw: true }});
   }}
-  return JSON.stringify({{ fired: true }});
+  return __mcsJson({{ fired: true }});
 }})()"#
     )
 }
@@ -328,7 +328,7 @@ fn lifecycle_arm_script(capability: &str) -> String {
       value: (offered) => {{
         if (offered !== capability) return "refused";
         const taken = takeIntent();
-        return taken === null || taken === undefined ? "" : JSON.stringify(taken);
+        return taken === null || taken === undefined ? "" : __mcsJson(taken);
       }},
       writable: false, configurable: false, enumerable: false,
     }});
@@ -564,7 +564,7 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
     format!(
         r#"(() => {{
   const s = window.__mcs;
-  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  if (!s) return "{{\"error\":\"uninstrumented\"}}";
 {activation}
   const role = (el) => {{
     const t = el.tagName.toLowerCase();
@@ -644,7 +644,7 @@ fn snapshot_script(max_nodes: u64, is_child: bool, has_base_target: bool) -> Str
   }}
   s.nodes = nodes;
   s.snapshot = s.revision;
-  return JSON.stringify({{ revision: s.revision, truncated, nodes: out }});
+  return __mcsJson({{ revision: s.revision, truncated, nodes: out }});
 }})()"#
     )
 }
@@ -656,19 +656,19 @@ fn microbench_script(nested: bool) -> String {
     format!(
         r#"(() => {{
   const s = window.__mcs;
-  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
+  if (!s) return "{{\"error\":\"uninstrumented\"}}";
   const target = 16384;
   const entries = [];
   let nestedText = "";
   while (true) {{
     const i = entries.length + 1;
     entries.push({{ node: "node_" + i, role: i % 3 === 0 ? "link" : (i % 3 === 1 ? "text" : "button"), name: "entry " + i + " " + "n".repeat(180), dom_id: "id_" + i }});
-    nestedText = JSON.stringify({{ revision: s.revision, truncated: false, nodes: entries }});
+    nestedText = __mcsJson({{ revision: s.revision, truncated: false, nodes: entries }});
     if (nestedText.length >= target) break;
   }}
   if ({nested}) return nestedText;
-  const base = JSON.stringify({{ revision: s.revision, truncated: false, nodes: [], pad: "" }});
-  return JSON.stringify({{ revision: s.revision, truncated: false, nodes: [], pad: "p".repeat(nestedText.length - base.length) }});
+  const base = __mcsJson({{ revision: s.revision, truncated: false, nodes: [], pad: "" }});
+  return __mcsJson({{ revision: s.revision, truncated: false, nodes: [], pad: "p".repeat(nestedText.length - base.length) }});
 }})()"#
     )
 }
@@ -686,15 +686,15 @@ fn download_probe_script(revision: u64, index: usize) -> String {
     format!(
         r#"(() => {{
   const s = window.__mcs;
-  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
-  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
-  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  if (!s) return "{{\"error\":\"uninstrumented\"}}";
+  if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
   const el = s.nodes[{index}];
-  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
-  if (el.tagName.toLowerCase() !== "a" || !el.hasAttribute("href")) return JSON.stringify({{}});
+  if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
+  if (el.tagName.toLowerCase() !== "a" || !el.hasAttribute("href")) return __mcsJson({{}});
   const out = {{ href: el.getAttribute("href") }};
   if (el.hasAttribute("download")) out.declared = el.getAttribute("download");
-  return JSON.stringify(out);
+  return __mcsJson(out);
 }})()"#
     )
 }
@@ -790,15 +790,15 @@ fn preflight_script(
     format!(
         r#"(() => {{
   const s = window.__mcs;
-  if (!s) return JSON.stringify({{ error: "uninstrumented" }});
-  if (s.revision !== {revision}) return JSON.stringify({{ stale: true, current: s.revision }});
-  if (s.snapshot !== {revision}) return JSON.stringify({{ missing: true }});
+  if (!s) return "{{\"error\":\"uninstrumented\"}}";
+  if (s.revision !== {revision}) return __mcsJson({{ stale: true, current: s.revision }});
+  if (s.snapshot !== {revision}) return __mcsJson({{ missing: true }});
   const el = s.nodes[{index}];
-  if (!el || !el.isConnected) return JSON.stringify({{ missing: true }});
+  if (!el || !el.isConnected) return __mcsJson({{ missing: true }});
   const action = {action};
 {activation}
 {serializer}
-  return JSON.stringify(__mcsPreflight(el, action));
+  return __mcsJson(__mcsPreflight(el, action));
 }})()"#
     )
 }
