@@ -1404,6 +1404,59 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing implemented: round D, the attributes a decision
+  reads (`labs/native-dom/attribute-fact-design-0.0.1.md`, receipt
+  `evidence/native-dom-control-0.0.2-attribute-fact-candidates.json`). Four
+  candidates built on the pushed round-C tree, measured on **both allocators**,
+  and discarded; **no frozen value was re-frozen**, because the tree holds no
+  implementation and moving a pin now would only make the court wrong about the
+  tree it measures. **D1 — move the store only — is the worst option on the
+  table**: it costs exactly what D2 costs and closes three routes of four,
+  leaving the `toLowerCase` route open, so a round that shipped it would have
+  reported F1 closed while a page could still submit a declared POST as a GET.
+  **D3 — validate at write time — is broken, and instructively**: it fails on
+  every arm including the unpatched one and reports `method: "get"` for every
+  form, because the parser seeds attributes straight into the map
+  (`dom_shim_base.js:479`) without going through `setAttribute`, so the folded
+  copy is never written. That is round C's `cloneNode` lesson in a second
+  dimension — *validation at write time misses whichever construction door does
+  not go through the writer* — and it costs three times the cheapest option.
+  **D2 and E both close everything**: every arm refuses, the snapshot reports
+  `post` truthfully on all ten, every honest control still works, and the page's
+  `__attrs` still reads as a `Map` because all four candidates carry the
+  explicit **no-op landing setter** the previous round measured to be mandatory
+  (without it a page's own write throws and answers `target_crashed`).
+  **E — one record per element holding tag and attributes together — is the
+  cheapest on every one of the five measures**: +518 base bytes against D2's
+  +584, and +2,896/+20,272 system and +3,024/+21,904 arena against D2's
+  +4,096/+28,736 and +3,152/+22,960, leaving 23,590 under M1 and 166,564 under
+  M2. Nothing is extrapolated from round C or the earlier estimates: each row is
+  its own build, probe run and child-frame run on both arms, and the previous
+  round's C+D figures are superseded. **No authority expansion**, measured on
+  every build — `javascript:`, `file://` at a real local file whose bytes never
+  came back, and an unallowed origin refused identically, every refusal still
+  the Rust half's — **no page value or query in the ledger**, and the typed
+  vocabulary unchanged. **Five frozen values would move**, identified by running
+  the frozen courts against the E build and left untouched: `property-shape`'s
+  `window` (`113:5899bf6e` → `114:5d05836a`) and `Element.prototype`
+  (`40:26312e4` → `41:1c3f518d`, `__attrs` becoming a page-observable accessor —
+  the one genuinely new cost of D), `signature-integrity`'s base-byte pin,
+  `registry-brand`'s N3 hash, and **`element-tag`'s whole cost group, which has
+  expired**: its ceilings are deltas from the pre-round-C baseline, so under E
+  it fails all five and reports C's cost plus D's as if they were C's. *A cost
+  ceiling written as a delta from a fixed prior baseline expires when the next
+  slice lands*; the recommendation is to re-express it as equalities at round
+  C's measured values. Everything else holds on E: capture-declaration 8/8 (no
+  sixteenth capture), form 179/179, frame-action 182/182, page-navigation 80/80,
+  downloads 21/21, element-api 28/28, dataset 15/15, host-answer 9/9. Loss
+  matrix §8, dependencies §9, safe failures §10, a court design §11.
+  Recommendation: **E**. Tree back at `e9e07111` with the shims at 33,290 and
+  26,485 bytes. Regressions read-only and green: element-tag 52/52,
+  signature-integrity 34/34, registry-brand 15/15, property-shape 22/22,
+  capture-declaration 8/8, probe-truthfulness 25/25, host-answer 9/9, downloads
+  21/21, form 179/179, frame-action 182/182, page-navigation 80/80, child-frame
+  82/82, element-api 28/28, dataset 15/15; fmt, 58 tests, clippy `-D warnings`,
+  contract 28 examples and 50 negatives. Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Frozen, then implemented: round C, an element's tag is the host's
   (`labs/native-dom/element-tag-design-0.0.1.md`, court
   `labs/native-dom/element-tag-court.py`, receipts

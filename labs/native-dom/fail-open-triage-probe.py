@@ -103,7 +103,8 @@ PATCHES = {
     ),
     "prop_attrs_method": (
         "var f = document.getElementById('postform');"
-        "f.__attrs = new Map([['method', 'get'], ['action', '/landed.html']]);"
+        "f.__attrs = new Map([['method', 'get'], ['action', '/landed.html'],"
+        " ['id', 'postform']]);"
     ),
     "prop_attrs_target": (
         "var a = document.getElementById('named');"
@@ -140,6 +141,7 @@ def page(patch, second_origin, local_file):
     return (
         "<!doctype html><html><body><main>"
         "<p id='mark'>marker</p>"
+        "<p id='echo'>unset</p>"
         # F1: the declared POST, and the honest GET beside it.
         "<form id='postform' method='post' action='/landed.html'>"
         "<input id='p' type='text' name='p' value='typed'>"
@@ -160,7 +162,17 @@ def page(patch, second_origin, local_file):
         "<a id='afile' href='file://" + local_file + "' download='x.bin'>anchor file</a>"
         "<div id='divcross' href='" + second_origin + "/asked.bin' download='x.bin'>div cross</div>"
         "<a id='across' href='" + second_origin + "/asked.bin' download='x.bin'>anchor cross</a>"
-        "</main><script>(function(){" + patch + "})();</script></body></html>"
+        "</main><script>(function(){" + patch +
+        # The page reports what its own write did: whether it threw, what the
+        # field reads back as, and whether the value survived. A slice that
+        # moves an internal field must not turn a page's harmless mistake into
+        # a dead document.
+        "try { var f2 = document.getElementById('postform');"
+        " var kind = (f2.__attrs && typeof f2.__attrs.get === 'function') ? 'map' : 'other';"
+        " document.getElementById('echo').textContent = 'attrs=' + kind;"
+        "} catch (e) { try { document.getElementById('echo').textContent ="
+        " 'threw'; } catch (e2) {} }"
+        "})();</script></body></html>"
     ).encode()
 
 
@@ -337,6 +349,9 @@ def run_arm(binary, origin, served, patch_name, workspace, local_file):
     # Anti-vacuity: the page's own script ran before the host looked. Without
     # this every refusal below could pass on a page that installed nothing.
     record["marker_in_snapshot"] = "mark" in by_id
+    # Page compatibility: whether the page's own `__attrs` write threw, what it
+    # read back, and whether the field is still a Map to page code.
+    record["page_echo"] = (by_id.get("echo") or {}).get("name")
     record["div_role"] = (by_id.get("fakedl") or {}).get("role")
     record["anchor_role"] = (by_id.get("realdl") or {}).get("role")
     record["f1_post_submit"] = post
