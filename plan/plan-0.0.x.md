@@ -1302,6 +1302,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   the standing lesson is that **a shape's cost is not its source size**: a
   design that misses a bound should be re-shaped and re-measured before a
   capability is given up to fund it. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: the first realm's fixed cost
+  (`labs/native-dom/first-realm-cost-audit-0.0.1.md`), measured after paying
+  the first-request constant so it is not double-counted. **The first realm is
+  not one realm's worth of memory**: on the system arm it costs **1,490,944**
+  while the host accounts only **327,456**, and by the third and fourth realm
+  the marginal cost has fallen to ~300,000, so there is a one-time engine cost
+  of about **1.16 MB** on top of ~0.3 MB per realm. **Most of that one-time
+  cost is the allocator, not the engine**: the same first realm on the arena
+  arm costs **770,072** with nearly identical tracked bytes, so roughly **720
+  KB is libmalloc page behaviour** rather than QuickJS demand. **The two arms
+  trade live cost against recovery**: system is cheaper per live realm and
+  returns nothing on close (+32,768), arena is dearer per realm but returns
+  **1,851,488** when four targets close and ends 2.13 MB lower. D6's numbers
+  are untouched — 6,619,592 system, 6,046,200 arena, target 4,178,196 — and
+  decompose as the first-request constant (~1.77 MB), profile machinery
+  (~0.02 MB), the first realm's one-time cost, and ~0.3-0.54 MB per realm
+  after. So a D6 repair has three honest shapes and none is profile work:
+  attack the 720 KB allocator delta, attack the first-request constant, or
+  **re-derive what D6 measures** — because a live-only criterion rewards the
+  arm that never gives memory back, which is a property of the criterion
+  rather than of the route, and that is a ruling rather than a repair. For G1
+  the shape is favourable and now measured end to end: profiles free, marginal
+  target 0.3-0.5 MB, two one-time constants that a campaign should report
+  separately. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing implemented: the host's fixed first-request cost
   (`labs/native-dom/first-request-cost-audit-0.0.1.md`), which was meant to be
   the first-profile audit and **dissolved its own premise**. Creating a profile
