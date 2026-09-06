@@ -1,0 +1,973 @@
+{
+  "probe": "the C class: what a page's own text reaches, and one candidate priced",
+  "binary_sha256": "cc8ebfa4a4dc710ab94ce3d202e2e4c67ce10764981292f952a1827eb19672c2",
+  "note": "Form values and built query strings are page data: the server records only whether a marker appeared in a query and how many bytes it was, never the query. Node text is reported by length and by which fixture marker it matches, never verbatim beyond the fixture's own short constants.",
+  "shipped_tree": {
+    "binary": "cc8ebfa4a4dc710a",
+    "shim_base_bytes": 33886,
+    "shim_main_bytes": 26485
+  },
+  "arms": [
+    {
+      "patch": "none",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 7,
+      "truncated": false,
+      "names": {
+        "plain": {
+          "len": 33,
+          "marks": [
+            "plain"
+          ]
+        },
+        "big": {
+          "len": 256,
+          "marks": [
+            "other"
+          ]
+        },
+        "plainlink": {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        },
+        "f": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "sel": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "ta": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "go": {
+          "len": 2,
+          "marks": [
+            "other"
+          ]
+        }
+      },
+      "snapshot_bytes": 1936,
+      "option_labels": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "textarea_value": {
+        "len": 33,
+        "marks": [
+          "plain"
+        ]
+      },
+      "node_ids": {
+        "plain": "node_1",
+        "big": "node_2",
+        "plainlink": "node_3",
+        "f": "node_4",
+        "sel": "node_5",
+        "ta": "node_6",
+        "go": "node_7"
+      },
+      "select_option": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": []
+      },
+      "option_labels_after_select": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "submit": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": true,
+            "query_bytes": 46
+          }
+        ]
+      },
+      "act_link_with_text_moved": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 0
+          }
+        ]
+      },
+      "revision_after": 2,
+      "stale_reference": {
+        "present": true,
+        "outcome": "stale_revision",
+        "served": []
+      }
+    },
+    {
+      "patch": "write_text",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 7,
+      "truncated": false,
+      "names": {
+        "plain": {
+          "len": 21,
+          "marks": [
+            "rewritten"
+          ]
+        },
+        "big": {
+          "len": 256,
+          "marks": [
+            "other"
+          ]
+        },
+        "plainlink": {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        },
+        "f": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "sel": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "ta": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "go": {
+          "len": 2,
+          "marks": [
+            "other"
+          ]
+        }
+      },
+      "snapshot_bytes": 1924,
+      "option_labels": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "textarea_value": {
+        "len": 33,
+        "marks": [
+          "plain"
+        ]
+      },
+      "node_ids": {
+        "plain": "node_1",
+        "big": "node_2",
+        "plainlink": "node_3",
+        "f": "node_4",
+        "sel": "node_5",
+        "ta": "node_6",
+        "go": "node_7"
+      },
+      "select_option": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": []
+      },
+      "option_labels_after_select": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "submit": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": true,
+            "query_bytes": 46
+          }
+        ]
+      },
+      "act_link_with_text_moved": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 0
+          }
+        ]
+      },
+      "revision_after": 2,
+      "stale_reference": {
+        "present": true,
+        "outcome": "stale_revision",
+        "served": []
+      }
+    },
+    {
+      "patch": "slice_identity",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 1,
+      "truncated": true,
+      "names": {
+        "plain": {
+          "len": 33,
+          "marks": [
+            "plain"
+          ]
+        }
+      },
+      "snapshot_bytes": 411,
+      "option_labels": [],
+      "textarea_value": null,
+      "node_ids": {
+        "plain": "node_1"
+      },
+      "select_option": {
+        "present": false
+      },
+      "option_labels_after_select": [],
+      "submit": {
+        "present": false
+      },
+      "act_link_with_text_moved": {
+        "present": false
+      },
+      "revision_after": 0,
+      "stale_reference": {
+        "present": false
+      }
+    },
+    {
+      "patch": "join_const",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 7,
+      "truncated": false,
+      "names": {
+        "plain": {
+          "len": 18,
+          "marks": [
+            "joined"
+          ]
+        },
+        "big": {
+          "len": 18,
+          "marks": [
+            "joined"
+          ]
+        },
+        "plainlink": {
+          "len": 18,
+          "marks": [
+            "joined"
+          ]
+        },
+        "f": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "sel": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "ta": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "go": {
+          "len": 18,
+          "marks": [
+            "joined"
+          ]
+        }
+      },
+      "snapshot_bytes": 1696,
+      "option_labels": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 18,
+          "marks": [
+            "joined"
+          ]
+        }
+      ],
+      "textarea_value": {
+        "len": 18,
+        "marks": [
+          "joined"
+        ]
+      },
+      "node_ids": {
+        "plain": "node_1",
+        "big": "node_2",
+        "plainlink": "node_3",
+        "f": "node_4",
+        "sel": "node_5",
+        "ta": "node_6",
+        "go": "node_7"
+      },
+      "select_option": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": []
+      },
+      "option_labels_after_select": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 18,
+          "marks": [
+            "joined"
+          ]
+        }
+      ],
+      "submit": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 41
+          }
+        ]
+      },
+      "act_link_with_text_moved": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 0
+          }
+        ]
+      },
+      "revision_after": 2,
+      "stale_reference": {
+        "present": true,
+        "outcome": "stale_revision",
+        "served": []
+      }
+    },
+    {
+      "patch": "map_empty",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 7,
+      "truncated": false,
+      "names": {
+        "plain": {
+          "len": 0,
+          "marks": [
+            "other"
+          ]
+        },
+        "big": {
+          "len": 0,
+          "marks": [
+            "other"
+          ]
+        },
+        "plainlink": {
+          "len": 0,
+          "marks": [
+            "other"
+          ]
+        },
+        "f": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "sel": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "ta": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "go": {
+          "len": 0,
+          "marks": [
+            "other"
+          ]
+        }
+      },
+      "snapshot_bytes": 1560,
+      "option_labels": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 0,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "textarea_value": {
+        "len": 0,
+        "marks": [
+          "other"
+        ]
+      },
+      "node_ids": {
+        "plain": "node_1",
+        "big": "node_2",
+        "plainlink": "node_3",
+        "f": "node_4",
+        "sel": "node_5",
+        "ta": "node_6",
+        "go": "node_7"
+      },
+      "select_option": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": []
+      },
+      "option_labels_after_select": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 0,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "submit": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 0
+          }
+        ]
+      },
+      "act_link_with_text_moved": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 0
+          }
+        ]
+      },
+      "revision_after": 2,
+      "stale_reference": {
+        "present": true,
+        "outcome": "stale_revision",
+        "served": []
+      }
+    },
+    {
+      "patch": "stateful_join",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 7,
+      "truncated": false,
+      "names": {
+        "plain": {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        "big": {
+          "len": 256,
+          "marks": [
+            "other"
+          ]
+        },
+        "plainlink": {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        },
+        "f": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "sel": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "ta": {
+          "len": 1,
+          "marks": [
+            "other"
+          ]
+        },
+        "go": {
+          "len": 2,
+          "marks": [
+            "other"
+          ]
+        }
+      },
+      "snapshot_bytes": 1913,
+      "option_labels": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "textarea_value": {
+        "len": 33,
+        "marks": [
+          "plain"
+        ]
+      },
+      "node_ids": {
+        "plain": "node_1",
+        "big": "node_2",
+        "plainlink": "node_3",
+        "f": "node_4",
+        "sel": "node_5",
+        "ta": "node_6",
+        "go": "node_7"
+      },
+      "select_option": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": []
+      },
+      "option_labels_after_select": [
+        {
+          "len": 10,
+          "marks": [
+            "shown-marker"
+          ]
+        },
+        {
+          "len": 12,
+          "marks": [
+            "other"
+          ]
+        }
+      ],
+      "submit": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": true,
+            "query_bytes": 46
+          }
+        ]
+      },
+      "act_link_with_text_moved": {
+        "present": true,
+        "outcome": "ok:applied=True",
+        "served": [
+          {
+            "path": "/landed.html",
+            "carried_shown": false,
+            "carried_hidden": false,
+            "query_bytes": 0
+          }
+        ]
+      },
+      "revision_after": 2,
+      "stale_reference": {
+        "present": true,
+        "outcome": "stale_revision",
+        "served": []
+      }
+    },
+    {
+      "patch": "trim_grow",
+      "snapshot": "ok:revision=0",
+      "revision": 0,
+      "node_count": 0,
+      "truncated": false,
+      "names": {},
+      "snapshot_bytes": 262,
+      "option_labels": [],
+      "textarea_value": null,
+      "node_ids": {},
+      "select_option": {
+        "present": false
+      },
+      "option_labels_after_select": [],
+      "submit": {
+        "present": false
+      },
+      "act_link_with_text_moved": {
+        "present": false
+      },
+      "revision_after": 0,
+      "stale_reference": {
+        "present": false
+      }
+    }
+  ],
+  "surrogate_cut_on_the_shipped_tree": {
+    "plain": {
+      "ok": true,
+      "code": null,
+      "message": null,
+      "reason": null,
+      "nodes": 1,
+      "name_lengths": [
+        5
+      ],
+      "dom_ids": [
+        1
+      ],
+      "value_lengths": []
+    },
+    "long_plain": {
+      "ok": true,
+      "code": null,
+      "message": null,
+      "reason": null,
+      "nodes": 1,
+      "name_lengths": [
+        256
+      ],
+      "dom_ids": [
+        1
+      ],
+      "value_lengths": []
+    },
+    "pair_straddles_the_cut": {
+      "ok": false,
+      "code": "internal",
+      "message": "engine returned malformed snapshot JSON",
+      "reason": null,
+      "nodes": 0,
+      "name_lengths": [],
+      "dom_ids": [],
+      "value_lengths": []
+    },
+    "pair_ends_at_the_cut": {
+      "ok": true,
+      "code": null,
+      "message": null,
+      "reason": null,
+      "nodes": 1,
+      "name_lengths": [
+        255
+      ],
+      "dom_ids": [
+        1
+      ],
+      "value_lengths": []
+    },
+    "pair_after_the_cut": {
+      "ok": true,
+      "code": null,
+      "message": null,
+      "reason": null,
+      "nodes": 1,
+      "name_lengths": [
+        256
+      ],
+      "dom_ids": [
+        1
+      ],
+      "value_lengths": []
+    },
+    "pair_straddles_a_dom_id": {
+      "ok": false,
+      "code": "internal",
+      "message": "engine returned malformed snapshot JSON",
+      "reason": null,
+      "nodes": 0,
+      "name_lengths": [],
+      "dom_ids": [],
+      "value_lengths": []
+    },
+    "pair_straddles_a_value": {
+      "ok": false,
+      "code": "internal",
+      "message": "engine returned malformed snapshot JSON",
+      "reason": null,
+      "nodes": 0,
+      "name_lengths": [],
+      "dom_ids": [],
+      "value_lengths": []
+    },
+    "pair_straddles_an_option": {
+      "ok": false,
+      "code": "internal",
+      "message": "engine returned malformed snapshot JSON",
+      "reason": null,
+      "nodes": 0,
+      "name_lengths": [],
+      "dom_ids": [],
+      "value_lengths": []
+    }
+  },
+  "candidate_T_surrogate_safe_cut": {
+    "binary": "6f44390e867f0520",
+    "note": "A throwaway build, measured and discarded. `git checkout -- src/` restored the tree and the binary was rebuilt to cc8ebfa4a4dc710a. The edit is entirely inside `snapshot_script`, a host script compiled per evaluation and not resident per realm, which is why every measured cost is zero.",
+    "shim_base_bytes": 33886,
+    "shim_main_bytes": 26485,
+    "child_frame_owner_bytes": {
+      "system M1": 238554,
+      "system M2": 1668444,
+      "arena M1": 230586,
+      "arena M2": 1614092
+    },
+    "child_frame_owner_bytes_before": {
+      "system M1": 238554,
+      "system M2": 1668444,
+      "arena M1": 230586,
+      "arena M2": 1614092
+    },
+    "surrogate_cut": {
+      "plain": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 1,
+        "name_lengths": [
+          5
+        ],
+        "dom_ids": [
+          1
+        ],
+        "value_lengths": []
+      },
+      "long_plain": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 1,
+        "name_lengths": [
+          256
+        ],
+        "dom_ids": [
+          1
+        ],
+        "value_lengths": []
+      },
+      "pair_straddles_the_cut": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 1,
+        "name_lengths": [
+          255
+        ],
+        "dom_ids": [
+          1
+        ],
+        "value_lengths": []
+      },
+      "pair_ends_at_the_cut": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 1,
+        "name_lengths": [
+          255
+        ],
+        "dom_ids": [
+          1
+        ],
+        "value_lengths": []
+      },
+      "pair_after_the_cut": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 1,
+        "name_lengths": [
+          256
+        ],
+        "dom_ids": [
+          1
+        ],
+        "value_lengths": []
+      },
+      "pair_straddles_a_dom_id": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 1,
+        "name_lengths": [
+          21
+        ],
+        "dom_ids": [
+          63
+        ],
+        "value_lengths": []
+      },
+      "pair_straddles_a_value": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 2,
+        "name_lengths": [
+          0,
+          1
+        ],
+        "dom_ids": [
+          0,
+          1
+        ],
+        "value_lengths": [
+          255
+        ]
+      },
+      "pair_straddles_an_option": {
+        "ok": true,
+        "code": null,
+        "message": null,
+        "reason": null,
+        "nodes": 2,
+        "name_lengths": [
+          0,
+          1
+        ],
+        "dom_ids": [
+          0,
+          1
+        ],
+        "value_lengths": []
+      }
+    },
+    "settled_courts": {
+      "attribute-fact": "154/154",
+      "element-tag": "52/52",
+      "signature-integrity": "34/34",
+      "property-shape": "22/22",
+      "registry-brand": "15/15",
+      "snapshot-schema": "13/13",
+      "form": "179/179",
+      "frame-action": "182/182",
+      "downloads": "21/21",
+      "element-api": "28/28",
+      "dataset": "15/15",
+      "child-frame": "82/82"
+    }
+  }
+}

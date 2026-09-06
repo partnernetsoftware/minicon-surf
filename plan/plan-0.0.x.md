@@ -1404,6 +1404,57 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [ ] Design-only, nothing implemented: the C class, what a page's own text
+  reaches (`labs/native-dom/text-answer-audit-0.0.1.md`, probe
+  `text-answer-probe.py`, receipt
+  `evidence/native-dom-control-0.0.2-text-answer.json`). With every fail-open
+  closed, this is the class the ruling left open: a node's `name` comes from the
+  page's `textContent`. **It reaches nothing it was feared to reach**, measured
+  over seven arms: node ids are positional and host-assigned; a text write moves
+  the revision, so a reference taken before it answers `stale_revision` on every
+  arm; no navigation, download or typed refusal reads text; and **no arm caused
+  any request the baseline did not**. Even the size bound holds without help
+  from the page: with `String.prototype.slice` replaced by the identity the
+  answer came back **`truncated: true`, one node, 411 bytes**, because the Rust
+  half counts each node's serialised bytes and stops at `max_bytes`
+  (`main.rs:7029`). **But the cut can lose the whole answer.**
+  `name.slice(0, 256)` cuts UTF-16 code units, so a surrogate pair straddling
+  the cut leaves a lone surrogate, `serde_json` refuses it, and the host answers
+  a bare `internal` — *"engine returned malformed snapshot JSON"*
+  (`main.rs:4589`). **No intrinsic is replaced**: it is ordinary content at an
+  unlucky offset, and it hits the 256-unit cut on a name, an input `value` and
+  an option label, and the 64-unit cut on a `dom_id`. A legitimate page with an
+  emoji 256 characters in loses its entire snapshot and is told `internal`
+  rather than anything it can reason about. A second, self-inflicted route — a
+  page writing `String.fromCharCode(0xD800)` — reaches the same crash.
+  **A second finding, needing no patch at all**: `<option label="A">B</option>`
+  shows the agent `A` and submits `B`, confirmed by marker at the server. That
+  is conformant — a browser does the same — but **the snapshot never exposes the
+  value that would be submitted**, so an agent choosing by label cannot know
+  what goes on the wire. Named, not solved: it is an answer-shape question for
+  the agent contract. **The candidate is free.** A `cut(raw, n)` built from
+  `.length`, index reads and `+=` — the technique already ruled in for `urlOf`
+  and the approval signature — stops rather than splitting a pair and replaces
+  an unpaired surrogate with U+FFFD, and it replaces all six `.slice` calls on
+  page-derived strings so the cut stops being the page's. Built as `6f44390e`
+  and measured on both allocators: **base shim 0, main shim 0, child-frame M1
+  and M2 0 on both arms** — every cost zero, because the edit lives entirely in
+  a host script, compiled per evaluation and not resident per realm. It closes
+  both routes (all eight cut documents return a snapshot) and moves nothing
+  else: attribute-fact 154/154, element-tag 52/52, signature-integrity 34/34,
+  property-shape 22/22, registry-brand 15/15, snapshot-schema 13/13, form
+  179/179, frame-action 182/182, downloads 21/21, element-api 28/28, dataset
+  15/15, child-frame 82/82. **It is the first candidate in this line that needs
+  no re-freeze at all.** Loss matrix §9, court draft §12. Tree back at
+  `cc8ebfa4` with the shims at 33,886 and 26,485. Verification on the restored
+  tree: attribute-fact 154/154, element-tag 52/52, signature-integrity 34/34,
+  property-shape 22/22, registry-brand 15/15, capture-declaration 8/8,
+  probe-truthfulness 25/25, host-answer 9/9, downloads 21/21, snapshot-schema
+  13/13, form 179/179, frame-action 182/182, page-navigation 80/80, element-api
+  28/28, dataset 15/15, and child-frame **81/82** on its arena growth criterion
+  — **batch variance on the same binary**, which scored 82/82 twice earlier in
+  the same session. fmt, 58 tests, clippy `-D warnings`, contract 28 examples
+  and 50 negatives. Not pushed. G1, G3, P6 and G6 stay open.
 - [x] Frozen, then implemented: round D, candidate E — one record per element
   holds the tag and the attributes (`labs/native-dom/attribute-fact-design-0.0.1.md`
   §11b, court `labs/native-dom/attribute-fact-court.py`, receipts
