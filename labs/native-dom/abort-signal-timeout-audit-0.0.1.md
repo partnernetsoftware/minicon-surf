@@ -150,3 +150,42 @@ Not frozen, and not written as a file. What it would have to falsify:
   main-only placement, and no host path aborting a page's signal.
 - The `shim-footprint` slack check on the same binary, which is what decided
   this audit.
+
+
+## 7. Ruled
+
+**T3b is accepted**: `timeout()` refuses when the page's existing timer table
+already holds 16 or more entries, so a page keeps **48 slots for its own
+`setTimeout`** and timeout signals can hold at most 16. The refusal is a
+`RangeError` and the page stays usable. No new quota state is introduced —
+the threshold reads the table that is already there — and the accepted cost is
+main slack **62,016 of 65,536**, 3,520 left, with M1, M2 and the child delta
+unmoved. The main extension keeps its comments; `CustomEvent` and every other
+capability stay.
+
+### 7.1 The standing guard, amended
+
+It read: **no host path may abort a page's signal.** It now reads:
+
+> No host path may abort a page's signal, with one narrow exception: the timer
+> that `AbortSignal.timeout()` created for a signal may abort **that signal and
+> no other**. The exception is bound to the signal the call minted, fires only
+> from that timer, and reaches nothing else — not another page signal, and not
+> any host path that is not this timer.
+
+Everything else about the guard is unchanged. A host path that wants to abort
+a page's signal for any other reason still needs its own ruling.
+
+### 7.2 The frozen `timeout` guard, amended
+
+`abort-signal-surface-court.py` pinned `AbortSignal.timeout` **absent**, so
+that taking it later would be a ruling and not a diff. This is that ruling: the
+criterion is amended to require it, and the amendment is recorded here and in
+the commit that makes it. The guard did its job — it made this a decision.
+
+The implementation court is frozen before the code and covers the
+`TimeoutError` `DOMException`, the abort event firing once with its listener
+dropped, the reserve of 48 coexisting with 16 signals, the refusal type,
+target close and owner release, the amended no-arbitrary-abort guard,
+`AbortSignal.any` still absent, the unchanged handle key set, and the main
+slack bound measured on the same binary.

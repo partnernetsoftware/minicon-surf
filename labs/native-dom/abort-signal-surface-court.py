@@ -108,8 +108,11 @@ PROBES = [
      "(function(){var c=new AbortController();var n=0;"
      "c.signal.onabort=function(){n++;};c.signal.onabort=null;"
      "c.abort();return 'fired '+n+'|held '+String(c.signal.onabort);})()"),
-    # The deferred candidate stays absent.
-    ("timeout_absent", "typeof AbortSignal.timeout"),
+    # Amended by ruling: the deferred candidate was taken, so this criterion
+    # now requires what it used to forbid. The guard did its job — taking
+    # timeout() had to be a decision, and this is the amendment that records
+    # it. `abort-signal-timeout-court.py` holds its semantics.
+    ("timeout_present", "typeof AbortSignal.timeout"),
     # The L5 guarantees this slice must not weaken.
     ("hostile_object_still_refused",
      "(function(){try{var b=document.createElement('span');"
@@ -280,9 +283,9 @@ def main():
                     expect(tag + "R5b: and clearing it removes the handler",
                            said.get("onabort_cleared") == "fired 0|held null",
                            {"said": said.get("onabort_cleared")})
-                    expect(tag + "D1: timeout stays absent, as the deferred candidate",
-                           said.get("timeout_absent") == "undefined",
-                           {"said": said.get("timeout_absent")})
+                    expect(tag + "D1: timeout is present, by the ruling that amended this",
+                           said.get("timeout_present") == "function",
+                           {"said": said.get("timeout_present")})
                     expect(tag + "L5a: a page object is still not a signal",
                            said.get("hostile_object_still_refused") == "threw:TypeError",
                            {"said": said.get("hostile_object_still_refused")})
@@ -316,7 +319,7 @@ def main():
         "hosts_killed": killed_hosts,
         "limitations": [
             "design-frozen court: it fails until R1 through R5 exist",
-            "timeout() is pinned absent by ruling, so taking it later amends this court rather than slipping past it",
+            "timeout() was pinned absent when this court was frozen; the ruling that took it amended D1 to require it, which is what the pin was for",
             "three criteria read the shipped sources beside this court rather than the binary, so they are repo-local by design",
             "the main-only slack and the M1/M2 floors are measured by the shim-footprint and child-frame courts on the same binary; H2 is what keeps this slice out of the base, which is what protects the child floors",
             "one hermetic loopback origin, macOS only; no surface, no window, no AppKit",
