@@ -8224,6 +8224,116 @@ mod revision_tests {
 }
 
 #[cfg(test)]
+mod transport_tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+    use std::io::{Read, Write};
+    use std::process::{Command, Stdio};
+
+    /// A download-sized answer has to survive the writer, a real pipe and a
+    /// reader, at a size nothing in the shipped protocol can reach: the
+    /// snapshot truncates node text at 256 characters and caps the tree at
+    /// MAX_SNAPSHOT_NODES, storage values are bounded in kilobytes, and
+    /// profile.list is bounded by MAX_PROFILES, so the largest line this host
+    /// can emit today is tens of kilobytes. This writes the line the network
+    /// cap allows -- 1,048,576 payload bytes, base64 encoded -- through the
+    /// same envelope() and the same write_all/newline/flush the serve loop
+    /// uses, over a real pipe with its own buffer, and compares the bytes and
+    /// their digest on the far side.
+    #[test]
+    fn a_download_sized_line_survives_the_writer_a_pipe_and_a_reader() {
+        let payload = vec![b'x'; net::MAX_RESPONSE_BYTES];
+        let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &payload);
+        let digest = format!("{:x}", Sha256::digest(&payload));
+        let line = envelope(
+            "req_1",
+            VERSION,
+            Ok(json!({
+                "kind": "download",
+                "byte_count": payload.len(),
+                "sha256": digest,
+                "reported_name": "x".repeat(255),
+                "truncated": false,
+                "bytes_base64": encoded,
+            })),
+        );
+        // The whole point of the measurement: this is far under the bound, so
+        // the generic "response exceeds byte limit" reply is unreachable here.
+        assert!(
+            line.len() < MAX_RESPONSE_BYTES,
+            "a network-cap download serializes to {} bytes, under {MAX_RESPONSE_BYTES}",
+            line.len()
+        );
+
+        let mut pipe = Command::new("cat")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .expect("cat spawns");
+        let mut sink = pipe.stdin.take().expect("stdin is piped");
+        let written = line.clone();
+        let writer = std::thread::spawn(move || {
+            sink.write_all(&written).expect("the line is written");
+            sink.write_all(b"\n").expect("the newline is written");
+            sink.flush().expect("the line is flushed");
+        });
+        let mut read_back = Vec::new();
+        pipe.stdout
+            .take()
+            .expect("stdout is piped")
+            .read_to_end(&mut read_back)
+            .expect("the far side reads the line");
+        writer.join().expect("the writer finishes");
+        pipe.wait().expect("cat exits");
+
+        assert_eq!(read_back.len(), line.len() + 1, "one line and one newline");
+        assert_eq!(
+            &read_back[..line.len()],
+            &line[..],
+            "the bytes are unchanged"
+        );
+        let parsed: Value = serde_json::from_slice(&read_back).expect("the line parses");
+        let result = &parsed["result"];
+        assert_eq!(result["byte_count"], json!(payload.len()));
+        assert_eq!(result["sha256"], json!(digest));
+        let decoded = base64::Engine::decode(
+            &base64::engine::general_purpose::STANDARD,
+            result["bytes_base64"]
+                .as_str()
+                .expect("the payload is a string"),
+        )
+        .expect("the payload decodes");
+        assert_eq!(decoded, payload, "the payload survives the round trip");
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&decoded)),
+            digest,
+            "the digest on the far side matches the one the host computed"
+        );
+    }
+
+    /// The other half of the same question: an answer that would exceed the
+    /// response bound is replaced by a generic `internal` error carrying no
+    /// reason, which a client cannot tell from a host fault. Whatever emits
+    /// large answers has to refuse before it reaches this point.
+    #[test]
+    fn an_oversized_answer_loses_its_reason() {
+        let line = envelope(
+            "req_1",
+            VERSION,
+            Ok(json!({"bytes_base64": "x".repeat(MAX_RESPONSE_BYTES + 1)})),
+        );
+        let parsed: Value = serde_json::from_slice(&line).expect("the line parses");
+        assert_eq!(parsed["ok"], json!(false));
+        assert_eq!(parsed["error"]["code"], json!("internal"));
+        assert_eq!(
+            parsed["error"]["message"],
+            json!("response exceeds byte limit")
+        );
+        assert_eq!(parsed["error"].get("details"), None, "no reason survives");
+    }
+}
+
+#[cfg(test)]
 mod ledger_tests {
     use super::*;
 

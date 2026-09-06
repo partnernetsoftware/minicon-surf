@@ -1381,6 +1381,26 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Required before implementation, nothing implemented: the download
+  transport stressed (`labs/native-dom/download-transport-stress-0.0.1.md`,
+  `transport-line-stress.py`, `transport_tests` in `src/main.rs`). Hermetic and
+  headless; nothing downloaded. **The stress had to be two halves**, because no
+  shipped operation can emit a large line: measured across a 400-node document,
+  the ceiling is `target.snapshot` at **46,515 bytes** — 1.109% of the response
+  bound, a thirtieth of a download line — held there by 256-character node
+  text, `MAX_SNAPSHOT_NODES` 128 and `MAX_PROFILES` 8. So the writer half runs
+  the real `envelope()` and the real write_all/newline/flush over a real pipe
+  at **1,398,652 bytes**, and the reader half runs the courts' own
+  `readline()` at 1,398,624; the bytes are identical, `byte_count` matches, and
+  the sha256 recomputed **after** base64 decoding matches the host's. Over the
+  cap, `target.open` is refused `resource_limit` with
+  `reason: "response-bytes"` — typed, before serialization, never the generic
+  `internal`, which a companion test pins as carrying no details at all.
+  Candidate budgets: `downloads` 32 and `download_bytes` 32 MiB, so neither
+  limit makes the other unreachable. `sha2` and `base64` are already
+  dependencies. **Still open**: the two halves joined through the real host,
+  which cannot be measured until a capability can emit such a line — it stays
+  the court's first criterion. G1, G3, P6 and G6 stay open; D6 untouched.
 - [ ] Read-only measurement, nothing implemented: the download envelope
   (`labs/native-dom/download-envelope-audit-0.0.1.md`). Nothing was
   downloaded — the fixture is local. **The envelope is not the binding
