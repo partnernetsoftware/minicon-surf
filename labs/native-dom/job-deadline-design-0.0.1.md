@@ -334,3 +334,26 @@ from what the drain actually returns. Counting a job that raised needs
 smuggled in here; until it is ruled, this host does not claim to observe a
 job's exception at all, and the court asserts the outcome that **is**
 observable — such a page's operation succeeds and its later jobs still run.
+
+## 12. Evidence
+
+Recorded 2026-09-06, when an integration audit found that one of these two
+receipts was named by no document in the tree. Both are committed, both parse,
+and each names the binary it was measured on:
+
+| receipt | binary | score | what it is |
+| --- | --- | --- | --- |
+| `evidence/native-dom-control-0.0.2-job-deadline.json` | `8ff70b9f26c1bdb3…` | **42/42**, `passed: true` | the court on the host that implements this design |
+| `evidence/native-dom-control-0.0.2-job-deadline-falsification.json` | `3b47966ece35e487…` | **12/42**, `passed: false` | the build **before** the slice, kept as the proof that the forty-two criteria can fail |
+
+The second is the one that was unreferenced. It is **not renamed and not
+removed**: a committed receipt is the history of the round that produced it
+(`AGENTS.md`, Lab discipline), and a falsification arm that nobody points at is
+a citation gap rather than a defect in the evidence. This section is the
+citation.
+
+Neither binary has a row in `README.md`'s register: both predate the thirteen
+rows added for the security-and-answer line, and `3b47966ece35e487…` is a
+pre-slice build that was never a shipped host. That is recorded here rather than
+repaired there, because a register row for a build nobody shipped would say less
+than this table does.

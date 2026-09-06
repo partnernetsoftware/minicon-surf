@@ -1404,6 +1404,36 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Documentation-only cleanup: the last orphan is cited and the absent
+  governance is ruled (`labs/native-dom/job-deadline-design-0.0.1.md` §12,
+  `integration-consistency-audit-0.0.1.md` §1b). **The orphan is closed by
+  citation, not by renaming**: `-job-deadline-falsification` — **12/42,
+  `passed: false`, on `3b47966ece35e487…`**, the build before that slice — is now
+  named beside its passing arm (**42/42** on `8ff70b9f26c1bdb3…`) in the design
+  that owns them both, with the reason it is neither renamed nor removed: a
+  committed receipt is history, and a falsification arm nobody points at is a
+  citation gap rather than a defect in the evidence. Both parse and both state
+  their binary. Neither binary gets a register row, and that is recorded rather
+  than repaired: both predate the thirteen rows, and `3b47966ece35e487…` was
+  never a shipped host. **Re-run of the orphan check: 112 receipts, zero
+  unreferenced, all parsing.** **And the absent governance is now a ruling
+  rather than a finding**: `PRD.md`, a `prd/` module, `evidence-registry.json`,
+  `alignment-contract.json` and `release-policy.json` are external to this
+  repository or do not exist, and are **intentionally not created here**; the
+  tracked owners stay, and nothing is invented to fill a name. Two lines of that
+  record are said out loud because silence would read as oversight: **release
+  policy is held by nothing found** and is recorded as *unowned*, and **the
+  evidence register is `labs/native-dom/README.md`**, prose and a table rather
+  than a JSON file — a machine-readable registry would be a different artefact
+  with a different owner and this ruling does not ask for one. The ownership
+  table's own numbers are corrected while they are being relied on: the ledger is
+  **47 rows** since `d5cede7`, not the 34 it had when the audit was written, and
+  the evidence directory holds **112** receipts. **The unrecoverable binaries
+  stay unrecoverable**: `b00dd3a` and `a229c13` committed no receipt, their
+  hashes are written nowhere, and **no row is fabricated for either** —
+  recovering them means rebuilding old commits, which is its own round. No
+  product code, no court, no criterion, no bound, handle or base byte. Not
+  pushed. G1, G3, P6 and G6 stay open.
 - [x] Documentation-only evidence repair: the probe-truthfulness court has a
   passing receipt at last (`evidence/native-dom-control-0.0.2-probe-truthfulness-repaired.json`,
   register note in `labs/native-dom/README.md`). The maintenance round found

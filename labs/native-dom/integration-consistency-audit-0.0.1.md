@@ -24,13 +24,42 @@ else, or does not exist yet. **Everything below audits what is actually here**,
 and the four missing documents are reported as the first finding rather than
 invented.
 
+### 1b. Ruled: they are external or absent, and are not created here
+
+Recorded 2026-09-06 as the standing decision, after this audit reported the
+absence:
+
+> `PRD.md`, a `prd/` module, `evidence-registry.json`,
+> `alignment-contract.json` and `release-policy.json` **are external to this
+> repository or do not exist**, and are **intentionally not created here**. The
+> roles they name are held by the tracked documents in the table below, which
+> stay the owners. Nothing is invented to fill a name.
+
+So the table is not a list of gaps waiting for files with those names — it is
+the ownership record. Two of its lines are worth saying out loud, because a
+reader expecting the missing names would otherwise read silence as oversight:
+
+- **Release policy is held by nothing found.** No tracked document states one.
+  It is the one role with no owner, and it is recorded as unowned rather than
+  assigned to a document that does not do it.
+- **The evidence register is `labs/native-dom/README.md`**, not a JSON file. It
+  is prose and a table, maintained per round, and since `d5cede7` it carries one
+  row per binary with the receipts each was measured on. A machine-readable
+  registry would be a different artefact with a different owner, and this ruling
+  does not ask for one.
+
+The unrecoverable binaries stay unrecoverable: `b00dd3a` and `a229c13` changed
+the host and committed no receipt, their hashes are written nowhere, and **no
+row is fabricated for either**. Recovering them means rebuilding those commits,
+which is a build of an old tree and would be its own round.
+
 What plays their parts today:
 
 | the role | what actually holds it |
 | --- | --- |
 | product definition and outcomes | `plan/plan-0.0.x.md` §1, and `AGENTS.md`'s "Non-negotiable product outcomes" |
 | the rules a round must follow | `AGENTS.md` |
-| the evidence register | `labs/native-dom/README.md`'s 34-row binary ledger, plus `labs/native-dom/evidence/` (107 receipts) |
+| the evidence register | `labs/native-dom/README.md`'s per-binary ledger — 34 rows when this was written, **47 since `d5cede7`** — plus `labs/native-dom/evidence/` (112 receipts since the verification and repaired-probe receipts landed) |
 | the alignment/consistency record | the per-round entries in `plan/plan-0.0.x.md` |
 | release policy | nothing found |
 
@@ -241,8 +270,11 @@ Left, and reported for a ruling:
    a decision on shape before anyone writes them.
 2. The two stale court strings (§3) and the court half of the corrected
    sentence (§4) — exact edits given; this round may not change courts.
-3. The orphaned `job-deadline-falsification` receipt (§7) — either name it in
-   its audit or accept it as an unreferenced historical arm.
-4. Whether `PRD.md`, `evidence-registry.json`, `alignment-contract.json` and
-   `release-policy.json` should exist here at all (§1). If they should, that is
-   a round of its own, and this audit is the inventory it would start from.
+3. ~~The orphaned `job-deadline-falsification` receipt (§7).~~ **Closed**: it is
+   named, with its binary and score, in `job-deadline-design-0.0.1.md` §12,
+   which also records why it is neither renamed nor removed. Not one receipt in
+   `labs/native-dom/evidence/` is now unreferenced.
+4. ~~Whether `PRD.md`, `evidence-registry.json`, `alignment-contract.json` and
+   `release-policy.json` should exist here at all (§1).~~ **Ruled in §1b**: they
+   are external or absent and are intentionally not created here; the tracked
+   owners stay. Release policy is recorded as **unowned**.
