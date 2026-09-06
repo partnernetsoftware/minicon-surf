@@ -1381,6 +1381,30 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: H2 and H3
+  (`labs/native-dom/intrinsic-hardening-h2-audit-0.0.1.md`). **Recommendation:
+  H3 yes, H2 no — on evidence, not on cost.** After H1, every monkeypatch
+  probed makes a page *invisible* to the agent rather than making it *lie*:
+  replacing `String.prototype.toLowerCase` empties the snapshot (0 nodes),
+  `Array.prototype.push` makes it refuse `internal`, `Map.prototype.get` hides
+  the link node, `Array.prototype.indexOf` hides one div, and
+  `Array.prototype.splice` changes nothing — while downloads still fetch the
+  right URL and a non-link is still refused `not_a_link`. **All fail closed**,
+  and each is something a page could already do by not rendering. The
+  `classList` corruption persists but is confined: `class` is not part of the
+  snapshot. Surface: **85 of 156 sites have a capture to route through; 71 do
+  not**, `toLowerCase` alone being 20 of them, seven in host decision scripts
+  including the download probe's `tagName.toLowerCase() !== "a"` — those need
+  new captures, which would grow the base and are out of scope. Cost of
+  routing, measured: **48.6 bytes per site per realm** — ~1,507 in every realm
+  for the base's 31 sites, ~1,798 per main realm for main's 37, ~0 for host
+  scripts, ~26 KB across eight targets. Binding dependency: base-side H2 adds
+  to every child realm and must be measured against `shim-footprint-court`'s
+  **frozen** M1/M2 floors (245,760 / 1,720,320) before any implementation.
+  H3's rule — every captured intrinsic is referenced at least once — is one
+  line of court and is what surfaced `arrayIndexOf` (still the only capture at
+  zero references). Loss matrix, DAG and four pending rulings in the audit. D6,
+  G1, the handle key set and the snapshot's shape validation untouched.
 - [x] Implemented behind a frozen court: H1, the host's answers stop passing
   through page-replaceable functions (`labs/native-dom/src/main.rs`,
   `host-answer-court.py`, receipt
