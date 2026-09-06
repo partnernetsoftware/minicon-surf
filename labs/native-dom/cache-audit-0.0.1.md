@@ -148,3 +148,37 @@ These would pass now and are worth pinning if the cache question is revisited:
    one, because the profile record is sealed and rewritten whole.
 3. Whether §8 is worth freezing as a court now, to pin the absence rather than
    rediscover it.
+
+---
+
+## 10. Ruled — 2026-09-06: the absence is the design
+
+No HTTP response cache is implemented, and the status quo is now a decision
+rather than a gap. The per-profile 16-slot TLS `ClientSessionMemoryCache` stays
+as it is, governed by `secure-cookie-court.py`.
+
+**§8's four criteria are adopted into the record.** They describe what must
+remain true, and each is measured in §2 rather than assumed:
+
+1. The same URL asked for in two profiles produces **two** server requests —
+   nothing crosses a profile.
+2. A restart re-fetches, and the first https fetch is a full handshake — nothing
+   survives a host's life. (Already pinned at `secure-cookie-court.py:242`.)
+3. The host sends **no** `If-None-Match` and no `If-Modified-Since`: it never
+   revalidates, so no cache directive can make it serve a body it did not just
+   receive.
+4. Twelve reloads leave the tracked realm bytes **unchanged** — repetition
+   accumulates nothing.
+
+To those four, §2 adds the reload, navigate-back and second-target results and
+the thirteen-connections measurement, which are the same property seen from
+other angles.
+
+**If the requirement ever appears**, it does not begin with code. It begins
+with its own round: a protocol shape, a budget of its own, an isolation ruling,
+and a court measured on the **arena** arm because D6 is RSS. Downloads are
+excluded by name from the start, as history was. And the G1 question must be
+settled in the same round: a comparison run would have to declare whether the
+cache was warm, which is a question that cannot arise today.
+
+Nothing in this round changed code, the handle key set, the base, or any bound.

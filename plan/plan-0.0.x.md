@@ -1405,7 +1405,15 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   make G1 runs depend on whether the cache was warm, would re-seal the whole
   profile record per store at ~12 ms if persistent, and must exclude downloads.
   Eight-criterion court draft for a future cache in §7, four criteria pinning
-  today's absence in §8, three rulings pending in §9.
+  today's absence in §8. **Ruled (§10): the absence is the design** — no
+  response cache is implemented, the per-profile 16-slot TLS session cache
+  stays as it is, and §8's four criteria are adopted into the record as what
+  must remain true: two profiles asking for one URL make two server requests, a
+  restart re-fetches with a full handshake, the host sends no conditional
+  headers, and twelve reloads leave tracked realm bytes unchanged. Should the
+  requirement appear, it begins with its own round — protocol shape, its own
+  budget, an isolation ruling, a court measured on the arena arm, downloads
+  excluded by name, and the G1 warm-or-cold question settled in the same round.
 - [x] Frozen, then implemented: the snapshot parse stops defaulting
   (`labs/native-dom/snapshot-schema-court.py`, receipt
   `evidence/native-dom-control-0.0.2-snapshot-schema.json`, record in
