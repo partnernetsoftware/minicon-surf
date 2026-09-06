@@ -2341,6 +2341,53 @@ target on these fixtures, and the slice with actions is still about four
 times below Lightpanda's single server and fifteen times below Servo at one
 target by footprint. Every later slice is measured against this row.
 
+#### Standing memory metrics
+
+Five numbers describe this route's memory, and they are **five separate
+metrics**. Each is measured on its own workload and none of them is a
+substitute for another; folding any of them into another produces a figure
+that is true of no workload.
+
+| metric | system | arena | what it is |
+| --- | ---: | ---: | --- |
+| first served line | ~1.74–1.90 MB | ~1.77 MB | a one-time process constant paid by the first line the host serves, **a malformed one included** — not profiles, not the operation (`first-request-cost-audit-0.0.1.md`) |
+| first realm | 1,490,944 | 770,072 | a one-time engine cost above a marginal realm (`first-realm-cost-audit-0.0.1.md`) |
+| profile | ~16,384 once, then 0 | same | creating a profile costs nothing measurable after the first |
+| marginal target | ~327,456 | ~317,232 | tracked bytes for one more realm, **constant from the first realm to the eighth**, released in full on close |
+| **per element** | **1,329.6 B** | **1,279.3 B** | **what one more element of a document costs the realm holding it** (`element-scaling-audit-0.0.1.md`) |
+
+**The per-element slope is a metric in its own right and is deliberately not
+folded into any other.** In particular it is **not** part of G1's per-target
+comparison, **not** part of D6, and **not** inside the marginal-target figure:
+that figure is measured on court fixtures of a few elements, so it carries
+almost none of the slope, and a route comparison that quotes it alone will
+understate a real page by two orders of magnitude. The two are reported side by
+side or not at all.
+
+What follows from the slope, under the stated assumptions, is the largest
+document a realm can hold before the per-realm 16 MiB limit:
+
+| | system | arena |
+| --- | ---: | ---: |
+| **realm ceiling, shipped** | **12,370 elements** | **12,864 elements** |
+| before round C, for scale | 14,991 | 15,990 |
+
+**The assumptions these numbers are true under**, because a ceiling quoted
+without them is a slogan: tracked `script_realms.malloc_bytes`, not RSS and not
+physical footprint; the 16 MiB per-realm limit as currently set; a
+least-squares fit over documents of 0, 500, 1,000, 2,000 and 4,000 elements,
+each a `div` carrying two attributes and wrapping a `span`; one host and one
+target per point, so no allocator history carries between them; and a bare
+element measured separately at 864.7 bytes with each attribute costing a
+further 229.8. A document of heavier elements sits above this line and a
+document of bare ones below it.
+
+The two comparison figures in the "before round C" row come from binaries
+**rebuilt off the canonical path**. By the rule at the head of the receipt
+register their hashes are not historical provenance tokens and are not to be
+cited as those builds' identity; runtime memory does not depend on the build
+path, which is what makes the comparison valid.
+
 ## Exact limitations and next experiment
 
 - No layout, images, fonts, `setInterval`, animation frames or idle

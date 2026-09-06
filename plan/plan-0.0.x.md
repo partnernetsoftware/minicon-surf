@@ -1404,6 +1404,36 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   native-dom arm is built and current (`ba46420b…`) and is an optional
   argument, so the harness would run the moment the Lightpanda binary exists.
   Two independent authorisations and the exact follow-up commands are in §5.
+- [x] Ruling applied (`382657e` pushed): the per-element slope is recorded as a
+  **standing product metric** and a guard for it is designed but **not frozen**
+  (`labs/native-dom/element-slope-guard-design-0.0.1.md`, and "Standing memory
+  metrics" in `labs/native-dom/README.md`). Rule 1: the route's memory is now
+  stated as **five separate metrics** — the first-served-line constant, the
+  first realm, a profile, the marginal target, and **1,329.6 bytes per element
+  (system) / 1,279.3 (arena)** — with the explicit statement that the slope is
+  **not** folded into G1, **not** into D6 and **not** inside the marginal-target
+  figure, which is measured on court fixtures of a few elements and therefore
+  carries almost none of it. The derived 16 MiB realm ceilings, 12,370 and
+  12,864 elements, are recorded **with the assumptions they hold under** —
+  tracked `script_realms.malloc_bytes` rather than RSS, the current per-realm
+  limit, and the exact fixture shape — because a ceiling quoted without them is
+  a slogan. The rebuilt comparison hashes are marked as **not** historical
+  provenance, per the same-path rule. Rule 2: the guard is pre-registered rather
+  than frozen — baseline, sample plan, thresholds, tolerance and a falsification
+  arm all chosen in advance and **reported for approval before the court file is
+  written**, since a threshold that later has to move is a movement in the
+  record while waiting one cycle costs nothing. The metric was verified
+  **exactly deterministic** (two independent runs, all 18 tracked figures
+  identical to the byte, and a third measurement through a separately written
+  probe agreeing), so the guard carries **no noise tolerance** and every byte of
+  headroom is deliberate policy. Proposed: slope ≤ 1,400.0 / 1,350.0 (below half
+  of either historical round's step), intercept ≤ 336,000 / 326,000, bare
+  element ≤ 920.0 / 900.0, per attribute ≤ 240.0 / 215.0, R² ≥ 0.9999,
+  two-run byte-exact determinism, both arms independently, and an anti-vacuity
+  arm requiring the same court to **fail** at a 1,150.0 ceiling. **M1/M2 are
+  untouched and stay separate**; no cap moved. Rule 3 honoured: the `__attrs`
+  direct-write/revision question is left as a separately scoped audit item and
+  nothing was implemented for it. Not pushed. G1, G3, P6 and G6 stay open.
 - [ ] Design-only, nothing changed: what an element costs a realm
   (`labs/native-dom/element-scaling-audit-0.0.1.md`, receipts
   `evidence/native-dom-control-0.0.2-element-scaling{,-round-c,-pre-round-c}.json`
