@@ -1381,6 +1381,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: shim reduction
+  (`labs/native-dom/shim-reduction-audit-0.0.1.md`). **The 3.6 bytes-per-source-byte
+  yardstick is an average and a false guide, and this audit replaces it.**
+  Measured per marginal realm, appending each construct 200 times to the real
+  base shim: a closure 502, a `defineProperty` 474, a class-body method 445, a
+  batched `defineProperties` entry 443, a plain prototype assignment 442, an
+  object literal 150, 100 bytes of string data 27, and **a comment 0** — 21,290
+  bytes of comments moved the realm by exactly nothing, so the shims' 17,329
+  bytes of comment are not a target at all. The unit of reduction is a
+  **member**, at ~442–474 bytes in every realm that evaluates it. **The decisive
+  finding**: the cost is the *compiled bytecode*, not the installed object — 200
+  members behind a lazy accessor that nothing touches still cost **372 each**,
+  so deferral buys only 16–21% and lazy installation is not a reduction
+  technique. Split by payer: engine floor 103,856 every realm, base shim
+  **122,800** every realm including child frames, main shim **87,296** main
+  realms only (already exempt for children, not double-counted). Named members
+  are only ~24% of the base shim's cost, so member removal will not return
+  linearly and the structural remainder needs its own measurement. Viable and
+  semantics-neutral: batching the ~27 separate `defineProperty` sites (~840
+  bytes per realm) and deleting the dead `arrayIndexOf` capture. Rejected on
+  measurement: lazy installation, comment stripping, accessor-to-method
+  conversion (~32 bytes and a page-visible API change), and base/main
+  de-duplication (the shared names are loop variables and handle imports).
+  Six-criterion court draft in §7; three rulings pending in §8. D6 untouched;
+  no shared runtime, no page capability removed.
 - [ ] Design-only, nothing implemented: the first realm at engine level
   (`labs/native-dom/first-realm-engine-audit-0.0.1.md`). Read-only; candidates
   measured in a **scratch crate outside the repository** linking the same
