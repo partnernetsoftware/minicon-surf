@@ -1381,6 +1381,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   §5, whose fourth criterion writes the ruling's own constraint as a check: no
   host control error text reaches the page, `click()` still returns
   `undefined` and throws nothing. G1, G3, P6 and G6 stay open.
+- [ ] Design-only, nothing implemented: intrinsic hardening
+  (`labs/native-dom/intrinsic-hardening-audit-0.0.1.md`). **Three of four host
+  paths probed are page-controllable.** 186 direct calls of replaceable methods
+  across the base shim (65), the main shim (60) and the host's own in-realm
+  scripts (61); the shims capture eleven intrinsics and use them at 30 sites.
+  **The serious one: a page that replaces `JSON.stringify` forges the agent's
+  entire snapshot** — the agent received `nodes: [{name: "FORGED-BY-PAGE"}]` and
+  none of the real document, because the snapshot script ends
+  `return JSON.stringify(...)`; the host checks only that a `revision` field
+  exists (a probe omitting it was refused `internal: "snapshot lacks a
+  revision"`), so shape is checked and provenance is not. **Second: a download
+  fetched a URL the agent never referenced** — the agent's reference named
+  `/visible.bin`, the server logged `GET /secret.bin`, and the agent received
+  those bytes under the profile's cookies, in the path landed earlier today.
+  Third: `classList` corruption via `Array.prototype.indexOf` (from the C2
+  audit). **Negative result recorded**: a forged `{decision: "allowed"}` did
+  *not* flip an activation refusal, because the host re-checks the node kind —
+  the pattern is not uniform, which is where the audit's value lies.
+  Candidates: **H1**, route the 24 `JSON.stringify` sites in the host's script
+  constants through the already-installed, non-writable `__mcsJson` — nearly
+  free, closes both agent-facing paths, extends no handle; **H2**, the shim's
+  own ~90 direct calls, which *costs* bytes and must never be traded against a
+  slimming target; **H3**, the rule that every captured intrinsic is referenced
+  and every direct call justified. Eight-criterion per-site court draft in §5;
+  four rulings pending in §7. D6 and G1 untouched; no shared runtime, no lazy
+  install, no base or handle growth.
 - [ ] Design-only, nothing implemented: the dead `arrayIndexOf` capture, C2
   (`labs/native-dom/dead-capture-audit-0.0.1.md`). **HOLD the deletion — and
   the reason is not the bytes.** It is confirmed dead (referenced nowhere in
