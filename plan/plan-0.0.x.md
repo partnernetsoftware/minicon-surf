@@ -1495,6 +1495,36 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   ordering kept: item 1 was struck, because
   `first-request-cost-audit-0.0.1.md` had already measured the first-profile
   cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
+- [ ] Frozen before the host changes, nothing implemented: the history-disclosure
+  court (`labs/native-dom/history-disclosure-court.py`, frozen from
+  `history-persistence-audit-0.0.1.md` §14). The ruled shape is settled: entries
+  carry **origin and path only** — never a query, a fragment, a form-built
+  value, a token or a search term — ordered **most-recent-first**, with **no
+  timestamps**, read through an **opt-in** argument on the existing
+  `profile.inspect` so the default response stays **byte-identical**, and with
+  **no new operation**: the enum stays at 26. The §12 asymmetry is settled by
+  the same ruling and deliberately not by making the two the same —
+  `target.inspect`'s `url` keeps its query as existing browser state a caller
+  already asked for, while a profile's disclosed history is a stricter privacy
+  trim that must never be read as a full URL. Two frozen constants, from the
+  host's own `MAX_HISTORY_ENTRIES` 8 and `MAX_URL_BYTES` 2,000: **8 entries and
+  16,384 bytes**. Baseline on the shipped `2d57ce864002406e…`,
+  `native-dom-control-0.0.2-history-disclosure-baseline`: **11 of 24** — the 4
+  detector controls and 7 ground criteria pass, and all 13 disclosure criteria
+  fail, which is what a court frozen before its capability is supposed to look
+  like. Every criterion is scored on every run, so the count stays 24 and only
+  the pass count moves; a court that grew its criteria as the capability landed
+  could not be said to cover them. Two defects found while writing it are
+  recorded rather than repaired quietly: **D8 was written vacuously** — it
+  compared two *absent* lists, found them equal and passed, the exact defect the
+  detector group exists to prevent, inside the court that carries that group —
+  and is now scored failing until the list exists on both sides; and the ground
+  group was **observed** failing rather than argued to be falsifiable, because
+  the court's navigations were first sent under `0.0.1` where `target.navigate`
+  does not exist, and G1 and G2 failed on ring length 1 and twelve
+  `invalid_request` refusals. **Implementation is not authorised**; no host
+  change, no operation added, no schema changed, no threshold moved. G1, G3, P6
+  and G6 stay open.
 - [x] Ruled and recorded, nothing implemented and no court frozen: P6's history
   question is answered **disclosure only**
   (`history-persistence-audit-0.0.1.md` §13, appended chronologically with §11's

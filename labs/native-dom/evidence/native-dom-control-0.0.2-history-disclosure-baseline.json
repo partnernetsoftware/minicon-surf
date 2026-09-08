@@ -1,0 +1,212 @@
+{
+ "checks": [
+  {
+   "check": "P1: the detector catches a planted query",
+   "passed": true
+  },
+  {
+   "check": "P2: the detector catches a planted fragment",
+   "passed": true
+  },
+  {
+   "check": "P3: the detector clears a bare origin and path",
+   "passed": true
+  },
+  {
+   "check": "P4: the detector reads structured entries, not only strings",
+   "passed": true
+  },
+  {
+   "check": "G1: the ring bounds at the frozen entry limit",
+   "detail": {
+    "length": 8,
+    "limit": 8
+   },
+   "passed": true
+  },
+  {
+   "check": "G2: eviction never refuses a navigation",
+   "detail": {
+    "refusals": []
+   },
+   "passed": true
+  },
+  {
+   "check": "G3: the ring exposes shape only, never a URL",
+   "detail": {
+    "keys": [
+     "can_go_back",
+     "can_go_forward",
+     "length",
+     "position"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "G4: the default profile.inspect carries no history and no URL",
+   "detail": {
+    "keys": [
+     "budgets",
+     "cookies",
+     "kind",
+     "name",
+     "persistence",
+     "policy",
+     "profile",
+     "read_only",
+     "sessions",
+     "storage",
+     "store"
+    ]
+   },
+   "passed": true
+  },
+  {
+   "check": "G5: memory.report names the entry limit and discloses no URL",
+   "detail": {
+    "limit_named": true
+   },
+   "passed": true
+  },
+  {
+   "check": "D1: profile.inspect accepts the opt-in history argument",
+   "detail": {
+    "code": "invalid_request",
+    "message": "expected exactly the fields [\"profile\"]",
+    "retryable": false
+   },
+   "passed": false
+  },
+  {
+   "check": "D2: it returns a list bounded by the frozen entry limit",
+   "detail": {
+    "entries": null
+   },
+   "passed": false
+  },
+  {
+   "check": "D3: the disclosed list is bounded by the frozen byte budget",
+   "detail": {
+    "budget": 16384,
+    "bytes": null
+   },
+   "passed": false
+  },
+  {
+   "check": "D4: no disclosed entry carries a query or a fragment",
+   "detail": {
+    "entries": "absent"
+   },
+   "passed": false
+  },
+  {
+   "check": "D5: the disclosed list is most-recent-first",
+   "detail": {
+    "first": null
+   },
+   "passed": false
+  },
+  {
+   "check": "D6: no disclosed entry carries a timestamp",
+   "detail": {
+    "entries": "absent"
+   },
+   "passed": false
+  },
+  {
+   "check": "D7: the absent argument and history:true are distinguishable",
+   "detail": {
+    "asked_has_entries": false,
+    "default_has_history": false
+   },
+   "passed": false
+  },
+  {
+   "check": "D8: a readonly session navigates without growing the disclosure",
+   "detail": {
+    "grew": false,
+    "observable": false,
+    "readonly_opened": true
+   },
+   "passed": false
+  },
+  {
+   "check": "D9: an ephemeral profile says nothing is persisted, not a bare empty list",
+   "detail": {
+    "result": {
+     "code": "invalid_request",
+     "message": "expected exactly the fields [\"profile\"]",
+     "retryable": false
+    }
+   },
+   "passed": false
+  },
+  {
+   "check": "D10: a fork inherits none of the parent's history",
+   "detail": {
+    "fork_entries": null
+   },
+   "passed": false
+  },
+  {
+   "check": "D11: a download never enters the disclosure",
+   "detail": {
+    "entries": "absent"
+   },
+   "passed": false
+  },
+  {
+   "check": "G6: the persistent profile is still adopted at startup",
+   "detail": {
+    "adopted": "profile_alpha"
+   },
+   "passed": true
+  },
+  {
+   "check": "D12: the disclosure survives a restart",
+   "detail": {
+    "restored": null
+   },
+   "passed": false
+  },
+  {
+   "check": "D13: nothing restored carries a query or a fragment",
+   "detail": {
+    "restored": null
+   },
+   "passed": false
+  },
+  {
+   "check": "G7: a corrupt record is refused at adoption, not softened",
+   "detail": {
+    "available": []
+   },
+   "passed": true
+  }
+ ],
+ "checks_passed": 11,
+ "checks_total": 24,
+ "court": "native-dom profile history disclosure (control 0.0.1 arguments)",
+ "frozen": {
+  "default_response": "byte-identical to today's profile.inspect",
+  "entries": "origin and path only; never a query, a fragment or a timestamp",
+  "entry_limit": 8,
+  "order": "most-recent-first",
+  "refused": "reopen-target restoration; target ids are reused across restarts",
+  "shape": "opt-in history argument on the existing profile.inspect; no new operation",
+  "total_bytes": 16384
+ },
+ "host_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+ "limitations": [
+  "design-frozen court: the D group fails until profile.inspect accepts the opt-in history argument, and the baseline receipt records exactly which criteria that is",
+  "every criterion is scored on every run, so the criterion count does not grow when the capability lands; only the pass count does",
+  "the P group is the honest control for the D group: while nothing is disclosed, a query check passes vacuously, so the detector is proved against a planted query, a planted fragment and a bare path before D relies on it",
+  "D8's readonly arm can only observe what the disclosure returns; until D1 passes it cannot distinguish 'did not grow' from 'nothing to grow'. It is scored FAILING on that ambiguity, and that is a repair: as first written it compared two absent lists, found them equal, and PASSED vacuously -- the defect the P group exists to prevent, inside the court that carries the P group. It now requires the list on both sides",
+  "the G group is not vacuous by construction, and this was observed rather than argued: while this court was being written its navigations were sent under 0.0.1, where target.navigate does not exist, and G1 and G2 failed (ring length 1, twelve invalid_request refusals). The ground criteria can fail, and did",
+  "the atomic-commit criterion is covered by G7 and D12 together (a corrupt record is refused, and what survives a restart is what the record holds); forcing a mid-commit failure needs the profile court's fault injection and is out of this court's scope",
+  "target.inspect's current url still carries its query by the ruling that leaves existing browser state alone; the detector is never applied to it",
+  "one hermetic loopback origin, macOS only; no surface, no window, no AppKit"
+ ],
+ "passed": false
+}

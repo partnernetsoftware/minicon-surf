@@ -325,3 +325,78 @@ narrowing intact. The two that the disclosure shape adds:
 
 Nothing above is proposed for implementation. `target.inspect`'s current-URL
 asymmetry (§12) remains its own question and is not settled by this ruling.
+
+## 14. Ruled — the shape settled, and the court frozen against it
+
+Recorded chronologically; §13 stands as written. **Still nothing implemented**:
+the court below is frozen and measured, and the capability is not built.
+
+### 14.1 What was ruled
+
+- **Entries carry origin and path only** — never a query string, a fragment, a
+  form-built value, a token or a search term. §13.3 asked the question and
+  recommended this; it is now decided.
+- **The §12 asymmetry is settled by the same ruling, and deliberately not by
+  making the two the same.** `target.inspect`'s current `url` keeps its query:
+  it is existing browser state, read by a caller that already asked for that
+  address. A profile's disclosed history is a **stricter privacy trim**, and it
+  must never be read as a full URL. Two different answers, each with a reason,
+  rather than one answer imposed on both.
+- **Order is most-recent-first**, fixed.
+- **No timestamps.** A timestamp is its own disclosure surface and waits for a
+  requirement that names it.
+- **The default `profile.inspect {profile}` stays byte-identical**; only
+  `history: true` returns bounded entries.
+- **No `target.history` operation, no restored target ring, no enum change.**
+
+### 14.2 The court, frozen
+
+`history-disclosure-court.py`, frozen against those numbers before the host
+changes. Two frozen constants, from the host's own `MAX_HISTORY_ENTRIES` 8 and
+`MAX_URL_BYTES` 2,000: **8 entries and 16,384 bytes**.
+
+Baseline on the shipped `2d57ce864002406e…`:
+`native-dom-control-0.0.2-history-disclosure-baseline` — **11 of 24**.
+
+| group | criteria | baseline | meaning |
+| --- | --- | --- | --- |
+| **P** detector control | 4 | **4 pass** | the privacy detector is proved before anything relies on it |
+| **G** ground | 7 | **7 pass** | what must stay true before *and* after |
+| **D** disclosure | 13 | **0 pass** | the capability, absent by design today |
+
+Every criterion is scored on every run. A court that grows its criteria only
+once the capability exists cannot be said to cover them, and its early receipts
+would flatter the work; here the count stays 24 and only the pass count moves.
+
+The D group covers each area the ruling named: the 8-entry and 16 KiB budget
+(D2, D3), atomic-commit consistency (G7 with D12 — a corrupt record is refused,
+and what survives a restart is what the record holds), eviction that never
+refuses a navigation (G2), readonly moving without writing (D8), the ephemeral
+explicit no-op (D9), a fork inheriting nothing (D10), downloads excluded (D11),
+query and fragment never leaking (D4, D13), corrupt-record safe failure (G7),
+and absence distinguished from `history: true` (D7, G4).
+
+### 14.3 Two things found while writing it, recorded rather than repaired quietly
+
+**The P group exists because the obvious check is vacuous.** While nothing is
+disclosed, "no entry carries a query" passes because there are no entries. So
+the detector is proved first, against a planted query, a planted fragment, a
+bare origin-and-path and a structured entry.
+
+**D8 was written vacuously, and the court's own principle caught it.** As first
+written it compared the disclosure before and after a readonly navigation,
+found two *absent* lists equal, and **passed** — the exact defect the P group
+exists to prevent, inside the court that carries the P group. It now requires
+the list to exist on both sides, and fails until it does. The receipt says so.
+
+**The ground group is not vacuous either, and that was observed rather than
+argued.** While this court was being written its navigations were sent under
+`0.0.1`, where `target.navigate` does not exist. G1 and G2 failed — ring length
+1, twelve `invalid_request` refusals. The ground criteria can fail, and did.
+
+### 14.4 Still not decided
+
+The court is frozen; **implementation is not authorised**, and nothing about
+the host has changed. The atomic-commit criterion is covered only as far as a
+court without fault injection can reach it — forcing a mid-commit failure needs
+the profile court's machinery and is named as out of scope rather than assumed.
