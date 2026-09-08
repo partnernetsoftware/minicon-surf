@@ -222,3 +222,106 @@ already knows the address it asked for — but it is the one place a query strin
 crosses the protocol, and it is **not** fixed in this round. It is recorded
 here as a disclosure question of its own, to be ruled on its own merits rather
 than as a side effect of a storage design.
+
+---
+
+## 13. Ruled — disclosure only, and the shape it may take
+
+Recorded chronologically. §11's deferral stands as written and is not edited;
+this section says what was decided after it. **Nothing is implemented, no court
+is frozen, no operation enum is changed, and no product code is touched.**
+
+### 13.1 The ruling
+
+Of §3's two features, **agent disclosure is taken and reopen-target restoration
+is refused** — not deferred, refused, and not in combination.
+
+The reason is a measurement made after §11, on `2d57ce864002406e…`: §1 records
+that a target does not survive a restart, but **target ids are also reused
+across restarts**. A fresh host numbers from `target_1` again. So a persisted
+ring keyed by target id would not merely fail to reattach — it would **silently
+reattach to an unrelated target**, which is worse than not restoring at all: a
+wrong answer where there was previously an honest empty one. §3 called feature
+2's identity "a new concept"; this makes the cost concrete, and the honest
+answer is not to invent one.
+
+Disclosure stands on its own: it is a question about what a caller may *read*,
+answerable without any identity for a reopened target.
+
+### 13.2 The minimal shape of the exposure
+
+The enum stays at 26 operations, so candidate C of §5 — a new `target.history`
+read — is out by construction. The minimal shape that remains:
+
+```
+   profile record gains ONE bounded list of committed entries
+        |
+        +-- read through an OPT-IN argument on an EXISTING operation:
+              profile.inspect {profile}                  -> exactly as today, NO entries
+              profile.inspect {profile, history: true}   -> entries[]
+```
+
+Two properties earn the "minimal" claim. **No new operation**, so the closed
+enum and both schemas are untouched; one optional argument on one existing
+operation, the same size of change the readonly mode turned out to need. And
+**opt-in**, so the default response is byte-identical to today's: no existing
+caller, court, receipt or `memory.report` gains a URL by accident. A disclosure
+that changes what everyone already reads is not minimal, whatever its size.
+
+Scope is the **profile**, not the target — the feature is "where has this
+profile been", and §1 already establishes the per-target ring is in memory and
+dies with the target.
+
+### 13.3 The one question this shape cannot decide by itself
+
+**Does a disclosed entry carry its query string?**
+
+This is the crux, and it is a ruling rather than a detail. The repository's
+standing redaction rule is that a built query is page data and belongs in no
+ledger, error, receipt or diagnostic; §1 confirms the audit ledger carries
+origins only. But §12 already records the asymmetry that `target.inspect.url`
+reports the current URL *including* its query.
+
+**Recommendation: origin and path, never the query.** A disclosed history is
+read by an agent to know where a profile has been, and an origin plus path
+answers that; a query is where session tokens, search terms and form-built
+values live. This loses fidelity deliberately, and the loss is the point.
+Recorded as a recommendation, not a decision — if the ruling wants full URLs,
+that is a disclosure decision to take knowingly, and it should also settle §12
+rather than leave two different answers in one protocol.
+
+### 13.4 Boundaries, all inherited rather than invented
+
+| boundary | answer, and where it comes from |
+| --- | --- |
+| **budget** | 8 entries and 16 KiB, inside the profile's existing accounted budget (§6). History can never take more than 12.5% of the budget it shares with cookies and storage, and the record's write path is the existing one — a full re-seal, joined to the same atomic commit, never a second write path (§6) |
+| **eviction** | at the head, unchanged; a full history **evicts, never refuses a navigation** (§8) |
+| **readonly session** | the ring moves in memory, **nothing is written** — the open promised not to write, and §11 already holds this as decided |
+| **ephemeral profile** | a no-op, and it must **say** nothing was persisted rather than report success (§8) |
+| **fork / copy-on-write** | **not inherited**; the fork clears it (§7), which is what the copy-on-write ruling already requires when it forbids a child from recording even its parent's name |
+| **download** | never enters history — a download is not a navigation (§7), stated so it is not added by accident |
+| **cache** | does not exist; no interaction |
+| **D6 / G1** | the live cost does not change; the record grows by at most the history budget, and that must be **measured** against D6 before anything lands, not assumed (§7) |
+
+### 13.5 Safe failures
+
+Unchanged from §8, which was written for both features and survives the
+narrowing intact. The two that the disclosure shape adds:
+
+| situation | answer |
+| --- | --- |
+| `history: true` on an ephemeral profile | an empty list plus the explicit "nothing is persisted here", never a silent empty that reads like "this profile has been nowhere" |
+| the persisted list is corrupt at adoption | the profile is already refused at adoption today; disclosure must not add a second, softer path (§8) |
+| `history: false` or the argument absent | byte-identical to today's response — the absence of the field is not an empty list |
+
+### 13.6 What is still not decided
+
+1. The query-string question in §13.3 — the only one that blocks a design.
+2. Whether the disclosed list is *ordered* most-recent-first and whether it
+   carries timestamps; a timestamp is its own disclosure and is **not**
+   recommended in the first slice.
+3. The court, which is not drafted here beyond §9's list; §9 was written for
+   both features and needs narrowing before it is frozen.
+
+Nothing above is proposed for implementation. `target.inspect`'s current-URL
+asymmetry (§12) remains its own question and is not settled by this ruling.

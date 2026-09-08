@@ -1495,6 +1495,31 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   ordering kept: item 1 was struck, because
   `first-request-cost-audit-0.0.1.md` had already measured the first-profile
   cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
+- [x] Ruled and recorded, nothing implemented and no court frozen: P6's history
+  question is answered **disclosure only**
+  (`history-persistence-audit-0.0.1.md` §13, appended chronologically with §11's
+  deferral kept as written). Of the two features that audit found wearing one
+  name, **agent disclosure is taken and reopen-target restoration is refused** —
+  refused rather than deferred, and not in combination. The reason is the
+  measurement made after the deferral: target ids are **reused across restarts**,
+  so a ring keyed by target id would silently reattach to an unrelated target,
+  which is worse than not restoring — a wrong answer where there was an honest
+  empty one. The minimal exposure keeps the **operation enum at 26**: the
+  profile record gains one bounded list, read through an **opt-in** argument on
+  the existing `profile.inspect`, so the default response stays byte-identical
+  and no caller, court, receipt or `memory.report` gains a URL by accident.
+  Every boundary is inherited rather than invented — 8 entries and 16 KiB inside
+  the profile's existing accounted budget, joined to the existing atomic commit
+  rather than a second write path, head eviction that never refuses a
+  navigation, a readonly session that moves the ring and writes nothing, an
+  ephemeral profile that is a no-op and must say so, a fork that inherits no
+  history, and a download that never enters it. **One question blocks the
+  design and is not settled**: whether a disclosed entry carries its query
+  string. The recommendation is origin and path only, never the query, since a
+  query is where tokens, search terms and form-built values live; taken
+  knowingly it would also have to settle §12's `target.inspect` asymmetry rather
+  than leave two answers in one protocol. No operation added, no schema changed,
+  no threshold moved, nothing implemented. G1, G3, P6 and G6 stay open.
 - [x] Measured and recorded, not a gate change: **G1's missing comparison half
   now exists**, on one machine on one day, against both named baselines.
   `g1-campaign-0.0.1.md` delivered the route's own numbers and reported the
