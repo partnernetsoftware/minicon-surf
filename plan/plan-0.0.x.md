@@ -1495,6 +1495,94 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   ordering kept: item 1 was struck, because
   `first-request-cost-audit-0.0.1.md` had already measured the first-profile
   cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
+- [x] Measured and recorded, not a gate change: **G1's missing comparison half
+  now exists**, on one machine on one day, against both named baselines.
+  `g1-campaign-0.0.1.md` delivered the route's own numbers and reported the
+  comparison **blocked** on an authorized Lightpanda binary; that authorization
+  was given, the artifact downloaded and verified against the runners' built-in
+  digest `840547bb…` on the complete 82,631,784-byte file, and the two existing
+  harnesses run unmodified. No threshold, criterion, court or product code was
+  touched, and Servo was not built. Three permanent receipts, none refreshing
+  any existing one: `macos-arm64-w1-lightpanda-0.4.0-vs-chrome-152.0.7977.82`,
+  `macos-arm64-target-retention-native-dom-0.0.0-lightpanda-0.4.0-chrome-152.0.7977.82`
+  (system arm) and
+  `macos-arm64-target-retention-arena-native-dom-0.0.0-lightpanda-0.4.0-chrome-152.0.7977.82`
+  (arena arm, reached through the host's own `MINICON_SURF_NATIVE_REALM_ARENA`
+  knob, which the court inherits — no script was modified, and it reaches only
+  the native host, so both baselines are untouched and measured consistently
+  across the two runs). Provenance in every receipt: native
+  `2d57ce864002406e…` — the shipped `cbae107` binary, rebuilt at its fixed path
+  and reproducing the ledger hash exactly — Lightpanda `840547bb…`, Chrome
+  `392011a7…` at **152.0.7977.82**, a different build from the `.65`/`.75` in
+  the historical receipts, which is precisely why a same-day run was needed.
+  Median of 7, tree physical footprint, arena arm: empty 1,950,032 against
+  Lightpanda's 8,389,160 and Chrome's 288,759,416; one target 2,785,640 against
+  9,110,104 and 591,063,840; eight concurrent targets 6,799,912 against Chrome's
+  850,185,728. **Lightpanda still reaches one concurrent target**, so the
+  eight-target row has no Lightpanda number at all and is route-against-Chrome
+  only. The row the route lost on the system arm is **reversed on the arena
+  arm**: retained-after-all-closes footprint is 884,760 against Lightpanda's
+  1,572,912 (the route retains 1.78× **less**), where on the system arm it was
+  2,359,320 against 1,507,376 (1.57× **more**); retained resident is 2,326,528
+  against 6,848,512. Both arms are kept, and the system arm is the control.
+  Each receipt's own `status` reads `incomplete`, which is the court's
+  permanent honesty label and **not** a failure of these runs: the court cannot
+  force a like-for-like target count because Lightpanda supports one concurrent
+  target, and the Servo column is absent because Servo was not built. **G1 is
+  not claimed passed here**; the evidence it asked for exists and the verdict is
+  the root's. G1, G3, P6 and G6 stay open.
+- [x] Ruled and recorded, closing the `first-realm-engine-audit-0.0.1.md` §8
+  debt: (1) the **3.6× shim-source exchange rate is a historical measurement of
+  the fixed per-realm term only** and never a standalone programme yardstick —
+  `element-scaling-audit-0.0.1.md` measured it confirmed for the fixed term
+  (3.47/4.30/3.97) and blind to the per-element slope that dominates a real
+  page, so whenever it is cited it must be reported together with the frozen
+  element-slope S1–S8; (2) **arena-arm RSS is the sole judging surface for D6**,
+  the system arm being control only; (3) the **14,416-byte permanent
+  first-realm residual gets no audit of its own** and stays a measured
+  host-side working-set fact, to be reopened only on a concrete regression or a
+  G1/D6 evidence need; (4) **candidate B, the shared runtime, stays
+  rejected/unselected design evidence** — not implemented, not reopened.
+  Nothing measured, no bound moved, no court touched.
+- [x] Recorded, and it corrects an earlier entry rather than a measurement:
+  **`p6-host-triage-0.0.1.md` was stale, and three of its six rows have
+  shipped.** Amended chronologically in a new §6 with the original §5 ordering
+  kept intact and no receipt refreshed: readonly (`readonly-profile-court.py`
+  28/28 with a falsification receipt), copy-on-write (23/23) and downloads
+  (21/21) are all implemented. The triage had called readonly the cheapest
+  capability *because* a `read_only` field already existed; the opposite was
+  true, and `readonly-profile-audit-0.0.1.md` records why — the field is a
+  **fail-closed latch** pinned by `profile-court.py:326`, so a mode needed a new
+  field, and two further constraints appeared only when the code was written
+  (persistent profiles are **adopted at startup and never re-created**, moving
+  the mode from `profile.create` to `session.open`; and the host allows **one
+  live session per profile**, forcing R6 to be re-frozen). Verified black-box on
+  `2d57ce864002406e…`: a readonly session refuses `profile.storage.put`
+  (`local_storage` and `cookie`) and `profile.policy.set` with
+  `unsupported_capability` / `session_read_only`, `storage.get` still returns
+  the value, the same put in a readwrite session returns `stored: true`,
+  `profile.create` refuses `mode` and `read_only`, and readonly on an ephemeral
+  profile is `invalid_request`. What remains of P6 is **cache, profile-level
+  history persistence and permissions enforcement**; cache is the one item the
+  triage itself says makes G1 and D6 worse, and permissions may honestly stay
+  `recorded_only` until a permission-bearing capability exists.
+- [x] Re-measured, nothing implemented and no new design written: the premises
+  under `history-persistence-audit-0.0.1.md` still hold on `2d57ce864002406e…`,
+  two binaries after the audit measured them at `092b50e`. A persistent profile
+  is adopted after a restart (`available: true`) with **no history restored**;
+  `profile.inspect` carries no history field; `memory.report` exposes
+  `history_entries`, `history_bytes` and `history_entry_limit: 8` and **no
+  URLs**; and the sealed record (612 bytes) contains no fixture name. That
+  audit was **already ruled deferred on 2026-09-06** until it is said which of
+  its two features is wanted — agent disclosure, or reopen-target restoration —
+  so no second brief was written. One fact is **sharper than the audit's** and
+  is recorded because it bears directly on the identity question the deferral
+  turns on: the audit says a target does not survive a restart, but target ids
+  are also **reused across restarts** — a fresh host numbers from `target_1`
+  again, so a ring keyed by target id would not merely fail to reattach, it
+  would silently reattach to an unrelated target. Measured with a fixture open,
+  which produces no history entry, so this run verified the persistence and
+  adoption facts and not §1's traversal table.
 - [x] Ruled and recorded: a binary hash is a same-path provenance token
   (`AGENTS.md`, "Lab discipline"; linked from `labs/native-dom/README.md`'s
   receipt-provenance section and measured in

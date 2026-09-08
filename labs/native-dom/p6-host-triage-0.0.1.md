@@ -135,3 +135,50 @@ scheduled rather than after.
 
 Nothing here is proposed for implementation, and each of items 1 through 6
 needs its own design and a protocol ruling before code.
+
+## 6. Amendment, recorded after the fact — three of the six have since shipped
+
+Recorded chronologically. **Nothing above is edited or deleted**, and no
+receipt is refreshed: the ordering in §5 is kept exactly as it stood so the
+movement is visible. This section says only what later rounds measured.
+
+The triage above was written against `420cdf5b82bf…`. Three of its six rows
+were overtaken by rounds that followed it, and the ordering it recommended is
+no longer the ordering that remains.
+
+| row in §5 | state when triaged | state now |
+| --- | --- | --- |
+| 1. **readonly** | "the report field exists; needs a setter and enforcement" | **shipped**, `readonly-profile-court.py` 28/28 with a falsification receipt, in the regression suite |
+| 5. **copy-on-write** | "nothing today" | **shipped**, `copy-on-write-court.py` 23/23 |
+| 4. **downloads** | "typed refusal today" | **shipped**, `downloads-court.py` 21/21 |
+
+**Item 1's reasoning was wrong in a way worth keeping.** It called readonly the
+cheapest capability *because* `read_only` already existed. The opposite was
+true: `readonly-profile-audit-0.0.1.md` §1 found the field is a **fail-closed
+latch** — set when a commit fails, pinned by `profile-court.py:326` — so it was
+spoken for, and a mode had to be a new field. Two further constraints appeared
+only when the code was written, both recorded there: a persistent profile is
+**adopted at startup and never re-created**, which made the ruled
+`profile.create {mode}` unable to reach the profiles readonly exists for and
+moved the mode to `session.open` (A′); and this host allows **one live session
+per profile**, which forced R6 to be re-frozen before implementation.
+
+Measured black-box on `2d57ce864002406e…` while re-checking this triage:
+`session.open {profile, mode: "readonly"}` opens an adopted persistent profile;
+`profile.storage.put` (`local_storage` and `cookie`) and `profile.policy.set`
+refuse with `unsupported_capability` / `session_read_only`; `profile.storage.get`
+still returns the value; the same `put` in a readwrite session returns
+`stored: true`; `profile.create` refuses both `mode` and `read_only`; and
+readonly on an ephemeral profile is `invalid_request`.
+
+**What remains of §5's six**: cache, profile-level history persistence, and
+permissions enforcement — and §5's own analysis already disposes of two of
+them. Cache is the one item that makes G1 and D6 worse. Permissions may
+honestly stay `recorded_only` until a permission-bearing capability exists to
+enforce against. History persistence has since had its own design round
+(`history-persistence-audit-0.0.1.md`), which was **ruled deferred on
+2026-09-06** until it is said which of its two features is wanted.
+
+**The lesson this triage should carry**: it priced readonly by a field's name
+without measuring what the field meant. The measurement that followed reversed
+the verdict.

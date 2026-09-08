@@ -264,3 +264,57 @@ instead creates one live target through each CDP server, verifies the same
 semantic condition, holds it for the same two-second window, then closes and
 reaps it through one orchestration contract. See
 [`evidence/`](evidence/) and the reproducible macOS runner.
+
+### The G1 comparison, same machine, same day, both allocator arms
+
+The route's own numbers had been measured before, but the *comparison* half of
+G1 — the route against **named** same-machine baselines — had never been run:
+`labs/native-dom/g1-campaign-0.0.1.md` reported it blocked on an authorized
+Lightpanda artifact. It is now run. The two existing harnesses were used
+unmodified and Servo was not built.
+
+Provenance, identical across all three receipts: native `2d57ce864002406e…`
+(the shipped `cbae107` binary, rebuilt at its fixed path and reproducing the
+ledger hash exactly), Lightpanda `840547bb…` at 0.4.0, Chrome `392011a7…` at
+**152.0.7977.82** — a different build from the `.65`/`.75` of the historical
+receipts, which is why a same-day run was needed rather than a comparison
+across days.
+
+W1 (`macos-arm64-w1-lightpanda-0.4.0-vs-chrome-152.0.7977.82`) carries the two
+baselines only, since that court has no native arm: Chrome's median peak tree
+RSS 1,237,024,768 over 9 processes against Lightpanda's 28,147,712 over 1, a
+median ratio of 43.948 over 7 alternating repetitions.
+
+The retention court was run on both allocator arms, through the host's own
+`MINICON_SURF_NATIVE_REALM_ARENA` knob, which the court inherits — no script
+was modified, and the knob reaches only the native host, so the two baselines
+are untouched and agree closely across the two runs (Chrome empty 288.9 against
+288.8 MB; Lightpanda empty 8.42 against 8.39 MB), which is the cross-check that
+the arm changed only what it should. Median of 7, tree physical footprint:
+
+| stage | native-dom (arena) | native-dom (system) | Lightpanda 0.4.0 | Chrome 152.0.7977.82 |
+|---|---|---|---|---|
+| empty | 1,950,032 | 1,950,032 | 8,389,160 | 288,759,416 |
+| one target | 2,785,640 | 3,719,528 | 9,110,104 | 591,063,840 |
+| eight concurrent | 6,799,912 | 6,766,952 | **one target only** | 850,185,728 |
+| retained after all closes | **884,760** | 2,359,320 | 1,572,912 | 114,786,712 |
+| retained after all closes, RSS | 2,326,528 | 3,784,704 | 6,848,512 | 125,124,608 |
+
+Arena is the arm the D6 criterion is judged on; the system arm is kept as the
+control. **The retention row reverses between them**, and both are recorded
+rather than only the favourable one: on the system arm the route retains
+2,359,320 against Lightpanda's 1,507,376 — 1.57× **more** — while on the arena
+arm it retains 884,760 against 1,572,912, 1.78× **less**. On summed RSS the
+route retains less on both arms. Which allocator the host runs decides who wins
+that row, and no other row changes sign.
+
+**Lightpanda still reaches one concurrent target**, so the eight-target row has
+no Lightpanda number and is route-against-Chrome only; at one target the route
+is 3.27× below Lightpanda on the arena arm and 2.45× below on the system arm.
+
+All three receipts carry `status: "incomplete"`, which is this court's standing
+honesty label and not a failure of these runs: concurrent capacity is reported
+per candidate rather than forced into a like-for-like target count, because
+Lightpanda supports one; and the Servo column is absent because Servo was not
+built for these runs. Neither the memory-optimized claim nor G1 is settled here
+— the evidence the gate asks for now exists, and the verdict is the product's.

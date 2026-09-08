@@ -1,0 +1,1054 @@
+{
+  "court": "same-server-cdp-target-churn-capacity-and-retention",
+  "limitations": [
+    "summed RSS is neither private memory nor PSS and can double-count shared pages",
+    "process-table sampling can miss short-lived or reparented processes",
+    "one synthetic data URL, one operating system and one architecture only",
+    "installed Chrome is digest-identified but is not a pinned downloadable artifact",
+    "browser feature sets and engine capabilities are not equivalent",
+    "stage samples are maxima and transitions occur between measured windows",
+    "concurrent capacity is reported per candidate rather than forced into a like-for-like target count",
+    "Lightpanda has no product-equivalent profile isolation in this court",
+    "no allocator trim or memory-pressure signal is available through the shared CDP journey",
+    "the Servo candidate is driven through native control 0.0.1 rather than CDP and renders through a CGL-backed context; its ready condition is a structured snapshot rather than Runtime.evaluate"
+  ],
+  "measurement": {
+    "candidates": {
+      "google_chrome": {
+        "concurrent_capacity_probe": {
+          "median_peak_descendants_resident_bytes": 1938931712,
+          "median_peak_tree_physical_footprint_bytes": 850185728,
+          "median_peak_tree_resident_bytes": 2203058176,
+          "next_create_errors": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "peak_descendants_resident_bytes": [
+            1937096704,
+            1938931712,
+            1938964480,
+            1938833408,
+            1939734528,
+            1938620416,
+            1940045824
+          ],
+          "peak_tree_physical_footprint_bytes": [
+            851496448,
+            849415656,
+            850906864,
+            849219000,
+            847547856,
+            854839120,
+            850185728
+          ],
+          "peak_tree_resident_bytes": [
+            2200338432,
+            2203058176,
+            2201714688,
+            2203156480,
+            2203303936,
+            2202402816,
+            2204270592
+          ],
+          "probe_reached_limit": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "executable_sha256": "392011a70cdd30bc22ccc977591ed0fd099233a50da8b0cdf9d1a16dabdcab9b",
+        "first_target_delta_resident_bytes": [
+          426606592,
+          428703744,
+          427032576,
+          426541056,
+          427933696,
+          426377216,
+          425705472
+        ],
+        "last_target_minus_post_one_close_resident_bytes": [
+          325779456,
+          330743808,
+          326057984,
+          332414976,
+          328482816,
+          331120640,
+          331317248
+        ],
+        "median_first_target_delta_resident_bytes": 426606592,
+        "median_last_target_minus_post_one_close_resident_bytes": 330743808,
+        "median_post_all_closes_minus_empty_physical_footprint_bytes": 114786712,
+        "median_post_all_closes_minus_empty_resident_bytes": 125124608,
+        "post_all_closes_minus_empty_physical_footprint_bytes": [
+          97943888,
+          115671376,
+          214401408,
+          108708296,
+          216252848,
+          114786712,
+          107299224
+        ],
+        "post_all_closes_minus_empty_resident_bytes": [
+          117882880,
+          125730816,
+          118030336,
+          126435328,
+          125124608,
+          122699776,
+          125337600
+        ],
+        "states": {
+          "empty": {
+            "maximum_peak_descendants_resident_bytes": 624263168,
+            "maximum_peak_process_count": 7,
+            "maximum_peak_tree_physical_footprint_bytes": 288988864,
+            "maximum_peak_tree_resident_bytes": 806649856,
+            "median_peak_descendants_resident_bytes": 622379008,
+            "median_peak_process_count": 7,
+            "median_peak_tree_physical_footprint_bytes": 288759416,
+            "median_peak_tree_resident_bytes": 803864576,
+            "peak_descendants_resident_bytes": [
+              623525888,
+              622182400,
+              623345664,
+              621969408,
+              622346240,
+              624263168,
+              622379008
+            ],
+            "peak_process_count": [
+              7,
+              7,
+              7,
+              7,
+              7,
+              7,
+              7
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              288824856,
+              288759416,
+              288726696,
+              288284088,
+              288579096,
+              288988864,
+              288841360
+            ],
+            "peak_tree_resident_bytes": [
+              805617664,
+              803700736,
+              805552128,
+              803258368,
+              803815424,
+              806649856,
+              803864576
+            ]
+          },
+          "last_target": {
+            "maximum_peak_descendants_resident_bytes": 994131968,
+            "maximum_peak_process_count": 9,
+            "maximum_peak_tree_physical_footprint_bytes": 612854344,
+            "maximum_peak_tree_resident_bytes": 1249214464,
+            "median_peak_descendants_resident_bytes": 993525760,
+            "median_peak_process_count": 9,
+            "median_peak_tree_physical_footprint_bytes": 611215968,
+            "median_peak_tree_resident_bytes": 1247887360,
+            "peak_descendants_resident_bytes": [
+              992231424,
+              992772096,
+              992985088,
+              994131968,
+              993525760,
+              993787904,
+              993968128
+            ],
+            "peak_process_count": [
+              9,
+              9,
+              9,
+              9,
+              9,
+              9,
+              9
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              610429440,
+              611215968,
+              610691848,
+              612854344,
+              611347112,
+              610921152,
+              611396240
+            ],
+            "peak_tree_resident_bytes": [
+              1242316800,
+              1247887360,
+              1243316224,
+              1249214464,
+              1247313920,
+              1248329728,
+              1248788480
+            ]
+          },
+          "one_target": {
+            "maximum_peak_descendants_resident_bytes": 987267072,
+            "maximum_peak_process_count": 9,
+            "maximum_peak_tree_physical_footprint_bytes": 593259152,
+            "maximum_peak_tree_resident_bytes": 1233027072,
+            "median_peak_descendants_resident_bytes": 986726400,
+            "median_peak_process_count": 9,
+            "median_peak_tree_physical_footprint_bytes": 591063840,
+            "median_peak_tree_resident_bytes": 1232224256,
+            "peak_descendants_resident_bytes": [
+              986841088,
+              986710016,
+              987119616,
+              985153536,
+              986726400,
+              987267072,
+              984383488
+            ],
+            "peak_process_count": [
+              9,
+              9,
+              9,
+              9,
+              9,
+              9,
+              9
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              592489056,
+              590424768,
+              593259152,
+              590817744,
+              591063840,
+              590686864,
+              592390776
+            ],
+            "peak_tree_resident_bytes": [
+              1232224256,
+              1232404480,
+              1232584704,
+              1229799424,
+              1231749120,
+              1233027072,
+              1229570048
+            ]
+          },
+          "post_all_closes": {
+            "maximum_peak_descendants_resident_bytes": 675332096,
+            "maximum_peak_process_count": 7,
+            "maximum_peak_tree_physical_footprint_bytes": 504831944,
+            "maximum_peak_tree_resident_bytes": 929693696,
+            "median_peak_descendants_resident_bytes": 675020800,
+            "median_peak_process_count": 7,
+            "median_peak_tree_physical_footprint_bytes": 403775576,
+            "median_peak_tree_resident_bytes": 929202176,
+            "peak_descendants_resident_bytes": [
+              674103296,
+              674791424,
+              673906688,
+              675102720,
+              675332096,
+              675233792,
+              675020800
+            ],
+            "peak_process_count": [
+              7,
+              7,
+              7,
+              7,
+              7,
+              7,
+              7
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              386768744,
+              404430792,
+              503128104,
+              396992384,
+              504831944,
+              403775576,
+              396140584
+            ],
+            "peak_tree_resident_bytes": [
+              923500544,
+              929431552,
+              923582464,
+              929693696,
+              928940032,
+              929349632,
+              929202176
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_descendants_resident_bytes": 672530432,
+            "maximum_peak_process_count": 7,
+            "maximum_peak_tree_physical_footprint_bytes": 488284224,
+            "maximum_peak_tree_resident_bytes": 918831104,
+            "median_peak_descendants_resident_bytes": 670679040,
+            "median_peak_process_count": 7,
+            "median_peak_tree_physical_footprint_bytes": 484630352,
+            "median_peak_tree_resident_bytes": 917209088,
+            "peak_descendants_resident_bytes": [
+              670236672,
+              670547968,
+              670842880,
+              670679040,
+              672530432,
+              670547968,
+              670892032
+            ],
+            "peak_process_count": [
+              7,
+              7,
+              7,
+              7,
+              7,
+              7,
+              7
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              484630352,
+              485466128,
+              488284224,
+              400318312,
+              486301856,
+              484335632,
+              401760248
+            ],
+            "peak_tree_resident_bytes": [
+              916537344,
+              917143552,
+              917258240,
+              916799488,
+              918831104,
+              917209088,
+              917471232
+            ]
+          }
+        },
+        "transport": "CDP over loopback WebSocket",
+        "version": "152.0.7977.82"
+      },
+      "lightpanda": {
+        "artifact_sha256": "840547bb7b98743a3e32618a4d120ac4a75e7c3c2d227ecf5ce8d508ddc118b7",
+        "concurrent_capacity_probe": {
+          "median_peak_descendants_resident_bytes": 0,
+          "median_peak_tree_physical_footprint_bytes": 9978456,
+          "median_peak_tree_resident_bytes": 29589504,
+          "next_create_errors": [
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}",
+            "Target.createTarget failed: {'code': -31998, 'message': 'TargetAlreadyLoaded'}"
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "peak_descendants_resident_bytes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "peak_tree_physical_footprint_bytes": [
+            10125936,
+            9945688,
+            9978432,
+            9863768,
+            10011224,
+            9978456,
+            10093144
+          ],
+          "peak_tree_resident_bytes": [
+            29704192,
+            29540352,
+            29589504,
+            29458432,
+            29605888,
+            29573120,
+            29687808
+          ],
+          "probe_reached_limit": [
+            false,
+            false,
+            false,
+            false,
+            false,
+            false,
+            false
+          ]
+        },
+        "first_target_delta_resident_bytes": [
+          5275648,
+          5226496,
+          5242880,
+          5226496,
+          5242880,
+          5275648,
+          5226496
+        ],
+        "last_target_minus_post_one_close_resident_bytes": [
+          1687552,
+          1556480,
+          1425408,
+          1425408,
+          1572864,
+          1490944,
+          1589248
+        ],
+        "median_first_target_delta_resident_bytes": 5242880,
+        "median_last_target_minus_post_one_close_resident_bytes": 1556480,
+        "median_post_all_closes_minus_empty_physical_footprint_bytes": 1572912,
+        "median_post_all_closes_minus_empty_resident_bytes": 6848512,
+        "post_all_closes_minus_empty_physical_footprint_bytes": [
+          1687600,
+          1589296,
+          1441840,
+          1425456,
+          1572912,
+          1540144,
+          1638472
+        ],
+        "post_all_closes_minus_empty_resident_bytes": [
+          6995968,
+          6848512,
+          6701056,
+          6684672,
+          6881280,
+          6799360,
+          6881280
+        ],
+        "states": {
+          "empty": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 8503824,
+            "maximum_peak_tree_resident_bytes": 22806528,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 8389160,
+            "median_peak_tree_resident_bytes": 22675456,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              8372800,
+              8323624,
+              8503824,
+              8405544,
+              8389160,
+              8356392,
+              8438288
+            ],
+            "peak_tree_resident_bytes": [
+              22642688,
+              22609920,
+              22806528,
+              22691840,
+              22675456,
+              22642688,
+              22740992
+            ]
+          },
+          "last_target": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 10076760,
+            "maximum_peak_tree_resident_bytes": 29638656,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 9929304,
+            "median_peak_tree_resident_bytes": 29507584,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              10060400,
+              9880152,
+              9945664,
+              9831000,
+              9929304,
+              9896536,
+              10076760
+            ],
+            "peak_tree_resident_bytes": [
+              29638656,
+              29425664,
+              29507584,
+              29376512,
+              29523968,
+              29442048,
+              29622272
+            ]
+          },
+          "one_target": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 9224768,
+            "maximum_peak_tree_resident_bytes": 28049408,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 9110104,
+            "median_peak_tree_resident_bytes": 27918336,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              9126512,
+              9028184,
+              9224768,
+              9110104,
+              9110104,
+              9110104,
+              9142848
+            ],
+            "peak_tree_resident_bytes": [
+              27918336,
+              27836416,
+              28049408,
+              27918336,
+              27918336,
+              27918336,
+              27967488
+            ]
+          },
+          "post_all_closes": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 10076760,
+            "maximum_peak_tree_resident_bytes": 29638656,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 9945664,
+            "median_peak_tree_resident_bytes": 29507584,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              10060400,
+              9912920,
+              9945664,
+              9831000,
+              9962072,
+              9896536,
+              10076760
+            ],
+            "peak_tree_resident_bytes": [
+              29638656,
+              29458432,
+              29507584,
+              29376512,
+              29556736,
+              29442048,
+              29622272
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 9224768,
+            "maximum_peak_tree_resident_bytes": 28082176,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 9110104,
+            "median_peak_tree_resident_bytes": 27951104,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              9126512,
+              9028184,
+              9224768,
+              9110104,
+              9110104,
+              9110104,
+              9175616
+            ],
+            "peak_tree_resident_bytes": [
+              27951104,
+              27869184,
+              28082176,
+              27951104,
+              27951104,
+              27951104,
+              28033024
+            ]
+          }
+        },
+        "transport": "CDP over loopback WebSocket",
+        "version": "0.4.0"
+      },
+      "native_dom": {
+        "binary_sha256": "2d57ce864002406e31b75b2f8f4f1b52b9eaeef1c751cc357eb723da7ceb51e0",
+        "concurrent_capacity_probe": {
+          "median_peak_descendants_resident_bytes": 0,
+          "median_peak_tree_physical_footprint_bytes": 6799912,
+          "median_peak_tree_resident_bytes": 13402112,
+          "next_create_errors": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "observed_concurrent_targets_at_probe_stop": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ],
+          "peak_descendants_resident_bytes": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "peak_tree_physical_footprint_bytes": [
+            6750760,
+            6963776,
+            6750760,
+            6783528,
+            6914600,
+            6799912,
+            6799912
+          ],
+          "peak_tree_resident_bytes": [
+            13352960,
+            13549568,
+            13352960,
+            13385728,
+            13516800,
+            13402112,
+            13402112
+          ],
+          "probe_reached_limit": [
+            true,
+            true,
+            true,
+            true,
+            true,
+            true,
+            true
+          ]
+        },
+        "first_target_delta_resident_bytes": [
+          2211840,
+          2244608,
+          2244608,
+          2228224,
+          2260992,
+          2228224,
+          2244608
+        ],
+        "html5ever_version": "0.38.0",
+        "last_target_minus_post_one_close_resident_bytes": [
+          1015808,
+          1081344,
+          983040,
+          983040,
+          1081344,
+          983040,
+          966656
+        ],
+        "median_first_target_delta_resident_bytes": 2244608,
+        "median_last_target_minus_post_one_close_resident_bytes": 983040,
+        "median_post_all_closes_minus_empty_physical_footprint_bytes": 884760,
+        "median_post_all_closes_minus_empty_resident_bytes": 2326528,
+        "post_all_closes_minus_empty_physical_footprint_bytes": [
+          901144,
+          983064,
+          884760,
+          884760,
+          999448,
+          868376,
+          868376
+        ],
+        "post_all_closes_minus_empty_resident_bytes": [
+          2342912,
+          2424832,
+          2326528,
+          2326528,
+          2441216,
+          2310144,
+          2310144
+        ],
+        "states": {
+          "empty": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 2015592,
+            "maximum_peak_tree_resident_bytes": 7290880,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 1950032,
+            "median_peak_tree_resident_bytes": 7241728,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              1950032,
+              2015592,
+              1950032,
+              1950032,
+              1950032,
+              1950032,
+              1950032
+            ],
+            "peak_tree_resident_bytes": [
+              7241728,
+              7290880,
+              7241728,
+              7241728,
+              7241728,
+              7241728,
+              7241728
+            ]
+          },
+          "last_target": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 3473816,
+            "maximum_peak_tree_resident_bytes": 10174464,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 3309952,
+            "median_peak_tree_resident_bytes": 10027008,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              3326336,
+              3473816,
+              3309952,
+              3309952,
+              3424640,
+              3293568,
+              3293568
+            ],
+            "peak_tree_resident_bytes": [
+              10043392,
+              10174464,
+              10027008,
+              10027008,
+              10141696,
+              10010624,
+              10010624
+            ]
+          },
+          "one_target": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 2851200,
+            "maximum_peak_tree_resident_bytes": 9535488,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 2785640,
+            "median_peak_tree_resident_bytes": 9486336,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              2752872,
+              2851200,
+              2785640,
+              2769256,
+              2802024,
+              2769256,
+              2785640
+            ],
+            "peak_tree_resident_bytes": [
+              9453568,
+              9535488,
+              9486336,
+              9469952,
+              9502720,
+              9469952,
+              9486336
+            ]
+          },
+          "post_all_closes": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 2998656,
+            "maximum_peak_tree_resident_bytes": 9715712,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 2834792,
+            "median_peak_tree_resident_bytes": 9568256,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              2851176,
+              2998656,
+              2834792,
+              2834792,
+              2949480,
+              2818408,
+              2818408
+            ],
+            "peak_tree_resident_bytes": [
+              9584640,
+              9715712,
+              9568256,
+              9568256,
+              9682944,
+              9551872,
+              9551872
+            ]
+          },
+          "post_one_close": {
+            "maximum_peak_descendants_resident_bytes": 0,
+            "maximum_peak_process_count": 1,
+            "maximum_peak_tree_physical_footprint_bytes": 2376040,
+            "maximum_peak_tree_resident_bytes": 9093120,
+            "median_peak_descendants_resident_bytes": 0,
+            "median_peak_process_count": 1,
+            "median_peak_tree_physical_footprint_bytes": 2310480,
+            "median_peak_tree_resident_bytes": 9043968,
+            "peak_descendants_resident_bytes": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_process_count": [
+              1,
+              1,
+              1,
+              1,
+              1,
+              1,
+              1
+            ],
+            "peak_tree_physical_footprint_bytes": [
+              2294096,
+              2376040,
+              2310480,
+              2310480,
+              2326864,
+              2294096,
+              2310480
+            ],
+            "peak_tree_resident_bytes": [
+              9027584,
+              9093120,
+              9043968,
+              9043968,
+              9060352,
+              9027584,
+              9043968
+            ]
+          }
+        },
+        "transport": "native control 0.0.1 NDJSON on stdio; html5ever DOM only, no layout, script or network",
+        "version": "0.0.0"
+      }
+    },
+    "semantic": "peak of sampled sum of BSD ps RSS over browser root and recursively observed descendants per stage; peak_descendants_resident_bytes excludes the root so a court host's own footprint can be separated from engine processes; peak_tree_physical_footprint_bytes sums proc_pid_rusage ri_phys_footprint over the same tree, which excludes shared file-backed pages and is the kernel's memory-pressure accounting"
+  },
+  "platform": {
+    "architecture": "arm64",
+    "os": "macos"
+  },
+  "schema": "minicon-surf.cdp-target-retention-receipt/0.0.1",
+  "status": "incomplete",
+  "workload": {
+    "concurrent_target_probe_limit": 8,
+    "fixture_sha256": "1d562146735fcb83bb7086769135c3db8ac795c1c0e3776aaf687022c86ec9e5",
+    "measured_repetitions": 7,
+    "order": "rotating by repetition",
+    "profile": "fresh temporary Chrome profile per repetition; Lightpanda 0.4.0 has no equivalent profile flag; Servo uses an ephemeral control profile and a fresh temporary config directory per repetition",
+    "samples_per_stage": 3,
+    "sequential_target_cycles": 8,
+    "settle_ms": 500,
+    "stage_order": [
+      "empty",
+      "one_target",
+      "post_one_close",
+      "last_target",
+      "post_all_closes"
+    ],
+    "target_ready_condition": "named semantic heading observed through Runtime.evaluate (CDP) or target.snapshot (control 0.0.1) for every sequential target",
+    "warmups_per_candidate": 1
+  }
+}
