@@ -1495,6 +1495,53 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   ordering kept: item 1 was struck, because
   `first-request-cost-audit-0.0.1.md` had already measured the first-profile
   cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
+- [x] Implemented against the frozen court, and the court did not move:
+  **profile history disclosure**. `profile.inspect {profile, history: true}`
+  answers the profile's committed history — most-recent-first, at most **8
+  entries and 16,384 bytes**, **origin and path only**. The default
+  `profile.inspect {profile}` is byte-identical to what it was: the key is
+  added only when it is asked for. The **operation enum stays at 26**; there is
+  no `target.history` and no restored target ring. Court **24 of 24** on
+  `0885321884dfca3c…`, against the frozen baseline's 11 of 24 on
+  `2d57ce864002406e…` — the criterion count stayed 24 and only the pass count
+  moved, which is what freezing it before the capability was for. The privacy
+  trim happens **where the entry is built**, in
+  `profile::history_origin_and_path`, so a query never reaches the record even
+  for the moment before it is written and no downstream caller has to remember
+  to drop it; deliberately stricter than `target.inspect`'s current `url`,
+  which keeps its query as existing browser state a caller already asked for.
+  **Ruled, and recorded with its reason: a failed history write rolls the list
+  back and latches `read_only` through the existing atomic commit — the same
+  path a failed jar or storage commit takes, not a second one — but it does
+  NOT refuse or roll back the navigation.** The page has already navigated by
+  the time the write runs, so refusing there would report a failure that did
+  not happen; what a later reader sees is the latch and the rolled-back list.
+  Recorded only where a ring entry is committed, so a replace, a reload and a
+  download never add one; a readonly session's ring advances and writes
+  nothing; an ephemeral profile answers `history_persisted: false` with a
+  reason rather than a bare empty list that would read like "this profile has
+  been nowhere"; a fork inherits jar, storage and policy and never where its
+  source has been; and a record over budget or carrying a query or a fragment
+  is refused at adoption the way a corrupt record already is, with no fallback.
+  Regressions, measured on **both** binaries rather than compared against a
+  number recorded from another build: `-readonly-profile` 28/28,
+  `-copy-on-write` 23/23, `-downloads` 21/21, `-profile` **92/94 identical to
+  the baseline's 92/94** with the same two narrow D6 checks failing before and
+  after, `-child-frame` 79/80 against the baseline's 78/80 on the same machine,
+  and the retention attribution court `observed`. D6 live footprint moved from
+  8,880,632 to 8,602,056 on the system arm and from 7,799,288 to 7,815,672 on
+  the arena arm; **both are read as noise and neither is claimed as an
+  improvement or a regression** — the arena delta is a single page and the
+  system delta is negative. **M1 and M2 are byte-identical** before and after —
+  system 238,554 / 1,668,444, arena 230,586 / 1,614,092 against unmoved caps of
+  262,144 and 1,835,008 — as expected, because this change adds no shim source.
+  `-child-frame`'s one failure is environmental (a pinned client package absent
+  from an ignored lab directory) and fails on the baseline too; the baseline
+  additionally fails an arena M4 growth check that this build passed, and that
+  is **not** claimed as a repair, the criterion being narrow across batches.
+  `navigation-court` was **not** run: it carries the navigation soak the
+  standing rule forbids rerunning. No threshold moved — 8/16 KiB, D6, G1,
+  M1/M2 and slope S1–S8 all untouched. G1, G3, P6 and G6 stay open.
 - [ ] Frozen before the host changes, nothing implemented: the history-disclosure
   court (`labs/native-dom/history-disclosure-court.py`, frozen from
   `history-persistence-audit-0.0.1.md` §14). The ruled shape is settled: entries
