@@ -30,6 +30,45 @@ pub const MAX_STORAGE_VALUE_BYTES: usize = 1024;
 pub const MAX_STORAGE_KEY_BYTES: usize = 64;
 pub const MAX_ACCOUNTED_BYTES_PER_PROFILE: usize = 128 * 1024;
 pub const MAX_RECORD_BYTES: usize = 4 * 1024 * 1024;
+/// The disclosed history's frozen budget (`history-disclosure-court.py`, and
+/// `history-persistence-audit-0.0.1.md` §14). Eight entries and 16 KiB, taken
+/// from the host's own `MAX_HISTORY_ENTRIES` and `MAX_URL_BYTES`. A navigation
+/// past either bound evicts the oldest entry; it never refuses the navigation.
+pub const MAX_HISTORY_DISCLOSURE_ENTRIES: usize = 8;
+/// The same per-URL bound the host applies to a navigation, restated here so
+/// the record's own reader can reject an over-long entry without reaching back
+/// into the binary's constants.
+pub const MAX_HISTORY_ENTRY_BYTES: usize = 2000;
+pub const MAX_HISTORY_DISCLOSURE_BYTES: usize = 16384;
+
+/// The privacy trim: a disclosed entry is an origin and a path, and nothing
+/// else. The query and the fragment are dropped here, at the one place an
+/// entry is built, so no later caller has to remember to drop them. This is
+/// deliberately stricter than `target.inspect`'s current `url`, which keeps
+/// its query as existing browser state a caller already asked for.
+pub fn history_origin_and_path(url: &str) -> Option<String> {
+    let trimmed = url.split(['?', '#']).next()?;
+    if trimmed.is_empty() || trimmed.len() > MAX_HISTORY_ENTRY_BYTES {
+        return None;
+    }
+    Some(trimmed.to_owned())
+}
+
+/// Push one entry most-recent-first and evict to the frozen budget. Returns
+/// the list; it never fails, because a full history is not a reason to refuse
+/// a navigation.
+pub fn push_history(entries: &mut Vec<String>, entry: String) {
+    entries.retain(|existing| existing != &entry);
+    entries.insert(0, entry);
+    entries.truncate(MAX_HISTORY_DISCLOSURE_ENTRIES);
+    while history_bytes(entries) > MAX_HISTORY_DISCLOSURE_BYTES && entries.len() > 1 {
+        entries.pop();
+    }
+}
+
+pub fn history_bytes(entries: &[String]) -> usize {
+    entries.iter().map(String::len).sum()
+}
 /// The origin of fixture targets: storage under it is never persisted.
 pub const OPAQUE_ORIGIN: &str = "minicon-surf://court";
 /// Pseudo-host of control-plane cookies (`profile.storage.put`): budgeted
@@ -554,6 +593,11 @@ pub struct RecordData {
     /// an older reader ignores the field, a newer one defaults it.
     pub online: bool,
     pub allow_by_default: bool,
+    /// The profile's disclosed history, most-recent-first, origin and path
+    /// only. Like `policy`, a record written before this field existed has no
+    /// key and reads back as an empty list, so the format version does not
+    /// move and both directions stay compatible.
+    pub history: Vec<String>,
 }
 
 impl Default for RecordData {
@@ -563,6 +607,7 @@ impl Default for RecordData {
             storage: Storage::default(),
             online: true,
             allow_by_default: true,
+            history: Vec::new(),
         }
     }
 }
@@ -590,6 +635,7 @@ impl RecordData {
                 "network": if self.online { "online" } else { "offline" },
                 "permissions": if self.allow_by_default { "allow_by_default" } else { "deny_by_default" },
             },
+            "history":self.history,
         })
     }
 
@@ -637,11 +683,36 @@ impl RecordData {
         let policy = &value["policy"];
         let online = policy["network"].as_str() != Some("offline");
         let allow_by_default = policy["permissions"].as_str() != Some("deny_by_default");
+        // A record without a history is one written before the field existed.
+        // A record whose history is over budget, or carries a query or a
+        // fragment, is corrupt and is refused here -- the same refusal a
+        // corrupt record already gets, never a softer fallback that would
+        // silently repair it.
+        let history = match value.get("history") {
+            None | Some(Value::Null) => Vec::new(),
+            Some(value) => {
+                let entries = value
+                    .as_array()?
+                    .iter()
+                    .map(|entry| entry.as_str().map(str::to_owned))
+                    .collect::<Option<Vec<String>>>()?;
+                if entries.len() > MAX_HISTORY_DISCLOSURE_ENTRIES
+                    || history_bytes(&entries) > MAX_HISTORY_DISCLOSURE_BYTES
+                    || entries
+                        .iter()
+                        .any(|entry| entry.contains('?') || entry.contains('#'))
+                {
+                    return None;
+                }
+                entries
+            }
+        };
         Some(RecordData {
             persistent_cookies: cookies,
             storage,
             online,
             allow_by_default,
+            history,
         })
     }
 }

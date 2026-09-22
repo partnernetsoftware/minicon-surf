@@ -2440,6 +2440,11 @@ struct Profile {
     /// reopened tomorrow starts with its whole allowance.
     downloads: usize,
     download_bytes: usize,
+    /// The profile's disclosed history: origin and path only, most-recent
+    /// first, bounded by the frozen budget. Read only through
+    /// `profile.inspect {profile, history: true}`; never in the default
+    /// response, an error, the ledger, a receipt or `memory.report`.
+    history: Vec<String>,
 }
 
 /// What a fork carries from its source: the committed jar, the committed
@@ -3905,6 +3910,7 @@ impl Host {
             storage: profile.storage.clone(),
             online: profile.policy.online,
             allow_by_default: profile.policy.allow_by_default,
+            history: profile.history.clone(),
         };
         let bytes = profile::seal_record(source, profile_id, dek, &data)
             .map_err(|e| store_error(e, profile_id))?;
@@ -4013,6 +4019,65 @@ impl Host {
         Ok(())
     }
 
+    /// Record one committed navigation in the profile's disclosed history.
+    ///
+    /// Called only where a history *entry* is committed -- never on a replace,
+    /// a reload or a download, none of which add one. The entry is trimmed to
+    /// an origin and a path before it is stored, so a query never reaches the
+    /// record even for the moment before it is written.
+    ///
+    /// It joins the existing atomic commit rather than opening a second write
+    /// path: a failed write rolls the list back and latches `read_only`,
+    /// exactly as a failed jar or storage commit does. It does **not** fail
+    /// the navigation. The page has already navigated by the time this runs,
+    /// and refusing here would report a failure that did not happen; the
+    /// latch and the rolled-back list are what a later reader sees.
+    fn record_profile_history(&mut self, target_id: &str, url: &str) {
+        let Some(session_id) = self
+            .targets
+            .get(target_id)
+            .map(|target| target.session_id.clone())
+        else {
+            return;
+        };
+        // The open promised not to write, so it does not.
+        if self
+            .sessions
+            .get(&session_id)
+            .is_some_and(|session| session.read_only)
+        {
+            return;
+        }
+        let Some(profile_id) = self
+            .sessions
+            .get(&session_id)
+            .map(|session| session.profile_id.clone())
+        else {
+            return;
+        };
+        let Some(entry) = profile::history_origin_and_path(url) else {
+            return;
+        };
+        let Some(profile) = self.profiles.get_mut(&profile_id) else {
+            return;
+        };
+        // An ephemeral profile has nowhere to persist to, and says so rather
+        // than accumulating a list it would silently drop.
+        if !profile.persistent || profile.read_only {
+            return;
+        }
+        let previous = profile.history.clone();
+        profile::push_history(&mut profile.history, entry);
+        if profile.history == previous {
+            return;
+        }
+        if self.write_profile(&profile_id).is_err() {
+            let profile = self.profiles.get_mut(&profile_id).expect("profile exists");
+            profile.history = previous;
+            profile.read_only = true;
+        }
+    }
+
     /// D1 start-up: no keychain UI for the host lifetime, then load every
     /// persistent profile directory; a directory that fails to load is
     /// listed unavailable with its reason and never touched.
@@ -4077,6 +4142,7 @@ impl Host {
                             policy: policy_from_record,
                             downloads: 0,
                             download_bytes: 0,
+                            history: data.history,
                         },
                     );
                 }
@@ -4512,13 +4578,20 @@ impl Host {
             // reload leave the ring's length where it was.
             let committed = self.current_url(id).ok();
             if let Some(committed) = committed {
+                let mut added = true;
                 match self.histories.get_mut(id) {
-                    Some(history) if replace => history.replace(&committed),
+                    Some(history) if replace => {
+                        history.replace(&committed);
+                        added = false;
+                    }
                     Some(history) => history.commit(&committed),
                     None => {
                         self.histories
                             .insert(id.to_owned(), History::new(&committed));
                     }
+                }
+                if added {
+                    self.record_profile_history(id, &committed);
                 }
             }
         }
@@ -4685,7 +4758,25 @@ impl Host {
                 Ok(json!({"kind":"profile_list","profiles":profiles}))
             }
             "profile.inspect" => {
-                let object = exact_object(a, &["profile"])?;
+                // `{profile}` or `{profile, history}` -- nothing else. The
+                // default response must stay byte-identical to what it was
+                // before disclosure existed, so the history key is added only
+                // when it is asked for.
+                let object = a
+                    .as_object()
+                    .ok_or_else(|| invalid("arguments must be an object"))?;
+                if !object.contains_key("profile")
+                    || !object.keys().all(|k| k == "profile" || k == "history")
+                {
+                    return Err(invalid(
+                        "expected exactly the fields [\"profile\"] or [\"profile\", \"history\"]",
+                    ));
+                }
+                let disclose = match object.get("history") {
+                    None => false,
+                    Some(Value::Bool(asked)) => *asked,
+                    Some(_) => return Err(invalid("history must be a boolean")),
+                };
                 let id = typed_field(object, "profile", "profile")?;
                 let profile = self
                     .profiles
@@ -4702,6 +4793,28 @@ impl Host {
                     "store":self.key_source.as_ref().map(|k| k.mode.name()),
                     "budgets":profile_budgets(),
                 }))
+                .map(|mut answer: Value| {
+                    if disclose {
+                        let object = answer.as_object_mut().expect("object");
+                        object.insert("history".into(), json!(profile.history));
+                        // An ephemeral profile has nothing on disk. It says so
+                        // rather than returning a bare empty list that reads
+                        // like "this profile has been nowhere".
+                        object.insert("history_persisted".into(), json!(profile.persistent));
+                        if !profile.persistent {
+                            object.insert(
+                                "history_reason".into(),
+                                json!("ephemeral profiles persist no history"),
+                            );
+                        }
+                        object.insert(
+                            "history_budgets".into(),
+                            json!({"entries":profile::MAX_HISTORY_DISCLOSURE_ENTRIES,
+                                   "bytes":profile::MAX_HISTORY_DISCLOSURE_BYTES}),
+                        );
+                    }
+                    answer
+                })
             }
             "profile.delete" => {
                 let object = exact_object(a, &["profile"])?;
@@ -4927,6 +5040,11 @@ impl Host {
                     .unwrap_or_default(),
                 downloads: 0,
                 download_bytes: 0,
+                // A fork inherits the jar, the storage and the policy. It does
+                // not inherit history: a child that could be asked where its
+                // parent had been would be the same leak as a child recording
+                // its parent's name.
+                history: Vec::new(),
             },
         );
         Ok(
@@ -5075,6 +5193,9 @@ impl Host {
                 storage: copied.storage.clone(),
                 online: copied.policy.online,
                 allow_by_default: copied.policy.allow_by_default,
+                // A fork's sealed record starts with no history, matching the
+                // live profile it is sealing.
+                history: Vec::new(),
             })
             .unwrap_or_default();
         // Seal first: a missing or locked keychain fails here, before any file.
@@ -5113,6 +5234,8 @@ impl Host {
                     .unwrap_or_default(),
                 downloads: 0,
                 download_bytes: 0,
+                // Not inherited, for the reason above.
+                history: Vec::new(),
             },
         );
         Ok(
@@ -5421,6 +5544,7 @@ impl Host {
             .map(Url::to_string)
         {
             self.histories.insert(id.clone(), History::new(&url));
+            self.record_profile_history(&id, &url);
         }
         // The page's writes during load reach the profile now; a failed
         // commit keeps the target (its document is real) but reports the
@@ -6420,6 +6544,7 @@ impl Host {
                 self.histories.insert(id.clone(), History::new(&committed));
             }
         }
+        self.record_profile_history(&id, &committed);
         self.navigation_stage("after_history_audit", &id);
         let result = self.navigation_result(&id, deadline);
         self.navigation_stage("result_built", &id);
