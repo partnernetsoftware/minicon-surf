@@ -1495,6 +1495,33 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   ordering kept: item 1 was struck, because
   `first-request-cost-audit-0.0.1.md` had already measured the first-profile
   cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
+- [ ] Adjudication only, nothing measured and no gate declared:
+  **G1's status is proposed to move from BLOCKED to INCOMPLETE**
+  (`labs/native-dom/g1-adjudication-0.0.1.md`). Nothing was run, no threshold
+  moved, no court changed and no receipt written or refreshed; the document
+  indexes evidence already on main and puts a status to the root. The reason
+  for the change is narrow and is the whole of it: `g1-campaign-0.0.1.md`
+  named the block — an authorized Lightpanda artifact — and that block is
+  gone, the digest verified and both existing harnesses run unmodified. A gate
+  whose blocking condition has been removed is no longer BLOCKED, and that is
+  **not** evidence it passes. **PASS is explicitly not proposed**, and five
+  gaps are named rather than waved at: one platform (macOS arm64 only, and the
+  lab discipline says a result is evidence only for its cell), one synthetic
+  fixture, neither private memory nor PSS (footprint corrects part of summed
+  RSS but is not PSS), **no like-for-like at eight targets** because Lightpanda
+  reaches one concurrent target in 7 of 7 repetitions so that row is
+  route-against-Chrome alone, and Servo not built for these runs by ruling so
+  its only column is an older receipt on a different day against a different
+  Chrome build. The document also separates two things that are easy to
+  conflate: the receipts' own `status: "incomplete"` is the **court's**
+  standing honesty label about capacity reporting and an absent candidate, and
+  it neither proves nor denies the gate above it. Four falsifiable conditions
+  are listed for whatever would move INCOMPLETE to PASS, of which one — whether
+  Lightpanda's one-target limit is itself the finding and the multi-target
+  claim stands against Chrome alone — is a decision rather than a measurement.
+  **No new P6 capability was started**: cache is ruled out for making G1 and D6
+  worse, and permissions stays `recorded_only` with no permission-bearing
+  capability for a court to drive. G1, G3, P6 and G6 stay open.
 - [x] Implemented against the frozen court, and the court did not move:
   **profile history disclosure**. `profile.inspect {profile, history: true}`
   answers the profile's committed history — most-recent-first, at most **8
