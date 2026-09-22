@@ -120,3 +120,53 @@ the cheapest of the four.
 
 It does not declare a status, move a threshold, change a court, write or
 refresh a receipt, or claim G1 passed. The proposal in §6 is for a ruling.
+
+---
+
+## 9. Ruled — INCOMPLETE, and the one-target boundary is decided
+
+Recorded chronologically; §§1–8 stand as written, including §6's table and
+§7's four conditions, so the proposal and the decision can be read against
+each other.
+
+### 9.1 The status
+
+**G1 is INCOMPLETE. It is not PASS.** The authorized Lightpanda artifact was
+obtained and both existing harnesses ran, so the blocking condition is gone;
+the coverage gaps in §4 — platform, fixture, PSS/private memory, and
+cross-baseline multi-target — leave the gate unfinished.
+
+The distinction in §5 is kept: a receipt's internal `status: "incomplete"` is
+the court's label about what that run measured, and the G1 adjudication above
+it is a separate judgement. Neither is read off the other.
+
+### 9.2 Condition 4 is decided, not deferred
+
+**Lightpanda's one concurrent target is accepted as that baseline's capability
+boundary.** It is a property of the baseline, not a missing measurement, and
+the consequences are fixed rather than left to a later reader:
+
+- **No eight-target Lightpanda number may be manufactured** — not by
+  extrapolation, not by running eight engines and summing them, not by any
+  construction that would put a number in that cell. The cell is empty because
+  the baseline cannot reach it.
+- **The eight-target result is labelled `route-vs-Chrome`**, explicitly,
+  wherever it appears.
+- **Lightpanda participates in the units it can actually be measured in** —
+  empty, one target, and retention — and its numbers there stand as a full
+  comparison.
+
+This moves §7's item 4 out of the open list: it is **a decided branch, not a
+hidden gap**, and no future round should reopen it as though a missing number
+were an outstanding task.
+
+### 9.3 What still stands between INCOMPLETE and PASS
+
+Three conditions, unchanged from §7, and **any one unmet forbids PASS**:
+
+1. a second platform cell;
+2. a fixture that is not synthetic;
+3. a private-memory or PSS measure beside footprint, **or** an explicit ruling
+   that footprint is the measure the claim is stated in.
+
+Servo stays unbuilt, no visual run, no soak, and no threshold or court moves.

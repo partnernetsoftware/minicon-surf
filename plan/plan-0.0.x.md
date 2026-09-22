@@ -1495,6 +1495,32 @@ G6 stays closed: no route is independently green on both G1 and G2/A3.
   ordering kept: item 1 was struck, because
   `first-request-cost-audit-0.0.1.md` had already measured the first-profile
   cost out of existence. Not pushed. G1, G3, P6 and G6 stay open.
+- [x] **Ruled: G1 is INCOMPLETE, not BLOCKED and not PASS**
+  (`labs/native-dom/g1-adjudication-0.0.1.md` §9, appended chronologically with
+  §§1–8 kept as written so the proposal and the decision read against each
+  other). The authorized Lightpanda artifact was obtained and both existing
+  harnesses ran, so the blocking condition is gone; the coverage gaps leave the
+  gate unfinished. The separation is kept: a receipt's internal
+  `status: "incomplete"` is the **court's** label about what that run measured,
+  and the G1 adjudication above it is a separate judgement — neither is read
+  off the other. **Condition 4 is decided rather than deferred: Lightpanda's
+  one concurrent target is accepted as that baseline's capability boundary**,
+  a property of the baseline and not a missing measurement. Three consequences
+  are fixed so a later reader cannot treat the empty cell as an outstanding
+  task: **no eight-target Lightpanda number may be manufactured** — not by
+  extrapolation, not by running eight engines and summing them, not by any
+  construction that would fill that cell; the eight-target result is labelled
+  **`route-vs-Chrome`** wherever it appears; and Lightpanda participates fully
+  in the units it can be measured in — empty, one target and retention. That
+  moves item 4 out of the open list as **a decided branch, not a hidden gap**.
+  **Three conditions still stand between INCOMPLETE and PASS, and any one unmet
+  forbids PASS**: a second platform cell, a fixture that is not synthetic, and
+  a private-memory or PSS measure beside footprint *or* an explicit ruling that
+  footprint is the measure the claim is stated in. No new P6 capability was
+  started — cache is ruled out for making G1 and D6 worse, and permissions
+  stays `recorded_only` with nothing permission-bearing for a court to drive.
+  Servo unbuilt, no visual run, no soak, no threshold or court moved. G1, G3,
+  P6 and G6 stay open.
 - [ ] Adjudication only, nothing measured and no gate declared:
   **G1's status is proposed to move from BLOCKED to INCOMPLETE**
   (`labs/native-dom/g1-adjudication-0.0.1.md`). Nothing was run, no threshold
